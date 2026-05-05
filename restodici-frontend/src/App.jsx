@@ -1,55 +1,56 @@
-// src/hooks/useCart.js
-import { createContext, useContext, useState, useEffect } from 'react';
+// src/App.jsx — Version épurée (conflit résolu)
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './hooks/useAuth';
+import { CartProvider } from './hooks/useCart';
+import Home  from './pages/Home';
 
-const CartContext = createContext();
+// Pages
+import Login from './pages/Login';
+import Register from './pages/Register';
+import MenuPage from './pages/Menu';
+import AdminDashboard from './pages/AdminDashboard';
 
-export function CartProvider({ children }) {
-  const [cart, setCart] = useState(() => {
-    const saved = localStorage.getItem('cart');
-    return saved ? JSON.parse(saved) : [];
-  });
+const queryClient = new QueryClient();
 
-  useEffect(() => {
-    localStorage.setItem('cart', JSON.stringify(cart));
-  }, [cart]);
-
-  const addToCart = (item) => {
-    setCart(prev => {
-      const existing = prev.find(i => i.id === item.id && JSON.stringify(i.supplements) === JSON.stringify(item.supplements));
-      if (existing) {
-        return prev.map(i => 
-          i.id === item.id && JSON.stringify(i.supplements) === JSON.stringify(item.supplements)
-            ? { ...i, quantity: i.quantity + item.quantity }
-            : i
-        );
-      }
-      return [...prev, item];
-    });
-  };
-
-  const updateQuantity = (id, newQuantity) => {
-    if (newQuantity <= 0) {
-      removeFromCart(id);
-    } else {
-      setCart(prev => prev.map(item => item.id === id ? { ...item, quantity: newQuantity } : item));
-    }
-  };
-
-  const removeFromCart = (id) => {
-    setCart(prev => prev.filter(item => item.id !== id));
-  };
-
-  const clearCart = () => setCart([]);
-
-  return (
-    <CartContext.Provider value={{ cart, addToCart, updateQuantity, removeFromCart, clearCart }}>
-      {children}
-    </CartContext.Provider>
-  );
+// 🔐 Route protégée — juste vérifier le token, PAS de redirection rôle
+function ProtectedRoute({ children }) {
+  const token = localStorage.getItem('token');
+  return token ? children : <Navigate to="/login" replace />;
 }
 
-export const useCart = () => {
-  const ctx = useContext(CartContext);
-  if (!ctx) throw new Error('useCart must be used inside CartProvider');
-  return ctx;
-};
+export default function App() {
+  return (
+    <BrowserRouter>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <CartProvider>
+            <div className="min-h-screen bg-[#F9F7F5] text-[#2D2720]">
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/register" element={<Register />} />
+                
+                {/*  Route /menu : protégée, mais PAS de RoleRedirect ici */}
+                <Route path="/menu" element={
+                  <ProtectedRoute>
+                    <MenuPage />
+                  </ProtectedRoute>
+                } />
+
+                {/*  Route /admin : protégée */}
+                <Route path="/admin" element={
+                  <ProtectedRoute>
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                } />
+
+                <Route path="*" element={<Navigate to="/menu" replace />} />
+              </Routes>
+            </div>
+          </CartProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </BrowserRouter>
+  );
+}

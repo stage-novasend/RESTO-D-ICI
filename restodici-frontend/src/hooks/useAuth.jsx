@@ -1,50 +1,63 @@
+// src/hooks/useAuth.js
 import { createContext, useContext, useState, useEffect } from 'react';
-import { authService } from '../services/auth.service';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // ← Pour la redirection
 
   useEffect(() => {
-    const token = authService.getToken();
+    const token = localStorage.getItem('token');
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        setUser({ id: payload.sub, email: payload.email, role: payload.role, nom: '' });
-      } catch (e) {
-        authService.logout();
+        setUser({
+          id: payload.sub,
+          email: payload.email,
+          role: payload.role,
+          nom: payload.nom || 'Utilisateur'
+        });
+      } catch (err) {
+        localStorage.removeItem('token');
       }
     }
     setLoading(false);
   }, []);
 
-  const login = async (data) => {
-    const res = await authService.login(data);
-    authService.setToken(res.data.access_token);
-    const payload = JSON.parse(atob(res.data.access_token.split('.')[1]));
-    setUser(res.data.user);
-    navigate(payload.role === 'GERANT' ? '/admin' : '/menu');
+  const login = async ({ email, password }) => {
+    const api = axios.create({ baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000' });
+    
+    const { data } = await api.post('/auth/login', { email, password });
+    
+    // Stockage du token
+    localStorage.setItem('token', data.access_token);
+    setUser(data.user);
+    
+    // Redirection immédiate selon le rôle (RG-31)
+    if (data.user.role === 'ADMIN' || data.user.role === 'GERANT') {
+      navigate('/admin', { replace: true });
+    } else {
+      navigate('/menu', { replace: true });
+    }
+    
+    return data;
   };
 
   const logout = () => {
-    authService.logout();
+    localStorage.removeItem('token');
     setUser(null);
-    navigate('/login');
+    navigate('/login', { replace: true });
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth doit être utilisé dans AuthProvider');
-  return ctx;
-};
+export const useAuth = () => useContext(AuthContext);

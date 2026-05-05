@@ -1,28 +1,44 @@
+// src/auth/guards/roles.guard.ts
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { ROLES_KEY } from '../../common/decorators/roles.decorator';
 
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private reflector: Reflector) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
+    const requiredRoles = this.reflector.getAllAndOverride<string[]>('roles', [
       context.getHandler(),
       context.getClass(),
     ]);
 
-    if (!requiredRoles) return true;
+    if (!requiredRoles || requiredRoles.length === 0) {
+      return true;
+    }
 
-    const { user } = context.switchToHttp().getRequest();
+   
+    const request = context.switchToHttp().getRequest();
     
-    // Vérifie si le rôle de l'utilisateur correspond à l'un des rôles requis
-    const hasRole = requiredRoles.some((role) => user?.role === role);
+    
+    const user = request.user;
+
+    // Debug log (à supprimer en prod)
+    console.log('🔍 RolesGuard:', {
+      hasUser: !!user,
+      userRole: user?.role,
+      requiredRoles,
+    });
+
+    if (!user || !user.role) {
+      throw new ForbiddenException('Accès refusé : utilisateur non authentifié');
+    }
+
+    const hasRole = requiredRoles.includes(user.role);
     
     if (!hasRole) {
-      throw new ForbiddenException('Accès refusé : rôle insuffisant');
+      throw new ForbiddenException(`Accès refusé : rôle "${user.role}" non autorisé`);
     }
-    
+
     return true;
   }
 }
