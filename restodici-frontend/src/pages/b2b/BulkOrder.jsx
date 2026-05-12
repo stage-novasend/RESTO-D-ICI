@@ -140,48 +140,55 @@ export default function BulkOrder() {
       setError('Veuillez ajouter au moins un article à la commande');
       return;
     }
-    
-    if (!deliveryInfo.date || !deliveryInfo.time) {
-      setError('Veuillez sélectionner une date et une heure de livraison');
-      return;
-    }
-    
+
+    // Le DTO backend B2B attend deliveryAddress et/ou deliveryDateTime (optionnel),
+    // mais on peut envoyer au minimum deliveryAddress + total/subtotal.
     try {
       setLoading(true);
       setError('');
-      
+
+      const subtotal = orderItems.reduce(
+        (sum, item) => sum + (item.prix * item.quantity),
+        0,
+      );
+
+      // deliveryAddress: on priorise la sélection lieu, sinon le champ adresse texte.
+      const deliveryAddress =
+        deliveryLocations.find((loc) => loc.id === deliveryInfo.location)?.address ||
+        deliveryInfo.address;
+
+      // deliveryDateTime: optionnel, on le construit si date et time existent.
+      const deliveryDateTime =
+        deliveryInfo.date && deliveryInfo.time
+          ? new Date(`${deliveryInfo.date}T${deliveryInfo.time}:00`)
+          : undefined;
+
       const orderData = {
-        restaurantId: selectedRestaurant.restaurantId,
-        items: orderItems.map(item => ({
+        items: orderItems.map((item) => ({
           articleId: item.articleId,
-          quantite: item.quantite,
-          collaborateurId: selectedEmployeeByArticle[item.articleId] || employees[0]?.id
+          quantity: item.quantity,
+          unitPrice: item.prix,
+          total: item.prix * item.quantity,
         })),
-        livraison: {
-          date: deliveryInfo.date,
-          heure: deliveryInfo.time,
-          adresse: deliveryLocations.find(loc => loc.id === deliveryInfo.location)?.address || deliveryInfo.address
-        },
-        total: orderItems.reduce((sum, item) => sum + (item.prix * item.quantite), 0)
+        subtotal,
+        deliveryFee: 0,
+        total: subtotal,
+        deliveryAddress,
+        deliveryDateTime,
       };
-      
-      // Try to submit to backend
+
+      // Submit to backend
       await b2bAPI.bulkOrder(orderData);
-      
-      // Show success message and redirect
+
       alert('Commande passée avec succès!');
       navigate('/b2b/dashboard');
-      
     } catch (err) {
       console.error('Error submitting order:', err);
-      // Handle different error scenarios
-      if (err.response?.status === 404) {
-        // Backend endpoint not implemented yet - show mock success
-        alert('✅ Commande simulée avec succès! (Backend B2B en développement)');
-        navigate('/b2b/dashboard');
-      } else {
-        setError(err.response?.data?.message || 'Erreur lors de la soumission de la commande');
-      }
+      setError(
+        err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          'Erreur lors de la soumission de la commande',
+      );
     } finally {
       setLoading(false);
     }

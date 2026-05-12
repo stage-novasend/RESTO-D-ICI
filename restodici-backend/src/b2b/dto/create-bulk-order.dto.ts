@@ -11,30 +11,30 @@ import { Type } from 'class-transformer';
 
 class BulkOrderItemDto {
   @IsString()
-  articleId: string;
+  articleId!: string;
 
   @IsNumber()
-  quantity: number;
+  quantity!: number;
 
   @IsNumber()
-  unitPrice: number;
+  unitPrice!: number;
 }
 
 export class CreateBulkOrderDto {
   @ValidateNested({ each: true })
   @Type(() => BulkOrderItemDto)
   @IsArray()
-  items: BulkOrderItemDto[];
+  items!: BulkOrderItemDto[];
 
   @IsNumber()
-  subtotal: number;
+  subtotal!: number;
 
   @IsNumber()
   @IsOptional()
   deliveryFee?: number;
 
   @IsNumber()
-  total: number;
+  total!: number;
 
   @IsString()
   @IsOptional()
