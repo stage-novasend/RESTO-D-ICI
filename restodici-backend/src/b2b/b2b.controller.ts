@@ -1,4 +1,7 @@
-import { Controller, Get, Post, Body, Req, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Req, Query, UseGuards } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import { B2BService } from './b2b.service';
 
 @Controller('b2b')
@@ -39,6 +42,14 @@ export class B2BController {
   @Get('orders')
   getOrders(@Req() req: any, @Query('compteB2BId') compteB2BId?: string) {
     return this.b2bService.getOrders(req?.user, compteB2BId);
+  }
+
+  // GET /b2b/orders/management
+  @Get('orders/management')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  getOrdersForManagement(@Req() req: any) {
+    return this.b2bService.getOrdersForManagement(req.user);
   }
 
   // GET /b2b/invoices

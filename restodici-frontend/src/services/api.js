@@ -160,6 +160,7 @@ export const b2bAPI = {
   createCollaborator: (data) => api.post("/b2b/collaborators", data),
   bulkOrder: (data) => api.post("/b2b/bulk-orders", data),
   getOrders: () => api.get("/b2b/orders"),
+  getManagerOrders: () => api.get("/b2b/orders/management"),
   getInvoices: () => api.get("/b2b/invoices"),
   getReports: () => api.get("/b2b/reports"),
 };
@@ -176,11 +177,16 @@ export const tresorerieAPI = {
   getStats: (period = "day") => api.get(`/tresorerie/stats?period=${period}`),
 
   // GET /tresorerie/receipt/:commandeId/pdf
-  getReceiptPdf: (commandeId) => {
-    return api.get(`/tresorerie/receipt/${commandeId}/pdf`, {
+  getReceiptPdf: (commandeId) =>
+    api.get(`/tresorerie/receipt/${commandeId}/pdf`, {
       responseType: "blob",
-    });
-  },
+    }),
+
+  // GET /tresorerie/export/syscohada?period=monthly
+  exportSyscohada: (period = "monthly") =>
+    api.get(`/tresorerie/export/syscohada?period=${period}`, {
+      responseType: "blob",
+    }),
 
   // POST /tresorerie/expenses
   recordExpense: (expenseData) => api.post("/tresorerie/expenses", expenseData),

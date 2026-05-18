@@ -8,7 +8,6 @@ import { AuthController } from './auth.controller';
 import { User } from './entities/user.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { GoogleStrategy } from './strategies/google.strategy';
 import { RolesGuard } from './guards/roles.guard';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { RestaurantsModule } from '../restaurants/restaurants.module';
@@ -16,6 +15,7 @@ import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
 
 @Module({
   imports: [
+    ConfigModule,
     TypeOrmModule.forFeature([User, Restaurant, CompteB2B, PasswordReset]),
     PassportModule,
     JwtModule.registerAsync({
@@ -28,7 +28,7 @@ import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
     }),
     RestaurantsModule,
   ],
-  providers: [AuthService, JwtStrategy, GoogleStrategy, RolesGuard],
+  providers: [AuthService, JwtStrategy, RolesGuard],
   controllers: [AuthController],
   exports: [AuthService],
 })

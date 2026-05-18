@@ -204,20 +204,27 @@ export class CommandesService {
     const newIndex = order.indexOf(newStatut);
 
     if (newStatut === StatutCommande.ANNULEE) {
-      if (
-        commande.statut === StatutCommande.LIVREE ||
-        commande.statut === StatutCommande.ANNULEE
-      ) {
+      const ageMinutes =
+        (Date.now() - new Date(commande.createdAt).getTime()) / 60000;
+      if (commande.statut !== StatutCommande.RECUE || ageMinutes > 5) {
         throw new BadRequestException(
-          `Transition invalide: ${commande.statut} → ${newStatut}`,
+          `Annulation impossible pour une commande ${commande.statut}`,
         );
       }
       commande.statut = newStatut;
       return this.commandeRepo.save(commande);
     }
 
-    // Bloquer transitions rétrogrades ou invalides
-    if (newIndex <= currentIndex || newIndex === -1) {
+    const transitions: Record<StatutCommande, StatutCommande[]> = {
+      [StatutCommande.RECUE]: [StatutCommande.CONFIRMEE],
+      [StatutCommande.CONFIRMEE]: [StatutCommande.EN_PREP],
+      [StatutCommande.EN_PREP]: [StatutCommande.PRETE],
+      [StatutCommande.PRETE]: [StatutCommande.LIVREE],
+      [StatutCommande.LIVREE]: [],
+      [StatutCommande.ANNULEE]: [],
+    };
+
+    if (!transitions[commande.statut]?.includes(newStatut)) {
       throw new BadRequestException(
         `Transition invalide: ${commande.statut} → ${newStatut}`,
       );

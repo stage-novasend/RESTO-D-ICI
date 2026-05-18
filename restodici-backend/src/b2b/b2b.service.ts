@@ -267,6 +267,29 @@ export class B2BService {
     }));
   }
 
+  async getOrdersForManagement(reqUser: any) {
+    const commandes = await this.commandeRepo.find({
+      relations: ['lignes', 'compteB2B'],
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+
+    return commandes.map((c) => ({
+      id: c.id,
+      numero: c.numero,
+      statut: c.statut,
+      createdAt: c.createdAt,
+      total: Number(c.totalEstime),
+      type: 'B2B',
+      source: c.compteB2B?.raisonSociale ?? 'Entreprise',
+      livraison: c.adresseLivraison ?? c.lieuLivraison,
+      items: (c.lignes ?? []).map((l) => ({
+        nom: l.articleId,
+        quantite: Number(l.quantite),
+      })),
+    }));
+  }
+
   async getInvoices(reqUser: any) {
     const compteId = reqUser?.compteB2BId;
     if (!compteId) return [];

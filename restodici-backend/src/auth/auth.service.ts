@@ -136,6 +136,10 @@ export class AuthService {
     const savedUser = await this.userRepository.save(user);
     savedUser.restaurant = restaurant ?? undefined;
 
+    // Marquer l'email comme vérifié par défaut — suppression du flow de vérification
+    savedUser.emailVerified = true;
+    await this.userRepository.save(savedUser);
+
     // Retourner le token et les infos utilisateur pour la redirection
     return this.buildAuthResponse(savedUser, 'Compte créé avec succès');
   }
@@ -155,47 +159,9 @@ export class AuthService {
       throw new BadRequestException('Compte désactivé');
     }
 
-    // Bloquer l'accès si l'email n'est pas vérifié
-    if (!user.emailVerified) {
-      throw new BadRequestException(
-        'Email non vérifié. Veuillez vérifier votre email ou renvoyer le lien de vérification.',
-      );
-    }
+    // NOTE: suppression du contrôle d'emailVerified — l'utilisateur peut se connecter immédiatement
 
     return this.buildAuthResponse(user);
-  }
-
-  // Google OAuth validation and user creation/update
-  async validateGoogleLogin(googleProfile: any) {
-    const { googleId, email, nom, prenom, photo } = googleProfile;
-
-    // Check if user exists by googleId or email
-    let user = await this.userRepository.findOne({
-      where: [{ googleId }, { email }],
-      relations: ['restaurant'],
-    });
-
-    if (user) {
-      // Update Google ID if not set
-      if (!user.googleId) {
-        user.googleId = googleId;
-        await this.userRepository.save(user);
-      }
-    } else {
-      // Create new user
-      user = this.userRepository.create({
-        email: email.toLowerCase(),
-        googleId,
-        nom: nom || '',
-        prenom: prenom || '',
-        password: '', // Empty password for OAuth users
-        role: Role.CLIENT,
-        emailVerified: true, // Google verified the email
-      });
-      user = await this.userRepository.save(user);
-    }
-
-    return this.buildAuthResponse(user, 'Connecté avec Google');
   }
 
   // Password reset request
@@ -210,13 +176,7 @@ export class AuthService {
       return { message: "Si l'email existe, un lien de réinitialisation a été envoyé" };
     }
 
-    // Sécurité: refuser la récupération si email non vérifié
-    if (!user.emailVerified) {
-      return {
-        message:
-          'Veuillez d\u2019abord vérifier votre email avant de réinitialiser votre mot de passe.',
-      };
-    }
+    // NOTE: suppression du blocage si l'email n'est pas vérifié — permettre la réinitialisation
 
 
     // Generate reset token
@@ -257,19 +217,7 @@ export class AuthService {
       throw new BadRequestException('Token de réinitialisation invalide ou expiré');
     }
 
-    // Sécurité: refuser le reset si email non vérifié
-    if (!resetRequest.user.emailVerified) {
-      throw new BadRequestException(
-        'Veuillez d\u2019abord vérifier votre email avant de réinitialiser votre mot de passe.',
-      );
-    }
-
-    // Sécurité: empêcher la réinitialisation si l'email n'est pas vérifié
-    if (!resetRequest.user.emailVerified) {
-      throw new BadRequestException(
-        'Email non vérifié. Veuillez vérifier votre email avant de réinitialiser le mot de passe.',
-      );
-    }
+    // NOTE: suppression des vérifications sur emailVerified — autoriser le reset
 
     // Update password
     const passwordHash = await bcrypt.hash(newPassword, 12);
@@ -285,24 +233,8 @@ export class AuthService {
 
   // Verify email with token
   async verifyEmail(token: string) {
-    const user = await this.userRepository.findOne({
-      where: { emailVerificationToken: token },
-    });
-
-    if (!user) {
-      throw new BadRequestException('Token de vérification invalide');
-    }
-
-    if (user.emailVerificationExpires && user.emailVerificationExpires < new Date()) {
-      throw new BadRequestException('Token de vérification expiré');
-    }
-
-    user.emailVerified = true;
-    user.emailVerificationToken = undefined;
-    user.emailVerificationExpires = undefined;
-    await this.userRepository.save(user);
-
-    return { message: 'Email vérifié avec succès', emailVerified: true };
+    // Email verification flow disabled — always succeed for backward compatibility
+    return { message: 'Email verification disabled in this deployment', emailVerified: true };
   }
 
   // Resend verification email
@@ -311,23 +243,7 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { email: userEmail },
     });
-
-    if (!user || user.emailVerified) {
-      return { message: 'Email déjà vérifié ou utilisateur inexistant' };
-    }
-
-    // Generate new verification token
-    const token = crypto.randomBytes(32).toString('hex');
-    const expiresAt = new Date(Date.now() + 86400000); // 24 hours
-
-    user.emailVerificationToken = token;
-    user.emailVerificationExpires = expiresAt;
-    await this.userRepository.save(user);
-
-    // In production, send verification email
-    console.log(`Email verification token for ${email}: ${token}`);
-    console.log(`Verification link: ${(this.configService?.get('FRONTEND_URL') || 'http://localhost:5173')}/verify-email?token=${token}`);
-
-    return { message: 'Email de vérification envoyé' };
+    // Verification disabled — return neutral message for compatibility
+    return { message: 'Email verification disabled in this deployment' };
   }
 }

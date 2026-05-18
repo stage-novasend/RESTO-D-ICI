@@ -42,25 +42,6 @@ export class AuthController {
     return { message: 'Déconnexion réussie' };
   }
 
-  // Google OAuth routes
-  @Get('google')
-  @UseGuards(AuthGuard('google'))
-  googleLogin() {
-    // This initiates the Google OAuth flow
-    // The user will be redirected to Google's login page
-  }
-
-  @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  async googleLoginCallback(@Req() req: any, @Res() res: Response) {
-    // After Google authentication, create or update user and return token
-    const result = await this.authService.validateGoogleLogin(req.user);
-    
-    // Redirect to frontend with token
-    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
-    res.redirect(`${frontendUrl}/auth/google/callback?token=${result.accessToken}&user=${encodeURIComponent(JSON.stringify(result.user))}`);
-  }
-
   // Password reset routes
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)

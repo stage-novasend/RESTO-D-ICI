@@ -56,10 +56,6 @@ export class User {
   @Column({ nullable: true })
   emailVerificationExpires?: Date;
 
-  // Google OAuth fields
-  @Column({ nullable: true })
-  googleId?: string;
-
   // 🔗 NOUVEAU : Lien vers le restaurant (pour GERANT et STAFF)
   @ManyToOne(() => Restaurant, (restaurant) => restaurant.users, {
     nullable: true,

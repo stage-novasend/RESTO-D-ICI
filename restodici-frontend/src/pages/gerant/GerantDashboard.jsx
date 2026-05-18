@@ -1,6 +1,6 @@
 // src/pages/gerant/GerantDashboard.jsx
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Package,
   ClipboardList,
@@ -37,6 +37,7 @@ import {
   stocksAPI,
   tresorerieAPI,
   staffAPI,
+  b2bAPI,
 } from "../../services/api";
 
 // ==================== COLOR THEME CONSTANTS ====================
@@ -578,16 +579,40 @@ function OrdersTab({ restaurantId }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const loadOrders = async () => {
       if (!restaurantId) return;
       try {
         setLoading(true);
-        const res = await commandesService.getAll({ restaurantId, limit: 50 });
-        setOrders(res.data || []);
-      } catch (error) {
-        console.error("Erreur chargement commandes:", error);
+        setError(null);
+        const [clientRes, b2bRes] = await Promise.all([
+          commandesService.getAll({ restaurantId, limit: 50 }),
+          b2bAPI.getManagerOrders(),
+        ]);
+
+        const clientOrders = (clientRes.data || []).map((order) => ({
+          ...order,
+          type: "CLIENT",
+          source: "Client",
+          amount: Number(order.montantTotal ?? order.total ?? 0),
+        }));
+
+        const b2bOrders = (b2bRes.data || []).map((order) => ({
+          ...order,
+          type: "B2B",
+          source: order.source || "Entreprise",
+          amount: Number(order.total ?? order.montantTotal ?? 0),
+        }));
+
+        const merged = [...clientOrders, ...b2bOrders].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+        );
+        setOrders(merged);
+      } catch (loadError) {
+        console.error("Erreur chargement commandes:", loadError);
+        setError("Impossible de charger les commandes client et entreprise.");
       } finally {
         setLoading(false);
       }
@@ -598,9 +623,26 @@ function OrdersTab({ restaurantId }) {
   const updateOrderStatus = async (orderId, newStatus) => {
     try {
       await commandesService.updateStatus(orderId, newStatus);
-      // Refresh orders
-      const res = await commandesService.getAll({ restaurantId, limit: 50 });
-      setOrders(res.data || []);
+      const [clientRes, b2bRes] = await Promise.all([
+        commandesService.getAll({ restaurantId, limit: 50 }),
+        b2bAPI.getManagerOrders(),
+      ]);
+      const clientOrders = (clientRes.data || []).map((order) => ({
+        ...order,
+        type: "CLIENT",
+        source: "Client",
+        amount: Number(order.montantTotal ?? order.total ?? 0),
+      }));
+      const b2bOrders = (b2bRes.data || []).map((order) => ({
+        ...order,
+        type: "B2B",
+        source: order.source || "Entreprise",
+        amount: Number(order.total ?? order.montantTotal ?? 0),
+      }));
+      const merged = [...clientOrders, ...b2bOrders].sort(
+        (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+      );
+      setOrders(merged);
     } catch (error) {
       console.error("Erreur mise à jour statut:", error);
       alert("Erreur lors de la mise à jour du statut");
@@ -609,19 +651,40 @@ function OrdersTab({ restaurantId }) {
 
   const getStatusColor = (status) => {
     const colors = {
-      RECEIVED: "bg-sky-100 text-sky-800",
-      CONFIRMED: "bg-violet-100 text-violet-800",
-      PREPARING: "bg-amber-100 text-amber-800",
-      READY: "bg-green-100 text-green-800",
-      DELIVERED: "bg-gray-100 text-gray-800",
-      CANCELLED: "bg-rose-100 text-rose-800",
+      RECUE: "bg-sky-100 text-sky-800",
+      CONFIRMEE: "bg-violet-100 text-violet-800",
+      EN_PREP: "bg-amber-100 text-amber-800",
+      PRETE: "bg-green-100 text-green-800",
+      LIVREE: "bg-teal-100 text-teal-800",
+      ANNULEE: "bg-rose-100 text-rose-800",
+      EN_ATTENTE: "bg-yellow-100 text-yellow-800",
     };
     return colors[status] || "bg-gray-100 text-gray-800";
   };
 
-  const canCancelOrder = (status) => {
-    return status === "RECEIVED" || status === "CONFIRMED";
+  const getStatusLabel = (status) => {
+    const labels = {
+      RECUE: "Reçue",
+      CONFIRMEE: "Confirmée",
+      EN_PREP: "En préparation",
+      PRETE: "Prête",
+      LIVREE: "Livrée",
+      ANNULEE: "Annulée",
+      EN_ATTENTE: "En attente",
+    };
+    return labels[status] || status;
   };
+
+  const orderAgeMinutes = (order) =>
+    (Date.now() - new Date(order.createdAt).getTime()) / 60000;
+
+  const canCancelOrder = (order) =>
+    order.statut === "RECUE" && orderAgeMinutes(order) <= 5;
+
+  const canConfirmOrder = (order) => order.statut === "RECUE";
+  const canPrepareOrder = (order) => order.statut === "CONFIRMEE";
+  const canMarkReady = (order) => order.statut === "EN_PREP";
+  const canCompleteOrder = (order) => order.statut === "PRETE";
 
   if (loading) {
     return (
@@ -650,55 +713,70 @@ function OrdersTab({ restaurantId }) {
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="font-semibold">
-                    Commande #{order.numero}
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <span className="font-semibold">Commande #{order.numero}</span>
+                  <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                    {order.source}
                   </span>
                   <span
                     className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.statut)}`}
                   >
-                    {order.statut}
+                    {getStatusLabel(order.statut)}
                   </span>
                 </div>
                 <p className="text-sm text-gray-600">
                   {new Date(order.createdAt).toLocaleString("fr-FR")}
                 </p>
+                <p className="text-sm text-gray-500">Référence CDC: {order.numero}</p>
                 <p className="font-medium text-violet-600">
-                  {Number(order.total).toLocaleString()} FCFA
+                  {Number(order.amount || 0).toLocaleString()} FCFA
                 </p>
               </div>
-              <div className="flex gap-2">
-                {canCancelOrder(order.statut) && (
+              <div className="flex flex-wrap gap-2">
+                {order.type === "CLIENT" && canCancelOrder(order) && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, "CANCELLED")}
+                    onClick={() => updateOrderStatus(order.id, "ANNULEE")}
                     className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-sm hover:bg-rose-600 transition"
                   >
                     Annuler
                   </button>
                 )}
-                {order.statut === "RECEIVED" && (
+                {order.type === "CLIENT" && canConfirmOrder(order) && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, "CONFIRMED")}
+                    onClick={() => updateOrderStatus(order.id, "CONFIRMEE")}
                     className="px-3 py-1.5 bg-violet-500 text-white rounded-lg text-sm hover:bg-violet-600 transition"
                   >
-                    Confirmer
+                    Valider
                   </button>
                 )}
-                {order.statut === "CONFIRMED" && (
+                {order.type === "CLIENT" && canPrepareOrder(order) && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, "PREPARING")}
+                    onClick={() => updateOrderStatus(order.id, "EN_PREP")}
                     className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition"
                   >
-                    Préparer
+                    En préparation
                   </button>
                 )}
-                {order.statut === "PREPARING" && (
+                {order.type === "CLIENT" && canMarkReady(order) && (
                   <button
-                    onClick={() => updateOrderStatus(order.id, "READY")}
+                    onClick={() => updateOrderStatus(order.id, "PRETE")}
                     className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition"
                   >
                     Prête
                   </button>
+                )}
+                {order.type === "CLIENT" && canCompleteOrder(order) && (
+                  <button
+                    onClick={() => updateOrderStatus(order.id, "LIVREE")}
+                    className="px-3 py-1.5 bg-cyan-500 text-white rounded-lg text-sm hover:bg-cyan-600 transition"
+                  >
+                    Valider remise
+                  </button>
+                )}
+                {order.type === "B2B" && (
+                  <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm">
+                    Commande entreprise - lecture seule
+                  </span>
                 )}
               </div>
             </div>
@@ -706,7 +784,12 @@ function OrdersTab({ restaurantId }) {
         ))}
       </div>
 
-      {orders.length === 0 && (
+      {error && (
+        <div className="text-center py-8 text-red-600">
+          {error}
+        </div>
+      )}
+      {orders.length === 0 && !error && (
         <div className="text-center py-12 text-gray-600">
           <ClipboardList className="w-12 h-12 mx-auto mb-4 text-gray-300" />
           <p>Aucune commande récente</p>
@@ -732,12 +815,9 @@ function StocksTab({ restaurantId }) {
       if (!restaurantId) return;
       try {
         setLoading(true);
-        // Load inventory - in real implementation this would come from a dedicated stocks endpoint
-        // For now, we'll get articles which contain stock information
-        const articlesRes = await menuAPI.get({ restaurantId, cible: "TOUS" });
-        setStocks(articlesRes.data || []);
+        const stocksRes = await stocksAPI.getAll({ restaurantId });
+        setStocks(stocksRes.data || []);
 
-        // Load alerts
         const alertsRes = await stocksAPI.getAlerts({ restaurantId });
         setAlerts(alertsRes.data || []);
       } catch (error) {
@@ -746,28 +826,28 @@ function StocksTab({ restaurantId }) {
         setStocks([
           {
             id: "1",
-            articleNom: "Riz",
-            quantite: 25,
+            nom: "Riz",
+            stock: 25,
             unite: "kg",
-            seuilMin: 10,
+            seuil: 10,
           },
           {
             id: "2",
-            articleNom: "Poisson",
-            quantite: 8,
+            nom: "Poisson",
+            stock: 8,
             unite: "kg",
-            seuilMin: 5,
+            seuil: 5,
           },
           {
             id: "3",
-            articleNom: "Tomates",
-            quantite: 15,
+            nom: "Tomates",
+            stock: 15,
             unite: "kg",
-            seuilMin: 8,
+            seuil: 8,
           },
         ]);
         setAlerts([
-          { id: "2", articleNom: "Poisson", stockActuel: 8, seuilMin: 10 },
+          { id: "2", nom: "Poisson", stock: 8, seuil: 10 },
         ]);
       } finally {
         setLoading(false);
@@ -793,8 +873,8 @@ function StocksTab({ restaurantId }) {
       setAdjustmentForm({ articleId: "", quantity: "", motif: "" });
 
       // Refresh data
-      const articlesRes = await menuAPI.get({ restaurantId, cible: "TOUS" });
-      setStocks(articlesRes.data || []);
+      const stocksRes = await stocksAPI.getAll({ restaurantId });
+      setStocks(stocksRes.data || []);
     } catch (error) {
       console.error("Erreur ajustement stock:", error);
       alert("Erreur lors de l'ajustement du stock");
@@ -1282,6 +1362,29 @@ function SettingsTab({ restaurantId, user }) {
     darkMode: localStorage.getItem("darkMode") === "true",
   });
   const [staffAccounts, setStaffAccounts] = useState([]);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("gerantSettings");
+    if (saved) {
+      try {
+        setSettings(JSON.parse(saved));
+      } catch {
+        // Ignore malformed saved settings
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem("gerantSettings", JSON.stringify(settings));
+  }, [settings]);
+
+  const handleSaveSettings = () => {
+    localStorage.setItem("gerantSettings", JSON.stringify(settings));
+    setSettingsSaved(true);
+    setTimeout(() => setSettingsSaved(false), 2000);
+    alert("Paramètres sauvegardés avec succès !");
+  };
   const [staffForm, setStaffForm] = useState({
     email: "",
     nom: "", // Only 'nom' field exists in backend, not separate 'prenom'
@@ -1417,6 +1520,14 @@ function SettingsTab({ restaurantId, user }) {
             />
           </button>
         </div>
+      </div>
+      <div className="flex justify-end">
+        <button
+          onClick={handleSaveSettings}
+          className="px-4 py-2.5 bg-sky-500 text-white rounded-xl font-medium hover:bg-sky-600 transition"
+        >
+          Sauvegarder les paramètres
+        </button>
       </div>
 
       {/* Horaires */}
@@ -1657,6 +1768,7 @@ function OverviewTab({ restaurantId }) {
     lowStockItems: 0,
     newCustomers: 0,
   });
+  const navigate = useNavigate();
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -1666,22 +1778,41 @@ function OverviewTab({ restaurantId }) {
       try {
         setLoading(true);
 
-        // Load recent orders
-        const ordersRes = await commandesService.getAll({
-          restaurantId,
-          limit: 5,
-        });
-        setRecentOrders(ordersRes.data || []);
+        const [ordersRes, alertsRes, statsRes] = await Promise.all([
+          commandesService.getAll({ restaurantId, limit: 50 }),
+          stocksAPI.getAlerts({ restaurantId }),
+          tresorerieAPI.getStats("day"),
+        ]);
 
-        // Mock stats - in real implementation these would come from API
-        const mockStats = {
-          todayOrders: Math.floor(Math.random() * 15) + 8,
-          todayRevenue: Math.floor(Math.random() * 200000) + 100000,
-          activeOrders: Math.floor(Math.random() * 8) + 3,
-          lowStockItems: Math.floor(Math.random() * 5) + 2,
-          newCustomers: Math.floor(Math.random() * 10) + 5,
-        };
-        setStats(mockStats);
+        const allOrders = ordersRes.data || [];
+        const recent = allOrders.slice(0, 5);
+        setRecentOrders(recent);
+
+        const todayRevenue = allOrders.reduce((sum, order) => {
+          const amount = Number(order.montantTotal ?? order.total ?? 0);
+          return sum + (Number.isFinite(amount) ? amount : 0);
+        }, 0);
+
+        const activeOrders = allOrders.filter(
+          (order) =>
+            order.statut !== "LIVREE" &&
+            order.statut !== "ANNULEE" &&
+            order.statut !== "RECUE"
+        ).length;
+
+        const uniqueCustomers = new Set(
+          allOrders
+            .map((order) => order.client?.id)
+            .filter((id) => !!id),
+        ).size;
+
+        setStats({
+          todayOrders: allOrders.length,
+          todayRevenue: statsRes.data?.caJour ?? todayRevenue,
+          activeOrders,
+          lowStockItems: alertsRes.data?.length ?? 0,
+          newCustomers: uniqueCustomers,
+        });
       } catch (error) {
         console.error("Erreur chargement données tableau de bord:", error);
       } finally {
@@ -1696,38 +1827,46 @@ function OverviewTab({ restaurantId }) {
   }, [restaurantId]);
 
   const handleExportPDF = async () => {
-    // In a real implementation, this would call your backend PDF generation endpoint
     try {
-      const apiBase = (
-        import.meta.env.VITE_API_URL || "http://localhost:3000"
-      ).replace(/\/$/, "");
-      const apiUrl = apiBase.endsWith("/api") ? apiBase : `${apiBase}/api`;
-      const response = await fetch(
-        `${apiUrl}/commandes/receipt/${recentOrders[0]?.id}/pdf`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        },
-      );
-
-      if (response.ok) {
-        const blob = await response.blob();
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `recu-commande-${recentOrders[0]?.numero || "today"}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        window.URL.revokeObjectURL(url);
-        document.body.removeChild(a);
-        alert("Reçu PDF téléchargé avec succès!");
-      } else {
-        throw new Error("Erreur génération PDF");
+      if (!recentOrders[0]?.id) {
+        throw new Error("Aucune commande disponible pour l'export PDF.");
       }
+
+      const response = await tresorerieAPI.getReceiptPdf(recentOrders[0].id);
+      const blob = new Blob([response.data], { type: "application/pdf" });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `recu-commande-${recentOrders[0]?.numero || "today"}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      alert("Reçu PDF téléchargé avec succès!");
     } catch (error) {
       console.error("Erreur export PDF:", error);
       alert("Erreur lors de la génération du reçu PDF. Veuillez réessayer.");
+    }
+  };
+
+  const handleExportSyscohada = async () => {
+    try {
+      const response = await tresorerieAPI.exportSyscohada("monthly");
+      const blob = new Blob([response.data], {
+        type: "text/csv;charset=utf-8;",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `syscohada-export-${restaurantId || "restaurant"}-monthly.csv`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      alert("Export SYSCOHADA téléchargé avec succès!");
+    } catch (error) {
+      console.error("Erreur export SYSCOHADA:", error);
+      alert("Erreur lors de l'export SYSCOHADA. Veuillez réessayer.");
     }
   };
 
@@ -1825,18 +1964,28 @@ function OverviewTab({ restaurantId }) {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Recent Orders */}
         <div className="bg-white rounded-2xl border border-violet-100 p-6">
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-4">
             <h3 className="font-bold text-gray-800 text-lg">
               Dernières Commandes
             </h3>
-            <button
-              onClick={handleExportPDF}
-              disabled={recentOrders.length === 0}
-              className="flex items-center gap-2 px-3 py-2 bg-violet-500 text-white rounded-lg text-sm hover:bg-violet-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download className="w-4 h-4" />
-              Export PDF
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                onClick={handleExportPDF}
+                disabled={recentOrders.length === 0}
+                className="flex items-center gap-2 px-3 py-2 bg-violet-500 text-white rounded-lg text-sm hover:bg-violet-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4" />
+                Export PDF
+              </button>
+              <button
+                onClick={handleExportSyscohada}
+                disabled={!restaurantId}
+                className="flex items-center gap-2 px-3 py-2 bg-sky-500 text-white rounded-lg text-sm hover:bg-sky-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4" />
+                Export SYSCOHADA
+              </button>
+            </div>
           </div>
           {recentOrders.length > 0 ? (
             <div className="space-y-3">
@@ -1887,26 +2036,38 @@ function OverviewTab({ restaurantId }) {
             Actions Rapides
           </h3>
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex flex-col items-center gap-2 p-4 bg-violet-50 rounded-xl hover:bg-violet-100 transition border border-violet-200">
-              <Package className="w-6 h-6 text-violet-600" />
-              <span className="text-sm font-medium text-gray-800">Menu</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 bg-amber-50 rounded-xl hover:bg-amber-100 transition border border-amber-200">
-              <ClipboardList className="w-6 h-6 text-amber-600" />
-              <span className="text-sm font-medium text-gray-800">
-                Commandes
-              </span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 bg-rose-50 rounded-xl hover:bg-rose-100 transition border border-rose-200">
-              <AlertTriangle className="w-6 h-6 text-rose-600" />
-              <span className="text-sm font-medium text-gray-800">Stocks</span>
-            </button>
-            <button className="flex flex-col items-center gap-2 p-4 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition border border-emerald-200">
-              <BarChart3 className="w-6 h-6 text-emerald-600" />
-              <span className="text-sm font-medium text-gray-800">
-                Trésorerie
-              </span>
-            </button>
+            <button
+            onClick={() => navigate('/gerant?tab=menu')}
+            className="flex flex-col items-center gap-2 p-4 bg-violet-50 rounded-xl hover:bg-violet-100 transition border border-violet-200"
+          >
+            <Package className="w-6 h-6 text-violet-600" />
+            <span className="text-sm font-medium text-gray-800">Menu</span>
+          </button>
+          <button
+            onClick={() => navigate('/gerant?tab=orders')}
+            className="flex flex-col items-center gap-2 p-4 bg-amber-50 rounded-xl hover:bg-amber-100 transition border border-amber-200"
+          >
+            <ClipboardList className="w-6 h-6 text-amber-600" />
+            <span className="text-sm font-medium text-gray-800">
+              Commandes
+            </span>
+          </button>
+          <button
+            onClick={() => navigate('/gerant?tab=stocks')}
+            className="flex flex-col items-center gap-2 p-4 bg-rose-50 rounded-xl hover:bg-rose-100 transition border border-rose-200"
+          >
+            <AlertTriangle className="w-6 h-6 text-rose-600" />
+            <span className="text-sm font-medium text-gray-800">Stocks</span>
+          </button>
+          <button
+            onClick={() => navigate('/gerant?tab=finance')}
+            className="flex flex-col items-center gap-2 p-4 bg-emerald-50 rounded-xl hover:bg-emerald-100 transition border border-emerald-200"
+          >
+            <BarChart3 className="w-6 h-6 text-emerald-600" />
+            <span className="text-sm font-medium text-gray-800">
+              Trésorerie
+            </span>
+          </button>
           </div>
         </div>
       </div>

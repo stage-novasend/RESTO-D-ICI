@@ -1,7 +1,7 @@
 // src/pages/Login.jsx
 import { useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, ArrowLeft, UserPlus, UtensilsCrossed, Chrome } from 'lucide-react';
+import { Mail, Lock, ArrowLeft, UserPlus, UtensilsCrossed } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -215,26 +215,7 @@ export default function Login() {
           </button>
         </form>
 
-        {/* Google Sign-In Button */}
-        <div className="space-y-3">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-[#E8E2D9]"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-white text-[#8B7355]">Ou continuer avec</span>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3000'}/auth/google`}
-            className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-[#E8E2D9] rounded-2xl font-medium text-[#2D2720] hover:bg-[#F9F7F5] transition-colors"
-          >
-            <Chrome className="w-5 h-5" />
-            <span>Se connecter avec Google</span>
-          </button>
-        </div>
+        {/* Google sign-in removed */}
 
         {/* Liens supplémentaires */}
         <div className="pt-4 border-t border-[#E8E2D9] space-y-3">

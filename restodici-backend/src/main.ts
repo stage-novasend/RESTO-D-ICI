@@ -19,11 +19,13 @@ async function bootstrap() {
     origin: [
       'http://localhost:5173', // Vite dev server default
       'http://localhost:5174', // Vite dev server alternative
+      'http://localhost:5175', // Vite dev server possible increment
       'http://localhost:3000', // Create React App
       'http://localhost:62758', // Current serve port
       'http://localhost:64096', // Dynamic serve port
       'http://127.0.0.1:5173',
       'http://127.0.0.1:5174',
+      'http://127.0.0.1:5175',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:62758',
       'http://127.0.0.1:64096',

@@ -268,7 +268,26 @@ export class MenuService {
       );
     }
 
-    await this.articleRepo.update(id, { disponible });
+    // Transaction: update article + write audit
+    await this.articleRepo.manager.transaction(async (manager) => {
+      await manager.update(Article, id, { disponible });
+
+      // Write audit log (if AuditService available via repo)
+      try {
+        const auditRepo = manager.getRepository('audit_logs');
+        await auditRepo.save({
+          userId: user?.id || 'system',
+          restaurantId: article.restaurant?.id,
+          action: disponible ? 'ACTIVER_ARTICLE' : 'DESACTIVER_ARTICLE',
+          payload: { articleId: id, before: { disponible: article.disponible }, after: { disponible } },
+        });
+      } catch (err) {
+        this.logger.warn(`Impossible d'écrire audit pendant transaction: ${err.message}`);
+        throw err;
+      }
+    });
+
+    // Invalidate cache after successful transaction
     await this.invalidateMenuCache(article.restaurant?.id);
 
     this.logger.log(`Article ${id} ${disponible ? 'activé' : 'masqué'}`);

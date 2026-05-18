@@ -61,6 +61,33 @@ export class TresorerieController {
     res.send(pdfBuffer);
   }
 
+  // GET /tresorerie/export/syscohada?period=monthly
+  @Get('export/syscohada')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  async exportSyscohada(
+    @Req() req,
+    @Res() res: any,
+    @Query('period') period: 'monthly' | 'quarterly' | 'yearly' = 'monthly',
+  ) {
+    const restaurantId = req.user?.restaurant?.id;
+    if (!restaurantId) {
+      throw new BadRequestException('Restaurant ID required');
+    }
+
+    const csvBuffer = await this.tresorerieService.exportSyscohada(
+      restaurantId,
+      period,
+    );
+
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=syscohada-${restaurantId}-${period}.csv`,
+    );
+    res.send(csvBuffer);
+  }
+
   // POST /tresorerie/expenses — Saisir dépenses opérationnelles (US-28, RG-27)
   @Post('expenses')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
