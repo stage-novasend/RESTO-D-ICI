@@ -1,6 +1,7 @@
 // src/pages/gerant/GerantDashboard.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import Chart from "chart.js/auto";
 import {
   Package,
   ClipboardList,
@@ -1368,7 +1369,18 @@ function SettingsTab({ restaurantId, user }) {
     const saved = localStorage.getItem("gerantSettings");
     if (saved) {
       try {
-        setSettings(JSON.parse(saved));
+        const parsed = JSON.parse(saved);
+        setSettings((prev) => ({
+          ...prev,
+          ...parsed,
+          horaires: {
+            ...prev.horaires,
+            ...(parsed.horaires || {}),
+          },
+          zonesLivraison: parsed.zonesLivraison || prev.zonesLivraison,
+          newZone: parsed.newZone || "",
+          darkMode: parsed.darkMode ?? prev.darkMode,
+        }));
       } catch {
         // Ignore malformed saved settings
       }
@@ -1389,7 +1401,9 @@ function SettingsTab({ restaurantId, user }) {
     email: "",
     nom: "", // Only 'nom' field exists in backend, not separate 'prenom'
     telephone: "",
+    password: "",
   });
+  const [staffCreationNotice, setStaffCreationNotice] = useState("");
   const [loadingStaff, setLoadingStaff] = useState(false);
   const [mapCenter, setMapCenter] = useState({ lat: 5.3417, lng: -4.0262 }); // Abidjan coordinates
 
@@ -1422,13 +1436,17 @@ function SettingsTab({ restaurantId, user }) {
   }, [settings.darkMode]);
 
   const handleAddZone = () => {
-    if (settings.newZone.trim()) {
-      setSettings((prev) => ({
-        ...prev,
-        zonesLivraison: [...prev.zonesLivraison, settings.newZone.trim()],
-        newZone: "",
-      }));
+    const zone = settings.newZone.trim();
+    if (!zone) return;
+    if (settings.zonesLivraison.includes(zone)) {
+      alert("Cette zone existe déjà.");
+      return;
     }
+    setSettings((prev) => ({
+      ...prev,
+      zonesLivraison: [...prev.zonesLivraison, zone],
+      newZone: "",
+    }));
   };
 
   const handleRemoveZone = (zoneToRemove) => {
@@ -1456,10 +1474,27 @@ function SettingsTab({ restaurantId, user }) {
         nom: staffForm.nom,
         telephone: staffForm.telephone || "",
       };
+      if (staffForm.password) {
+        staffData.password = staffForm.password;
+      }
 
-      await staffAPI.createStaffAccount(restaurantId, staffData);
-      alert("Compte staff créé avec succès!");
-      setStaffForm({ email: "", nom: "", telephone: "" });
+      const response = await staffAPI.createStaffAccount(restaurantId, staffData);
+      const generatedPassword = response.data?.temporaryPassword;
+
+      let successMessage = "Compte staff créé avec succès !";
+      if (generatedPassword) {
+        successMessage += ` Mot de passe temporaire : ${generatedPassword}`;
+        setStaffCreationNotice(
+          `Mot de passe temporaire généré : ${generatedPassword}. Transmets-le au nouveau staff.`,
+        );
+      } else {
+        setStaffCreationNotice(
+          "Le compte staff a été créé. Le mot de passe fourni est utilisé.",
+        );
+      }
+
+      alert(successMessage);
+      setStaffForm({ email: "", nom: "", telephone: "", password: "" });
 
       // Refresh staff list
       const staffRes = await staffAPI.getStaffAccounts(restaurantId);
@@ -1521,13 +1556,18 @@ function SettingsTab({ restaurantId, user }) {
           </button>
         </div>
       </div>
-      <div className="flex justify-end">
+      <div className="flex flex-col gap-2 items-end">
         <button
           onClick={handleSaveSettings}
           className="px-4 py-2.5 bg-sky-500 text-white rounded-xl font-medium hover:bg-sky-600 transition"
         >
           Sauvegarder les paramètres
         </button>
+        {settingsSaved && (
+          <p className="text-sm text-emerald-600">
+            Paramètres sauvegardés avec succès.
+          </p>
+        )}
       </div>
 
       {/* Horaires */}
@@ -1689,6 +1729,23 @@ function SettingsTab({ restaurantId, user }) {
                 placeholder="Ex: Konan Aya"
               />
             </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-800 mb-1">
+                Mot de passe (optionnel)
+              </label>
+              <input
+                type="password"
+                value={staffForm.password}
+                onChange={(e) =>
+                  setStaffForm({ ...staffForm, password: e.target.value })
+                }
+                className="w-full px-4 py-2.5 bg-white border border-violet-200 rounded-xl focus:ring-2 focus:ring-violet-500 outline-none"
+                placeholder="Laisser vide pour générer un mot de passe"
+              />
+              <p className="text-xs text-gray-500 mt-2">
+                Si vous ne renseignez pas de mot de passe, un mot de passe temporaire sera généré automatiquement.
+              </p>
+            </div>
           </div>
           <button
             onClick={handleCreateStaff}
@@ -1696,6 +1753,11 @@ function SettingsTab({ restaurantId, user }) {
           >
             Créer le compte Staff
           </button>
+          {staffCreationNotice && (
+            <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4 text-sm text-violet-700">
+              {staffCreationNotice}
+            </div>
+          )}
         </div>
 
         {/* Liste des comptes staff */}
@@ -1759,6 +1821,48 @@ function SettingsTab({ restaurantId, user }) {
   );
 }
 
+function computeWeeklyPerformance(orders) {
+  const today = new Date();
+  const startOfToday = new Date(today);
+  startOfToday.setHours(0, 0, 0, 0);
+
+  const labels = [];
+  const orderCounts = Array(7).fill(0);
+  const revenue = Array(7).fill(0);
+
+  for (let dayOffset = 6; dayOffset >= 0; dayOffset -= 1) {
+    const day = new Date(startOfToday);
+    day.setDate(day.getDate() - dayOffset);
+    labels.push(
+      day
+        .toLocaleDateString("fr-FR", { weekday: "short" })
+        .replace(".", ""),
+    );
+  }
+
+  orders.forEach((order) => {
+    const created = new Date(order.createdAt);
+    if (Number.isNaN(created.getTime())) return;
+    const createdDay = new Date(created);
+    createdDay.setHours(0, 0, 0, 0);
+    const diffDays = Math.round(
+      (startOfToday.getTime() - createdDay.getTime()) / 86400000,
+    );
+    if (diffDays >= 0 && diffDays < 7) {
+      const index = 6 - diffDays;
+      orderCounts[index] += 1;
+      const amount = Number(order.montantTotal ?? order.total ?? 0);
+      revenue[index] += Number.isFinite(amount) ? amount : 0;
+    }
+  });
+
+  return {
+    labels,
+    orders: orderCounts,
+    revenue,
+  };
+}
+
 // ==================== DYNAMIC OVERVIEW MODULE ====================
 function OverviewTab({ restaurantId }) {
   const [stats, setStats] = useState({
@@ -1768,6 +1872,13 @@ function OverviewTab({ restaurantId }) {
     lowStockItems: 0,
     newCustomers: 0,
   });
+  const [weeklyPerformance, setWeeklyPerformance] = useState({
+    labels: [],
+    orders: [],
+    revenue: [],
+  });
+  const chartRef = useRef(null);
+  const chartInstanceRef = useRef(null);
   const navigate = useNavigate();
   const [recentOrders, setRecentOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -1813,6 +1924,8 @@ function OverviewTab({ restaurantId }) {
           lowStockItems: alertsRes.data?.length ?? 0,
           newCustomers: uniqueCustomers,
         });
+
+        setWeeklyPerformance(computeWeeklyPerformance(allOrders));
       } catch (error) {
         console.error("Erreur chargement données tableau de bord:", error);
       } finally {
@@ -1825,6 +1938,99 @@ function OverviewTab({ restaurantId }) {
     const interval = setInterval(loadOverviewData, 30000);
     return () => clearInterval(interval);
   }, [restaurantId]);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+
+    if (chartInstanceRef.current) {
+      chartInstanceRef.current.destroy();
+    }
+
+    const ctx = chartRef.current.getContext("2d");
+    chartInstanceRef.current = new Chart(ctx, {
+      type: "line",
+      data: {
+        labels: weeklyPerformance.labels,
+        datasets: [
+          {
+            label: "Commandes",
+            data: weeklyPerformance.orders,
+            borderColor: "#2563EB",
+            backgroundColor: "rgba(37, 99, 235, 0.2)",
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: "#2563EB",
+          },
+          {
+            label: "Revenus FCFA",
+            data: weeklyPerformance.revenue,
+            borderColor: "#059669",
+            backgroundColor: "rgba(5, 150, 105, 0.18)",
+            fill: true,
+            tension: 0.35,
+            pointRadius: 4,
+            pointBackgroundColor: "#059669",
+            yAxisID: "y1",
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: {
+          mode: "index",
+          intersect: false,
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: "#334155" },
+          },
+          y: {
+            position: "left",
+            title: {
+              display: true,
+              text: "Commandes",
+              color: "#334155",
+            },
+            ticks: { color: "#334155" },
+          },
+          y1: {
+            position: "right",
+            grid: { drawOnChartArea: false },
+            title: {
+              display: true,
+              text: "Revenus",
+              color: "#334155",
+            },
+            ticks: {
+              color: "#334155",
+              callback: (value) => `${value.toLocaleString()}`,
+            },
+          },
+        },
+        plugins: {
+          legend: {
+            position: "top",
+            labels: { color: "#334155" },
+          },
+          tooltip: {
+            callbacks: {
+              label: (context) => {
+                if (context.dataset.label === "Revenus FCFA") {
+                  return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString()} FCFA`;
+                }
+                return `${context.dataset.label}: ${context.parsed.y}`;
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return () => chartInstanceRef.current?.destroy();
+  }, [weeklyPerformance]);
 
   const handleExportPDF = async () => {
     try {
@@ -2077,10 +2283,24 @@ function OverviewTab({ restaurantId }) {
         <h3 className="font-bold text-gray-800 text-lg mb-4">
           Performance Hebdomadaire
         </h3>
-        <div className="h-64 flex items-center justify-center bg-sky-50 rounded-xl">
-          <p className="text-gray-600">
-            Graphique des ventes et commandes (à implémenter avec Chart.js)
-          </p>
+        <div className="rounded-2xl bg-sky-50 p-4">
+          <canvas ref={chartRef} className="h-72 w-full" />
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-4 text-sm text-gray-600">
+          <div className="rounded-2xl bg-white p-4 border border-sky-100 shadow-sm">
+            <p className="font-medium text-gray-800">Commandes cette semaine</p>
+            <p className="text-2xl font-semibold text-sky-700">
+              {weeklyPerformance.orders.reduce((sum, value) => sum + value, 0)}
+            </p>
+          </div>
+          <div className="rounded-2xl bg-white p-4 border border-sky-100 shadow-sm">
+            <p className="font-medium text-gray-800">Revenus cette semaine</p>
+            <p className="text-2xl font-semibold text-sky-700">
+              {weeklyPerformance.revenue
+                .reduce((sum, value) => sum + value, 0)
+                .toLocaleString()} FCFA
+            </p>
+          </div>
         </div>
       </div>
     </div>

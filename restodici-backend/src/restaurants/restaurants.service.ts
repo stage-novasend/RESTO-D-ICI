@@ -128,6 +128,16 @@ export class RestaurantsService {
       throw new BadRequestException('Email already exists');
     }
 
+    if (staffData.password && staffData.password.length < 6) {
+      throw new BadRequestException(
+        'Le mot de passe du staff doit contenir au moins 6 caractères',
+      );
+    }
+
+    const rawPassword = staffData.password
+      ? staffData.password
+      : this.generateTemporaryPassword();
+
     // Create staff account with STAFF role
     const staffUser = this.userRepo.create({
       email: staffData.email,
@@ -139,16 +149,16 @@ export class RestaurantsService {
     });
 
     // Set password separately
-    staffUser.password = await bcrypt.hash(
-      staffData.password || this.generateTemporaryPassword(),
-      12,
-    );
+    staffUser.password = await bcrypt.hash(rawPassword, 12);
 
     const savedStaff = await this.userRepo.save(staffUser);
 
     // Remove password from response
     const { password, ...staffWithoutPassword } = savedStaff;
-    return staffWithoutPassword;
+    return {
+      ...staffWithoutPassword,
+      temporaryPassword: staffData.password ? undefined : rawPassword,
+    };
   }
 
   // PUT /restaurants/:restaurantId/staff/:staffId — Activer/désactiver un compte Staff
