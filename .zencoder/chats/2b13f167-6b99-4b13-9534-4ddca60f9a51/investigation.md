@@ -143,7 +143,7 @@ Executed commands and outcomes:
 ## Investigation addendum — Vite proxy `/socket.io` AggregateError ECONNREFUSED
 
 ### Bug summary
-When running `npm run dev` in `./restodici-frontend`, Vite reports proxy failures for `/socket.io` with `AggregateError ECONNREFUSED`.
+When running `npm run dev` in `./restodici-frontend`, Vite reports proxy failures for `/socket.io` with `AggregateError ECONNREFUSED`, and the issue is especially visible in the enterprise/B2B parcours because those views share the same backend origin.
 
 ### Reproduction and observations
 1. Frontend socket client connects to `${socketBase}/commandes` from `./restodici-frontend/src/services/commandes.service.ts`.
@@ -166,8 +166,17 @@ Because Vite proxy and Socket.IO handshake are functioning when backend is reach
 ### Affected components
 - `./restodici-frontend/vite.config.js`
 - `./restodici-frontend/src/services/commandes.service.ts`
+- `./restodici-frontend/src/services/api.js`
+- `./restodici-frontend/src/pages/gerant/GerantDashboard.jsx`
+- `./restodici-frontend/src/pages/b2b/B2BDashboard.jsx`
+- `./restodici-frontend/src/pages/b2b/B2BOrders.jsx`
 - `./restodici-backend/src/main.ts`
 - Local runtime environment/process startup order
+
+### B2B enterprise-flow relevance
+- The B2B pages and the manager enterprise dashboard use the same backend origin as the Socket.IO client.
+- Even though the visible error is on `/socket.io`, a backend availability or port mismatch also impacts B2B REST loading and the manager orders view that aggregates enterprise data.
+- This makes the proxy issue show up during the enterprise/B2B parcours, not only on the staff/client realtime screens.
 
 ### Proposed solution (for implementation step)
 1. Make Vite proxy target configurable via env (e.g., `VITE_BACKEND_ORIGIN`) instead of hardcoded `http://localhost:3000`.
@@ -191,6 +200,7 @@ Because Vite proxy and Socket.IO handshake are functioning when backend is reach
 
 2. **Frontend API/socket base alignment implemented**
    - Added shared resolver utility: `./restodici-frontend/src/services/backend-endpoints.js`.
+   - `./restodici-frontend/src/services/api.js` now derives `API_URL` from the shared resolver, so REST calls and socket connections share the same backend-origin rules.
    - `./restodici-frontend/src/services/commandes.service.ts` now derives `apiBaseUrl` and `socketBase` from the shared resolver.
    - Behavior:
      - no `VITE_API_URL` => `apiBaseUrl=/api` + socket uses `window.location.origin` (proxy path),
@@ -210,6 +220,11 @@ Because Vite proxy and Socket.IO handshake are functioning when backend is reach
 
 - `npm run build` (frontend)
   - ✅ Completed successfully (bundle size warning only).
+
+- Revalidation after `./restodici-frontend/src/services/api.js` moved to the shared resolver.
+  - ✅ `node --test src/services/backend-endpoints.test.js` still passed: 6/6 tests.
+  - ✅ `npm run lint` still completed with warnings only (0 errors).
+  - ✅ `npm run build` still completed successfully (bundle size warning only).
 
 ## Investigation addendum — Vérification de conformité du cycle "commande client final"
 

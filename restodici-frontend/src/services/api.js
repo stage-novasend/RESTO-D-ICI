@@ -1,10 +1,11 @@
 // src/services/api.js
 import axios from "axios";
+import { resolveFrontendApiAndSocketBase } from "./backend-endpoints.js";
 
-// Vite exposes env vars prefixed with VITE_ to client-side code
-const RAW_API_BASE = import.meta.env.VITE_API_URL?.trim();
-const API_BASE = (RAW_API_BASE || "/api").replace(/\/$/, "");
-const API_URL = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
+const { apiBaseUrl: API_URL } = resolveFrontendApiAndSocketBase({
+  viteApiUrl: import.meta.env.VITE_API_URL,
+  browserOrigin: window.location.origin,
+});
 
 // CRITIQUE : Créer l'instance axios AVANT d'utiliser les interceptors
 export const api = axios.create({
