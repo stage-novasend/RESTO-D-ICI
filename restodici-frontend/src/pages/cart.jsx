@@ -1,143 +1,205 @@
-import { useState, useEffect } from 'react';
+
+import { useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  ShoppingCart, Trash2, Minus, Plus, MapPin, Store, Package, 
-  CreditCard, Smartphone, Wallet, Gift, X, CheckCircle, AlertCircle, Truck
+import {
+  AlertCircle,
+  BadgePercent,
+  CheckCircle,
+  ChevronRight,
+  CreditCard,
+  Minus,
+  Package,
+  Plus,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  Trash2,
+  Truck,
 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
+import LocationAssistant from '../components/maps/LocationAssistant';
+import { FREQUENT_LOCATION_ZONES } from '../components/maps/locationAssistantData';
 import { formatFCFA } from '../utils/formatters';
+
+const deliveryZones = [
+  { name: 'Cocody', fee: 1000 },
+  { name: 'Plateau', fee: 800 },
+  { name: 'Marcory', fee: 1200 },
+  { name: 'Treichville', fee: 900 },
+  { name: 'Yopougon', fee: 1500 },
+].map((zone) => {
+  const frequentZone = FREQUENT_LOCATION_ZONES.find(
+    (item) => item.name.toLowerCase() === zone.name.toLowerCase(),
+  );
+
+  return {
+    ...zone,
+    ...frequentZone,
+    address: frequentZone?.address || `${zone.name}, Abidjan`,
+  };
+});
+
+const orderModes = [
+  {
+    id: 'sur_place',
+    label: 'Sur place',
+    description: 'Mangez directement au restaurant',
+    icon: Store,
+  },
+  {
+    id: 'emporter',
+    label: 'À emporter',
+    description: 'Récupérez rapidement votre commande',
+    icon: Package,
+  },
+  {
+    id: 'livraison',
+    label: 'Livraison',
+    description: 'Recevez vos plats à domicile',
+    icon: Truck,
+  },
+];
 
 export default function CartPage() {
   const navigate = useNavigate();
-  const { 
-    items, 
-    restaurantId, 
-    restaurantName,
-    updateQuantity, 
-    removeItem, 
-    clearCart 
-  } = useCart();
-  const [orderMode, setOrderMode] = useState('sur_place'); // sur_place, emporter, livraison
+  const { items, restaurantId, restaurantName, updateQuantity, removeItem, clearCart } =
+    useCart();
+  const [orderMode, setOrderMode] = useState('sur_place');
   const [deliveryAddress, setDeliveryAddress] = useState('');
   const [deliveryZone, setDeliveryZone] = useState('');
+  const [deliveryPosition, setDeliveryPosition] = useState({ lat: null, lng: null });
   const [promoCode, setPromoCode] = useState('');
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoDiscount, setPromoDiscount] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
-
-  // Validation state
   const [errors, setErrors] = useState({});
 
-  // Mock delivery zones
-  const deliveryZones = [
-    { name: 'Cocody', fee: 1000 },
-    { name: 'Plateau', fee: 800 },
-    { name: 'Marcory', fee: 1200 },
-    { name: 'Treichville', fee: 900 },
-    { name: 'Yopougon', fee: 1500 }
-  ];
-
-  const subtotal = items.reduce((sum, item) => sum + (item.prix * item.quantite), 0);
-  const deliveryFee = orderMode === 'livraison' ? (deliveryZones.find(z => z.name === deliveryZone)?.fee || 1000) : 0;
+  const subtotal = useMemo(
+    () => items.reduce((sum, item) => sum + Number(item.prix) * Number(item.quantite), 0),
+    [items],
+  );
+  const deliveryFee =
+    orderMode === 'livraison'
+      ? deliveryZones.find((zone) => zone.name === deliveryZone)?.fee || 1000
+      : 0;
   const total = subtotal + deliveryFee - promoDiscount;
 
-  // Validate required fields before proceeding to checkout
   const validateForm = () => {
-    const newErrors = {};
-    
+    const nextErrors = {};
+
     if (!restaurantId) {
-      newErrors.restaurant = 'Aucun restaurant sélectionné';
+      nextErrors.restaurant = 'Aucun restaurant sélectionné.';
     }
-    
+
     if (orderMode === 'livraison' && !deliveryAddress.trim()) {
-      newErrors.deliveryAddress = 'Adresse de livraison requise';
+      nextErrors.deliveryAddress = 'Adresse de livraison requise.';
     }
-    
+
     if (orderMode === 'livraison' && !deliveryZone) {
-      newErrors.deliveryZone = 'Zone de livraison requise';
+      nextErrors.deliveryZone = 'Zone de livraison requise.';
     }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+
+    setErrors(nextErrors);
+    return Object.keys(nextErrors).length === 0;
   };
 
   const handleProceedToCheckout = () => {
-    if (!validateForm()) return;
-    
-    // Save order details to localStorage for checkout
-    const normalizedOrderMode = orderMode === 'sur_place' ? 'SUR_PLACE' : orderMode === 'livraison' ? 'LIVRAISON' : 'EMPORTER';
+    if (!validateForm()) {
+      return;
+    }
+
+    const normalizedOrderMode =
+      orderMode === 'sur_place'
+        ? 'SUR_PLACE'
+        : orderMode === 'livraison'
+          ? 'LIVRAISON'
+          : 'EMPORTER';
+
     const orderDetails = {
-      items: items.map(item => ({
+      items: items.map((item) => ({
+        lineId: item.lineId,
         articleId: item.articleId,
         nom: item.nom,
         prix: item.prix,
         quantite: item.quantite,
-        instructions: item.instructions
+        instructions: item.instructions,
       })),
       restaurantId,
       restaurantName,
       orderMode: normalizedOrderMode,
       deliveryAddress: normalizedOrderMode === 'LIVRAISON' ? deliveryAddress : '',
       deliveryZone: normalizedOrderMode === 'LIVRAISON' ? deliveryZone : '',
+      deliveryLat: normalizedOrderMode === 'LIVRAISON' ? deliveryPosition.lat : null,
+      deliveryLng: normalizedOrderMode === 'LIVRAISON' ? deliveryPosition.lng : null,
       total,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
-    
+
     localStorage.setItem('pendingOrder', JSON.stringify(orderDetails));
-    
-    // Check if user is authenticated
+
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     if (user) {
-      // User is logged in, proceed directly to checkout
       navigate('/checkout');
-    } else {
-      // User is not logged in, redirect to login with checkout redirect
-      navigate('/login?redirect=checkout');
+      return;
     }
+
+    navigate('/login?redirect=checkout');
   };
 
-  const handleUpdateQuantity = (articleId, newQuantity) => {
+  const handleUpdateQuantity = (lineId, newQuantity) => {
     if (newQuantity >= 1) {
-      updateQuantity(articleId, newQuantity);
+      updateQuantity(lineId, newQuantity);
     } else {
-      removeItem(articleId);
+      removeItem(lineId);
     }
   };
 
   const handleApplyPromo = () => {
-    if (promoCode.trim()) {
-      // Mock promo logic - in real app this would call an API
-      if (promoCode.toLowerCase() === 'WELCOME10') {
-        const discount = subtotal * 0.1; // 10% discount
-        setPromoDiscount(discount);
-        setPromoApplied(true);
-      } else if (promoCode.toLowerCase() === 'FREESHIP') {
-        setPromoDiscount(deliveryFee);
-        setPromoApplied(true);
-      } else {
-        alert('Code promo invalide');
-      }
+    const code = promoCode.trim().toLowerCase();
+    if (!code) {
+      return;
     }
+
+    if (code === 'welcome10') {
+      setPromoDiscount(Math.round(subtotal * 0.1));
+      setPromoApplied(true);
+      return;
+    }
+
+    if (code === 'freeship') {
+      setPromoDiscount(deliveryFee);
+      setPromoApplied(true);
+      return;
+    }
+
+    setPromoApplied(false);
+    setPromoDiscount(0);
+    setErrors((current) => ({ ...current, promo: 'Code promo invalide.' }));
   };
 
   const handleRemovePromo = () => {
     setPromoCode('');
     setPromoApplied(false);
     setPromoDiscount(0);
+    setErrors((current) => ({ ...current, promo: undefined }));
   };
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-        <div className="text-center max-w-md">
-          <ShoppingCart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Votre panier est vide</h2>
-          <p className="text-gray-600 mb-6">Ajoutez des plats à votre panier pour commencer votre commande.</p>
-          <Link 
-            to="/menu" 
-            className="px-6 py-3 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition font-medium"
+      <div className="min-h-[calc(100vh-64px)] bg-[#F9F7F5] px-4 py-10 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto rounded-[32px] border border-[#E8E2D9] bg-white p-8 sm:p-12 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#FFF5EB] text-[#D94500]">
+            <ShoppingBag className="h-10 w-10" />
+          </div>
+          <h1 className="text-3xl font-bold text-[#2D2720]">Votre panier est vide</h1>
+          <p className="mt-3 text-[#8B7355] max-w-lg mx-auto">
+            Ajoutez quelques plats savoureux pour préparer votre prochaine commande.
+          </p>
+          <Link
+            to="/menu"
+            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[#D94500] px-6 py-3.5 font-semibold text-white shadow-md transition hover:bg-[#B83A00]"
           >
-            Voir le menu
+            Découvrir les restaurants
+            <ChevronRight className="h-4 w-4" />
           </Link>
         </div>
       </div>
@@ -145,273 +207,368 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="container mx-auto px-4 max-w-6xl">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Votre panier</h1>
-        
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <div className="space-y-6">
-                {items.map((item) => (
-                  <div key={item.articleId} className="flex gap-4 pb-6 border-b border-gray-200 last:border-b-0 last:pb-0">
-                    {item.photoUrl ? (
-                      <img 
-                        src={item.photoUrl} 
-                        alt={item.nom} 
-                        className="w-20 h-20 object-cover rounded-xl"
-                      />
-                    ) : (
-                      <div className="w-20 h-20 bg-gray-200 rounded-xl flex items-center justify-center">
-                        <Package className="w-8 h-8 text-gray-500" />
-                      </div>
-                    )}
-                    
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-bold text-lg">{item.nom}</h3>
-                        <button 
-                          onClick={() => removeItem(item.articleId)}
-                          className="text-red-500 hover:text-red-700 transition"
-                        >
-                          <Trash2 className="w-5 h-5" />
-                        </button>
-                      </div>
-                      
-                      {item.categorie && (
-                        <p className="text-gray-600 text-sm mb-2">{item.categorie.nom}</p>
-                      )}
-                      
-                      {item.instructions && (
-                        <p className="text-gray-700 text-sm mb-2 bg-gray-100 p-2 rounded-lg">
-                          Instructions: {item.instructions}
-                        </p>
-                      )}
-                      
-                      {item.supplements && item.supplements.length > 0 && (
-                        <div className="text-sm mb-2">
-                          <span className="font-medium">Suppléments:</span>
-                          {item.supplements.map((supplement, index) => (
-                            <span key={index} className="ml-2">
-                              {supplement.name} (+{formatFCFA(supplement.price)})
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                      
-                      <div className="flex items-center gap-4 mt-2">
-                        <div className="flex items-center gap-2">
-                          <button 
-                            onClick={() => handleUpdateQuantity(item.articleId, item.quantite - 1)}
-                            className="p-1 rounded-full border border-gray-300 hover:bg-gray-100 transition"
-                          >
-                            <Minus className="w-4 h-4" />
-                          </button>
-                          <span className="font-medium w-8 text-center">{item.quantite}</span>
-                          <button 
-                            onClick={() => handleUpdateQuantity(item.articleId, item.quantite + 1)}
-                            className="p-1 rounded-full border border-gray-300 hover:bg-gray-100 transition"
-                          >
-                            <Plus className="w-4 h-4" />
-                          </button>
-                        </div>
-                        
-                        <span className="font-bold text-orange-500">
-                          {formatFCFA(item.prix * item.quantite)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-              
-              <div className="mt-6 flex gap-4">
-                <button 
-                  onClick={clearCart}
-                  className="px-4 py-2 border border-gray-300 rounded-xl hover:bg-gray-100 transition"
-                >
-                  Vider le panier
-                </button>
-                <Link 
-                  to="/menu" 
-                  className="px-4 py-2 border border-orange-500 text-orange-500 rounded-xl hover:bg-orange-50 transition"
-                >
-                  Continuer vos achats
-                </Link>
-              </div>
+    <div className="min-h-[calc(100vh-64px)] bg-[#F9F7F5] px-4 py-6 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-6">
+        <section className="rounded-[32px] border border-[#E8E2D9] bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF5EB] px-4 py-2 text-sm font-semibold text-[#D94500]">
+                <ShieldCheck className="h-4 w-4" />
+                Panier sécurisé
+              </span>
+              <h1 className="mt-4 text-3xl font-bold text-[#2D2720] sm:text-4xl">
+                Finalisez une commande claire, rapide et élégante
+              </h1>
+              <p className="mt-3 max-w-2xl text-[#8B7355]">
+                Chaque ajout reste une ligne distincte dans le panier pour garder vos variantes,
+                quantités et instructions bien visibles.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 sm:min-w-[320px]">
+              <MiniStat label="Articles" value={String(items.length)} />
+              <MiniStat label="Sous-total" value={formatFCFA(subtotal)} />
             </div>
           </div>
+        </section>
 
-          {/* Order Summary & Checkout */}
+        <div className="grid gap-6 xl:grid-cols-[1.55fr,0.95fr]">
           <div className="space-y-6">
-            {/* Restaurant Info */}
-            {restaurantId && (
-              <div className="bg-white rounded-xl p-6 border border-[#E8E2D9] mb-6">
-                <h3 className="font-bold text-lg text-[#2D2720] mb-2">
-                  Restaurant: {restaurantName}
-                </h3>
-                <p className="text-sm text-[#8B7355]">
-                  Tous les articles de votre panier proviennent de ce restaurant.
-                </p>
+            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
+              <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-[#2D2720]">Vos articles</h2>
+                  <p className="text-sm text-[#8B7355] mt-1">
+                    Gérez chaque ligne individuellement sans fusion automatique.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={clearCart}
+                    className="rounded-2xl border border-[#E8E2D9] px-4 py-2.5 text-sm font-semibold text-[#8B7355] transition hover:bg-[#F9F7F5]"
+                  >
+                    Vider le panier
+                  </button>
+                  <Link
+                    to="/menu"
+                    className="rounded-2xl border border-[#D94500] px-4 py-2.5 text-sm font-semibold text-[#D94500] transition hover:bg-[#FFF5EB]"
+                  >
+                    Ajouter d'autres plats
+                  </Link>
+                </div>
               </div>
+
+              <div className="space-y-4">
+                {items.map((item, index) => (
+                  <article
+                    key={item.lineId}
+                    className="rounded-[26px] border border-[#EFE7DD] bg-[#FCFBFA] p-4 transition hover:shadow-sm sm:p-5"
+                  >
+                    <div className="flex flex-col gap-4 sm:flex-row">
+                      {item.photoUrl ? (
+                        <img
+                          src={item.photoUrl}
+                          alt={item.nom}
+                          className="h-24 w-full rounded-2xl object-cover sm:h-28 sm:w-28"
+                        />
+                      ) : (
+                        <div className="flex h-24 w-full items-center justify-center rounded-2xl bg-[#FFF5EB] text-[#D94500] sm:h-28 sm:w-28">
+                          <Package className="h-8 w-8" />
+                        </div>
+                      )}
+
+                      <div className="flex-1">
+                        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8B7355] border border-[#E8E2D9]">
+                                Ligne {index + 1}
+                              </span>
+                              {item.categorie?.nom && (
+                                <span className="rounded-full bg-[#EAF7FB] px-3 py-1 text-xs font-semibold text-[#00A7CB]">
+                                  {item.categorie.nom}
+                                </span>
+                              )}
+                            </div>
+                            <h3 className="mt-3 text-lg font-bold text-[#2D2720]">{item.nom}</h3>
+                            {item.instructions && (
+                              <div className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm text-[#8B7355] border border-[#EEE8DF]">
+                                {item.instructions}
+                              </div>
+                            )}
+                          </div>
+
+                          <button
+                            onClick={() => removeItem(item.lineId)}
+                            className="inline-flex items-center gap-2 self-start rounded-2xl px-3 py-2 text-sm font-semibold text-red-600 transition hover:bg-red-50"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Retirer
+                          </button>
+                        </div>
+
+                        <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                          <div className="inline-flex w-fit items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white px-3 py-2">
+                            <button
+                              onClick={() => handleUpdateQuantity(item.lineId, item.quantite - 1)}
+                              className="rounded-xl p-2 text-[#8B7355] transition hover:bg-[#F9F7F5]"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </button>
+                            <span className="min-w-[32px] text-center text-base font-bold text-[#2D2720]">
+                              {item.quantite}
+                            </span>
+                            <button
+                              onClick={() => handleUpdateQuantity(item.lineId, item.quantite + 1)}
+                              className="rounded-xl p-2 text-[#8B7355] transition hover:bg-[#F9F7F5]"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          </div>
+
+                          <div className="text-left sm:text-right">
+                            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8B7355]">
+                              Total ligne
+                            </p>
+                            <p className="mt-1 text-2xl font-bold text-[#D94500]">
+                              {formatFCFA(Number(item.prix) * Number(item.quantite))}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+          </div>
+
+          <aside className="space-y-6">
+            {restaurantId && (
+              <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
+                <div className="flex items-start gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF5EB] text-[#D94500]">
+                    <Store className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#8B7355]">Restaurant sélectionné</p>
+                    <h3 className="mt-1 text-lg font-bold text-[#2D2720]">{restaurantName}</h3>
+                    <p className="mt-2 text-sm text-[#8B7355]">
+                      Tous vos articles proviennent de ce restaurant pour une commande cohérente.
+                    </p>
+                  </div>
+                </div>
+                {errors.restaurant && (
+                  <p className="mt-4 flex items-center gap-2 text-sm font-medium text-red-600">
+                    <AlertCircle className="h-4 w-4" />
+                    {errors.restaurant}
+                  </p>
+                )}
+              </section>
             )}
 
-            {/* Promo Code */}
-            <div className="bg-white rounded-2xl shadow-sm p-6">
-              <h3 className="font-bold text-lg mb-4">Code promo</h3>
-              <div className="flex gap-2">
+            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-[#2D2720]">
+                <BadgePercent className="h-5 w-5 text-[#D94500]" />
+                Code promo
+              </h3>
+              <div className="mt-4 flex gap-2">
                 <input
                   type="text"
                   value={promoCode}
-                  onChange={(e) => setPromoCode(e.target.value)}
-                  placeholder="Entrez votre code promo"
-                  className="flex-1 px-4 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none"
+                  onChange={(event) => {
+                    setPromoCode(event.target.value);
+                    setErrors((current) => ({ ...current, promo: undefined }));
+                  }}
+                  placeholder="WELCOME10 ou FREESHIP"
+                  className="flex-1 rounded-2xl border border-[#E8E2D9] bg-[#F9F7F5] px-4 py-3 outline-none transition focus:border-[#D94500] focus:ring-2 focus:ring-[#D94500]/15"
                 />
                 {!promoApplied ? (
-                  <button 
+                  <button
                     onClick={handleApplyPromo}
-                    className="px-4 py-2.5 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition"
+                    className="rounded-2xl bg-[#D94500] px-4 py-3 font-semibold text-white transition hover:bg-[#B83A00]"
                   >
                     Appliquer
                   </button>
                 ) : (
-                  <button 
+                  <button
                     onClick={handleRemovePromo}
-                    className="px-4 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition"
+                    className="rounded-2xl border border-red-200 px-4 py-3 font-semibold text-red-600 transition hover:bg-red-50"
                   >
-                    <X className="w-5 h-5" />
+                    Retirer
                   </button>
                 )}
               </div>
               {promoApplied && (
-                <div className="mt-2 flex items-center gap-2 text-green-600">
-                  <CheckCircle className="w-4 h-4" />
-                  <span>Code appliqué! -{formatFCFA(promoDiscount)}</span>
-                </div>
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-[#2ECC71]">
+                  <CheckCircle className="h-4 w-4" />
+                  Promotion appliquée : -{formatFCFA(promoDiscount)}
+                </p>
               )}
-            </div>
+              {errors.promo && (
+                <p className="mt-3 flex items-center gap-2 text-sm font-semibold text-red-600">
+                  <AlertCircle className="h-4 w-4" />
+                  {errors.promo}
+                </p>
+              )}
+            </section>
 
-            {/* Mode de commande */}
-            <div className="bg-white rounded-xl p-6 border border-[#E8E2D9]">
-              <h3 className="font-bold text-lg text-[#2D2720] mb-4 flex items-center gap-2">
-                <Package className="w-5 h-5" />
-                Mode de commande
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <button
-                  type="button"
-                  onClick={() => setOrderMode('sur_place')}
-                  className={`p-4 rounded-xl border-2 text-center transition-all ${
-                    orderMode === 'sur_place'
-                      ? 'border-[#D94500] bg-[#FFF5EB]'
-                      : 'border-[#E8E2D9] hover:border-[#D94500]/50'
-                  }`}
-                >
-                  <Store className="w-6 h-6 mx-auto mb-2" />
-                  <span className="font-medium">Sur place</span>
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setOrderMode('emporter')}
-                  className={`p-4 rounded-xl border-2 text-center transition-all ${
-                    orderMode === 'emporter'
-                      ? 'border-[#D94500] bg-[#FFF5EB]'
-                      : 'border-[#E8E2D9] hover:border-[#D94500]/50'
-                  }`}
-                >
-                  <Package className="w-6 h-6 mx-auto mb-2" />
-                  <span className="font-medium">À emporter</span>
-                </button>
-                
-                <button
-                  type="button"
-                  onClick={() => setOrderMode('livraison')}
-                  className={`p-4 rounded-xl border-2 text-center transition-all ${
-                    orderMode === 'livraison'
-                      ? 'border-[#D94500] bg-[#FFF5EB]'
-                      : 'border-[#E8E2D9] hover:border-[#D94500]/50'
-                  }`}
-                >
-                  <Truck className="w-6 h-6 mx-auto mb-2" />
-                  <span className="font-medium">Livraison</span>
-                </button>
-              </div>
-            </div>
-
-            {/* Livraison details (only if livraison selected) */}
-            {orderMode === 'livraison' && (
-              <div className="bg-white rounded-xl p-6 border border-[#E8E2D9]">
-                <h3 className="font-bold text-lg text-[#2D2720] mb-4">
-                  Détails de livraison
-                </h3>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-[#2D2720] mb-2">
-                      Adresse de livraison *
-                    </label>
-                    <textarea
-                      value={deliveryAddress}
-                      onChange={(e) => setDeliveryAddress(e.target.value)}
-                      placeholder="Entrez votre adresse complète..."
-                      rows={3}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#D94500]/20 focus:border-[#D94500] outline-none transition ${
-                        errors.deliveryAddress ? 'border-red-500 bg-red-50' : 'border-[#E8E2D9]'
-                      }`}
-                    />
-                    {errors.deliveryAddress && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.deliveryAddress}
-                      </p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-[#2D2720] mb-2">
-                      Zone de livraison *
-                    </label>
-                    <select
-                      value={deliveryZone}
-                      onChange={(e) => setDeliveryZone(e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-[#D94500]/20 focus:border-[#D94500] outline-none transition ${
-                        errors.deliveryZone ? 'border-red-500 bg-red-50' : 'border-[#E8E2D9]'
+            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
+              <h3 className="text-lg font-bold text-[#2D2720]">Mode de commande</h3>
+              <div className="mt-4 grid gap-3">
+                {orderModes.map((mode) => {
+                  const Icon = mode.icon;
+                  const active = orderMode === mode.id;
+                  return (
+                    <button
+                      key={mode.id}
+                      type="button"
+                      onClick={() => setOrderMode(mode.id)}
+                      className={`rounded-[24px] border p-4 text-left transition ${
+                        active
+                          ? 'border-[#D94500] bg-[#FFF5EB] shadow-sm'
+                          : 'border-[#E8E2D9] bg-[#FCFBFA] hover:border-[#D94500]/40'
                       }`}
                     >
-                      <option value="">Sélectionnez votre zone</option>
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
+                            active ? 'bg-[#D94500] text-white' : 'bg-white text-[#8B7355]'
+                          }`}
+                        >
+                          <Icon className="h-5 w-5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-[#2D2720]">{mode.label}</p>
+                          <p className="mt-1 text-sm text-[#8B7355]">{mode.description}</p>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {orderMode === 'livraison' && (
+                <div className="mt-5 space-y-4">
+                  <LocationAssistant
+                    title="Livraison assistée"
+                    description="Sélectionnez une zone très fréquentée, ajustez l'adresse puis confirmez le point exact sur la carte."
+                    addressLabel="Adresse de livraison"
+                    addressValue={deliveryAddress}
+                    onAddressChange={(value) => {
+                      setDeliveryAddress(value);
+                      setErrors((current) => ({ ...current, deliveryAddress: undefined }));
+                    }}
+                    addressPlaceholder="Entrez votre adresse complète..."
+                    zoneLabel="Zone de livraison"
+                    zoneValue={deliveryZone}
+                    onZoneChange={(value, zone) => {
+                      setDeliveryZone(value);
+                      if (zone?.lat && zone?.lng) {
+                        setDeliveryPosition({ lat: zone.lat, lng: zone.lng });
+                      }
+                      setErrors((current) => ({ ...current, deliveryZone: undefined }));
+                    }}
+                    mapValue={deliveryPosition}
+                    onMapChange={({ lat, lng, address }) => {
+                      setDeliveryPosition({ lat, lng });
+                      if (address) {
+                        setDeliveryAddress(address);
+                      }
+                      setErrors((current) => ({
+                        ...current,
+                        deliveryAddress: undefined,
+                      }));
+                    }}
+                    frequentZones={deliveryZones}
+                    errorAddress={errors.deliveryAddress}
+                    errorZone={errors.deliveryZone}
+                  />
+
+                  <div className="rounded-[24px] border border-[#E8E2D9] bg-[#FCFBFA] p-4">
+                    <p className="text-sm font-semibold text-[#2D2720]">Tarifs par zone</p>
+                    <div className="mt-3 flex flex-wrap gap-2">
                       {deliveryZones.map((zone) => (
-                        <option key={zone.name} value={zone.name}>
-                          {zone.name} (+{formatFCFA(zone.fee)} FCFA)
-                        </option>
+                        <button
+                          key={zone.name}
+                          type="button"
+                          onClick={() => {
+                            setDeliveryZone(zone.name);
+                            setDeliveryAddress(zone.address || deliveryAddress);
+                            if (zone.lat && zone.lng) {
+                              setDeliveryPosition({ lat: zone.lat, lng: zone.lng });
+                            }
+                            setErrors((current) => ({ ...current, deliveryZone: undefined }));
+                          }}
+                          className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
+                            deliveryZone === zone.name
+                              ? 'border-[#D94500] bg-[#FFF1E8] text-[#D94500]'
+                              : 'border-[#E8E2D9] bg-white text-[#8B7355] hover:border-[#D94500]/40'
+                          }`}
+                        >
+                          {zone.name} · +{formatFCFA(zone.fee)}
+                        </button>
                       ))}
-                    </select>
-                    {errors.deliveryZone && (
-                      <p className="mt-1 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle className="w-4 h-4" />
-                        {errors.deliveryZone}
-                      </p>
-                    )}
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </section>
 
-            <div className="flex justify-end">
+            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
+              <h3 className="text-lg font-bold text-[#2D2720]">Résumé de la commande</h3>
+              <div className="mt-5 space-y-3 text-sm text-[#8B7355]">
+                <PriceRow label="Sous-total" value={formatFCFA(subtotal)} />
+                <PriceRow
+                  label="Livraison"
+                  value={deliveryFee > 0 ? formatFCFA(deliveryFee) : 'Gratuite'}
+                />
+                <PriceRow
+                  label="Remise"
+                  value={promoDiscount > 0 ? `-${formatFCFA(promoDiscount)}` : 'Aucune'}
+                  accent={promoDiscount > 0 ? 'text-[#2ECC71]' : ''}
+                />
+              </div>
+
+              <div className="mt-5 rounded-[24px] bg-[#FFF5EB] px-5 py-4">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-semibold text-[#8B7355]">Total à payer</p>
+                    <p className="mt-1 text-3xl font-bold text-[#D94500]">{formatFCFA(total)}</p>
+                  </div>
+                  <CreditCard className="h-8 w-8 text-[#D94500]" />
+                </div>
+              </div>
+
               <button
                 onClick={handleProceedToCheckout}
-                disabled={items.length === 0 || isProcessing}
-                className="px-8 py-3 bg-[#D94500] text-white rounded-xl font-semibold hover:bg-[#B83A00] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D94500] px-5 py-4 font-semibold text-white shadow-md transition hover:bg-[#B83A00]"
               >
-                <CreditCard className="w-5 h-5" />
-                Passer au paiement ({formatFCFA(total)} FCFA)
+                Passer au paiement
+                <ChevronRight className="h-4 w-4" />
               </button>
-            </div>
-          </div>
+            </section>
+          </aside>
         </div>
       </div>
+    </div>
+  );
+}
+
+function MiniStat({ label, value }) {
+  return (
+    <div className="rounded-2xl border border-[#E8E2D9] bg-[#FCFBFA] px-4 py-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8B7355]">{label}</p>
+      <p className="mt-2 text-xl font-bold text-[#2D2720] break-words">{value}</p>
+    </div>
+  );
+}
+
+function PriceRow({ label, value, accent = '' }) {
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <span>{label}</span>
+      <span className={`font-semibold text-[#2D2720] ${accent}`}>{value}</span>
     </div>
   );
 }

@@ -1,4 +1,3 @@
-// src/restaurants/entities/restaurant.entity.ts
 import {
   Entity,
   PrimaryGeneratedColumn,
@@ -31,10 +30,31 @@ export class Restaurant {
   @Column({ nullable: true })
   description!: string;
 
+  @Column({ nullable: true })
+  email!: string;
+
+  @Column({ nullable: true })
+  openingTime!: string;
+
+  @Column({ nullable: true })
+  closingTime!: string;
+
+  @Column({ type: 'simple-json', nullable: true })
+  deliveryZones!: Array<{
+    nom: string;
+    lat?: number | null;
+    lng?: number | null;
+  }> | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+  latitude!: number | null;
+
+  @Column({ type: 'decimal', precision: 10, scale: 6, nullable: true })
+  longitude!: number | null;
+
   @Column({ default: true })
   actif!: boolean;
 
-  // Relations
   @OneToMany(() => User, (user) => user.restaurant)
   users!: User[];
 

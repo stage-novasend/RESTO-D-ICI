@@ -55,7 +55,12 @@ export class MenuController {
     @Query('restaurantId') restaurantId?: string,
     @Req() req?,
   ) {
-    return this.menuService.searchArticles(query, cible, req.user, restaurantId);
+    return this.menuService.searchArticles(
+      query,
+      cible,
+      req.user,
+      restaurantId,
+    );
   }
 
   // GET /menu/restaurant/:id — Menu d'un restaurant spécifique
@@ -65,7 +70,11 @@ export class MenuController {
     @Query('categorie') categorieId?: string,
     @Query('cible') cible: string = 'CLIENT',
   ) {
-    return this.menuService.getMenuByRestaurant(restaurantId, categorieId, cible);
+    return this.menuService.getMenuByRestaurant(
+      restaurantId,
+      categorieId,
+      cible,
+    );
   }
 
   //  POST /menu/categories — Création (Lier au restaurant du gérant)

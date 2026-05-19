@@ -10,7 +10,7 @@ describe('CommandesController (e2e)', () => {
   let clientToken: string;
   let adminToken: string;
   let orderId: string;
-  let testRestaurantId = 'test-restaurant-id';
+  const testRestaurantId = 'test-restaurant-id';
 
   beforeAll(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
@@ -117,9 +117,7 @@ describe('CommandesController (e2e)', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/commandes/me')
-        .expect(401);
+      await request(app.getHttpServer()).get('/commandes/me').expect(401);
     });
   });
 
@@ -136,9 +134,7 @@ describe('CommandesController (e2e)', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/commandes')
-        .expect(401);
+      await request(app.getHttpServer()).get('/commandes').expect(401);
     });
 
     it('should return 403 for client user', async () => {
@@ -160,9 +156,7 @@ describe('CommandesController (e2e)', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/commandes/kds')
-        .expect(401);
+      await request(app.getHttpServer()).get('/commandes/kds').expect(401);
     });
 
     it('should return 403 for client user', async () => {
@@ -207,9 +201,7 @@ describe('CommandesController (e2e)', () => {
     });
 
     it('should return 401 without authentication', async () => {
-      await request(app.getHttpServer())
-        .get('/commandes/test-id')
-        .expect(401);
+      await request(app.getHttpServer()).get('/commandes/test-id').expect(401);
     });
   });
 

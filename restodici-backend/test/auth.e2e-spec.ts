@@ -96,20 +96,18 @@ describe('AuthController (e2e)', () => {
   });
 
   describe('/auth/login (POST)', () => {
-    let testUserEmail = `login_${Date.now()}@example.com`;
-    let testUserPassword = 'TestPassword123!';
+    const testUserEmail = `login_${Date.now()}@example.com`;
+    const testUserPassword = 'TestPassword123!';
 
     beforeAll(async () => {
       // Create a test user for login
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: testUserEmail,
-          password: testUserPassword,
-          nom: 'Login',
-          prenom: 'Test',
-          role: 'CLIENT',
-        });
+      await request(app.getHttpServer()).post('/auth/register').send({
+        email: testUserEmail,
+        password: testUserPassword,
+        nom: 'Login',
+        prenom: 'Test',
+        role: 'CLIENT',
+      });
     });
 
     it('should login with valid credentials', async () => {
@@ -175,9 +173,7 @@ describe('AuthController (e2e)', () => {
     });
 
     it('should return 401 without token', async () => {
-      await request(app.getHttpServer())
-        .get('/auth/me')
-        .expect(401);
+      await request(app.getHttpServer()).get('/auth/me').expect(401);
     });
 
     it('should return 401 with invalid token', async () => {

@@ -10,7 +10,6 @@ import { PasswordReset } from './entities/password-reset.entity';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesGuard } from './guards/roles.guard';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
-import { RestaurantsModule } from '../restaurants/restaurants.module';
 import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
 
 @Module({
@@ -21,12 +20,12 @@ import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET') || 'dev-secret-change-me',
+        secret:
+          configService.get<string>('JWT_SECRET') || 'dev-secret-change-me',
         signOptions: { expiresIn: '24h' },
       }),
       inject: [ConfigService],
     }),
-    RestaurantsModule,
   ],
   providers: [AuthService, JwtStrategy, RolesGuard],
   controllers: [AuthController],

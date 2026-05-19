@@ -17,7 +17,25 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     private compteB2BRepository: Repository<CompteB2B>,
   ) {
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        (request: any) => {
+          const handshakeToken = request?.handshake?.auth?.token;
+          if (typeof handshakeToken === 'string' && handshakeToken.trim()) {
+            return handshakeToken.trim();
+          }
+
+          const authorization = request?.handshake?.headers?.authorization;
+          if (
+            typeof authorization === 'string' &&
+            authorization.startsWith('Bearer ')
+          ) {
+            return authorization.slice(7).trim();
+          }
+
+          return null;
+        },
+      ]),
       ignoreExpiration: false,
       secretOrKey: process.env.JWT_SECRET || 'dev-secret-change-me',
     });

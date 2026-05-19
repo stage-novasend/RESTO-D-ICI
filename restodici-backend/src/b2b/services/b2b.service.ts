@@ -16,6 +16,7 @@ import { AddTeamMemberDto } from '../dto/add-team-member.dto';
 import { CreateBulkOrderDto } from '../dto/create-bulk-order.dto';
 import { UpdateBulkOrderStatusDto } from '../dto/update-bulk-order-status.dto';
 import * as bcrypt from 'bcrypt';
+import { CommandesGateway } from '../../commandes/commandes.gateway';
 
 @Injectable()
 export class B2BService {
@@ -30,6 +31,7 @@ export class B2BService {
     private invoiceRepository: Repository<Invoice>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    private commandesGateway: CommandesGateway,
   ) {}
 
   // === TEAM MANAGEMENT ===
@@ -181,7 +183,18 @@ export class B2BService {
       status: 'PENDING',
     });
 
-    return this.bulkOrderRepository.save(bulkOrder);
+    const savedOrder = await this.bulkOrderRepository.save(bulkOrder);
+
+    this.commandesGateway.emitToManagers('commande.nouvelle', {
+      id: savedOrder.id,
+      numero: `B2B-${savedOrder.id.slice(0, 8)}`,
+      statut: savedOrder.status,
+      source: 'B2B',
+      montantTotal: Number(savedOrder.total),
+      createdAt: savedOrder.createdAt,
+    });
+
+    return savedOrder;
   }
 
   async getBulkOrdersByUser(userId: string): Promise<BulkOrder[]> {
@@ -194,6 +207,28 @@ export class B2BService {
   async getOrdersByUser(userId: string): Promise<Record<string, any>[]> {
     const orders = await this.getBulkOrdersByUser(userId);
     return orders.map((order) => this.toOrderResponse(order));
+  }
+
+  async getOrdersForManagement(userId: string): Promise<Record<string, any>[]> {
+    const orders = await this.bulkOrderRepository.find({
+      relations: ['createdBy'],
+      order: { createdAt: 'DESC' },
+      take: 50,
+    });
+
+    return orders.map((order) => ({
+      id: order.id,
+      status: order.status,
+      createdAt: order.createdAt,
+      total: Number(order.total),
+      type: 'B2B',
+      source: order.createdBy?.email ?? order.createdByUserId ?? 'Entreprise',
+      livraison: order.deliveryAddress ?? 'Non spécifiée',
+      items: (order.items ?? []).map((item) => ({
+        nom: item.articleId,
+        quantite: Number(item.quantity),
+      })),
+    }));
   }
 
   async updateBulkOrderStatus(
@@ -228,7 +263,18 @@ export class B2BService {
     }
 
     order.status = updateDto.status;
-    return this.bulkOrderRepository.save(order);
+    const savedOrder = await this.bulkOrderRepository.save(order);
+
+    this.commandesGateway.emitToManagers('commande.statut', {
+      id: savedOrder.id,
+      numero: `B2B-${savedOrder.id.slice(0, 8)}`,
+      statut: savedOrder.status,
+      source: 'B2B',
+      montantTotal: Number(savedOrder.total),
+      updatedAt: savedOrder.updatedAt,
+    });
+
+    return savedOrder;
   }
 
   // === INVOICE MANAGEMENT ===
@@ -308,7 +354,8 @@ export class B2BService {
       monthlyOrders: orderCount,
       unpaidInvoices,
       monthlyBudget,
-      budgetUsage: monthlyBudget > 0 ? (totalOrderValue / monthlyBudget) * 100 : 0,
+      budgetUsage:
+        monthlyBudget > 0 ? (totalOrderValue / monthlyBudget) * 100 : 0,
       recentOrders: recentOrders.slice(0, 5).map((order) => ({
         id: order.id,
         date: order.dateLivraison,
@@ -348,7 +395,9 @@ export class B2BService {
     });
 
     if (targetUser && targetUser.role !== Role.B2B) {
-      throw new BadRequestException('Le collaborateur doit être un utilisateur B2B');
+      throw new BadRequestException(
+        'Le collaborateur doit être un utilisateur B2B',
+      );
     }
 
     if (!targetUser) {

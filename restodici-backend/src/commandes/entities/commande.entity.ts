@@ -17,6 +17,7 @@ export enum StatutCommande {
   CONFIRMEE = 'CONFIRMEE',
   EN_PREP = 'EN_PREP',
   PRETE = 'PRETE',
+  EN_LIVRAISON = 'EN_LIVRAISON',
   LIVREE = 'LIVREE',
   ANNULEE = 'ANNULEE',
 }
@@ -27,13 +28,18 @@ export enum ModeLivraison {
   LIVRAISON = 'LIVRAISON',
 }
 
+export enum ModePaiementCommande {
+  ESPECES = 'ESPECES',
+  LIVRAISON = 'LIVRAISON',
+}
+
 @Entity('commandes')
 export class Commande {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
   @Column({ unique: true })
-  numero!: string; // Ex: CMD-2026-0042
+  numero!: string;
 
   @Column({ type: 'enum', enum: StatutCommande, default: StatutCommande.RECUE })
   statut!: StatutCommande;
@@ -46,6 +52,21 @@ export class Commande {
 
   @Column('decimal', { precision: 10, scale: 2 })
   montantTotal!: number;
+
+  @Column({ default: false })
+  estPaye!: boolean;
+
+  @Column({ type: 'enum', enum: ModePaiementCommande, nullable: true })
+  modePaiement?: ModePaiementCommande;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  montantRemis?: number;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  renduMonnaie?: number;
+
+  @Column({ type: 'timestamp', nullable: true })
+  payeAt?: Date;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'clientId' })

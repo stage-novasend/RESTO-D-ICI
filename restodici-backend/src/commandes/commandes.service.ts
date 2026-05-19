@@ -1,4 +1,3 @@
-// src/commandes/commandes.service.ts
 import {
   Injectable,
   BadRequestException,
@@ -11,11 +10,13 @@ import {
   Commande,
   StatutCommande,
   ModeLivraison,
+  ModePaiementCommande,
 } from './entities/commande.entity';
 import { LigneCommande } from './entities/ligne-commande.entity';
 import { Article } from '../menu/entities/article.entity';
-import { User } from '../auth/entities/user.entity';
 import { CreateCommandeDto } from './dto/create-commande.dto';
+import { CommandesGateway } from './commandes.gateway';
+import { TresorerieService } from '../tresorerie/tresorerie.service';
 
 @Injectable()
 export class CommandesService {
@@ -23,25 +24,22 @@ export class CommandesService {
     @InjectRepository(Commande) private commandeRepo: Repository<Commande>,
     @InjectRepository(LigneCommande)
     private ligneRepo: Repository<LigneCommande>,
-    @InjectRepository(Article) private articleRepo: Repository<Article>,
-    @InjectRepository(User) private userRepo: Repository<User>,
     private dataSource: DataSource,
+    private commandesGateway: CommandesGateway,
+    private tresorerieService: TresorerieService,
   ) {}
 
-  // ✅ EN-1919 : Création commande avec transaction atomique (RG-21)
   async createCommande(
     dto: CreateCommandeDto,
     clientId: string,
     restaurantId: string,
   ): Promise<Commande> {
-    // RG-07: Vérifier panier non vide
     if (!dto.lignes || dto.lignes.length === 0) {
       throw new BadRequestException(
         'La commande doit contenir au moins un article',
       );
     }
 
-    // RG-08 & RG-09: Validation mode livraison & adresse
     if (
       dto.modeLivraison === ModeLivraison.LIVRAISON &&
       !dto.adresseLivraison
@@ -49,15 +47,13 @@ export class CommandesService {
       throw new BadRequestException('Adresse obligatoire en mode livraison');
     }
 
-    // Génération numéro unique CMD-YYYY-XXX
     const count = await this.commandeRepo.count({
       where: { restaurant: { id: restaurantId } },
     });
     const year = new Date().getFullYear();
     const numero = `CMD-${year}-${String(count + 1).padStart(3, '0')}`;
 
-    // 🔒 TRANSACTION ATOMIQUE (RG-21: Déduction stock + création commande)
-    return this.dataSource.transaction(async (manager) => {
+    const commande = await this.dataSource.transaction(async (manager) => {
       const ligneEntities: LigneCommande[] = [];
       let montantTotal = 0;
 
@@ -65,22 +61,25 @@ export class CommandesService {
         const article = await manager.findOne(Article, {
           where: { id: ligneDto.articleId },
         });
-        if (!article)
+        if (!article) {
           throw new NotFoundException(
             `Article ${ligneDto.articleId} introuvable`,
           );
-        if (article.restaurantId !== restaurantId)
+        }
+        if (article.restaurantId !== restaurantId) {
           throw new BadRequestException(
             `Article ${article.nom} n'appartient pas au restaurant demandé`,
           );
-        if (!article.disponible)
+        }
+        if (!article.disponible) {
           throw new BadRequestException(`Article ${article.nom} indisponible`);
-        if (article.stock < ligneDto.quantite)
+        }
+        if (article.stock < ligneDto.quantite) {
           throw new BadRequestException(
             `Stock insuffisant pour ${article.nom}`,
           );
+        }
 
-        // Déduction stock immédiate
         const stockRestant = article.stock - ligneDto.quantite;
         await manager.update(
           Article,
@@ -94,18 +93,18 @@ export class CommandesService {
             article: { id: article.id },
             quantite: ligneDto.quantite,
             prixUnitaire: article.prix,
-            instructions: ligneDto.instructions || undefined, // ✅ Fix: null → undefined
+            instructions: ligneDto.instructions || undefined,
           }),
         );
       }
 
-      const commande = manager.create(Commande, {
+      const created = manager.create(Commande, {
         numero,
         modeLivraison: dto.modeLivraison,
         adresseLivraison:
           dto.modeLivraison === ModeLivraison.LIVRAISON
             ? dto.adresseLivraison
-            : undefined, // ✅ Fix: null → undefined
+            : undefined,
         montantTotal,
         statut: StatutCommande.RECUE,
         client: { id: clientId },
@@ -113,11 +112,28 @@ export class CommandesService {
         lignes: ligneEntities,
       });
 
-      return manager.save(Commande, commande);
+      return manager.save(Commande, created);
     });
+
+    this.commandesGateway.emitToKitchen(restaurantId, 'commande.nouvelle', {
+      id: commande.id,
+      numero: commande.numero,
+      modeLivraison: commande.modeLivraison,
+      statut: commande.statut,
+      montantTotal: commande.montantTotal,
+      createdAt: commande.createdAt,
+      notification: 'sound+visual',
+    });
+
+    this.commandesGateway.emitToClient(clientId, 'commande.creee', {
+      id: commande.id,
+      numero: commande.numero,
+      statut: commande.statut,
+    });
+
+    return commande;
   }
 
-  // ✅ US-07 : Historique commandes client
   async findAllByUser(clientId: string): Promise<Commande[]> {
     return this.commandeRepo.find({
       where: { client: { id: clientId } },
@@ -127,7 +143,6 @@ export class CommandesService {
     });
   }
 
-  // ✅ US-08 : Commandes pour un restaurant (filtrage multi-tenant)
   async findAllForRestaurant(
     restaurantId: string,
     limit: number = 50,
@@ -142,9 +157,8 @@ export class CommandesService {
     });
   }
 
-  // ✅ US-08 : Interface KDS — commandes actives seulement
   async getKDS(restaurantId: string): Promise<Commande[]> {
-    return this.commandeRepo.find({
+    const orders = await this.commandeRepo.find({
       where: {
         restaurant: { id: restaurantId },
         statut: In([
@@ -153,29 +167,49 @@ export class CommandesService {
           StatutCommande.EN_PREP,
         ]),
       },
-      relations: ['lignes', 'lignes.article'],
+      relations: ['lignes', 'lignes.article', 'client'],
       order: { createdAt: 'ASC' },
     });
+
+    for (const order of orders) {
+      if (order.client) {
+        const { id, nom, prenom, telephone, email } = order.client;
+        (order as any).client = { id, nom, prenom, telephone, email };
+      }
+    }
+
+    return orders;
   }
 
-  // ✅ US-07 : Détail d'une commande (avec vérification d'accès)
-  async findOne(id: string, clientId?: string): Promise<Commande> {
+  async findOne(
+    id: string,
+    clientId?: string,
+    restaurantId?: string,
+  ): Promise<Commande> {
     const commande = await this.commandeRepo.findOne({
       where: { id },
       relations: ['lignes', 'lignes.article', 'client', 'restaurant'],
     });
 
-    if (!commande) throw new NotFoundException('Commande introuvable');
+    if (!commande) {
+      throw new NotFoundException('Commande introuvable');
+    }
 
-    // RG-31: Un client ne voit que SES commandes
     if (clientId && commande.client.id !== clientId) {
+      throw new ForbiddenException('Accès refusé à cette commande');
+    }
+
+    if (
+      restaurantId &&
+      commande.restaurant &&
+      commande.restaurant.id !== restaurantId
+    ) {
       throw new ForbiddenException('Accès refusé à cette commande');
     }
 
     return commande;
   }
 
-  // ✅ RG-10 : Mise à jour statut séquentiel irréversible
   async updateStatut(
     id: string,
     newStatut: StatutCommande,
@@ -183,43 +217,60 @@ export class CommandesService {
   ): Promise<Commande> {
     const commande = await this.commandeRepo.findOne({
       where: { id },
-      relations: ['restaurant'],
+      relations: ['restaurant', 'client'],
     });
 
-    if (!commande) throw new NotFoundException('Commande introuvable');
+    if (!commande) {
+      throw new NotFoundException('Commande introuvable');
+    }
 
-    // RG-31: Un gérant ne modifie que SES commandes
     if (restaurantId && commande.restaurant.id !== restaurantId) {
       throw new ForbiddenException('Accès refusé à cette commande');
     }
 
-    const order = [
-      StatutCommande.RECUE,
-      StatutCommande.CONFIRMEE,
-      StatutCommande.EN_PREP,
-      StatutCommande.PRETE,
-      StatutCommande.LIVREE,
-    ];
-    const currentIndex = order.indexOf(commande.statut);
-    const newIndex = order.indexOf(newStatut);
-
     if (newStatut === StatutCommande.ANNULEE) {
       const ageMinutes =
         (Date.now() - new Date(commande.createdAt).getTime()) / 60000;
-      if (commande.statut !== StatutCommande.RECUE || ageMinutes > 5) {
+      if (
+        ![StatutCommande.RECUE, StatutCommande.CONFIRMEE].includes(
+          commande.statut,
+        ) ||
+        ageMinutes > 5
+      ) {
         throw new BadRequestException(
           `Annulation impossible pour une commande ${commande.statut}`,
         );
       }
+
       commande.statut = newStatut;
-      return this.commandeRepo.save(commande);
+      const saved = await this.commandeRepo.save(commande);
+
+      this.commandesGateway.emitToKitchen(
+        commande.restaurant.id,
+        'commande.statut',
+        {
+          id: saved.id,
+          numero: saved.numero,
+          statut: saved.statut,
+        },
+      );
+      this.commandesGateway.emitToClient(saved.client.id, 'commande.statut', {
+        id: saved.id,
+        statut: saved.statut,
+      });
+
+      return saved;
     }
 
     const transitions: Record<StatutCommande, StatutCommande[]> = {
       [StatutCommande.RECUE]: [StatutCommande.CONFIRMEE],
       [StatutCommande.CONFIRMEE]: [StatutCommande.EN_PREP],
       [StatutCommande.EN_PREP]: [StatutCommande.PRETE],
-      [StatutCommande.PRETE]: [StatutCommande.LIVREE],
+      [StatutCommande.PRETE]: [
+        StatutCommande.EN_LIVRAISON,
+        StatutCommande.LIVREE,
+      ],
+      [StatutCommande.EN_LIVRAISON]: [StatutCommande.LIVREE],
       [StatutCommande.LIVREE]: [],
       [StatutCommande.ANNULEE]: [],
     };
@@ -231,6 +282,96 @@ export class CommandesService {
     }
 
     commande.statut = newStatut;
-    return this.commandeRepo.save(commande);
+    const saved = await this.commandeRepo.save(commande);
+
+    this.commandesGateway.emitToKitchen(
+      commande.restaurant.id,
+      'commande.statut',
+      {
+        id: saved.id,
+        numero: saved.numero,
+        statut: saved.statut,
+      },
+    );
+    this.commandesGateway.emitToClient(saved.client.id, 'commande.statut', {
+      id: saved.id,
+      statut: saved.statut,
+    });
+
+    return saved;
+  }
+
+  async registerPayment(
+    id: string,
+    payload: { montantRemis: number; modePaiement: ModePaiementCommande },
+    restaurantId?: string,
+  ) {
+    const commande = await this.commandeRepo.findOne({
+      where: { id },
+      relations: ['restaurant', 'client'],
+    });
+
+    if (!commande) {
+      throw new NotFoundException('Commande introuvable');
+    }
+
+    if (restaurantId && commande.restaurant.id !== restaurantId) {
+      throw new ForbiddenException('Accès refusé à cette commande');
+    }
+
+    if (commande.estPaye) {
+      throw new BadRequestException('Commande déjà payée');
+    }
+
+    const montantTotal = Number(commande.montantTotal);
+    const montantRemis = Number(payload.montantRemis);
+
+    if (!Number.isFinite(montantRemis)) {
+      throw new BadRequestException('montantRemis invalide');
+    }
+
+    if (montantRemis !== montantTotal) {
+      throw new BadRequestException(
+        `Le montant remis doit être exactement ${montantTotal}`,
+      );
+    }
+
+    commande.estPaye = true;
+    commande.modePaiement = payload.modePaiement;
+    commande.montantRemis = montantRemis;
+    commande.renduMonnaie = 0;
+    commande.payeAt = new Date();
+
+    const saved = await this.commandeRepo.save(commande);
+
+    const transaction = await this.tresorerieService.recordOrderPayment({
+      commandeId: saved.id,
+      numeroCommande: saved.numero,
+      montantTotal,
+      modePaiement: saved.modePaiement,
+      montantRemis,
+      restaurantId: saved.restaurant.id,
+      payeAt: saved.payeAt,
+    });
+
+    this.commandesGateway.emitToKitchen(
+      saved.restaurant.id,
+      'commande.paiement',
+      {
+        id: saved.id,
+        numero: saved.numero,
+        estPaye: saved.estPaye,
+        modePaiement: saved.modePaiement,
+      },
+    );
+    this.commandesGateway.emitToClient(saved.client.id, 'commande.paiement', {
+      id: saved.id,
+      estPaye: saved.estPaye,
+    });
+
+    return {
+      commande: saved,
+      transaction,
+    };
   }
 }

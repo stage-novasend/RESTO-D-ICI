@@ -10,6 +10,7 @@ import {
   Delete,
   Query,
   Put,
+  Patch,
   ForbiddenException,
 } from '@nestjs/common';
 import { RestaurantsService } from './restaurants.service';
@@ -30,10 +31,36 @@ export class RestaurantsController {
     return this.restaurantsService.getAllActive(zone, categorie);
   }
 
+  // GET /restaurants/me/profile — Profil du restaurant du gérant/admin
+  @Get('me/profile')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  getMyRestaurantProfile(@Req() req) {
+    const restaurantId = req.user.restaurant?.id;
+    if (!restaurantId) {
+      throw new ForbiddenException(
+        'Aucun restaurant associé à cet utilisateur',
+      );
+    }
+    return this.restaurantsService.getById(restaurantId);
+  }
+
   // GET /restaurants/:id — Détails d'un restaurant
   @Get(':id')
   getRestaurant(@Param('id') id: string) {
     return this.restaurantsService.getById(id);
+  }
+
+  // PATCH /restaurants/:id — Mise à jour du profil restaurant
+  @Patch(':id')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  updateRestaurant(
+    @Param('id') id: string,
+    @Body() updateData: any,
+    @Req() req,
+  ) {
+    return this.restaurantsService.updateRestaurant(id, updateData, req.user);
   }
 
   // POST /restaurants/:id/favorites — Ajouter/retirer des favoris

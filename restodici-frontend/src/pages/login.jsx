@@ -89,6 +89,11 @@ export default function Login() {
         console.log('Redirecting B2B to /b2b/dashboard');
         navigate('/b2b/dashboard');
       }
+      // Staff opérationnel
+      else if (userRole === 'STAFF') {
+        console.log('Redirecting STAFF to /staff');
+        navigate('/staff');
+      }
       // Regular Customer (CLIENT) or any other role
       else {
         console.log('Redirecting to /menu (role:', userRole, ')');
@@ -96,11 +101,11 @@ export default function Login() {
       }
     } catch (error) {
       console.error('Login error:', error);
-      // Parse backend validation errors
       let errorMessage = 'Erreur lors de la connexion';
+      let backendMessage;
+
       if (error.response?.data?.message) {
-        const backendMessage = error.response.data.message;
-        // Handle concatenated validation errors
+        backendMessage = error.response.data.message;
         if (backendMessage.includes('email must be an email') || 
             backendMessage.includes('password must be longer than or equal to 6 characters')) {
           errorMessage = 'Veuillez vérifier votre email et mot de passe';
@@ -108,7 +113,7 @@ export default function Login() {
           errorMessage = backendMessage;
         }
       }
-      // Si email non vérifié, proposer la redirection vers verify-email
+
       if (typeof backendMessage === 'string' && backendMessage.toLowerCase().includes('email non vérifié')) {
         setErrors({
           submit: backendMessage,

@@ -2,9 +2,8 @@
 import axios from "axios";
 
 //  Base URL avec préfixe '/api' pour matcher NestJS
-const API_BASE = (
-  import.meta.env.VITE_API_URL || "http://localhost:3000"
-).replace(/\/$/, "");
+const RAW_API_BASE = import.meta.env.VITE_API_URL?.trim();
+const API_BASE = (RAW_API_BASE || "/api").replace(/\/$/, "");
 const API_URL = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
 const api = axios.create({
   baseURL: API_URL,
@@ -36,6 +35,11 @@ export const authService = {
   //  GET /api/auth/me (profil utilisateur)
   getProfile: async () => {
     const { data } = await api.get("/auth/me");
+    return data;
+  },
+
+  updateProfile: async (payload) => {
+    const { data } = await api.patch("/auth/me", payload);
     return data;
   },
 };

@@ -131,6 +131,12 @@ export class B2BController {
     return this.b2bService.createCollaborator(req.user.id, dto);
   }
 
+  @Get('orders/management')
+  @Roles(Role.GERANT, Role.ADMIN)
+  async getOrdersForManagement(@Req() req: RequestWithUser) {
+    return this.b2bService.getOrdersForManagement(req.user.id);
+  }
+
   @Get('reports')
   async getReports(@Req() req: RequestWithUser) {
     return this.b2bService.getReportsByUser(req.user.id);

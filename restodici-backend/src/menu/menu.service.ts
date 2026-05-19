@@ -233,9 +233,7 @@ export class MenuService {
     // 7. Invalidation cache (RG-02: sync <30s)
     await this.invalidateMenuCache(restaurantId);
 
-    this.logger.log(
-      `Article créé: ${saved.nom} (Restaurant: ${restaurantId})`,
-    );
+    this.logger.log(`Article créé: ${saved.nom} (Restaurant: ${restaurantId})`);
     return saved;
   }
 
@@ -279,10 +277,16 @@ export class MenuService {
           userId: user?.id || 'system',
           restaurantId: article.restaurant?.id,
           action: disponible ? 'ACTIVER_ARTICLE' : 'DESACTIVER_ARTICLE',
-          payload: { articleId: id, before: { disponible: article.disponible }, after: { disponible } },
+          payload: {
+            articleId: id,
+            before: { disponible: article.disponible },
+            after: { disponible },
+          },
         });
       } catch (err) {
-        this.logger.warn(`Impossible d'écrire audit pendant transaction: ${err.message}`);
+        this.logger.warn(
+          `Impossible d'écrire audit pendant transaction: ${err.message}`,
+        );
         throw err;
       }
     });

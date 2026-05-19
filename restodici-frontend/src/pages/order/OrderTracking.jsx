@@ -2,7 +2,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Check, Clock, MapPin, Phone, ChevronRight, Truck } from 'lucide-react';
-import { commandesService } from '../../services/commandes.service';
+import {
+  commandesService,
+  createCommandesSocket,
+} from '../../services/commandes.service';
 import { formatFCFA, formatDate, STATUS_LABELS, STATUS_COLORS } from '../../utils/formatters';
 
 const STEPS = [
@@ -23,10 +26,12 @@ export default function OrderTrackingPage() {
   useEffect(() => {
     if (!id) return;
     
+    let active = true;
     let poll;
     const fetchOrder = async () => {
       try {
         const res = await commandesService.findOne(id);
+        if (!active) return;
         setOrder(res.data);
         setLoading(false);
         
@@ -35,15 +40,41 @@ export default function OrderTrackingPage() {
           clearInterval(poll);
         }
       } catch (err) {
+        if (!active) return;
         setError(err.response?.data?.message || 'Impossible de charger le suivi');
         setLoading(false);
       }
     };
 
+    const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUser = cachedUser?.user || cachedUser;
+    const socket = createCommandesSocket(currentUser);
+
+    const refreshOrder = async () => {
+      if (!id) return;
+      await fetchOrder();
+    };
+
+    socket.on('commande.statut', (payload) => {
+      if (payload?.id === id) {
+        void refreshOrder();
+      }
+    });
+
+    socket.on('commande.paiement', (payload) => {
+      if (payload?.id === id) {
+        void refreshOrder();
+      }
+    });
+
     fetchOrder();
-    // Polling HTTP toutes les 5s (fallback si WebSocket indisponible - US-07)
     poll = setInterval(fetchOrder, 5000);
-    return () => clearInterval(poll);
+
+    return () => {
+      active = false;
+      clearInterval(poll);
+      socket.disconnect();
+    };
   }, [id]);
 
   if (loading) {

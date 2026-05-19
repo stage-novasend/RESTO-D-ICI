@@ -33,6 +33,53 @@ export class AuthService {
     private configService?: ConfigService,
   ) {}
 
+  private parseRestaurantHours(rawHours?: string) {
+    const matches = rawHours?.match(/(\d{2}:\d{2})\s*-\s*(\d{2}:\d{2})/);
+    return {
+      openingTime: matches?.[1] || '08:00',
+      closingTime: matches?.[2] || '22:00',
+    };
+  }
+
+  private normalizeDeliveryZones(zones?: unknown) {
+    if (!Array.isArray(zones)) return [];
+
+    return zones
+      .map((zone) => {
+        if (typeof zone === 'string') {
+          const trimmed = zone.trim();
+          return trimmed ? { nom: trimmed, lat: null, lng: null } : null;
+        }
+
+        if (zone && typeof zone === 'object') {
+          const record = zone as Record<string, unknown>;
+          const rawNom =
+            typeof record.nom === 'string'
+              ? record.nom
+              : typeof record.name === 'string'
+                ? record.name
+                : '';
+          const nom = rawNom.trim();
+          if (!nom) return null;
+          const lat = Number(record.lat);
+          const lng = Number(record.lng);
+          return {
+            nom,
+            lat: Number.isFinite(lat) ? lat : null,
+            lng: Number.isFinite(lng) ? lng : null,
+          };
+        }
+
+        return null;
+      })
+      .filter(
+        (
+          zone,
+        ): zone is { nom: string; lat: number | null; lng: number | null } =>
+          zone !== null,
+      );
+  }
+
   private buildAuthResponse(
     user: User,
     message?: string,
@@ -62,11 +109,90 @@ export class AuthService {
         prenom: user.prenom,
         telephone: user.telephone,
         restaurant: user.restaurant
-          ? { id: user.restaurant.id, nom: user.restaurant.nom }
+          ? {
+              id: user.restaurant.id,
+              nom: user.restaurant.nom,
+              logo: user.restaurant.logo,
+              description: user.restaurant.description,
+              adresse: user.restaurant.adresse,
+              telephone: user.restaurant.telephone,
+              email: user.restaurant.email,
+              openingTime: user.restaurant.openingTime,
+              closingTime: user.restaurant.closingTime,
+              deliveryZones: user.restaurant.deliveryZones,
+              latitude: user.restaurant.latitude,
+              longitude: user.restaurant.longitude,
+            }
           : undefined,
       },
       ...(message ? { message } : {}),
     };
+  }
+
+  async getProfile(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, actif: true },
+      relations: ['restaurant'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    return this.buildAuthResponse(user).user;
+  }
+
+  async updateProfile(
+    userId: string,
+    updates: {
+      nom?: string;
+      prenom?: string;
+      email?: string;
+      telephone?: string;
+    },
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, actif: true },
+      relations: ['restaurant'],
+    });
+
+    if (!user) {
+      throw new NotFoundException('Utilisateur introuvable');
+    }
+
+    if (typeof updates.email === 'string') {
+      const email = updates.email.trim().toLowerCase();
+      if (!email) {
+        throw new BadRequestException('Email requis');
+      }
+
+      if (email !== user.email) {
+        const existingUser = await this.userRepository.findOne({
+          where: { email },
+        });
+
+        if (existingUser && existingUser.id !== user.id) {
+          throw new ConflictException('Email déjà utilisé');
+        }
+      }
+
+      user.email = email;
+    }
+
+    if (typeof updates.nom === 'string') {
+      user.nom = updates.nom.trim();
+    }
+
+    if (typeof updates.prenom === 'string') {
+      user.prenom = updates.prenom.trim();
+    }
+
+    if (typeof updates.telephone === 'string') {
+      user.telephone = updates.telephone.trim();
+    }
+
+    const savedUser = await this.userRepository.save(user);
+    return this.buildAuthResponse(savedUser).user;
   }
 
   async register(dto: RegisterDto) {
@@ -105,12 +231,20 @@ export class AuthService {
         );
       }
 
+      const { openingTime, closingTime } = this.parseRestaurantHours(
+        dto.horaires,
+      );
+
       // Créer le restaurant
       const newRestaurant = this.restaurantRepository.create({
         nom: dto.restaurantNom,
         description: dto.description || '',
         adresse: dto.adresse,
         telephone: dto.restaurantTelephone || dto.telephone || '',
+        email: dto.restaurantEmail || dto.email,
+        openingTime,
+        closingTime,
+        deliveryZones: this.normalizeDeliveryZones(dto.zonesLivraison),
       });
       const savedRestaurant =
         await this.restaurantRepository.save(newRestaurant);
@@ -173,11 +307,12 @@ export class AuthService {
 
     if (!user) {
       // Don't reveal if email exists for security
-      return { message: "Si l'email existe, un lien de réinitialisation a été envoyé" };
+      return {
+        message: "Si l'email existe, un lien de réinitialisation a été envoyé",
+      };
     }
 
     // NOTE: suppression du blocage si l'email n'est pas vérifié — permettre la réinitialisation
-
 
     // Generate reset token
     const token = crypto.randomBytes(32).toString('hex');
@@ -196,15 +331,21 @@ export class AuthService {
     // In production, send email with reset link
     // For now, log the token (you would send this via email)
     console.log(`Password reset token for ${email}: ${token}`);
-    console.log(`Reset link: ${(this.configService?.get('FRONTEND_URL') || this.configService?.get('FRONTEND_URL') || 'http://localhost:5173')}/reset-password?token=${token}`);
+    console.log(
+      `Reset link: ${this.configService?.get('FRONTEND_URL') || this.configService?.get('FRONTEND_URL') || 'http://localhost:5173'}/reset-password?token=${token}`,
+    );
 
-    return { message: "Si l'email existe, un lien de réinitialisation a été envoyé" };
+    return {
+      message: "Si l'email existe, un lien de réinitialisation a été envoyé",
+    };
   }
 
   // Reset password with token
   async resetPassword(token: string, newPassword: string) {
     if (!newPassword || newPassword.length < 6) {
-      throw new BadRequestException('Le mot de passe doit contenir au moins 6 caractères');
+      throw new BadRequestException(
+        'Le mot de passe doit contenir au moins 6 caractères',
+      );
     }
 
     // Find valid reset token
@@ -214,7 +355,9 @@ export class AuthService {
     });
 
     if (!resetRequest || resetRequest.expiresAt < new Date()) {
-      throw new BadRequestException('Token de réinitialisation invalide ou expiré');
+      throw new BadRequestException(
+        'Token de réinitialisation invalide ou expiré',
+      );
     }
 
     // NOTE: suppression des vérifications sur emailVerified — autoriser le reset
@@ -234,7 +377,10 @@ export class AuthService {
   // Verify email with token
   async verifyEmail(token: string) {
     // Email verification flow disabled — always succeed for backward compatibility
-    return { message: 'Email verification disabled in this deployment', emailVerified: true };
+    return {
+      message: 'Email verification disabled in this deployment',
+      emailVerified: true,
+    };
   }
 
   // Resend verification email

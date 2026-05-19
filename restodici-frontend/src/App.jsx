@@ -1,5 +1,5 @@
 // src/App.jsx — Version corrigée ESM strict
-import { BrowserRouter, Routes, Route, Navigate, Outlet, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
@@ -19,6 +19,7 @@ import CheckoutPage from './pages/Checkout';
 import OrdersPage from './pages/Orders';
 import PaymentSuccessPage from './pages/PaymentSuccess';
 import OrderTrackingPage from './pages/order/OrderTracking';
+import ClientDashboard from './pages/client/clientDashboard';
 
 // ===== DASHBOARDS — Imports directs sans extension .jsx =====
 import GerantDashboard from './pages/gerant/GerantDashboard';
@@ -54,11 +55,9 @@ function ProtectedStaffRoute({ children }) {
 // ─── Composant de protection pour le checkout (requiert authentification) ────
 function ProtectedCheckoutRoute({ children }) {
   const { user, loading } = useAuth();
-  const location = useLocation();
-  
+
   if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
   if (!user) {
-    // Redirect to login with checkout as redirect parameter
     return <Navigate to="/login" state={{ redirect: 'checkout' }} replace />;
   }
   return children;
@@ -104,9 +103,8 @@ export default function App() {
             <Route 
               element={
                 <CartProvider>
-                  <ClientLayout />
                   <ProtectedCheckoutRoute>
-                    <Outlet />
+                    <ClientLayout />
                   </ProtectedCheckoutRoute>
                 </CartProvider>
               }
@@ -115,6 +113,7 @@ export default function App() {
               <Route path="/checkout/success/:id" element={<PaymentSuccessPage />} />
               <Route path="/suivi/:id" element={<OrderTrackingPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/account" element={<ClientDashboard />} />
             </Route>
             
             {/* === ROUTES SANS LAYOUT (authentification) === */}
@@ -145,7 +144,8 @@ export default function App() {
                 </ProtectedStaffRoute>
               } 
             >
-              <Route index element={<KDSStaff />} />
+              <Route index element={<StaffDashboard />} />
+              <Route path="kds" element={<KDSStaff />} />
             </Route>
 
             {/* === DASHBOARD ENTREPRISE (B2B) === */}

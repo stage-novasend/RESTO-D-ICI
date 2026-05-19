@@ -1,11 +1,45 @@
 // src/pages/PaymentSuccess.jsx
+import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Check, Clock, MapPin, Phone } from 'lucide-react';
+import { Check, Clock, Download, Loader2 } from 'lucide-react';
+import { commandesService } from '../services/api';
+
+function downloadAndOpenBlob(blob, fileName) {
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  document.body.removeChild(anchor);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  window.setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+}
 
 export default function PaymentSuccessPage() {
   const navigate = useNavigate();
   const { id } = useParams();
   const orderId = id || 'R1234';
+  const [downloading, setDownloading] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleDownloadReceipt = async () => {
+    setDownloading(true);
+    setError('');
+
+    try {
+      const response = await commandesService.getReceiptPdf(orderId);
+      const blob = new Blob([response.data], { type: 'application/pdf' });
+      downloadAndOpenBlob(blob, `recu-commande-${orderId}.pdf`);
+    } catch (downloadError) {
+      setError(
+        downloadError?.response?.data?.message ||
+          'Le reçu PDF n’est pas encore disponible.',
+      );
+    } finally {
+      setDownloading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
@@ -37,15 +71,28 @@ export default function PaymentSuccessPage() {
           </p>
         </div>
 
-        {/* Bouton principal - Suivre commande */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl px-4 py-3 text-sm mb-4">
+            {error}
+          </div>
+        )}
+
         <button
           onClick={() => navigate(`/suivi/${orderId}`)}
           className="w-full bg-orange-700 hover:bg-orange-800 text-white font-bold py-4 px-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 mb-3 transform hover:-translate-y-0.5"
         >
           SUIVRE MA COMMANDE
         </button>
+
+        <button
+          onClick={handleDownloadReceipt}
+          disabled={downloading}
+          className="w-full inline-flex items-center justify-center gap-2 border border-orange-700 text-orange-700 font-bold py-4 px-6 rounded-2xl hover:bg-orange-50 transition-all duration-300 mb-3 disabled:opacity-70"
+        >
+          {downloading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Download className="w-5 h-5" />}
+          TÉLÉCHARGER MON REÇU
+        </button>
         
-        {/* Lien secondaire - Retour */}
         <button
           onClick={() => navigate('/menu')}
           className="w-full text-orange-700 font-semibold py-3 hover:bg-orange-50 rounded-xl transition-colors duration-200"

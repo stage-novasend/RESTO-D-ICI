@@ -7,6 +7,7 @@ import {
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { formatFCFA } from '../utils/formatters';
+import { commandesService } from '../services/commandes.service';
 
 // Define payment methods locally as they were missing in the original scope
 const paymentMethods = [
@@ -24,6 +25,7 @@ export default function CheckoutPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderConfirmed, setOrderConfirmed] = useState(false);
   const [orderId, setOrderId] = useState('');
+  const [createdOrderBackendId, setCreatedOrderBackendId] = useState('');
   const [pendingOrder, setPendingOrder] = useState(null);
 
   // Load pending order from localStorage
@@ -42,32 +44,29 @@ export default function CheckoutPage() {
     setIsProcessing(true);
     
     try {
-      // Simulate payment processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Generate order ID (in real app, this would come from backend)
-      const newOrderId = `ORD-${Date.now().toString().slice(-6)}`;
-      setOrderId(newOrderId);
-      
-      // Save order to user's order history (in real app, this would be server-side)
-      const userOrders = JSON.parse(localStorage.getItem(`userOrders_${user.id}`) || '[]');
-      userOrders.push({
-        id: newOrderId,
-        items: pendingOrder.items,
-        total: pendingOrder.total,
+      const payload = {
         restaurantId: pendingOrder.restaurantId,
-        restaurantName: pendingOrder.restaurantName,
-        orderMode: pendingOrder.orderMode,
-        deliveryAddress: pendingOrder.deliveryAddress,
-        timestamp: pendingOrder.timestamp,
-        status: 'confirmed'
-      });
-      localStorage.setItem(`userOrders_${user.id}`, JSON.stringify(userOrders));
-      
-      // Clear cart and pending order
+        modeLivraison: pendingOrder.orderMode,
+        adresseLivraison:
+          pendingOrder.orderMode === 'LIVRAISON'
+            ? pendingOrder.deliveryAddress
+            : undefined,
+        lignes: pendingOrder.items.map((item) => ({
+          articleId: item.articleId,
+          quantite: item.quantite,
+          instructions: item.instructions,
+        })),
+      };
+
+      const response = await commandesService.create(payload);
+      const createdOrder = response.data;
+
+      setOrderId(createdOrder.numero || createdOrder.id);
+      setCreatedOrderBackendId(createdOrder.id);
+
       clearCart();
       localStorage.removeItem('pendingOrder');
-      
+
       setOrderConfirmed(true);
     } catch (error) {
       console.error('Payment failed:', error);
@@ -107,7 +106,7 @@ export default function CheckoutPage() {
               </Link>
               
               <button
-                onClick={() => navigate('/orders')}
+                onClick={() => navigate(`/suivi/${createdOrderBackendId}`)}
                 className="block w-full px-6 py-3 border border-[#E8E2D9] text-[#2D2720] rounded-xl font-semibold hover:bg-[#F9F7F5] transition"
               >
                 Suivre ma commande

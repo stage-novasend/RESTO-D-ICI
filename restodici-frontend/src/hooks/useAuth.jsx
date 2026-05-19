@@ -1,5 +1,5 @@
 // src/hooks/useAuth.jsx
-import { createContext, useContext, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { authService } from "../services/auth.service";
 
 const AuthContext = createContext(null);
@@ -55,7 +55,24 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(getStoredSession);
   const loading = false;
 
-  const login = async (email, password) => {
+  const syncUser = useCallback((nextUser) => {
+    const token = localStorage.getItem("token") || user?.token;
+    localStorage.setItem("user", JSON.stringify(nextUser));
+    setUser(token ? { ...nextUser, token } : nextUser);
+    return nextUser;
+  }, [user?.token]);
+
+  const refreshProfile = useCallback(async () => {
+    try {
+      const profile = await authService.getProfile();
+      return syncUser(profile);
+    } catch (error) {
+      console.error("Profile refresh error:", error);
+      return null;
+    }
+  }, [syncUser]);
+
+  const login = useCallback(async (email, password) => {
     try {
       const data = await authService.login(email, password);
       const { access_token, token, user: userData } = data;
@@ -77,9 +94,9 @@ export function AuthProvider({ children }) {
         error: getErrorMessage(error, "Erreur de connexion"),
       };
     }
-  };
+  }, []);
 
-  const register = async (userData) => {
+  const register = useCallback(async (userData) => {
     try {
       const data = await authService.register(userData);
       const { access_token, token, user: newUser } = data;
@@ -100,16 +117,21 @@ export function AuthProvider({ children }) {
         error: getErrorMessage(error, "Erreur d'inscription"),
       };
     }
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     setUser(null);
-  };
+  }, []);
+
+  const value = useMemo(
+    () => ({ user, loading, login, register, logout, refreshProfile, syncUser }),
+    [user, loading, login, register, logout, refreshProfile, syncUser],
+  );
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );

@@ -2,39 +2,104 @@ import {
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,
-  MessageBody,
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { UseGuards } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
-import { Roles } from '../common/decorators/roles.decorator';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import * as jwt from 'jsonwebtoken';
+import { User } from '../auth/entities/user.entity';
 
 @WebSocketGateway({ cors: true, namespace: 'commandes' })
 export class CommandesGateway {
   @WebSocketServer() server!: Server;
 
-  //  Émettre un événement à un client spécifique
+  constructor(
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
+  ) {}
+
   emitToClient(userId: string, event: string, data: any) {
     this.server.to(`user:${userId}`).emit(event, data);
   }
 
-  //  Émettre à tous les staff (KDS)
-  emitToKitchen(event: string, data: any) {
-    this.server.to('role:STAFF').emit(event, data);
+  emitToKitchen(restaurantId: string, event: string, data: any) {
+    this.server.to(`restaurant:${restaurantId}:staff`).emit(event, data);
   }
 
-  //  Inscription du client à ses notifications personnelles
-  @SubscribeMessage('subscribe')
-  @UseGuards(AuthGuard('jwt'))
-  handleSubscribe(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() { userId, roles }: { userId: string; roles: string[] },
-  ) {
-    client.join(`user:${userId}`);
-    if (roles.includes('STAFF') || roles.includes('GERANT')) {
-      client.join('role:STAFF');
+  emitToManagers(event: string, data: any) {
+    this.server.to('role:GERANT').emit(event, data);
+    this.server.to('role:ADMIN').emit(event, data);
+  }
+
+  private extractToken(client: Socket): string | null {
+    const authToken = client.handshake?.auth?.token;
+    if (typeof authToken === 'string' && authToken.trim()) {
+      return authToken.trim();
     }
-    return { success: true };
+
+    const authorizationHeader = client.handshake?.headers?.authorization;
+    if (
+      typeof authorizationHeader === 'string' &&
+      authorizationHeader.startsWith('Bearer ')
+    ) {
+      return authorizationHeader.slice(7).trim();
+    }
+
+    return null;
+  }
+
+  private async resolveSocketUser(client: Socket): Promise<User | null> {
+    const token = this.extractToken(client);
+    if (!token) {
+      return null;
+    }
+
+    let payload: { sub?: string } | null = null;
+    try {
+      payload = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'dev-secret-change-me',
+      ) as { sub?: string };
+    } catch {
+      return null;
+    }
+
+    if (!payload?.sub) {
+      return null;
+    }
+
+    return this.userRepository.findOne({
+      where: { id: payload.sub, actif: true },
+      relations: ['restaurant'],
+    });
+  }
+
+  @SubscribeMessage('subscribe')
+  async handleSubscribe(@ConnectedSocket() client: Socket) {
+    const user = await this.resolveSocketUser(client);
+
+    if (!user) {
+      client.emit('subscribe.error', { message: 'Unauthorized' });
+      client.disconnect();
+      return { success: false };
+    }
+
+    void client.join(`user:${user.id}`);
+    void client.join(`role:${user.role}`);
+
+    if (
+      user.restaurant?.id &&
+      (user.role === 'STAFF' || user.role === 'GERANT' || user.role === 'ADMIN')
+    ) {
+      void client.join(`restaurant:${user.restaurant.id}:staff`);
+    }
+
+    return {
+      success: true,
+      userId: user.id,
+      role: user.role,
+      restaurantId: user.restaurant?.id,
+    };
   }
 }

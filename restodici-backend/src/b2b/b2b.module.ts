@@ -15,6 +15,7 @@ import { LigneCommandeGroupeeB2B } from './entities/ligne-commande-groupee-b2b.e
 import { AuditLogB2B } from './entities/audit-log-b2b.entity';
 import { FactureMensuelleB2B } from './entities/facture-mensuelle-b2b.entity';
 import { Article } from '../menu/entities/article.entity';
+import { CommandesModule } from '../commandes/commandes.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { Article } from '../menu/entities/article.entity';
       Article,
     ]),
     AuthModule,
+    CommandesModule,
   ],
   controllers: [B2BController],
   providers: [B2BService],

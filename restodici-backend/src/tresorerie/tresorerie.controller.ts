@@ -48,10 +48,10 @@ export class TresorerieController {
       throw new BadRequestException('Restaurant ID required');
     }
 
-    const pdfBuffer = await this.tresorerieService.generateReceiptPdf(
+    const pdfBuffer = await this.tresorerieService.generateReceiptPdf({
       commandeId,
       restaurantId,
-    );
+    });
 
     res.setHeader('Content-Type', 'application/pdf');
     res.setHeader(

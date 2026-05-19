@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Outlet, Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Menu, X, User, LogOut, ChefHat } from 'lucide-react';
+import { ShoppingCart, Menu, X, ChefHat } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 
@@ -11,7 +11,7 @@ export default function ClientLayout() {
 
   // Cart peut ne pas être initialisé si la route n'est pas wrapée par CartProvider.
   // Pour éviter l'écran blanc, on gère ce cas proprement.
-  let totalItems = 0;
+  let totalItems;
   try {
     const cart = useCart();
     totalItems = cart.items.reduce((sum, i) => sum + (i.quantite ?? i.quantity ?? 0), 0);
@@ -71,12 +71,14 @@ export default function ClientLayout() {
               )}
               
               <div className="flex items-center gap-2">
-                {/* Always show profile avatar - default when not logged in, user-specific when logged in */}
                 <Link 
                   to={user ? "/account" : "/login"}
-                  className="w-8 h-8 rounded-full bg-[#E8E2D9] flex items-center justify-center text-[#8B7355] font-medium text-sm hidden sm:flex hover:bg-[#D94500] hover:text-white transition"
+                  className="hidden items-center gap-2 rounded-full border border-[#E8E2D9] bg-[#FFF8F3] px-3 py-1.5 text-sm font-semibold text-[#D94500] transition hover:border-[#D94500] hover:bg-[#FFF1E8] sm:inline-flex"
                 >
-                  {user?.nom?.charAt(0) || '👤'}
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#D94500] text-sm font-bold text-white">
+                    {(user?.prenom?.charAt(0) || user?.nom?.charAt(0) || 'P').toUpperCase()}
+                  </span>
+                  <span>{user ? 'Profil' : 'Connexion'}</span>
                 </Link>
                 {user && (
                   <button 
@@ -84,7 +86,7 @@ export default function ClientLayout() {
                       logout(); 
                       navigate('/login'); 
                     }}
-                    className="text-xs sm:text-sm text-[#8B7355] hover:text-red-600 transition hidden sm:block"
+                    className="hidden text-xs text-[#8B7355] transition hover:text-red-600 sm:block"
                   >
                     Déconnexion
                   </button>

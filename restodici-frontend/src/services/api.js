@@ -2,9 +2,8 @@
 import axios from "axios";
 
 // Vite exposes env vars prefixed with VITE_ to client-side code
-const API_BASE = (
-  import.meta.env.VITE_API_URL || "http://localhost:3000"
-).replace(/\/$/, "");
+const RAW_API_BASE = import.meta.env.VITE_API_URL?.trim();
+const API_BASE = (RAW_API_BASE || "/api").replace(/\/$/, "");
 const API_URL = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
 
 // CRITIQUE : Créer l'instance axios AVANT d'utiliser les interceptors
@@ -138,6 +137,10 @@ export const commandesService = {
 
   // GET /commandes/me — historique client
   getMyOrders: () => api.get("/commandes/me"),
+  getReceiptPdf: (id) =>
+    api.get(`/commandes/${id}/receipt/pdf`, {
+      responseType: "blob",
+    }),
   getRecentOrders: (restaurantId, limit = 50) =>
     api.get("/commandes", { params: { restaurantId, limit } }),
 };
@@ -169,6 +172,7 @@ export const authAPI = {
   login: (credentials) => api.post("/auth/login", credentials),
   register: (data) => api.post("/auth/register", data),
   me: () => api.get("/auth/me"),
+  updateProfile: (data) => api.patch("/auth/me", data),
   logout: () => api.post("/auth/logout"),
 };
 
@@ -198,6 +202,11 @@ export const tresorerieAPI = {
   // POST /tresorerie/budget-alerts
   configureBudgetAlerts: (config) =>
     api.post("/tresorerie/budget-alerts", config),
+};
+
+export const restaurantAPI = {
+  getMine: () => api.get('/restaurants/me/profile'),
+  update: (restaurantId, data) => api.patch(`/restaurants/${restaurantId}`, data),
 };
 
 export const staffAPI = {

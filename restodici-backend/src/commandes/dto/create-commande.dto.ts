@@ -8,7 +8,7 @@ import {
   IsString,
   Min,
   ValidateIf,
-  IsUUID, //  AJOUTER CET IMPORT
+  IsUUID,
 } from 'class-validator';
 import { ModeLivraison } from '../entities/commande.entity';
 
@@ -17,9 +17,15 @@ export class CreateLigneDto {
   @IsString()
   articleId!: string;
 
+  @ValidateIf((o) => o.quantity === undefined)
   @IsNumber()
-  @Min(1) // RG-13
+  @Min(1)
   quantite!: number;
+
+  @ValidateIf((o) => o.quantite === undefined)
+  @IsNumber()
+  @Min(1)
+  quantity?: number;
 
   @IsOptional()
   @IsString()
@@ -29,17 +35,16 @@ export class CreateLigneDto {
 export class CreateCommandeDto {
   @IsArray()
   @IsNotEmpty()
-  lignes!: CreateLigneDto[]; // RG-07
+  lignes!: CreateLigneDto[];
 
   @IsEnum(ModeLivraison)
-  modeLivraison!: ModeLivraison; // RG-08
+  modeLivraison!: ModeLivraison;
 
   @ValidateIf((o) => o.modeLivraison === 'LIVRAISON')
   @IsNotEmpty()
   @IsString()
-  adresseLivraison?: string; // RG-09
+  adresseLivraison?: string;
 
-  //  AJOUT : restaurantId optionnel (pour client qui choisit un resto)
   @IsOptional()
   @IsUUID()
   restaurantId?: string;

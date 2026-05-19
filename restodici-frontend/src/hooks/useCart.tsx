@@ -1,7 +1,7 @@
-// src/hooks/useCart.ts
-import { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 
 export interface CartItem {
+  lineId: string;
   articleId: string;
   nom: string;
   prix: number;
@@ -22,9 +22,15 @@ interface CartContextType {
   items: CartItem[];
   restaurantId: string | null;
   restaurantName: string | null;
-  addItem: (item: Omit<CartItem, 'quantite'> & { restaurantId: string; restaurantName: string }, quantite?: number) => void;
-  updateQuantity: (articleId: string, quantite: number) => void;
-  removeItem: (articleId: string) => void;
+  addItem: (
+    item: Omit<CartItem, 'lineId' | 'quantite'> & {
+      restaurantId: string;
+      restaurantName: string;
+    },
+    quantite?: number,
+  ) => void;
+  updateQuantity: (lineId: string, quantite: number) => void;
+  removeItem: (lineId: string) => void;
   clearCart: () => void;
   total: () => number;
   isEmpty: () => boolean;
@@ -32,116 +38,167 @@ interface CartContextType {
   checkExpiration: () => boolean;
 }
 
-const CART_TTL_MS = 30 * 60 * 1000; // 30 minutes
+const CART_TTL_MS = 30 * 60 * 1000;
 const CART_STORAGE_KEY = 'cart';
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-export function CartProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<CartItem[]>(() => {
-    if (typeof window === 'undefined') return [];
-    try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
-      if (!raw) return [];
+function createLineId() {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
 
-      const saved: SavedCart = JSON.parse(raw);
-      if (Date.now() - saved.updatedAt > CART_TTL_MS) {
-        localStorage.removeItem(CART_STORAGE_KEY);
-        return [];
+  return `line-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+}
+
+function normalizeSavedItems(rawItems: unknown): CartItem[] {
+  if (!Array.isArray(rawItems)) {
+    return [];
+  }
+
+  return rawItems
+    .map((item, index) => {
+      if (!item || typeof item !== 'object') {
+        return null;
       }
 
-      return saved.items ?? [];
-    } catch {
-      return [];
-    }
-  });
+      const current = item as Partial<CartItem>;
+      if (!current.articleId || !current.nom) {
+        return null;
+      }
 
-  const [restaurantId, setRestaurantId] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
-      if (!raw) return null;
-      const saved: SavedCart = JSON.parse(raw);
-      return saved.restaurantId || null;
-    } catch {
+      return {
+        lineId: current.lineId || `${current.articleId}-${index}`,
+        articleId: current.articleId,
+        nom: current.nom,
+        prix: Number(current.prix || 0),
+        photoUrl: current.photoUrl,
+        quantite: Math.max(1, Number(current.quantite || 1)),
+        instructions: current.instructions,
+        categorie: current.categorie,
+      };
+    })
+    .filter(Boolean) as CartItem[];
+}
+
+function readSavedCart(): SavedCart | null {
+  if (typeof window === 'undefined') {
+    return null;
+  }
+
+  try {
+    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    if (!raw) {
       return null;
     }
-  });
 
-  const [restaurantName, setRestaurantName] = useState<string | null>(() => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
-      if (!raw) return null;
-      const saved: SavedCart = JSON.parse(raw);
-      return saved.restaurantName || null;
-    } catch {
+    const saved = JSON.parse(raw) as SavedCart;
+    if (Date.now() - saved.updatedAt > CART_TTL_MS) {
+      localStorage.removeItem(CART_STORAGE_KEY);
       return null;
     }
-  });
+
+    return {
+      items: normalizeSavedItems(saved.items),
+      restaurantId: saved.restaurantId || null,
+      restaurantName: saved.restaurantName || null,
+      updatedAt: saved.updatedAt,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function CartProvider({ children }: { children: ReactNode }) {
+  const savedCart = readSavedCart();
+
+  const [items, setItems] = useState<CartItem[]>(savedCart?.items || []);
+  const [restaurantId, setRestaurantId] = useState<string | null>(
+    savedCart?.restaurantId || null,
+  );
+  const [restaurantName, setRestaurantName] = useState<string | null>(
+    savedCart?.restaurantName || null,
+  );
 
   useEffect(() => {
-    const payload: SavedCart = { 
-      items, 
-      restaurantId, 
+    const payload: SavedCart = {
+      items,
+      restaurantId,
       restaurantName,
-      updatedAt: Date.now() 
+      updatedAt: Date.now(),
     };
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(payload));
   }, [items, restaurantId, restaurantName]);
 
-  const addItem = (item: Omit<CartItem, 'quantite'> & { restaurantId: string; restaurantName: string }, quantite = 1) => {
-    // Check if cart already has items from a different restaurant
+  const addItem = (
+    item: Omit<CartItem, 'lineId' | 'quantite'> & {
+      restaurantId: string;
+      restaurantName: string;
+    },
+    quantite = 1,
+  ) => {
     if (restaurantId && restaurantId !== item.restaurantId) {
-      // Clear cart if switching restaurants
-      if (confirm(`Votre panier contient des articles de ${restaurantName}. Voulez-vous vider le panier pour ajouter des articles de ${item.restaurantName}?`)) {
-        setItems([]);
+      if (
+        confirm(
+          `Votre panier contient des articles de ${restaurantName}. Voulez-vous vider le panier pour ajouter des articles de ${item.restaurantName} ?`,
+        )
+      ) {
+        setItems([
+          {
+            ...item,
+            lineId: createLineId(),
+            quantite: Math.max(1, quantite),
+          },
+        ]);
         setRestaurantId(item.restaurantId);
         setRestaurantName(item.restaurantName);
-        setItems(prev => [...prev, { ...item, quantite }]);
       }
       return;
     }
-    
-    // Set restaurant if cart is empty
+
     if (!restaurantId) {
       setRestaurantId(item.restaurantId);
       setRestaurantName(item.restaurantName);
     }
-    
-    setItems(prev => {
-      const existing = prev.find(i => i.articleId === item.articleId);
-      if (existing) {
-        return prev.map(i =>
-          i.articleId === item.articleId ? { ...i, quantite: i.quantite + quantite } : i
-        );
-      }
-      return [...prev, { ...item, quantite }];
-    });
+
+    setItems((prev) => [
+      ...prev,
+      {
+        ...item,
+        lineId: createLineId(),
+        quantite: Math.max(1, quantite),
+      },
+    ]);
   };
 
-  const updateQuantity = (articleId: string, quantite: number) => {
+  const updateQuantity = (lineId: string, quantite: number) => {
     if (quantite <= 0) {
-      setItems(prev => prev.filter(i => i.articleId !== articleId));
-      // If cart becomes empty, clear restaurant info
-      if (items.length === 1) {
-        setRestaurantId(null);
-        setRestaurantName(null);
-      }
-    } else {
-      setItems(prev => prev.map(i => i.articleId === articleId ? { ...i, quantite } : i));
+      setItems((prev) => {
+        const nextItems = prev.filter((item) => item.lineId !== lineId);
+        if (nextItems.length === 0) {
+          setRestaurantId(null);
+          setRestaurantName(null);
+        }
+        return nextItems;
+      });
+      return;
     }
+
+    setItems((prev) =>
+      prev.map((item) =>
+        item.lineId === lineId ? { ...item, quantite: Math.max(1, quantite) } : item,
+      ),
+    );
   };
 
-  const removeItem = (articleId: string) => {
-    setItems(prev => {
-      const newItems = prev.filter(i => i.articleId !== articleId);
-      // If cart becomes empty, clear restaurant info
-      if (newItems.length === 0) {
+  const removeItem = (lineId: string) => {
+    setItems((prev) => {
+      const nextItems = prev.filter((item) => item.lineId !== lineId);
+      if (nextItems.length === 0) {
         setRestaurantId(null);
         setRestaurantName(null);
       }
-      return newItems;
+      return nextItems;
     });
   };
 
@@ -152,11 +209,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   };
 
   const checkExpiration = () => {
-    if (typeof window === 'undefined') return false;
+    if (typeof window === 'undefined') {
+      return false;
+    }
+
     try {
       const raw = localStorage.getItem(CART_STORAGE_KEY);
-      if (!raw) return false;
-      const saved: SavedCart = JSON.parse(raw);
+      if (!raw) {
+        return false;
+      }
+
+      const saved = JSON.parse(raw) as SavedCart;
       const expired = Date.now() - saved.updatedAt > CART_TTL_MS;
       if (expired) {
         setItems([]);
@@ -170,27 +233,29 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const total = () => items.reduce((sum, i) => sum + i.prix * i.quantite, 0);
+  const total = () =>
+    items.reduce((sum, item) => sum + Number(item.prix) * Number(item.quantite), 0);
+
   const isEmpty = () => items.length === 0;
-  
-  const isRestaurantCart = (checkRestaurantId: string) => {
-    return restaurantId === checkRestaurantId;
-  };
+  const isRestaurantCart = (currentRestaurantId: string) =>
+    restaurantId === currentRestaurantId;
 
   return (
-    <CartContext.Provider value={{ 
-      items, 
-      restaurantId, 
-      restaurantName,
-      addItem, 
-      updateQuantity, 
-      removeItem, 
-      clearCart, 
-      total, 
-      isEmpty,
-      isRestaurantCart,
-      checkExpiration
-    }}>
+    <CartContext.Provider
+      value={{
+        items,
+        restaurantId,
+        restaurantName,
+        addItem,
+        updateQuantity,
+        removeItem,
+        clearCart,
+        total,
+        isEmpty,
+        isRestaurantCart,
+        checkExpiration,
+      }}
+    >
       {children}
     </CartContext.Provider>
   );

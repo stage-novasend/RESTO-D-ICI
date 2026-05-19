@@ -7,12 +7,16 @@ import {
   useSearchParams,
 } from "react-router-dom";
 import { useForm } from "react-hook-form";
+import LocationAssistant from "../components/maps/LocationAssistant";
+import {
+  FREQUENT_LOCATION_ZONES,
+  appendUniqueCsvValue,
+} from "../components/maps/locationAssistantData";
 import {
   Mail,
   Lock,
   User,
   Store,
-  MapPin,
   Phone,
   Building2,
   ChefHat,
@@ -37,6 +41,8 @@ export default function Register() {
   const {
     register,
     handleSubmit,
+    setValue,
+    watch,
     formState: { errors },
   } = useForm();
   const [loading, setLoading] = useState(false);
@@ -45,6 +51,8 @@ export default function Register() {
   // Determine user type from URL parameters
   const userType = normalizeUserType(searchParams.get("type"));
   const isRestaurant = userType === "restaurant";
+  const watchedAddress = watch("adresse") || "";
+  const watchedDeliveryZones = watch("zonesLivraison") || "";
 
   const onSubmit = async (data) => {
     setLoading(true);
@@ -470,25 +478,49 @@ export default function Register() {
                     )}
                   </div>
 
-                  <div className="space-y-2">
-                    <label className="text-sm font-semibold text-[#2D2720]">
-                      Adresse *
-                    </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3.5 top-3.5 w-5 h-5 text-[#8B7355]" />
-                      <input
-                        {...register("adresse", {
-                          required: "Adresse requise",
-                        })}
-                        placeholder="Adresse complète du restaurant"
-                        className="block w-full pl-10 pr-3 py-3 bg-[#F9F7F5] border border-[#E8E2D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D94500] focus:border-transparent transition-all"
-                      />
-                    </div>
-                    {errors.adresse && (
-                      <p className="text-red-500 text-xs mt-1">
-                        {errors.adresse.message}
-                      </p>
-                    )}
+                  <div>
+                    <input
+                      type="hidden"
+                      {...register("adresse", {
+                        required: "Adresse requise",
+                      })}
+                    />
+                    <input type="hidden" {...register("zonesLivraison")} />
+                    <LocationAssistant
+                      title="Adresse du restaurant"
+                      description="Utilisez une zone fréquente ou la carte pour renseigner rapidement l’adresse et les zones de livraison."
+                      tone="orange"
+                      addressLabel="Adresse du restaurant"
+                      addressValue={watchedAddress}
+                      onAddressChange={(value) => {
+                        setValue("adresse", value, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }}
+                      addressPlaceholder="Adresse complète du restaurant"
+                      zoneLabel="Zones de livraison (CSV)"
+                      zoneValue={watchedDeliveryZones}
+                      onZoneChange={(value, zone) => {
+                        const nextValue = zone
+                          ? appendUniqueCsvValue(watchedDeliveryZones, zone.name)
+                          : value;
+                        setValue("zonesLivraison", nextValue, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        });
+                      }}
+                      onMapChange={({ address }) => {
+                        if (address) {
+                          setValue("adresse", address, {
+                            shouldDirty: true,
+                            shouldValidate: true,
+                          });
+                        }
+                      }}
+                      frequentZones={FREQUENT_LOCATION_ZONES}
+                      errorAddress={errors.adresse?.message}
+                    />
                   </div>
                 </div>
 
@@ -520,10 +552,17 @@ export default function Register() {
                     <label className="text-sm font-semibold text-[#2D2720]">
                       Zones de livraison
                     </label>
-                    <input
-                      {...register("zonesLivraison")}
+                    <textarea
+                      value={watchedDeliveryZones}
+                      onChange={(event) =>
+                        setValue("zonesLivraison", event.target.value, {
+                          shouldDirty: true,
+                          shouldValidate: true,
+                        })
+                      }
                       placeholder="Abidjan, Cocody, Plateau (séparées par des virgules)"
                       className="block w-full px-3 py-3 bg-[#F9F7F5] border border-[#E8E2D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D94500] focus:border-transparent transition-all"
+                      rows="2"
                     />
                   </div>
                 </div>
@@ -627,23 +666,45 @@ export default function Register() {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-semibold text-[#2D2720]">
-                  Adresse *
-                </label>
-                <div className="relative">
-                  <MapPin className="absolute left-3.5 top-3.5 w-5 h-5 text-[#8B7355]" />
-                  <input
-                    {...register("adresse", { required: "Adresse requise" })}
-                    placeholder="Adresse complète de l'entreprise"
-                    className="block w-full pl-10 pr-3 py-3 bg-[#F9F7F5] border border-[#E8E2D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#2ECC71] focus:border-transparent transition-all"
-                  />
-                </div>
-                {errors.adresse && (
-                  <p className="text-red-500 text-xs mt-1">
-                    {errors.adresse.message}
-                  </p>
-                )}
+              <div>
+                <input
+                  type="hidden"
+                  {...register("adresse", { required: "Adresse requise" })}
+                />
+                <LocationAssistant
+                  title="Localisation de l'entreprise"
+                  description="Choisissez une zone fréquente ou précisez le point exact sur la carte."
+                  tone="green"
+                  addressLabel="Adresse de l'entreprise"
+                  addressValue={watchedAddress}
+                  onAddressChange={(value) => {
+                    setValue("adresse", value, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    });
+                  }}
+                  onZoneChange={(value, zone) => {
+                    const nextAddress = zone?.address || value;
+                    if (nextAddress) {
+                      setValue("adresse", nextAddress, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
+                  onMapChange={({ address }) => {
+                    if (address) {
+                      setValue("adresse", address, {
+                        shouldDirty: true,
+                        shouldValidate: true,
+                      });
+                    }
+                  }}
+                  zoneValue=""
+                  showZoneField={false}
+                  frequentZones={FREQUENT_LOCATION_ZONES}
+                  errorAddress={errors.adresse?.message}
+                />
               </div>
 
               <div className="space-y-2">

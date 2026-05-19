@@ -10,6 +10,7 @@ import {
   Res,
   HttpCode,
   HttpStatus,
+  Patch,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { AuthService } from './auth.service';
@@ -34,7 +35,22 @@ export class AuthController {
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
   me(@Req() req: { user: Record<string, any> }) {
-    return req.user;
+    return this.authService.getProfile(req.user.id);
+  }
+
+  @Patch('me')
+  @UseGuards(AuthGuard('jwt'))
+  updateMe(
+    @Req() req: { user: Record<string, any> },
+    @Body()
+    body: {
+      nom?: string;
+      prenom?: string;
+      email?: string;
+      telephone?: string;
+    },
+  ) {
+    return this.authService.updateProfile(req.user.id, body);
   }
 
   @Post('logout')
