@@ -33,7 +33,7 @@ export class CommandesController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('CLIENT', 'B2B')
+  @Roles('CLIENT')
   async create(
     @Body() dto: CreateCommandeDto,
     @Req() req: any,
@@ -67,7 +67,7 @@ export class CommandesController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('CLIENT', 'B2B')
+  @Roles('CLIENT')
   async findMyOrders(@Req() req: any) {
     return this.commandesService.findAllByUser(req.user.id);
   }

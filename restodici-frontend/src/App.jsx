@@ -60,6 +60,14 @@ function ProtectedCheckoutRoute({ children }) {
   if (!user) {
     return <Navigate to="/login" state={{ redirect: 'checkout' }} replace />;
   }
+
+  if (user.role !== 'CLIENT') {
+    if (user.role === 'B2B') return <Navigate to="/b2b/dashboard" replace />;
+    if (user.role === 'STAFF') return <Navigate to="/staff" replace />;
+    if (user.role === 'GERANT') return <Navigate to="/gerant" replace />;
+    return <Navigate to="/" replace />;
+  }
+
   return children;
 }
 
