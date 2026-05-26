@@ -30,15 +30,15 @@ export default function KitchenDisplay() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {orders.map(order => (
-          <div key={order.id} className="bg-[#292524] rounded-2xl p-5 border border-[#44403C] shadow-lg relative overflow-hidden">
+          <div key={order.id} className="bg-[#292524] rounded-2xl p-5 border border-[#1A1A1A] shadow-lg relative overflow-hidden">
             <div className={`absolute top-0 left-0 w-full h-1 ${order.statut === 'RECUE' ? 'bg-red-500' : order.statut === 'EN_PREP' ? 'bg-orange-500' : 'bg-green-500'}`} />
             
             <div className="flex justify-between items-start mb-4">
               <div>
                 <p className="text-lg font-bold">#{order.numero}</p>
-                <p className="text-xs text-gray-400 flex items-center gap-1"><Clock className="w-3 h-3"/> {new Date(order.createdAt).toLocaleTimeString()}</p>
+                <p className="text-xs text-[#9A7060] flex items-center gap-1"><Clock className="w-3 h-3"/> {new Date(order.createdAt).toLocaleTimeString()}</p>
               </div>
-              <span className="px-2 py-1 bg-[#44403C] rounded text-xs font-medium">{order.modeLivraison.replace('_', ' ')}</span>
+              <span className="px-2 py-1 bg-[#1A1A1A] rounded text-xs font-medium">{order.modeLivraison.replace('_', ' ')}</span>
             </div>
 
             <div className="space-y-2 mb-4 max-h-48 overflow-y-auto">

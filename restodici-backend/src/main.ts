@@ -1,4 +1,5 @@
 // src/main.ts
+import 'dotenv/config'; // ← charge .env avant tout le reste
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
@@ -11,7 +12,7 @@ async function bootstrap() {
 
   // Validation automatique des DTOs
   app.useGlobalPipes(
-    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),
   );
 
   // CORS pour le frontend React - supporte tous les ports de développement courants

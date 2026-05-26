@@ -24,11 +24,11 @@ function getToneStyles(tone) {
   }
 
   return {
-    badge: 'bg-[#FFF1E8] text-[#FF6B35]',
-    chip: 'border-[#FFD8CC] bg-[#FFF8F3] text-[#C45126] hover:border-[#FF6B35] hover:bg-[#FFF1E8]',
+    badge: 'bg-[#FBE8DC] text-[#E8906A]',
+    chip: 'border-[#FFD8CC] bg-[#FBE8DC] text-[#7A2E0A] hover:border-[#E8906A] hover:bg-[#FBE8DC]',
     card: 'border-[#F4DED3] bg-[#FFFCFA]',
-    input: 'focus:border-[#FF6B35] focus:ring-[#FF6B35]/15',
-    icon: 'text-[#FF6B35]',
+    input: 'focus:border-[#E8906A] focus:ring-[#E8906A]/15',
+    icon: 'text-[#E8906A]',
   };
 }
 
@@ -70,7 +70,7 @@ export default function LocationAssistant({
             <Sparkles className="h-3.5 w-3.5" />
             Zones fréquentes
           </span>
-          <h4 className="mt-3 text-base font-bold text-[#2D2720]">{title}</h4>
+          <h4 className="mt-3 text-base font-bold text-[#0F172A]">{title}</h4>
           <p className="mt-1 text-sm text-[#7A6A58]">{description}</p>
         </div>
       </div>
@@ -92,16 +92,16 @@ export default function LocationAssistant({
         <div className="space-y-4">
           {showZoneField && (
             <div>
-              <label className="mb-2 block text-sm font-semibold text-[#2D2720]">{zoneLabel}</label>
+              <label className="mb-2 block text-sm font-semibold text-[#0F172A]">{zoneLabel}</label>
               <div className="relative">
-                <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8B7355]" />
+                <MapPin className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#737373]" />
                 <input
                   type="text"
                   value={zoneValue}
                   onChange={(event) => onZoneChange?.(event.target.value)}
                   placeholder="Ex: Cocody"
                   className={`w-full rounded-2xl border bg-white py-3 pl-11 pr-4 outline-none transition ${styles.input} ${
-                    errorZone ? 'border-red-300 bg-red-50' : 'border-[#E8E2D9]'
+                    errorZone ? 'border-red-300 bg-red-50' : 'border-[#E2E8F0]'
                   }`}
                 />
               </div>
@@ -110,14 +110,14 @@ export default function LocationAssistant({
           )}
 
           <div>
-            <label className="mb-2 block text-sm font-semibold text-[#2D2720]">{addressLabel}</label>
+            <label className="mb-2 block text-sm font-semibold text-[#0F172A]">{addressLabel}</label>
             <textarea
               value={addressValue}
               onChange={(event) => onAddressChange?.(event.target.value)}
               rows={3}
               placeholder={addressPlaceholder}
               className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition ${styles.input} ${
-                errorAddress ? 'border-red-300 bg-red-50' : 'border-[#E8E2D9]'
+                errorAddress ? 'border-red-300 bg-red-50' : 'border-[#E2E8F0]'
               }`}
             />
             {errorAddress && <p className="mt-2 text-sm font-medium text-red-600">{errorAddress}</p>}
@@ -126,7 +126,7 @@ export default function LocationAssistant({
 
         {showMap && (
           <div>
-            <p className="mb-2 text-sm font-semibold text-[#2D2720]">Carte</p>
+            <p className="mb-2 text-sm font-semibold text-[#0F172A]">Carte</p>
             <DeliveryMap value={mapValue} onChange={onMapChange} heightClassName="h-72" />
           </div>
         )}

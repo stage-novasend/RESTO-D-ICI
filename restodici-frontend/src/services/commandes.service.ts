@@ -28,12 +28,14 @@ export const createCommandesSocket = (user: {
   const restaurantId = user?.restaurant?.id;
 
   const socket = io(`${socketBase}/commandes`, {
-    // allow polling first then upgrade to websocket for more robust local dev
+    // polling first for the initial Engine.IO handshake (avoids "closed before established"
+    // through Vite proxy); socket.io-client upgrades to WebSocket automatically after connect
     transports: ["polling", "websocket"],
     auth: { token },
     reconnection: true,
     reconnectionAttempts: Infinity,
     reconnectionDelay: 1000,
+    reconnectionDelayMax: 5000,
     timeout: 20000,
   });
 
@@ -76,7 +78,17 @@ export const createCommandesSocket = (user: {
 };
 
 export const commandesService = {
-  create: (data: any) => API.post("/commandes", data),
+  create: (data: any) => {
+    const payload = { ...data };
+    if (!payload.restaurantId) {
+      try {
+        const user = JSON.parse(localStorage.getItem("user") || "{}");
+        const rid = user?.restaurant?.id || localStorage.getItem("currentRestaurantId");
+        if (rid) payload.restaurantId = rid;
+      } catch { /* ignore */ }
+    }
+    return API.post("/commandes", payload);
+  },
   getAll: (params?: any) => API.get("/commandes", { params }),
   getRecentOrders: async (restaurantId: string, limit = 50) => {
     const { data } = await API.get("/commandes", {
@@ -92,7 +104,14 @@ export const commandesService = {
     API.patch(`/commandes/${id}/statut`, { statut }),
   registerPayment: (
     id: string,
-    payload: { montantRemis: number; modePaiement: "ESPECES" | "LIVRAISON" },
+    payload: { montantRemis: number; modePaiement: string },
   ) => API.patch(`/commandes/${id}/paiement`, payload),
+  clientRegisterPayment: (id: string, modePaiement: string) =>
+    API.patch(`/commandes/${id}/client-paiement`, { modePaiement }),
+  submitAvis: (id: string, note: number, commentaire?: string) =>
+    API.post(`/commandes/${id}/avis`, { note, commentaire }),
+  getAvisForOrder: (id: string) => API.get(`/commandes/${id}/avis`),
   getKDS: () => API.get("/commandes/kds"),
+  getReceiptPdf: (id: string) =>
+    API.get(`/commandes/${id}/receipt/pdf`, { responseType: "arraybuffer" }),
 };

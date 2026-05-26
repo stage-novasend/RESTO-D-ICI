@@ -75,7 +75,13 @@ export function AuthProvider({ children }) {
   const login = useCallback(async (email, password) => {
     try {
       const data = await authService.login(email, password);
-      const { access_token, token, user: userData } = data;
+      const { access_token, token, user: userData, requiresTwoFactor, tempToken } = data;
+
+      // 2FA required — pass through without setting auth state
+      if (requiresTwoFactor && tempToken) {
+        return { success: false, requiresTwoFactor: true, tempToken };
+      }
+
       const jwtToken = access_token ?? token;
 
       if (!jwtToken || !userData) {
@@ -84,6 +90,9 @@ export function AuthProvider({ children }) {
 
       localStorage.setItem("token", jwtToken);
       localStorage.setItem("user", JSON.stringify(userData));
+      // Clear stale restaurant selection from previous sessions
+      localStorage.removeItem("selectedRestaurantId");
+      localStorage.removeItem("currentRestaurantId");
       setUser({ ...userData, token: jwtToken });
 
       return { success: true, user: userData };
@@ -99,16 +108,11 @@ export function AuthProvider({ children }) {
   const register = useCallback(async (userData) => {
     try {
       const data = await authService.register(userData);
-      const { access_token, token, user: newUser } = data;
-      const jwtToken = access_token ?? token;
-
-      if (!jwtToken || !newUser) {
+      const { user: newUser } = data;
+      if (!newUser) {
         return { success: false, error: "Réponse invalide du serveur" };
       }
-
-      localStorage.setItem("token", jwtToken);
-      localStorage.setItem("user", JSON.stringify(newUser));
-      setUser({ ...newUser, token: jwtToken });
+      // Ne pas auto-connecter après inscription : l'email doit être vérifié d'abord
       return { success: true, user: newUser };
     } catch (error) {
       console.error("Register error:", error);

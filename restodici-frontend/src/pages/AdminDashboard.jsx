@@ -13,16 +13,16 @@ import {
 
 // Palette "Savane Moderne" — Conforme CDC §10
 const COLORS = {
-  bg: 'bg-[#F9F7F5]',
-  text: 'text-[#2D2720]',
-  textMuted: 'text-[#8B7355]',
-  primary: 'text-[#D94500]',
-  primaryBg: 'bg-[#D94500]',
-  primaryHover: 'hover:bg-[#B83A00]',
+  bg: 'bg-white',
+  text: 'text-[#0F172A]',
+  textMuted: 'text-[#737373]',
+  primary: 'text-[#C05015]',
+  primaryBg: 'bg-[#C05015]',
+  primaryHover: 'hover:bg-[#9A3E10]',
   success: 'text-[#2ECC71]',
   successBg: 'bg-[#2ECC71]',
   card: 'bg-white',
-  border: 'border-[#E8E2D9]',
+  border: 'border-[#E2E8F0]',
 };
 
 // Statuts de commande (RG-10)
@@ -173,7 +173,7 @@ export default function AdminDashboard() {
     toast.className = `fixed bottom-4 right-4 px-4 py-3 rounded-xl shadow-lg z-50 text-sm font-medium animate-fade-in ${
       type === 'success' ? 'bg-[#2ECC71] text-white' :
       type === 'error' ? 'bg-red-500 text-white' :
-      'bg-[#2D2720] text-white'
+      'bg-[#0F172A] text-white'
     }`;
     toast.textContent = message;
     document.body.appendChild(toast);
@@ -194,8 +194,8 @@ export default function AdminDashboard() {
   // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#F9F7F5]">
-        <Loader2 className="w-10 h-10 text-[#D94500] animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-white">
+        <Loader2 className="w-10 h-10 text-[#C05015] animate-spin" />
       </div>
     );
   }
@@ -219,7 +219,7 @@ export default function AdminDashboard() {
           
           <div className="flex items-center gap-3">
             {/* Notifications */}
-            <button className="relative p-2 hover:bg-[#F9F7F5] rounded-lg transition-colors">
+            <button className="relative p-2 hover:bg-white rounded-lg transition-colors">
               <Bell className="w-5 h-5" />
               {stats.alertesStock > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -230,10 +230,10 @@ export default function AdminDashboard() {
             
             {/* User menu */}
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-[#E8E2D9] rounded-full flex items-center justify-center text-sm font-medium">
+              <div className="w-8 h-8 bg-[#E2E8F0] rounded-full flex items-center justify-center text-sm font-medium">
                 {user?.nom?.charAt(0) || 'G'}
               </div>
-              <button onClick={handleLogout} className={`p-2 hover:bg-[#F9F7F5] rounded-lg transition-colors ${COLORS.textMuted} hover:${COLORS.primary}`}>
+              <button onClick={handleLogout} className={`p-2 hover:bg-white rounded-lg transition-colors ${COLORS.textMuted} hover:${COLORS.primary}`}>
                 <LogOut className="w-5 h-5" />
               </button>
             </div>
@@ -255,7 +255,7 @@ export default function AdminDashboard() {
                   className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                     isActive 
                       ? `${COLORS.primaryBg} text-white shadow-sm` 
-                      : `${COLORS.textMuted} hover:${COLORS.text} hover:bg-[#F9F7F5]`
+                      : `${COLORS.textMuted} hover:${COLORS.text} hover:bg-white`
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -281,7 +281,7 @@ export default function AdminDashboard() {
                 label="CA Aujourd'hui"
                 value={`${stats.caJour.toLocaleString()} FCFA`}
                 trend="+12%"
-                color="bg-[#FFF5EB]"
+                color="bg-[#FBE8DC]"
               />
               <KPICard 
                 icon={<Package className="w-5 h-5 text-blue-600" />}
@@ -337,15 +337,15 @@ export default function AdminDashboard() {
               
               {/* Commandes récentes */}
               <div className={`${COLORS.card} rounded-2xl ${COLORS.border} border overflow-hidden`}>
-                <div className="px-6 py-4 border-b border-[#E8E2D9] flex items-center justify-between">
+                <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
                   <h3 className="font-bold">Commandes récentes</h3>
                   <Link to="/admin/commandes" className={`text-sm ${COLORS.primary} font-medium hover:underline`}>
                     Voir tout →
                   </Link>
                 </div>
-                <div className="divide-y divide-[#E8E2D9]">
+                <div className="divide-y divide-[#E2E8F0]">
                   {recentOrders.map(order => (
-                    <div key={order.id} className="px-6 py-4 flex items-center justify-between hover:bg-[#F9F7F5]">
+                    <div key={order.id} className="px-6 py-4 flex items-center justify-between hover:bg-white">
                       <div>
                         <p className="font-medium">#{order.numero}</p>
                         <p className={`text-sm ${COLORS.textMuted}`}>
@@ -354,7 +354,7 @@ export default function AdminDashboard() {
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-[#D94500]">{Number(order.montantTotal).toLocaleString()} FCFA</p>
+                        <p className="font-bold text-[#C05015]">{Number(order.montantTotal).toLocaleString()} FCFA</p>
                         <span className={`text-xs px-2 py-1 rounded-full ${ORDER_STATUS[order.statut]?.color}`}>
                           {ORDER_STATUS[order.statut]?.label}
                         </span>
@@ -366,7 +366,7 @@ export default function AdminDashboard() {
 
               {/* Alertes stock (US-21) */}
               <div className={`${COLORS.card} rounded-2xl ${COLORS.border} border overflow-hidden`}>
-                <div className="px-6 py-4 border-b border-[#E8E2D9] flex items-center justify-between">
+                <div className="px-6 py-4 border-b border-[#E2E8F0] flex items-center justify-between">
                   <h3 className="font-bold flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-orange-500" />
                     Alertes stock (RG-22)
@@ -375,11 +375,11 @@ export default function AdminDashboard() {
                     Gérer →
                   </Link>
                 </div>
-                <div className="divide-y divide-[#E8E2D9]">
+                <div className="divide-y divide-[#E2E8F0]">
                   {stockAlerts.length > 0 ? stockAlerts.map(article => (
                     <div key={article.id} className="px-6 py-4 flex items-center justify-between">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden">
+                        <div className="w-10 h-10 rounded-lg bg-[#FBE8DC] overflow-hidden">
                           {article.photoUrl ? (
                             <img src={article.photoUrl} alt={article.nom} className="w-full h-full object-cover" />
                           ) : (
@@ -398,7 +398,7 @@ export default function AdminDashboard() {
                       </button>
                     </div>
                   )) : (
-                    <div className="px-6 py-8 text-center text-[#8B7355]">
+                    <div className="px-6 py-8 text-center text-[#737373]">
                       <CheckCircle className="w-8 h-8 mx-auto mb-2 text-[#2ECC71]" />
                       <p>Tous les stocks sont au-dessus des seuils</p>
                     </div>
@@ -421,7 +421,7 @@ export default function AdminDashboard() {
                 <p className={`text-sm ${COLORS.textMuted}`}>Activez/désactivez des articles, gérez les catégories</p>
               </div>
               <div className="flex gap-2">
-                <button className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${COLORS.border} hover:bg-[#F9F7F5] transition-colors`}>
+                <button className={`flex items-center gap-2 px-4 py-2 rounded-lg border ${COLORS.border} hover:bg-white transition-colors`}>
                   <Filter className="w-4 h-4" /> Filtres
                 </button>
                 <button className={`flex items-center gap-2 px-4 py-2 rounded-lg ${COLORS.primaryBg} text-white hover:opacity-90 transition-colors`}>
@@ -433,7 +433,7 @@ export default function AdminDashboard() {
             {/* Liste articles */}
             <div className={`${COLORS.card} rounded-2xl ${COLORS.border} border overflow-hidden`}>
               {/* Table header */}
-              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-[#FAFAFA] text-xs font-medium uppercase tracking-wider text-[#8B7355]">
+              <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-3 bg-white text-xs font-medium uppercase tracking-wider text-[#737373]">
                 <div className="col-span-5">Article</div>
                 <div className="col-span-2">Catégorie</div>
                 <div className="col-span-2">Prix</div>
@@ -442,14 +442,14 @@ export default function AdminDashboard() {
               </div>
               
               {/* Articles */}
-              <div className="divide-y divide-[#E8E2D9]">
+              <div className="divide-y divide-[#E2E8F0]">
                 {articles.map(article => (
-                  <div key={article.id} className="px-6 py-4 hover:bg-[#F9F7F5] transition-colors">
+                  <div key={article.id} className="px-6 py-4 hover:bg-white transition-colors">
                     <div className="flex flex-col md:grid md:grid-cols-12 md:gap-4 md:items-center">
                       
                       {/* Article info */}
                       <div className="col-span-5 flex items-center gap-4 mb-3 md:mb-0">
-                        <div className="w-14 h-14 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-[#E8E2D9]">
+                        <div className="w-14 h-14 rounded-xl bg-[#FBE8DC] overflow-hidden flex-shrink-0 border border-[#E2E8F0]">
                           {article.photoUrl ? (
                             <img src={article.photoUrl} alt={article.nom} className="w-full h-full object-cover" />
                           ) : (
@@ -470,7 +470,7 @@ export default function AdminDashboard() {
                       </div>
                       
                       {/* Price */}
-                      <div className="col-span-2 font-bold text-[#D94500]">
+                      <div className="col-span-2 font-bold text-[#C05015]">
                         {Number(article.prix).toLocaleString()} FCFA
                       </div>
                       
@@ -504,7 +504,7 @@ export default function AdminDashboard() {
                             {article.disponible ? (
                               <ToggleRight className="w-3 h-3 text-[#2ECC71]" />
                             ) : (
-                              <ToggleLeft className="w-3 h-3 text-gray-400" />
+                              <ToggleLeft className="w-3 h-3 text-[#9A7060]" />
                             )}
                           </span>
                         </button>
@@ -514,11 +514,11 @@ export default function AdminDashboard() {
                           <button className="p-1 hover:bg-gray-200 rounded">
                             <ChevronDown className="w-4 h-4" />
                           </button>
-                          <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-[#E8E2D9] py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-                            <button className="w-full px-4 py-2 text-left text-sm hover:bg-[#F9F7F5] flex items-center gap-2">
+                          <div className="absolute right-0 mt-1 w-40 bg-white rounded-xl shadow-lg border border-[#E2E8F0] py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
+                            <button className="w-full px-4 py-2 text-left text-sm hover:bg-white flex items-center gap-2">
                               <Eye className="w-4 h-4" /> Voir
                             </button>
-                            <button className="w-full px-4 py-2 text-left text-sm hover:bg-[#F9F7F5] flex items-center gap-2">
+                            <button className="w-full px-4 py-2 text-left text-sm hover:bg-white flex items-center gap-2">
                               <Edit2 className="w-4 h-4" /> Modifier
                             </button>
                             <button className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center gap-2">
@@ -543,14 +543,14 @@ export default function AdminDashboard() {
               <h2 className="text-xl font-bold">Suivi des Commandes</h2>
               <div className="flex gap-2">
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#9A7060]" />
                   <input 
                     type="text" 
                     placeholder="Rechercher..." 
-                    className="pl-9 pr-4 py-2 border border-[#E8E2D9] rounded-lg text-sm focus:ring-2 focus:ring-[#D94500]"
+                    className="pl-9 pr-4 py-2 border border-[#E2E8F0] rounded-lg text-sm focus:ring-2 focus:ring-[#C05015]"
                   />
                 </div>
-                <button className="p-2 border border-[#E8E2D9] rounded-lg hover:bg-[#F9F7F5]">
+                <button className="p-2 border border-[#E2E8F0] rounded-lg hover:bg-white">
                   <RefreshCw className="w-4 h-4" />
                 </button>
               </div>
@@ -560,7 +560,7 @@ export default function AdminDashboard() {
             <div className={`${COLORS.card} rounded-2xl ${COLORS.border} border overflow-hidden`}>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-[#FAFAFA] text-xs font-medium uppercase tracking-wider text-[#8B7355]">
+                  <thead className="bg-white text-xs font-medium uppercase tracking-wider text-[#737373]">
                     <tr>
                       <th className="px-6 py-3 text-left">Commande</th>
                       <th className="px-6 py-3 text-left">Client</th>
@@ -570,9 +570,9 @@ export default function AdminDashboard() {
                       <th className="px-6 py-3 text-right">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#E8E2D9]">
+                  <tbody className="divide-y divide-[#E2E8F0]">
                     {recentOrders.map(order => (
-                      <tr key={order.id} className="hover:bg-[#F9F7F5]">
+                      <tr key={order.id} className="hover:bg-white">
                         <td className="px-6 py-4">
                           <p className="font-medium">#{order.numero}</p>
                           <p className={`text-xs ${COLORS.textMuted}`}>
@@ -586,7 +586,7 @@ export default function AdminDashboard() {
                         <td className="px-6 py-4">
                           <span className="text-sm">{order.modeLivraison?.replace('_', ' ')}</span>
                         </td>
-                        <td className="px-6 py-4 font-bold text-[#D94500]">
+                        <td className="px-6 py-4 font-bold text-[#C05015]">
                           {Number(order.montantTotal).toLocaleString()} FCFA
                         </td>
                         <td className="px-6 py-4">
@@ -634,7 +634,7 @@ export default function AdminDashboard() {
                 {stockAlerts.map(article => (
                   <div key={article.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden">
+                      <div className="w-12 h-12 rounded-lg bg-[#FBE8DC] overflow-hidden">
                         {article.photoUrl ? (
                           <img src={article.photoUrl} alt={article.nom} className="w-full h-full object-cover" />
                         ) : (
@@ -652,25 +652,25 @@ export default function AdminDashboard() {
                       <button className="px-3 py-1.5 text-sm bg-white border border-orange-300 rounded-lg hover:bg-orange-50">
                         Voir détails
                       </button>
-                      <button className="px-3 py-1.5 text-sm bg-[#D94500] text-white rounded-lg hover:opacity-90">
+                      <button className="px-3 py-1.5 text-sm bg-[#C05015] text-white rounded-lg hover:opacity-90">
                         Commander
                       </button>
                     </div>
                   </div>
                 ))}
                 {stockAlerts.length === 0 && (
-                  <p className="text-center text-[#8B7355] py-4">Aucune alerte — tous les stocks sont OK ✅</p>
+                  <p className="text-center text-[#737373] py-4">Aucune alerte — tous les stocks sont OK ✅</p>
                 )}
               </div>
             </div>
 
             {/* Tableau stocks */}
             <div className={`${COLORS.card} rounded-2xl ${COLORS.border} border overflow-hidden`}>
-              <div className="px-6 py-4 border-b border-[#E8E2D9]">
+              <div className="px-6 py-4 border-b border-[#E2E8F0]">
                 <h3 className="font-bold">Inventaire en temps réel (US-20)</h3>
               </div>
               <table className="w-full">
-                <thead className="bg-[#FAFAFA] text-xs font-medium uppercase tracking-wider text-[#8B7355]">
+                <thead className="bg-white text-xs font-medium uppercase tracking-wider text-[#737373]">
                   <tr>
                     <th className="px-6 py-3 text-left">Article</th>
                     <th className="px-6 py-3 text-left">Stock Actuel</th>
@@ -680,9 +680,9 @@ export default function AdminDashboard() {
                     <th className="px-6 py-3 text-right">Action</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-[#E8E2D9]">
+                <tbody className="divide-y divide-[#E2E8F0]">
                   {articles.map(article => (
-                    <tr key={article.id} className="hover:bg-[#F9F7F5]">
+                    <tr key={article.id} className="hover:bg-white">
                       <td className="px-6 py-4">
                         <p className="font-medium">{article.nom}</p>
                         <p className={`text-xs ${COLORS.textMuted}`}>{article.categorie?.nom}</p>
@@ -728,11 +728,11 @@ export default function AdminDashboard() {
                 color="bg-[#E6F7ED]"
               />
               <KPICard 
-                icon={<TrendingUp className="w-5 h-5 text-[#D94500]" />}
+                icon={<TrendingUp className="w-5 h-5 text-[#C05015]" />}
                 label="Marge Brute"
                 value={`${stats.margeBrute}%`}
                 trend="Objectif: 70%"
-                color="bg-[#FFF5EB]"
+                color="bg-[#FBE8DC]"
               />
               <KPICard 
                 icon={<Package className="w-5 h-5 text-blue-600" />}
@@ -759,21 +759,21 @@ export default function AdminDashboard() {
                     { label: 'Orange Money', value: 45, color: 'bg-orange-500' },
                     { label: 'MTN MoMo', value: 30, color: 'bg-yellow-500' },
                     { label: 'Wave', value: 15, color: 'bg-blue-500' },
-                    { label: 'Espèces', value: 10, color: 'bg-gray-500' },
+                    { label: 'Espèces', value: 10, color: 'bg-white0' },
                   ].map(mode => (
                     <div key={mode.label}>
                       <div className="flex justify-between text-sm mb-1">
                         <span>{mode.label}</span>
                         <span className="font-medium">{mode.value}%</span>
                       </div>
-                      <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
+                      <div className="h-2 bg-[#FBE8DC] rounded-full overflow-hidden">
                         <div className={`h-full ${mode.color} rounded-full`} style={{ width: `${mode.value}%` }} />
                       </div>
                     </div>
                   ))}
                 </div>
                 <div className="flex items-center justify-center">
-                  <div className="w-40 h-40 rounded-full border-8 border-[#D94500] flex items-center justify-center">
+                  <div className="w-40 h-40 rounded-full border-8 border-[#C05015] flex items-center justify-center">
                     <div className="text-center">
                       <p className="text-2xl font-bold">45%</p>
                       <p className={`text-xs ${COLORS.textMuted}`}>Orange Money</p>
@@ -832,7 +832,7 @@ export default function AdminDashboard() {
                         ...prev,
                         horaires: { ...prev.horaires, [day]: e.target.value }
                       }))}
-                      className="w-32 px-3 py-1.5 border border-[#E8E2D9] rounded-lg text-sm focus:ring-2 focus:ring-[#D94500]"
+                      className="w-32 px-3 py-1.5 border border-[#E2E8F0] rounded-lg text-sm focus:ring-2 focus:ring-[#C05015]"
                       placeholder="08:00-22:00"
                     />
                   </div>
@@ -857,7 +857,7 @@ export default function AdminDashboard() {
                         newZones[idx] = e.target.value;
                         setRestaurantConfig(prev => ({ ...prev, zonesLivraison: newZones }));
                       }}
-                      className="flex-1 px-3 py-2 border border-[#E8E2D9] rounded-lg focus:ring-2 focus:ring-[#D94500]"
+                      className="flex-1 px-3 py-2 border border-[#E2E8F0] rounded-lg focus:ring-2 focus:ring-[#C05015]"
                     />
                     <button className="p-2 text-red-500 hover:bg-red-50 rounded-lg">
                       <Trash2 className="w-4 h-4" />
@@ -908,12 +908,12 @@ export default function AdminDashboard() {
       {showLogoutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-lg font-semibold text-[#2D2720]">Confirmer la déconnexion ?</h3>
-            <p className="mb-6 text-sm text-[#8B7355]">Vous serez redirigé vers la page de connexion.</p>
+            <h3 className="mb-2 text-lg font-semibold text-[#0F172A]">Confirmer la déconnexion ?</h3>
+            <p className="mb-6 text-sm text-[#737373]">Vous serez redirigé vers la page de connexion.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="flex-1 rounded-xl border border-[#E8E2D9] px-4 py-2.5 font-medium text-[#2D2720] transition hover:bg-[#F9F7F5]"
+                className="flex-1 rounded-xl border border-[#E2E8F0] px-4 py-2.5 font-medium text-[#0F172A] transition hover:bg-white"
               >
                 Annuler
               </button>
@@ -945,7 +945,7 @@ function KPICard({ icon, label, value, trend, color, alert = false }) {
       </div>
       <div className="mt-4">
         <p className="text-2xl font-bold">{value}</p>
-        <p className="text-xs text-[#8B7355] font-medium mt-1">{label}</p>
+        <p className="text-xs text-[#737373] font-medium mt-1">{label}</p>
         {trend && (
           <p className={`text-xs mt-2 font-medium ${
             trend.includes('+') || trend === 'OK' || trend === 'Stable' ? 'text-[#2ECC71]' : 'text-orange-500'

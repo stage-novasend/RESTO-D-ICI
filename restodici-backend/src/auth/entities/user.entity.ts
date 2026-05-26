@@ -56,6 +56,22 @@ export class User {
   @Column({ nullable: true })
   emailVerificationExpires?: Date;
 
+  // 2FA fields
+  @Column({ default: false })
+  twoFactorEnabled!: boolean;
+
+  @Column({ nullable: true })
+  twoFactorSecret?: string;
+
+  @Column({ nullable: true, type: 'json' })
+  twoFactorBackupCodes?: string[];
+
+  @Column({ nullable: true })
+  twoFactorTempToken?: string;
+
+  @Column({ nullable: true })
+  twoFactorTempTokenExpires?: Date;
+
   // 🔗 NOUVEAU : Lien vers le restaurant (pour GERANT et STAFF)
   @ManyToOne(() => Restaurant, (restaurant) => restaurant.users, {
     nullable: true,

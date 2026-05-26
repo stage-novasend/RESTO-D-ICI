@@ -2,9 +2,9 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import { 
-  LayoutDashboard, Package, ClipboardList, AlertTriangle, 
-  TrendingUp, Settings, LogOut, ChevronRight 
+import {
+  LayoutDashboard, Package, ClipboardList, AlertTriangle,
+  TrendingUp, Settings, LogOut, ChevronRight, UtensilsCrossed
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -62,110 +62,64 @@ export default function GerantLayout() {
   };
 
   return (
-    <div className={`flex min-h-screen ${darkMode ? 'gerant-theme-dark bg-[#111827] text-slate-100' : 'bg-gradient-to-b from-[#FDFCFB] via-white to-[#FFF7F2]'}`}>
+    <div className={`flex min-h-screen ${darkMode ? 'bg-[#0C1220]' : 'bg-white'}`}>
       <style>{`
-        .gerant-theme-dark {
-          background: linear-gradient(180deg, #111827 0%, #0f172a 55%, #020617 100%);
-          color: #e5eef9;
+        .gerant-theme-dark [class*='bg-white'] { background: rgba(15,23,42,0.88) !important; color: #e2e8f0; }
+        .gerant-theme-dark [class*='border-[#E2E8F0]'] { border-color: rgba(148,163,184,0.15) !important; }
+        .gerant-theme-dark canvas { filter: saturate(1.05) brightness(0.98); }
+        .gerant-theme-dark input, .gerant-theme-dark textarea, .gerant-theme-dark select {
+          background: rgba(15,23,42,0.92) !important; color: #f8fafc !important;
+          border-color: rgba(148,163,184,0.2) !important;
         }
-        .gerant-theme-dark aside {
-          background: linear-gradient(180deg, rgba(234, 88, 12, 0.98) 0%, rgba(194, 65, 12, 0.97) 100%);
-          border-color: rgba(255,255,255,0.12);
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-        }
-        .gerant-theme-dark main {
-          background: transparent;
-        }
-        .gerant-theme-dark .rounded-3xl,
-        .gerant-theme-dark .rounded-[28px],
-        .gerant-theme-dark .rounded-[26px],
-        .gerant-theme-dark .rounded-[24px],
-        .gerant-theme-dark .rounded-[22px] {
-          box-shadow: 0 18px 45px rgba(2, 6, 23, 0.28);
-        }
-        .gerant-theme-dark [class*='bg-white'] {
-          background: rgba(15, 23, 42, 0.88) !important;
-          color: #e2e8f0;
-        }
-        .gerant-theme-dark [class*='from-violet-50'],
-        .gerant-theme-dark [class*='from-emerald-50'],
-        .gerant-theme-dark [class*='from-amber-50'],
-        .gerant-theme-dark [class*='from-rose-50'],
-        .gerant-theme-dark [class*='from-sky-50'],
-        .gerant-theme-dark [class*='from-orange-50'],
-        .gerant-theme-dark [class*='from-cyan-50'],
-        .gerant-theme-dark [class*='from-fuchsia-50'],
-        .gerant-theme-dark [class*='from-teal-50'],
-        .gerant-theme-dark [class*='from-[#FFF5EB]'],
-        .gerant-theme-dark [class*='from-[#FDFCFB]'] {
-          background-image: linear-gradient(135deg, rgba(15, 23, 42, 0.97), rgba(30, 41, 59, 0.94)) !important;
-          color: #e2e8f0;
-        }
-        .gerant-theme-dark [class*='border-'] {
-          border-color: rgba(148, 163, 184, 0.22) !important;
-        }
-        .gerant-theme-dark h1,
-        .gerant-theme-dark h2,
-        .gerant-theme-dark h3,
-        .gerant-theme-dark h4,
-        .gerant-theme-dark h5,
-        .gerant-theme-dark h6,
-        .gerant-theme-dark [class*='text-[#2D2720]'] {
-          color: #f8fafc !important;
-        }
-        .gerant-theme-dark p,
-        .gerant-theme-dark span,
-        .gerant-theme-dark label,
-        .gerant-theme-dark [class*='text-[#7A6A58]'],
-        .gerant-theme-dark [class*='text-[#8B7355]'],
-        .gerant-theme-dark [class*='text-[#5F6C72]'] {
-          color: #cbd5e1 !important;
-        }
-        .gerant-theme-dark input,
-        .gerant-theme-dark textarea,
-        .gerant-theme-dark select {
-          background: rgba(15, 23, 42, 0.92) !important;
-          color: #f8fafc !important;
-          border-color: rgba(148, 163, 184, 0.22) !important;
-        }
-        .gerant-theme-dark canvas {
-          filter: saturate(1.05) brightness(0.98);
-        }
+        .nav-item-hover:hover { background: rgba(255,255,255,0.08) !important; }
       `}</style>
-      <aside className={`fixed left-0 top-0 z-50 h-full border-r border-[#FFD8CC] bg-gradient-to-b from-[#FFF8F3] via-[#FFFDFB] to-[#FFF1E8] shadow-[0_18px_50px_rgba(255,107,53,0.10)] transition-all duration-300 ${
-        collapsed ? 'w-20' : 'w-72'
-      }`}>
+
+      {/* ── Sidebar ── */}
+      <aside
+        className={`fixed left-0 top-0 z-50 h-full transition-all duration-300 ${collapsed ? 'w-20' : 'w-64'}`}
+        style={{ background: '#0F172A', borderRight: '1px solid rgba(255,255,255,0.06)', boxShadow: '4px 0 24px rgba(0,0,0,0.18)' }}
+      >
+        {/* Collapse toggle */}
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="absolute -right-3 top-6 flex h-7 w-7 items-center justify-center rounded-full bg-[#FF6B35] text-white shadow-md transition hover:bg-[#E85A29]"
+          className="absolute -right-3 top-6 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md transition"
+          style={{ background: '#C05015' }}
           aria-label={collapsed ? 'Développer' : 'Réduire'}
         >
           <ChevronRight className={`h-4 w-4 transition-transform ${collapsed ? '' : 'rotate-180'}`} />
         </button>
 
-        <div className="border-b border-[#FFE3DA] px-4 py-5">
+        {/* Logo / Brand */}
+        <div style={{ padding: collapsed ? '20px 0' : '20px 20px', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
           {!collapsed ? (
-            <div className="rounded-[24px] border border-[#FFD8CC] bg-gradient-to-r from-[#FFF4EF] via-white to-[#FFF8F3] p-4 shadow-sm">
-              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#FF6B35]">
-                Espace gérant
-              </p>
-              <h2 className="mt-2 text-lg font-bold text-[#2D2720]">Resto d'ici</h2>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#C05015', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: 9, fontWeight: 700, color: '#C05015', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: '#FDF5EF', margin: 0, lineHeight: 1.2 }}>Resto d'ici</p>
+                </div>
+              </div>
               {restaurantName && (
-                <p className="mt-2 truncate text-sm font-medium text-[#FF6B35]">
-                  {restaurantName}
-                </p>
+                <div style={{ background: 'rgba(255,255,255,0.06)', borderRadius: 8, padding: '6px 10px' }}>
+                  <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', margin: '0 0 1px' }}>Restaurant actif</p>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.85)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurantName}</p>
+                </div>
               )}
             </div>
           ) : (
-            <div className="flex justify-center">
-              <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FF6B35] text-sm font-bold text-white shadow-sm">
-                RD
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#C05015', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
               </div>
             </div>
           )}
         </div>
 
-        <nav className="space-y-2 px-3 py-4">
+        {/* Nav */}
+        <nav style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2 }}>
           {MENU_ITEMS.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -173,26 +127,25 @@ export default function GerantLayout() {
               <button
                 key={item.id}
                 onClick={() => handleNav(item.path)}
-                className={`group flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-all ${
-                  isActive
-                    ? 'bg-[#FF6B35] text-white shadow-[0_12px_30px_rgba(255,107,53,0.22)]'
-                    : 'text-[#5F6C72] hover:bg-[#FFF4EF] hover:text-[#2D2720]'
-                } ${collapsed ? 'justify-center px-2' : ''}`}
                 title={collapsed ? item.label : undefined}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 12,
+                  justifyContent: collapsed ? 'center' : 'flex-start',
+                  width: '100%', padding: collapsed ? '12px' : '10px 12px',
+                  border: 'none', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                  background: isActive ? '#C05015' : 'transparent',
+                  boxShadow: isActive ? '0 4px 14px rgba(224,78,26,0.35)' : 'none',
+                  transition: 'all 0.18s',
+                }}
+                className={isActive ? '' : 'nav-item-hover'}
               >
-                <span
-                  className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-2xl transition-all ${
-                    isActive
-                      ? 'bg-white/20 text-white'
-                      : 'bg-white text-[#FF6B35] shadow-sm group-hover:bg-[#FFF1E8] group-hover:text-[#FF6B35]'
-                  }`}
-                >
-                  <Icon className="h-5 w-5" />
+                <span style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.06)', color: isActive ? '#fff' : 'rgba(255,255,255,0.5)', transition: 'all 0.18s' }}>
+                  <Icon style={{ width: 16, height: 16 }} />
                 </span>
                 {!collapsed && (
-                  <span className="min-w-0 flex-1">
-                    <span className="block text-sm font-semibold">{item.label}</span>
-                    <span className={`block text-xs ${isActive ? 'text-white/85' : 'text-[#8B7355]'}`}>
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: isActive ? '#fff' : 'rgba(255,255,255,0.75)', lineHeight: 1.3 }}>{item.label}</span>
+                    <span style={{ display: 'block', fontSize: 10, color: isActive ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.35)', marginTop: 1 }}>
                       {item.id === 'overview' && 'Pilotage global'}
                       {item.id === 'menu' && 'Catalogue & catégories'}
                       {item.id === 'orders' && 'Flux opérationnel'}
@@ -207,40 +160,38 @@ export default function GerantLayout() {
           })}
         </nav>
 
-        <div className="absolute bottom-0 left-0 right-0 border-t border-[#FFE3DA] bg-white/90 px-4 py-4 backdrop-blur">
+        {/* Footer */}
+        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderTop: '1px solid rgba(255,255,255,0.07)', padding: collapsed ? '12px 0' : '12px 10px' }}>
           {!collapsed && (
-            <div className="mb-3 rounded-2xl bg-[#FDFCFB] px-3 py-2.5">
-              <p className="text-xs text-[#8B7355]">Connecté en tant que</p>
-              <p className="truncate text-sm font-semibold text-[#2D2720]">{user?.nom}</p>
+            <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 9, padding: '8px 12px', marginBottom: 8 }}>
+              <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)', margin: '0 0 2px' }}>Connecté en tant que</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: 'rgba(255,255,255,0.8)', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nom}</p>
             </div>
           )}
           <button
             onClick={handleLogout}
-            className={`flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-[#FF6B35] transition hover:bg-[#FFF4EF] ${
-              collapsed ? 'justify-center px-2' : ''
-            }`}
+            style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 10, justifyContent: collapsed ? 'center' : 'flex-start', width: '100%', padding: collapsed ? '10px' : '10px 12px', border: 'none', borderRadius: 9, cursor: 'pointer', background: 'transparent', color: 'rgba(255,255,255,0.4)', transition: 'all 0.2s' }}
+            className="nav-item-hover"
           >
-            <LogOut className="h-5 w-5 flex-shrink-0" />
-            {!collapsed && <span className="text-sm font-semibold">Déconnexion</span>}
+            <LogOut style={{ width: 16, height: 16, flexShrink: 0 }} />
+            {!collapsed && <span style={{ fontSize: 12, fontWeight: 600 }}>Déconnexion</span>}
           </button>
         </div>
       </aside>
 
-      <main className={`flex-1 overflow-y-auto p-6 lg:p-8 transition-all duration-300 ${
-        collapsed ? 'ml-20' : 'ml-72'
-      }`}>
+      <main className={`flex-1 overflow-y-auto p-6 lg:p-8 transition-all duration-300 ${collapsed ? 'ml-20' : 'ml-64'}`}>
         <Outlet />
       </main>
 
       {showLogoutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50">
           <div className="mx-4 w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl">
-            <h3 className="mb-2 text-lg font-semibold text-[#2D2720]">Confirmer la déconnexion ?</h3>
-            <p className="mb-6 text-sm text-[#8B7355]">Vous serez redirigé vers la page de connexion.</p>
+            <h3 className="mb-2 text-lg font-semibold text-[#0F172A]">Confirmer la déconnexion ?</h3>
+            <p className="mb-6 text-sm text-[#737373]">Vous serez redirigé vers la page de connexion.</p>
             <div className="flex gap-3">
               <button
                 onClick={() => setShowLogoutModal(false)}
-                className="flex-1 rounded-xl border border-[#E8E2D9] px-4 py-2.5 font-medium text-[#2D2720] transition hover:bg-[#F9F7F5]"
+                className="flex-1 rounded-xl border border-[#E2E8F0] px-4 py-2.5 font-medium text-[#0F172A] transition hover:bg-white"
               >
                 Annuler
               </button>

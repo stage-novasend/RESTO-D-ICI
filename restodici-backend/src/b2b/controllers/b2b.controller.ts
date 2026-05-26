@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Put,
+  Patch,
   Delete,
   Body,
   Param,
@@ -18,6 +19,9 @@ import { CreateTeamDto } from '../dto/create-team.dto';
 import { AddTeamMemberDto } from '../dto/add-team-member.dto';
 import { CreateBulkOrderDto } from '../dto/create-bulk-order.dto';
 import { UpdateBulkOrderStatusDto } from '../dto/update-bulk-order-status.dto';
+import { CreateCompteB2BDto } from '../dto/create-compte-b2b.dto';
+import { CreateCollaborateurB2BDto } from '../dto/create-collaborateur-b2b.dto';
+import { CreateCommandeGroupeeDto } from '../dto/create-commande-groupee.dto';
 
 interface RequestWithUser extends Request {
   user: { id: string; role: string };
@@ -29,7 +33,153 @@ interface RequestWithUser extends Request {
 export class B2BController {
   constructor(private b2bService: B2BService) {}
 
-  // === TEAM ENDPOINTS ===
+  // ============================================================
+  // === COMPTE B2B =============================================
+  // ============================================================
+
+  @Post('compte')
+  async createCompte(
+    @Req() req: RequestWithUser,
+    @Body() dto: CreateCompteB2BDto,
+  ) {
+    return this.b2bService.createCompteB2B(req.user.id, dto);
+  }
+
+  @Get('compte')
+  async getCompte(@Req() req: RequestWithUser) {
+    const compte = await this.b2bService.getCompteB2B(req.user.id);
+    return compte ?? { exists: false };
+  }
+
+  @Patch('compte')
+  async updateCompte(
+    @Req() req: RequestWithUser,
+    @Body() dto: Partial<CreateCompteB2BDto>,
+  ) {
+    return this.b2bService.updateCompteB2B(req.user.id, dto);
+  }
+
+  // Admin endpoint to validate a B2B account
+  @Put('compte/:compteId/valider')
+  @Roles(Role.ADMIN, Role.GERANT)
+  async validerCompte(
+    @Req() req: RequestWithUser,
+    @Param('compteId') compteId: string,
+    @Body() body: { approved: boolean },
+  ) {
+    return this.b2bService.validateCompteB2B(
+      req.user.id,
+      compteId,
+      body.approved,
+    );
+  }
+
+  // ============================================================
+  // === COLLABORATEURS B2B (with budget) =======================
+  // ============================================================
+
+  @Get('collaborateurs')
+  async getCollaborateurs(@Req() req: RequestWithUser) {
+    return this.b2bService.getCollaborateursB2B(req.user.id);
+  }
+
+  @Post('collaborateurs')
+  async createCollaborateur(
+    @Req() req: RequestWithUser,
+    @Body() dto: CreateCollaborateurB2BDto,
+  ) {
+    return this.b2bService.createCollaborateurB2B(req.user.id, dto);
+  }
+
+  @Get('collaborateurs/:id/solde')
+  async getCollaborateurSolde(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ) {
+    return this.b2bService.getCollaborateurSolde(id, req.user.id);
+  }
+
+  @Delete('collaborateurs/:id')
+  async deactivateCollaborateur(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ) {
+    await this.b2bService.deactivateCollaborateur(id, req.user.id);
+    return { message: 'Collaborateur désactivé' };
+  }
+
+  // ============================================================
+  // === COMMANDES GROUPÉES =====================================
+  // ============================================================
+
+  @Post('commandes-groupees')
+  async createCommandeGroupee(
+    @Req() req: RequestWithUser,
+    @Body() dto: CreateCommandeGroupeeDto,
+  ) {
+    return this.b2bService.createCommandeGroupee(req.user.id, dto);
+  }
+
+  @Get('commandes-groupees')
+  async getCommandesGroupees(@Req() req: RequestWithUser) {
+    return this.b2bService.getCommandesGroupees(req.user.id);
+  }
+
+  // ============================================================
+  // === FACTURES MENSUELLES ====================================
+  // ============================================================
+
+  @Get('factures-mensuelles')
+  async getFacturesMensuelles(@Req() req: RequestWithUser) {
+    return this.b2bService.getFacturesMensuelles(req.user.id);
+  }
+
+  @Post('factures-mensuelles/:id/payer')
+  async payerFacture(@Req() req: RequestWithUser, @Param('id') id: string) {
+    return this.b2bService.payFacture(id, req.user.id);
+  }
+
+  // ============================================================
+  // === AUDIT LOGS =============================================
+  // ============================================================
+
+  @Get('audit-logs')
+  async getAuditLogs(@Req() req: RequestWithUser) {
+    return this.b2bService.getAuditLogs(req.user.id);
+  }
+
+  // ============================================================
+  // === DASHBOARD & REPORTS ====================================
+  // ============================================================
+
+  @Get('dashboard')
+  async getDashboard(@Req() req: RequestWithUser) {
+    return this.b2bService.getDashboard(req.user.id);
+  }
+
+  @Get('reports')
+  async getReports(@Req() req: RequestWithUser) {
+    return this.b2bService.getReportsB2B(req.user.id);
+  }
+
+  // ============================================================
+  // === LEGACY COLLABORATORS (backward compat) =================
+  // ============================================================
+
+  @Get('collaborators')
+  async getCollaborators(@Req() req: RequestWithUser) {
+    return this.b2bService.getCollaboratorsByUser(req.user.id);
+  }
+
+  @Post('collaborators')
+  async createCollaborator(@Req() req: RequestWithUser, @Body() dto: any) {
+    return this.b2bService.createCollaborator(req.user.id, dto);
+  }
+
+  // ============================================================
+  // === LEGACY TEAM ENDPOINTS ==================================
+  // ============================================================
+
   @Post('teams')
   async createTeam(
     @Req() req: RequestWithUser,
@@ -62,21 +212,24 @@ export class B2BController {
     return { message: 'Team member removed successfully' };
   }
 
-  // === BULK ORDER ENDPOINTS ===
+  // ============================================================
+  // === LEGACY BULK ORDERS =====================================
+  // ============================================================
+
   @Post('bulk-orders')
   async createBulkOrder(
     @Req() req: RequestWithUser,
-    @Body() createBulkOrderDto: CreateBulkOrderDto,
+    @Body() dto: CreateBulkOrderDto,
   ) {
-    return this.b2bService.createBulkOrder(req.user.id, createBulkOrderDto);
+    return this.b2bService.createBulkOrder(req.user.id, dto);
   }
 
   @Post('orders/bulk')
   async createBulkOrderAlias(
     @Req() req: RequestWithUser,
-    @Body() createBulkOrderDto: CreateBulkOrderDto,
+    @Body() dto: CreateBulkOrderDto,
   ) {
-    return this.b2bService.createBulkOrder(req.user.id, createBulkOrderDto);
+    return this.b2bService.createBulkOrder(req.user.id, dto);
   }
 
   @Get('bulk-orders')
@@ -102,7 +255,10 @@ export class B2BController {
     );
   }
 
-  // === INVOICE ENDPOINTS ===
+  // ============================================================
+  // === LEGACY INVOICES ========================================
+  // ============================================================
+
   @Get('invoices')
   async getInvoices(@Req() req: RequestWithUser) {
     return this.b2bService.getInvoicesByUser(req.user.id);
@@ -116,29 +272,33 @@ export class B2BController {
     return this.b2bService.getInvoiceById(invoiceId, req.user.id);
   }
 
-  @Get('dashboard')
-  async getDashboard(@Req() req: RequestWithUser) {
-    return this.b2bService.getDashboard(req.user.id);
-  }
-
-  @Get('collaborators')
-  async getCollaborators(@Req() req: RequestWithUser) {
-    return this.b2bService.getCollaboratorsByUser(req.user.id);
-  }
-
-  @Post('collaborators')
-  async createCollaborator(@Req() req: RequestWithUser, @Body() dto: any) {
-    return this.b2bService.createCollaborator(req.user.id, dto);
-  }
-
+  // Gerant/Admin management endpoint
   @Get('orders/management')
   @Roles(Role.GERANT, Role.ADMIN)
   async getOrdersForManagement(@Req() req: RequestWithUser) {
     return this.b2bService.getOrdersForManagement(req.user.id);
   }
 
-  @Get('reports')
-  async getReports(@Req() req: RequestWithUser) {
-    return this.b2bService.getReportsByUser(req.user.id);
+  // Staff/Gerant: active B2B orders for their restaurant (KDS view)
+  @Get('restaurant-kds')
+  @Roles(Role.GERANT, Role.STAFF, Role.ADMIN)
+  async getRestaurantB2BKDS(@Req() req: any) {
+    const restaurantId = req.user.restaurant?.id;
+    if (!restaurantId) {
+      return [];
+    }
+    return this.b2bService.getB2BKDSForRestaurant(restaurantId);
+  }
+
+  // Staff/Gerant: update B2B order status
+  @Patch('commandes-groupees/:id/statut')
+  @Roles(Role.GERANT, Role.STAFF, Role.ADMIN)
+  async updateB2BOrderStatus(
+    @Req() req: any,
+    @Param('id') id: string,
+    @Body() body: { statut: string },
+  ) {
+    const restaurantId = req.user.restaurant?.id ?? '';
+    return this.b2bService.updateB2BOrderStatus(id, body.statut, restaurantId);
   }
 }

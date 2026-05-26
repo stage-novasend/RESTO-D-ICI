@@ -22,8 +22,8 @@ export default function AdminMenuPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F7F5] p-4 pb-20">
-      <h1 className="text-2xl font-bold text-[#2D2720] mb-6">Gestion du Menu</h1>
+    <div className="min-h-screen bg-white p-4 pb-20">
+      <h1 className="text-2xl font-bold text-[#0F172A] mb-6">Gestion du Menu</h1>
       <div className="space-y-3">
         {articles.map(art => (
           <div key={art.id} className="bg-white rounded-2xl p-4 flex items-center justify-between shadow-sm">
@@ -32,8 +32,8 @@ export default function AdminMenuPage() {
                 {art.photoUrl ? <img src={art.photoUrl} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center">🍽️</div>}
               </div>
               <div>
-                <h3 className="font-bold text-[#2D2720]">{art.nom}</h3>
-                <p className="text-xs text-gray-500">Stock: {art.stock} | {Number(art.prix).toLocaleString()} FCFA</p>
+                <h3 className="font-bold text-[#0F172A]">{art.nom}</h3>
+                <p className="text-xs text-[#9A7060]">Stock: {art.stock} | {Number(art.prix).toLocaleString()} FCFA</p>
               </div>
             </div>
             

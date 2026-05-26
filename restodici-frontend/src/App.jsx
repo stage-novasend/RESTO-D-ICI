@@ -7,12 +7,16 @@ import { CartProvider } from './hooks/useCart';
 // ===== LAYOUTS — Imports directs sans extension .jsx =====
 import GerantLayout from './layouts/GerantLayout';
 import ClientLayout from './layouts/ClientLayout';
+import B2BLayout from './layouts/B2BLayout';
+import StaffLayout from './layouts/StaffLayout';
 
 // ===== PAGES PUBLIQUES — Imports directs sans extension .jsx =====
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import MenuPage from './pages/Menu';
 import CartPage from './pages/Cart';
 import CheckoutPage from './pages/Checkout';
@@ -20,6 +24,7 @@ import OrdersPage from './pages/Orders';
 import PaymentSuccessPage from './pages/PaymentSuccess';
 import OrderTrackingPage from './pages/order/OrderTracking';
 import ClientDashboard from './pages/client/clientDashboard';
+import MyOrdersPage from './pages/client/MyOrdersPage';
 
 // ===== DASHBOARDS — Imports directs sans extension .jsx =====
 import GerantDashboard from './pages/gerant/GerantDashboard';
@@ -52,7 +57,7 @@ function ProtectedStaffRoute({ children }) {
   return children;
 }
 
-// ─── Composant de protection pour le checkout (requiert authentification) ────
+// ─── Composant de protection pour le checkout — CLIENT + B2B autorisés ────
 function ProtectedCheckoutRoute({ children }) {
   const { user, loading } = useAuth();
 
@@ -61,13 +66,11 @@ function ProtectedCheckoutRoute({ children }) {
     return <Navigate to="/login" state={{ redirect: 'checkout' }} replace />;
   }
 
-  if (user.role !== 'CLIENT') {
-    if (user.role === 'B2B') return <Navigate to="/b2b/dashboard" replace />;
-    if (user.role === 'STAFF') return <Navigate to="/staff" replace />;
-    if (user.role === 'GERANT') return <Navigate to="/gerant" replace />;
-    return <Navigate to="/" replace />;
-  }
+  // STAFF and GERANT have no reason to access the checkout or client pages
+  if (user.role === 'STAFF')  return <Navigate to="/staff" replace />;
+  if (user.role === 'GERANT') return <Navigate to="/gerant" replace />;
 
+  // CLIENT and B2B can both use the cart/checkout flow
   return children;
 }
 
@@ -84,8 +87,7 @@ function GerantDashboardWrapper() {
   const { user } = useAuth();
   const token = localStorage.getItem('token');
   
-  // Extraire l'ID du restaurant depuis l'utilisateur, puis fallback sur l'id utilisateur
-  const restaurantId = user?.restaurant?.id || user?.restaurantId || user?.id;
+  const restaurantId = user?.restaurant?.id || user?.restaurantId;
   
   return <GerantDashboard restaurantId={restaurantId} token={token} />;
 }
@@ -96,13 +98,15 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <Routes>
+            {/* === PAGE D'ACCUEIL sans layout (hero auto-suffisant) === */}
+            <Route path="/" element={<Home />} />
+
             {/* === ROUTES PUBLIQUES avec ClientLayout et CartProvider === */}
             <Route element={
               <CartProvider>
                 <ClientLayout />
               </CartProvider>
             }>
-              <Route path="/" element={<Home />} />
               <Route path="/menu" element={<MenuPage />} />
               <Route path="/cart" element={<CartPage />} />
             </Route>
@@ -121,6 +125,7 @@ export default function App() {
               <Route path="/checkout/success/:id" element={<PaymentSuccessPage />} />
               <Route path="/suivi/:id" element={<OrderTrackingPage />} />
               <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/mes-commandes" element={<MyOrdersPage />} />
               <Route path="/client/orders" element={<ClientDashboard />} />
               <Route path="/account" element={<ClientDashboard />} />
             </Route>
@@ -129,7 +134,9 @@ export default function App() {
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/verify-email" element={<VerifyEmail />} />
-            
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
 
             {/* === DASHBOARD GÉRANT === */}
             <Route 
@@ -144,27 +151,27 @@ export default function App() {
               <Route path="kds" element={<KDSPage />} />
             </Route>
 
-            {/* === DASHBOARD STAFF (KDS) === */}
-            <Route 
-              path="/staff/*" 
+            {/* === DASHBOARD STAFF (KDS) — layout sombre collapsible === */}
+            <Route
+              path="/staff/*"
               element={
                 <ProtectedStaffRoute>
-                  <ClientLayout />
+                  <StaffLayout />
                 </ProtectedStaffRoute>
-              } 
+              }
             >
               <Route index element={<StaffDashboard />} />
               <Route path="kds" element={<KDSStaff />} />
             </Route>
 
-            {/* === DASHBOARD ENTREPRISE (B2B) === */}
-            <Route 
-              path="/b2b/*" 
+            {/* === DASHBOARD ENTREPRISE (B2B) — layout sombre collapsible === */}
+            <Route
+              path="/b2b/*"
               element={
                 <ProtectedBusinessRoute>
-                  <ClientLayout />
+                  <B2BLayout />
                 </ProtectedBusinessRoute>
-              } 
+              }
             >
               <Route index element={<B2BDashboard />} />
               <Route path="dashboard" element={<B2BDashboard />} />

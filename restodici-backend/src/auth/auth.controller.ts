@@ -86,4 +86,51 @@ export class AuthController {
   async resendVerificationEmail(@Body('email') email: string) {
     return this.authService.resendVerificationEmail(email);
   }
+
+  @Patch('change-password')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  async changePassword(
+    @Req() req: { user: Record<string, any> },
+    @Body('currentPassword') currentPassword: string,
+    @Body('newPassword') newPassword: string,
+  ) {
+    return this.authService.changePassword(
+      req.user.id,
+      currentPassword,
+      newPassword,
+    );
+  }
+
+  @Post('2fa/setup')
+  @UseGuards(AuthGuard('jwt'))
+  async setup2FA(@Req() req: { user: Record<string, any> }) {
+    return this.authService.setup2FA(req.user.id);
+  }
+
+  @Post('2fa/enable')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  async enable2FA(
+    @Req() req: { user: Record<string, any> },
+    @Body('code') code: string,
+  ) {
+    return this.authService.enable2FA(req.user.id, code);
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(AuthGuard('jwt'))
+  @HttpCode(HttpStatus.OK)
+  async disable2FA(@Req() req: { user: Record<string, any> }) {
+    return this.authService.disable2FA(req.user.id);
+  }
+
+  @Post('2fa/verify-login')
+  @HttpCode(HttpStatus.OK)
+  async verifyTwoFactorLogin(
+    @Body('tempToken') tempToken: string,
+    @Body('code') code: string,
+  ) {
+    return this.authService.verifyTwoFactorLogin(tempToken, code);
+  }
 }

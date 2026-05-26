@@ -57,7 +57,7 @@ export default function ProductDetail() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-32">
+    <div className="min-h-screen bg-white pb-32">
       {/* Header */}
       <div className="fixed top-0 left-0 right-0 z-20 px-4 py-3 flex justify-between items-center bg-gradient-to-b from-black/30 to-transparent">
         <button onClick={() => navigate(-1)} className="p-2 bg-white/90 backdrop-blur rounded-full">
@@ -111,7 +111,7 @@ export default function ProductDetail() {
                   className={`px-5 py-2.5 rounded-full text-sm font-medium transition-all ${
                     selectedSpicy === level.id
                       ? 'bg-primary text-white shadow-button'
-                      : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                      : 'bg-[#FBE8DC] text-neutral-600 hover:bg-neutral-200'
                   }`}
                 >
                   {level.nom}
@@ -124,7 +124,7 @@ export default function ProductDetail() {
           <div>
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-bold text-neutral-900">Suppléments</h3>
-              <span className="text-xs text-neutral-400 bg-neutral-100 px-3 py-1 rounded-full">Optionnel</span>
+              <span className="text-xs text-neutral-400 bg-[#FBE8DC] px-3 py-1 rounded-full">Optionnel</span>
             </div>
             <div className="space-y-3">
               {product.supplements.map(sup => (
@@ -161,17 +161,17 @@ export default function ProductDetail() {
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-neutral-200 p-4 z-30">
         <div className="flex items-center gap-4">
           {/* Sélecteur quantité */}
-          <div className="flex items-center gap-3 bg-neutral-100 rounded-xl px-2 py-2">
+          <div className="flex items-center gap-3 bg-[#FBE8DC] rounded-xl px-2 py-2">
             <button 
               onClick={() => setQuantity(Math.max(1, quantity - 1))}
-              className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-lg font-bold text-neutral-700 hover:bg-neutral-50"
+              className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-lg font-bold text-neutral-700 hover:bg-white"
             >
               −
             </button>
             <span className="w-8 text-center font-bold text-neutral-900">{quantity}</span>
             <button 
               onClick={() => setQuantity(quantity + 1)}
-              className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-lg font-bold text-neutral-700 hover:bg-neutral-50"
+              className="w-10 h-10 rounded-lg bg-white shadow-sm flex items-center justify-center text-lg font-bold text-neutral-700 hover:bg-white"
             >
               +
             </button>

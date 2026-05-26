@@ -83,11 +83,13 @@ export default function CartPage() {
       : 0;
   const total = subtotal + deliveryFee - promoDiscount;
 
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   const validateForm = () => {
     const nextErrors = {};
 
-    if (!restaurantId) {
-      nextErrors.restaurant = 'Aucun restaurant sélectionné.';
+    if (!restaurantId || !UUID_RE.test(restaurantId)) {
+      nextErrors.restaurant = 'Restaurant invalide. Veuillez retourner au menu et sélectionner un restaurant.';
     }
 
     if (orderMode === 'livraison' && !deliveryAddress.trim()) {
@@ -185,18 +187,18 @@ export default function CartPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-[calc(100vh-64px)] bg-[#F9F7F5] px-4 py-10 sm:px-6 lg:px-8">
-        <div className="max-w-3xl mx-auto rounded-[32px] border border-[#E8E2D9] bg-white p-8 sm:p-12 text-center shadow-sm">
-          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#FFF5EB] text-[#D94500]">
+      <div className="min-h-[calc(100vh-64px)] bg-white px-4 py-10 sm:px-6 lg:px-8">
+        <div className="max-w-3xl mx-auto rounded-[32px] border border-[#E2E8F0] bg-white p-8 sm:p-12 text-center shadow-sm">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-full bg-[#FBE8DC] text-[#C05015]">
             <ShoppingBag className="h-10 w-10" />
           </div>
-          <h1 className="text-3xl font-bold text-[#2D2720]">Votre panier est vide</h1>
-          <p className="mt-3 text-[#8B7355] max-w-lg mx-auto">
+          <h1 className="text-3xl font-bold text-[#0F172A]">Votre panier est vide</h1>
+          <p className="mt-3 text-[#737373] max-w-lg mx-auto">
             Ajoutez quelques plats savoureux pour préparer votre prochaine commande.
           </p>
           <Link
             to="/menu"
-            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[#D94500] px-6 py-3.5 font-semibold text-white shadow-md transition hover:bg-[#B83A00]"
+            className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-[#C05015] px-6 py-3.5 font-semibold text-white shadow-md transition hover:bg-[#9A3E10]"
           >
             Découvrir les restaurants
             <ChevronRight className="h-4 w-4" />
@@ -207,19 +209,19 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#F9F7F5] px-4 py-6 sm:px-6 lg:px-8">
+    <div className="min-h-[calc(100vh-64px)] bg-white px-4 py-6 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-[32px] border border-[#E8E2D9] bg-white p-6 shadow-sm sm:p-8">
+        <section className="rounded-[32px] border border-[#E2E8F0] bg-white p-6 shadow-sm sm:p-8">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF5EB] px-4 py-2 text-sm font-semibold text-[#D94500]">
+              <span className="inline-flex items-center gap-2 rounded-full bg-[#FBE8DC] px-4 py-2 text-sm font-semibold text-[#C05015]">
                 <ShieldCheck className="h-4 w-4" />
                 Panier sécurisé
               </span>
-              <h1 className="mt-4 text-3xl font-bold text-[#2D2720] sm:text-4xl">
+              <h1 className="mt-4 text-3xl font-bold text-[#0F172A] sm:text-4xl">
                 Finalisez une commande claire, rapide et élégante
               </h1>
-              <p className="mt-3 max-w-2xl text-[#8B7355]">
+              <p className="mt-3 max-w-2xl text-[#737373]">
                 Chaque ajout reste une ligne distincte dans le panier pour garder vos variantes,
                 quantités et instructions bien visibles.
               </p>
@@ -234,24 +236,24 @@ export default function CartPage() {
 
         <div className="grid gap-6 xl:grid-cols-[1.55fr,0.95fr]">
           <div className="space-y-6">
-            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
+            <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-5 shadow-sm sm:p-6">
               <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div>
-                  <h2 className="text-xl font-bold text-[#2D2720]">Vos articles</h2>
-                  <p className="text-sm text-[#8B7355] mt-1">
+                  <h2 className="text-xl font-bold text-[#0F172A]">Vos articles</h2>
+                  <p className="text-sm text-[#737373] mt-1">
                     Gérez chaque ligne individuellement sans fusion automatique.
                   </p>
                 </div>
                 <div className="flex gap-3">
                   <button
                     onClick={clearCart}
-                    className="rounded-2xl border border-[#E8E2D9] px-4 py-2.5 text-sm font-semibold text-[#8B7355] transition hover:bg-[#F9F7F5]"
+                    className="rounded-2xl border border-[#E2E8F0] px-4 py-2.5 text-sm font-semibold text-[#737373] transition hover:bg-white"
                   >
                     Vider le panier
                   </button>
                   <Link
                     to="/menu"
-                    className="rounded-2xl border border-[#D94500] px-4 py-2.5 text-sm font-semibold text-[#D94500] transition hover:bg-[#FFF5EB]"
+                    className="rounded-2xl border border-[#C05015] px-4 py-2.5 text-sm font-semibold text-[#C05015] transition hover:bg-[#FBE8DC]"
                   >
                     Ajouter d'autres plats
                   </Link>
@@ -262,7 +264,7 @@ export default function CartPage() {
                 {items.map((item, index) => (
                   <article
                     key={item.lineId}
-                    className="rounded-[26px] border border-[#EFE7DD] bg-[#FCFBFA] p-4 transition hover:shadow-sm sm:p-5"
+                    className="rounded-[26px] border border-[#EFE7DD] bg-white p-4 transition hover:shadow-sm sm:p-5"
                   >
                     <div className="flex flex-col gap-4 sm:flex-row">
                       {item.photoUrl ? (
@@ -272,7 +274,7 @@ export default function CartPage() {
                           className="h-24 w-full rounded-2xl object-cover sm:h-28 sm:w-28"
                         />
                       ) : (
-                        <div className="flex h-24 w-full items-center justify-center rounded-2xl bg-[#FFF5EB] text-[#D94500] sm:h-28 sm:w-28">
+                        <div className="flex h-24 w-full items-center justify-center rounded-2xl bg-[#FBE8DC] text-[#C05015] sm:h-28 sm:w-28">
                           <Package className="h-8 w-8" />
                         </div>
                       )}
@@ -281,7 +283,7 @@ export default function CartPage() {
                         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#8B7355] border border-[#E8E2D9]">
+                              <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[#737373] border border-[#E2E8F0]">
                                 Ligne {index + 1}
                               </span>
                               {item.categorie?.nom && (
@@ -290,9 +292,9 @@ export default function CartPage() {
                                 </span>
                               )}
                             </div>
-                            <h3 className="mt-3 text-lg font-bold text-[#2D2720]">{item.nom}</h3>
+                            <h3 className="mt-3 text-lg font-bold text-[#0F172A]">{item.nom}</h3>
                             {item.instructions && (
-                              <div className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm text-[#8B7355] border border-[#EEE8DF]">
+                              <div className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm text-[#737373] border border-[#E2E8F0]">
                                 {item.instructions}
                               </div>
                             )}
@@ -308,29 +310,29 @@ export default function CartPage() {
                         </div>
 
                         <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                          <div className="inline-flex w-fit items-center gap-3 rounded-2xl border border-[#E8E2D9] bg-white px-3 py-2">
+                          <div className="inline-flex w-fit items-center gap-3 rounded-2xl border border-[#E2E8F0] bg-white px-3 py-2">
                             <button
                               onClick={() => handleUpdateQuantity(item.lineId, item.quantite - 1)}
-                              className="rounded-xl p-2 text-[#8B7355] transition hover:bg-[#F9F7F5]"
+                              className="rounded-xl p-2 text-[#737373] transition hover:bg-white"
                             >
                               <Minus className="h-4 w-4" />
                             </button>
-                            <span className="min-w-[32px] text-center text-base font-bold text-[#2D2720]">
+                            <span className="min-w-[32px] text-center text-base font-bold text-[#0F172A]">
                               {item.quantite}
                             </span>
                             <button
                               onClick={() => handleUpdateQuantity(item.lineId, item.quantite + 1)}
-                              className="rounded-xl p-2 text-[#8B7355] transition hover:bg-[#F9F7F5]"
+                              className="rounded-xl p-2 text-[#737373] transition hover:bg-white"
                             >
                               <Plus className="h-4 w-4" />
                             </button>
                           </div>
 
                           <div className="text-left sm:text-right">
-                            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#8B7355]">
+                            <p className="text-xs font-medium uppercase tracking-[0.18em] text-[#737373]">
                               Total ligne
                             </p>
-                            <p className="mt-1 text-2xl font-bold text-[#D94500]">
+                            <p className="mt-1 text-2xl font-bold text-[#C05015]">
                               {formatFCFA(Number(item.prix) * Number(item.quantite))}
                             </p>
                           </div>
@@ -345,15 +347,15 @@ export default function CartPage() {
 
           <aside className="space-y-6">
             {restaurantId && (
-              <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
+              <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-5 shadow-sm sm:p-6">
                 <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FFF5EB] text-[#D94500]">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[#FBE8DC] text-[#C05015]">
                     <Store className="h-5 w-5" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-[#8B7355]">Restaurant sélectionné</p>
-                    <h3 className="mt-1 text-lg font-bold text-[#2D2720]">{restaurantName}</h3>
-                    <p className="mt-2 text-sm text-[#8B7355]">
+                    <p className="text-sm font-semibold text-[#737373]">Restaurant sélectionné</p>
+                    <h3 className="mt-1 text-lg font-bold text-[#0F172A]">{restaurantName}</h3>
+                    <p className="mt-2 text-sm text-[#737373]">
                       Tous vos articles proviennent de ce restaurant pour une commande cohérente.
                     </p>
                   </div>
@@ -367,9 +369,9 @@ export default function CartPage() {
               </section>
             )}
 
-            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-              <h3 className="flex items-center gap-2 text-lg font-bold text-[#2D2720]">
-                <BadgePercent className="h-5 w-5 text-[#D94500]" />
+            <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-5 shadow-sm sm:p-6">
+              <h3 className="flex items-center gap-2 text-lg font-bold text-[#0F172A]">
+                <BadgePercent className="h-5 w-5 text-[#C05015]" />
                 Code promo
               </h3>
               <div className="mt-4 flex gap-2">
@@ -381,12 +383,12 @@ export default function CartPage() {
                     setErrors((current) => ({ ...current, promo: undefined }));
                   }}
                   placeholder="WELCOME10 ou FREESHIP"
-                  className="flex-1 rounded-2xl border border-[#E8E2D9] bg-[#F9F7F5] px-4 py-3 outline-none transition focus:border-[#D94500] focus:ring-2 focus:ring-[#D94500]/15"
+                  className="flex-1 rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-2 focus:ring-[#C05015]/15"
                 />
                 {!promoApplied ? (
                   <button
                     onClick={handleApplyPromo}
-                    className="rounded-2xl bg-[#D94500] px-4 py-3 font-semibold text-white transition hover:bg-[#B83A00]"
+                    className="rounded-2xl bg-[#C05015] px-4 py-3 font-semibold text-white transition hover:bg-[#9A3E10]"
                   >
                     Appliquer
                   </button>
@@ -413,8 +415,8 @@ export default function CartPage() {
               )}
             </section>
 
-            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-              <h3 className="text-lg font-bold text-[#2D2720]">Mode de commande</h3>
+            <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-5 shadow-sm sm:p-6">
+              <h3 className="text-lg font-bold text-[#0F172A]">Mode de commande</h3>
               <div className="mt-4 grid gap-3">
                 {orderModes.map((mode) => {
                   const Icon = mode.icon;
@@ -426,21 +428,21 @@ export default function CartPage() {
                       onClick={() => setOrderMode(mode.id)}
                       className={`rounded-[24px] border p-4 text-left transition ${
                         active
-                          ? 'border-[#D94500] bg-[#FFF5EB] shadow-sm'
-                          : 'border-[#E8E2D9] bg-[#FCFBFA] hover:border-[#D94500]/40'
+                          ? 'border-[#C05015] bg-[#FBE8DC] shadow-sm'
+                          : 'border-[#E2E8F0] bg-white hover:border-[#C05015]/40'
                       }`}
                     >
                       <div className="flex items-start gap-3">
                         <div
                           className={`flex h-11 w-11 items-center justify-center rounded-2xl ${
-                            active ? 'bg-[#D94500] text-white' : 'bg-white text-[#8B7355]'
+                            active ? 'bg-[#C05015] text-white' : 'bg-white text-[#737373]'
                           }`}
                         >
                           <Icon className="h-5 w-5" />
                         </div>
                         <div>
-                          <p className="font-semibold text-[#2D2720]">{mode.label}</p>
-                          <p className="mt-1 text-sm text-[#8B7355]">{mode.description}</p>
+                          <p className="font-semibold text-[#0F172A]">{mode.label}</p>
+                          <p className="mt-1 text-sm text-[#737373]">{mode.description}</p>
                         </div>
                       </div>
                     </button>
@@ -485,8 +487,8 @@ export default function CartPage() {
                     errorZone={errors.deliveryZone}
                   />
 
-                  <div className="rounded-[24px] border border-[#E8E2D9] bg-[#FCFBFA] p-4">
-                    <p className="text-sm font-semibold text-[#2D2720]">Tarifs par zone</p>
+                  <div className="rounded-[24px] border border-[#E2E8F0] bg-white p-4">
+                    <p className="text-sm font-semibold text-[#0F172A]">Tarifs par zone</p>
                     <div className="mt-3 flex flex-wrap gap-2">
                       {deliveryZones.map((zone) => (
                         <button
@@ -502,8 +504,8 @@ export default function CartPage() {
                           }}
                           className={`rounded-full border px-3 py-2 text-sm font-semibold transition ${
                             deliveryZone === zone.name
-                              ? 'border-[#D94500] bg-[#FFF1E8] text-[#D94500]'
-                              : 'border-[#E8E2D9] bg-white text-[#8B7355] hover:border-[#D94500]/40'
+                              ? 'border-[#C05015] bg-[#FBE8DC] text-[#C05015]'
+                              : 'border-[#E2E8F0] bg-white text-[#737373] hover:border-[#C05015]/40'
                           }`}
                         >
                           {zone.name} · +{formatFCFA(zone.fee)}
@@ -515,9 +517,9 @@ export default function CartPage() {
               )}
             </section>
 
-            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-              <h3 className="text-lg font-bold text-[#2D2720]">Résumé de la commande</h3>
-              <div className="mt-5 space-y-3 text-sm text-[#8B7355]">
+            <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-5 shadow-sm sm:p-6">
+              <h3 className="text-lg font-bold text-[#0F172A]">Résumé de la commande</h3>
+              <div className="mt-5 space-y-3 text-sm text-[#737373]">
                 <PriceRow label="Sous-total" value={formatFCFA(subtotal)} />
                 <PriceRow
                   label="Livraison"
@@ -530,19 +532,19 @@ export default function CartPage() {
                 />
               </div>
 
-              <div className="mt-5 rounded-[24px] bg-[#FFF5EB] px-5 py-4">
+              <div className="mt-5 rounded-[24px] bg-[#FBE8DC] px-5 py-4">
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <p className="text-sm font-semibold text-[#8B7355]">Total à payer</p>
-                    <p className="mt-1 text-3xl font-bold text-[#D94500]">{formatFCFA(total)}</p>
+                    <p className="text-sm font-semibold text-[#737373]">Total à payer</p>
+                    <p className="mt-1 text-3xl font-bold text-[#C05015]">{formatFCFA(total)}</p>
                   </div>
-                  <CreditCard className="h-8 w-8 text-[#D94500]" />
+                  <CreditCard className="h-8 w-8 text-[#C05015]" />
                 </div>
               </div>
 
               <button
                 onClick={handleProceedToCheckout}
-                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D94500] px-5 py-4 font-semibold text-white shadow-md transition hover:bg-[#B83A00]"
+                className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#C05015] px-5 py-4 font-semibold text-white shadow-md transition hover:bg-[#9A3E10]"
               >
                 Passer au paiement
                 <ChevronRight className="h-4 w-4" />
@@ -557,9 +559,9 @@ export default function CartPage() {
 
 function MiniStat({ label, value }) {
   return (
-    <div className="rounded-2xl border border-[#E8E2D9] bg-[#FCFBFA] px-4 py-4">
-      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#8B7355]">{label}</p>
-      <p className="mt-2 text-xl font-bold text-[#2D2720] break-words">{value}</p>
+    <div className="rounded-2xl border border-[#E2E8F0] bg-white px-4 py-4">
+      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#737373]">{label}</p>
+      <p className="mt-2 text-xl font-bold text-[#0F172A] break-words">{value}</p>
     </div>
   );
 }
@@ -568,7 +570,7 @@ function PriceRow({ label, value, accent = '' }) {
   return (
     <div className="flex items-center justify-between gap-4">
       <span>{label}</span>
-      <span className={`font-semibold text-[#2D2720] ${accent}`}>{value}</span>
+      <span className={`font-semibold text-[#0F172A] ${accent}`}>{value}</span>
     </div>
   );
 }

@@ -9,7 +9,9 @@ import {
   Min,
   ValidateIf,
   IsUUID,
+  ValidateNested,
 } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 import { ModeLivraison } from '../entities/commande.entity';
 
 export class CreateLigneDto {
@@ -29,12 +31,14 @@ export class CreateLigneDto {
 
   @IsOptional()
   @IsString()
-  instructions?: string; // EN-1917
+  instructions?: string;
 }
 
 export class CreateCommandeDto {
   @IsArray()
   @IsNotEmpty()
+  @ValidateNested({ each: true })
+  @Type(() => CreateLigneDto)
   lignes!: CreateLigneDto[];
 
   @IsEnum(ModeLivraison)
@@ -45,6 +49,7 @@ export class CreateCommandeDto {
   @IsString()
   adresseLivraison?: string;
 
+  @Transform(({ value }) => value || undefined)
   @IsOptional()
   @IsUUID()
   restaurantId?: string;

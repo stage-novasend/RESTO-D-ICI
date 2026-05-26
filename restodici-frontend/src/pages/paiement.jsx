@@ -66,7 +66,7 @@ export default function PaiementPage() {
 
   if (items.length === 0) {
     return (
-      <div className="min-h-screen bg-neutral-50 flex flex-col items-center justify-center px-4 text-center">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center px-4 text-center">
         <div className="w-24 h-24 rounded-full bg-neutral-200 flex items-center justify-center text-4xl mb-4">🛒</div>
         <h1 className="text-xl font-bold text-neutral-900 mb-2">Panier vide</h1>
         <p className="text-neutral-500 mb-6">Ajoutez des plats dans votre panier avant de passer au paiement.</p>
@@ -81,7 +81,7 @@ export default function PaiementPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 pb-16">
+    <div className="min-h-screen bg-white pb-16">
       <div className="bg-white px-4 py-4 sticky top-0 z-10 border-b border-neutral-200">
         <h1 className="text-2xl font-bold font-display text-neutral-900">Finaliser la commande</h1>
       </div>
@@ -103,7 +103,7 @@ export default function PaiementPage() {
                   }`}
                 >
                   <div className="flex items-center gap-2 mb-3">
-                    <span className="w-9 h-9 rounded-2xl bg-neutral-100 flex items-center justify-center text-lg">
+                    <span className="w-9 h-9 rounded-2xl bg-[#FBE8DC] flex items-center justify-center text-lg">
                       <Icon className="w-5 h-5" />
                     </span>
                     <span className="text-sm font-semibold">{option.label}</span>

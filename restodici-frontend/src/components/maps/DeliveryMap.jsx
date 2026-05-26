@@ -1,151 +1,111 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { MapPin } from 'lucide-react';
 
 const DEFAULT_CENTER = { lat: 5.3417, lng: -4.0262 }; // Abidjan
 
-/**
- * DeliveryMap
- * - Intégration Google Maps côté client (script chargé dynamiquement)
- * - Choix de lieu via un marker draggable
- * - Retourne { lat, lng, address }
- *
- * IMPORTANT: utiliser une clé Google Maps dans :
- *   - VITE_GOOGLE_MAPS_API_KEY (recommandé)
- */
-export default function DeliveryMap({
-  value,
-  onChange,
-  heightClassName = 'h-72',
-  className = '',
-  markerLabel = '📍',
-}) {
+export default function DeliveryMap({ value, onChange, heightClassName = 'h-72', className = '' }) {
   const containerRef = useRef(null);
-  const [googleReady, setGoogleReady] = useState(false);
+  const mapRef = useRef(null);
+  const markerRef = useRef(null);
+  const [ready, setReady] = useState(false);
 
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const center = {
+    lat: value?.lat ? Number(value.lat) : DEFAULT_CENTER.lat,
+    lng: value?.lng ? Number(value.lng) : DEFAULT_CENTER.lng,
+  };
 
-  const center = useMemo(() => {
-    if (value?.lat && value?.lng) return { lat: Number(value.lat), lng: Number(value.lng) };
-    return DEFAULT_CENTER;
-  }, [value?.lat, value?.lng]);
+  // Geocode with Nominatim (OpenStreetMap, free, no key)
+  const reverseGeocode = async (lat, lng) => {
+    try {
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&accept-language=fr`,
+        { headers: { 'Accept-Language': 'fr' } }
+      );
+      const data = await res.json();
+      const address = data.display_name || '';
+      onChange?.({ lat, lng, address });
+    } catch {
+      onChange?.({ lat, lng, address: '' });
+    }
+  };
 
   useEffect(() => {
-    if (!apiKey) return;
+    if (!containerRef.current || mapRef.current) return;
+    let cancelled = false;
 
-    const w = window;
-    if (w.google?.maps) {
-      setGoogleReady(true);
-      return;
-    }
+    import('leaflet').then((L) => {
+      // Guard: effect was cleaned up while the async import was in flight
+      if (cancelled || !containerRef.current || mapRef.current) return;
+      // Guard: container already has a Leaflet instance (StrictMode double-mount)
+      if (containerRef.current._leaflet_id) return;
 
-    const existing = document.querySelector('script[data-google-maps="1"]');
-    if (existing) {
-      const t = setInterval(() => {
-        if (w.google?.maps) {
-          clearInterval(t);
-          setGoogleReady(true);
-        }
-      }, 200);
-      return () => clearInterval(t);
-    }
+      delete L.default.Icon.Default.prototype._getIconUrl;
+      L.default.Icon.Default.mergeOptions({
+        iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+        iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+      });
 
-    const script = document.createElement('script');
-    script.dataset.googleMaps = '1';
-    script.async = true;
-    script.defer = true;
-    script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(apiKey)}&libraries=places`;
-    document.head.appendChild(script);
+      const map = L.default.map(containerRef.current, { zoomControl: true }).setView(
+        [center.lat, center.lng],
+        14,
+      );
 
-    const onLoad = () => setGoogleReady(true);
-    script.addEventListener('load', onLoad);
+      L.default.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+      }).addTo(map);
+
+      const marker = L.default.marker([center.lat, center.lng], { draggable: true }).addTo(map);
+
+      marker.on('dragend', () => {
+        const pos = marker.getLatLng();
+        reverseGeocode(pos.lat, pos.lng);
+      });
+
+      map.on('click', (e) => {
+        marker.setLatLng(e.latlng);
+        reverseGeocode(e.latlng.lat, e.latlng.lng);
+      });
+
+      mapRef.current = map;
+      markerRef.current = marker;
+      setReady(true);
+    });
 
     return () => {
-      script.removeEventListener('load', onLoad);
-    };
-  }, [apiKey]);
-
-  useEffect(() => {
-    if (!googleReady) return;
-    if (!containerRef.current) return;
-
-    const map = new window.google.maps.Map(containerRef.current, {
-      center,
-      zoom: 14,
-      streetViewControl: false,
-      fullscreenControl: false,
-      mapTypeControl: false,
-    });
-
-    const geocoder = new window.google.maps.Geocoder();
-
-    const marker = new window.google.maps.Marker({
-      position: center,
-      map,
-      draggable: true,
-      title: 'Lieu de livraison',
-    });
-
-    const updateAddress = async (lat, lng) => {
-      try {
-        const results = await geocoder.geocode({ location: { lat, lng } });
-        const first = results?.results?.[0];
-        const address = first?.formatted_address || '';
-        onChange?.({ lat, lng, address });
-      } catch {
-        onChange?.({ lat, lng, address: '' });
+      cancelled = true;
+      if (mapRef.current) {
+        mapRef.current.remove();
+        mapRef.current = null;
+        markerRef.current = null;
       }
     };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-    // Initial
-    if (value?.lat && value?.lng) {
-      marker.setPosition(center);
-      map.panTo(center);
-    } else {
-      // Sync UI -> parent
-      updateAddress(center.lat, center.lng);
-    }
-
-    marker.addListener('dragend', (e) => {
-      const newLat = e.latLng.lat();
-      const newLng = e.latLng.lng();
-      updateAddress(newLat, newLng);
-    });
-
-    map.addListener('click', (e) => {
-      const newLat = e.latLng.lat();
-      const newLng = e.latLng.lng();
-      marker.setPosition({ lat: newLat, lng: newLng });
-      updateAddress(newLat, newLng);
-    });
-
-    return () => {
-      // lib : pas de destroy officiel, on laisse GC
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [googleReady, containerRef, center.lat, center.lng]);
+  // Sync external value changes to marker position
+  useEffect(() => {
+    if (!ready || !markerRef.current || !mapRef.current) return;
+    if (!value?.lat || !value?.lng) return;
+    const newPos = { lat: Number(value.lat), lng: Number(value.lng) };
+    markerRef.current.setLatLng([newPos.lat, newPos.lng]);
+    mapRef.current.setView([newPos.lat, newPos.lng], mapRef.current.getZoom(), { animate: true });
+  }, [ready, value?.lat, value?.lng]);
 
   return (
-    <div className={className}>
-      {!apiKey ? (
-        <div className={`bg-red-50 border border-red-200 rounded-xl p-4 ${heightClassName} flex items-center justify-center`}>
-          <p className="text-sm text-red-700 font-medium">
-            Clé Google Maps manquante : ajoute <span className="font-mono">VITE_GOOGLE_MAPS_API_KEY</span>
-          </p>
-        </div>
-      ) : (
-        <div className={`${heightClassName} rounded-xl overflow-hidden border border-[#E8E2D9] bg-gray-100`}>
-          {!googleReady && (
-            <div className="w-full h-full flex items-center justify-center">
-              <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin" />
-            </div>
-          )}
-          <div ref={containerRef} className="w-full h-full" />
-          {/* petit label */}
-          <div className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-12">
-            <div className="text-2xl">{markerLabel}</div>
+    <div className={`relative ${heightClassName} ${className}`} style={{ isolation: 'isolate' }}>
+      <div
+        ref={containerRef}
+        className="absolute inset-0 rounded-xl overflow-hidden border border-[#E2E8F0] bg-[#FBE8DC]"
+      />
+      {!ready && (
+        <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-[#FBE8DC]">
+          <div className="text-center text-sm text-[#9A7060]">
+            <MapPin className="mx-auto mb-2 h-8 w-8 opacity-40" />
+            Chargement de la carte…
           </div>
         </div>
       )}
     </div>
   );
 }
-

@@ -8,8 +8,6 @@ import {
   Param,
   UseGuards,
   Req,
-  DefaultValuePipe,
-  ParseIntPipe,
   BadRequestException,
   Res,
 } from '@nestjs/common';
@@ -33,7 +31,7 @@ export class CommandesController {
 
   @Post()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('CLIENT')
+  @Roles('CLIENT', 'B2B')
   async create(
     @Body() dto: CreateCommandeDto,
     @Req() req: any,
@@ -67,7 +65,7 @@ export class CommandesController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('CLIENT')
+  @Roles('CLIENT', 'B2B')
   async findMyOrders(@Req() req: any) {
     return this.commandesService.findAllByUser(req.user.id);
   }
@@ -77,18 +75,21 @@ export class CommandesController {
   @Roles('GERANT', 'STAFF', 'ADMIN')
   async findAll(
     @Query('restaurantId') restaurantId: string,
-    @Query('limit', new DefaultValuePipe(50), ParseIntPipe) limit: number,
-    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+    @Query('limit') limitStr: string,
+    @Query('offset') offsetStr: string,
     @Req() req: any,
   ) {
+    const limit  = Math.min(Math.max(parseInt(limitStr  ?? '50', 10) || 50, 1), 200);
+    const offset = Math.max(parseInt(offsetStr ?? '0',  10) || 0,  0);
+    const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const safeQueryId = restaurantId && UUID_RE.test(restaurantId) ? restaurantId : undefined;
+
     const targetRestaurantId =
       req.user.role === 'GERANT' || req.user.role === 'STAFF'
-        ? req.user.restaurant?.id
-        : restaurantId;
+        ? (req.user.restaurant?.id || safeQueryId)
+        : safeQueryId;
 
-    if (!targetRestaurantId) {
-      throw new BadRequestException('restaurantId requis pour ce rôle');
-    }
+    if (!targetRestaurantId) return [];
 
     return this.commandesService.findAllForRestaurant(
       targetRestaurantId,
@@ -102,9 +103,7 @@ export class CommandesController {
   @Roles('GERANT', 'STAFF')
   async getKDS(@Req() req: any) {
     const restaurantId = req.user.restaurant?.id;
-    if (!restaurantId) {
-      throw new BadRequestException('Compte sans restaurant associé');
-    }
+    if (!restaurantId) return [];
     return this.commandesService.getKDS(restaurantId);
   }
 
@@ -138,14 +137,26 @@ export class CommandesController {
 
     const pdfBuffer = await this.tresorerieService.generateReceiptPdf({
       commandeId: commande.id,
-      restaurantId: commande.restaurant.id,
-      numeroCommande: commande.numero,
+      numero: commande.numero,
+      restaurantNom: commande.restaurant.nom,
+      restaurantAdresse: commande.restaurant.adresse,
+      restaurantTelephone: commande.restaurant.telephone,
+      restaurantEmail: commande.restaurant.email,
+      restaurantNif: (commande.restaurant as any).nif,
+      restaurantRccm: (commande.restaurant as any).rccm,
+      clientNom:
+        [commande.client?.prenom, commande.client?.nom]
+          .filter(Boolean)
+          .join(' ') || 'Client',
+      lignes: (commande.lignes ?? []).map((l) => ({
+        nom: l.article?.nom ?? 'Article',
+        quantite: l.quantite,
+        prixUnitaire: Number(l.prixUnitaire),
+      })),
       montantTotal: Number(commande.montantTotal),
       modePaiement: commande.modePaiement,
+      modeLivraison: commande.modeLivraison,
       payeAt: commande.payeAt,
-      clientNom: [commande.client?.prenom, commande.client?.nom]
-        .filter(Boolean)
-        .join(' '),
     });
 
     res.setHeader('Content-Type', 'application/pdf');
@@ -182,6 +193,40 @@ export class CommandesController {
         ? req.user.restaurant?.id
         : undefined;
     return this.commandesService.updateStatut(id, statut, restaurantId);
+  }
+
+  @Patch(':id/client-paiement')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('CLIENT', 'B2B')
+  async clientRegisterPayment(
+    @Param('id') id: string,
+    @Body('modePaiement') modePaiement: string,
+    @Req() req: any,
+  ) {
+    return this.commandesService.clientRegisterPayment(
+      id,
+      modePaiement,
+      req.user.id,
+    );
+  }
+
+  @Post(':id/avis')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('CLIENT', 'B2B')
+  async submitAvis(
+    @Param('id') id: string,
+    @Body('note') note: number,
+    @Body('commentaire') commentaire: string | undefined,
+    @Req() req: any,
+  ) {
+    return this.commandesService.submitAvis(id, req.user.id, note, commentaire);
+  }
+
+  @Get(':id/avis')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('CLIENT', 'B2B')
+  async getAvisForOrder(@Param('id') id: string, @Req() req: any) {
+    return this.commandesService.getAvisForOrder(id, req.user.id);
   }
 
   @Patch(':id/paiement')

@@ -40,6 +40,9 @@ export class CommandeGroupeeB2B {
   @Column('decimal', { precision: 14, scale: 2 })
   totalEstime!: number;
 
+  @Column({ nullable: true })
+  restaurantId?: string;
+
   // Statut simplifié pour US-35 (pipeline côté B2B)
   @Column({ default: 'EN_ATTENTE' })
   statut!: string;

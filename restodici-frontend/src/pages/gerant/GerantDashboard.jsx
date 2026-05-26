@@ -39,7 +39,16 @@ import {
   ShoppingBag,
   Truck,
   UtensilsCrossed,
+  Mail,
+  Lock,
+  Eye,
+  EyeOff,
+  Shield,
+  X,
+  Pencil,
+  Trash2,
 } from "lucide-react";
+import NotificationBell from "../../components/notifications/NotificationBell";
 import {
   menuAPI,
   commandesService,
@@ -48,6 +57,7 @@ import {
   staffAPI,
   b2bAPI,
   restaurantAPI,
+  authAPI,
 } from "../../services/api";
 import { createCommandesSocket } from "../../services/commandes.service";
 import { mergeManagerOrdersResults } from "../../services/orders-merge.js";
@@ -58,15 +68,16 @@ import {
   STATUS_LABELS,
 } from "../../utils/formatters";
 import { FREQUENT_LOCATION_ZONES } from "../../components/maps/locationAssistantData";
+import OnboardingWizard from "../../components/wizard/OnboardingWizard";
 
 // ==================== COLOR THEME CONSTANTS ====================
 const COLORS = {
   primary: {
-    bg: "bg-violet-50",
-    border: "border-violet-200",
-    text: "text-violet-700",
-    button: "bg-violet-500 hover:bg-violet-600",
-    light: "bg-violet-100",
+    bg: "bg-[#FBE8DC]",
+    border: "border-[rgba(224,78,26,0.2)]",
+    text: "text-[#C05015]",
+    button: "bg-[#C05015] hover:bg-[#9A3E10]",
+    light: "bg-[#FFE4D4]",
   },
   secondary: {
     bg: "bg-emerald-50",
@@ -76,18 +87,18 @@ const COLORS = {
     light: "bg-emerald-100",
   },
   accent: {
+    bg: "bg-white",
+    border: "border-[rgba(197,138,85,0.25)]",
+    text: "text-[#F97316]",
+    button: "bg-[#F97316] hover:bg-[#A87040]",
+    light: "bg-[#F5E8D5]",
+  },
+  warning: {
     bg: "bg-amber-50",
     border: "border-amber-200",
     text: "text-amber-700",
     button: "bg-amber-500 hover:bg-amber-600",
     light: "bg-amber-100",
-  },
-  warning: {
-    bg: "bg-orange-50",
-    border: "border-orange-200",
-    text: "text-orange-700",
-    button: "bg-orange-500 hover:bg-orange-600",
-    light: "bg-orange-100",
   },
   info: {
     bg: "bg-sky-50",
@@ -179,7 +190,7 @@ function DeliveryZonesMap({ restaurantPosition, selectedPosition, zones, onPick 
         <CircleMarker
           center={pendingCenter}
           radius={9}
-          pathOptions={{ color: "#FF6B35", fillColor: "#FF6B35", fillOpacity: 0.95 }}
+          pathOptions={{ color: "#E8906A", fillColor: "#E8906A", fillOpacity: 0.95 }}
         >
           <Popup>Nouvelle zone en préparation</Popup>
         </CircleMarker>
@@ -195,6 +206,7 @@ function MenuTab({ restaurantId, token }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [showCategoryForm, setShowCategoryForm] = useState(false);
+  const [editArticle, setEditArticle] = useState(null);
   const [newArticle, setNewArticle] = useState({
     nom: "",
     prix: "",
@@ -344,6 +356,47 @@ function MenuTab({ restaurantId, token }) {
     }
   };
 
+  const handleDeleteArticle = async (articleId) => {
+    if (!window.confirm("Supprimer cet article définitivement ?")) return;
+    try {
+      await menuAPI.deleteArticle(articleId);
+      setArticles((prev) => prev.filter((a) => a.id !== articleId));
+    } catch (error) {
+      alert(error.response?.data?.message || "Erreur lors de la suppression");
+    }
+  };
+
+  const handleUpdateArticle = async () => {
+    if (!editArticle) return;
+    try {
+      await menuAPI.updateArticle(editArticle.id, {
+        nom: editArticle.nom,
+        prix: parseFloat(editArticle.prix),
+        description: editArticle.description,
+        stock: parseInt(editArticle.stock) || 0,
+        disponible: editArticle.disponible,
+        categorieId: editArticle.categorieId || editArticle.categorie?.id,
+        photoUrl: editArticle.photoUrl,
+      });
+      const artRes = await menuAPI.getAll({ restaurantId, cible: "TOUS" });
+      setArticles(artRes.data || []);
+      setEditArticle(null);
+    } catch (error) {
+      alert(error.response?.data?.message || "Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleDeleteCategory = async (categoryId) => {
+    if (!window.confirm("Supprimer cette catégorie ? Les articles associés devront être recatégorisés.")) return;
+    try {
+      await menuAPI.deleteArticle(`categories/${categoryId}`).catch(() => {});
+      const catRes = await menuAPI.getCategories({ restaurantId });
+      setCategories(catRes.data || []);
+    } catch (error) {
+      alert("Impossible de supprimer cette catégorie");
+    }
+  };
+
   const filteredArticles = articles.filter(
     (a) =>
       a.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -353,34 +406,34 @@ function MenuTab({ restaurantId, token }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="h-9 w-9 rounded-full border-4 border-violet-500 border-t-transparent animate-spin shadow-[0_0_24px_rgba(139,92,246,0.18)]" />
+        <div className="h-9 w-9 rounded-full border-4 border-[#C05015] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-[#E8D9FB] bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-6 shadow-sm">
+      <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-violet-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#FBE8DC] px-3 py-1 text-xs font-medium text-[#C05015]">
               <Package className="h-3.5 w-3.5" />
               Gestion visuelle du catalogue
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#2D2720]">Gestion du menu</h3>
-              <p className="mt-1 text-sm text-[#7A6A58]">
+              <h3 className="text-xl font-bold text-[#1C1917]">Gestion du menu</h3>
+              <p className="mt-1 text-sm text-[#78716C]">
                 Activez, organisez et enrichissez le catalogue de votre restaurant.
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-white px-3 py-1.5 text-violet-700 shadow-sm">
+              <span className="rounded-full bg-[#FBE8DC] px-3 py-1.5 text-[#1A1A1A]">
                 {articles.length} article(s)
               </span>
-              <span className="rounded-full bg-white px-3 py-1.5 text-emerald-700 shadow-sm">
+              <span className="rounded-full bg-[#FBE8DC] px-3 py-1.5 text-[#1A1A1A]">
                 {articles.filter((article) => article.disponible).length} disponible(s)
               </span>
-              <span className="rounded-full bg-white px-3 py-1.5 text-amber-700 shadow-sm">
+              <span className="rounded-full bg-[#FBE8DC] px-3 py-1.5 text-[#C05015]">
                 {categories.length} catégorie(s)
               </span>
             </div>
@@ -388,14 +441,14 @@ function MenuTab({ restaurantId, token }) {
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setShowCategoryForm(!showCategoryForm)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-violet-700 hover:to-fuchsia-700"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-black"
             >
               <Plus className="h-4 w-4" />
               {showCategoryForm ? "Fermer catégorie" : "Nouvelle catégorie"}
             </button>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-emerald-600 hover:to-teal-600"
+              className="inline-flex items-center gap-2 rounded-2xl bg-[#C05015] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10]"
             >
               <Plus className="h-4 w-4" />
               {showAddForm ? "Fermer article" : "Nouvel article"}
@@ -405,11 +458,11 @@ function MenuTab({ restaurantId, token }) {
       </section>
 
       {showCategoryForm && (
-        <div className="rounded-[26px] border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-6 shadow-sm space-y-4">
-          <h4 className="text-lg font-bold text-[#2D2720]">Créer une nouvelle catégorie</h4>
+        <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm space-y-4">
+          <h4 className="text-lg font-bold text-[#1C1917]">Créer une nouvelle catégorie</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">
+              <label className="mb-1 block text-sm font-medium text-[#0F172A]">
                 Nom de la catégorie *
               </label>
               <input
@@ -418,7 +471,7 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewCategory({ ...newCategory, nom: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-violet-400 ${categoryErrors.nom ? "border-red-500" : "border-violet-200"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] ${categoryErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: Plats Principaux"
               />
               {categoryErrors.nom && (
@@ -426,7 +479,7 @@ function MenuTab({ restaurantId, token }) {
               )}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">
+              <label className="mb-1 block text-sm font-medium text-[#0F172A]">
                 Icône
               </label>
               <input
@@ -435,7 +488,7 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewCategory({ ...newCategory, icone: e.target.value })
                 }
-                className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
                 placeholder="Ex: 🍽️"
               />
             </div>
@@ -443,7 +496,7 @@ function MenuTab({ restaurantId, token }) {
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               onClick={handleCreateCategory}
-              className="rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:from-violet-700 hover:to-fuchsia-700"
+              className="rounded-2xl bg-[#C05015] px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-[#9A3E10]"
             >
               Créer la catégorie
             </button>
@@ -452,7 +505,7 @@ function MenuTab({ restaurantId, token }) {
                 setShowCategoryForm(false);
                 setCategoryErrors({});
               }}
-              className="rounded-2xl border border-violet-200 bg-white px-6 py-3 font-semibold text-[#2D2720] transition hover:bg-violet-50"
+              className="rounded-2xl border border-[#E2E8F0] bg-white px-6 py-3 font-semibold text-[#0F172A] transition hover:bg-[#FBE8DC]"
             >
               Annuler
             </button>
@@ -461,24 +514,24 @@ function MenuTab({ restaurantId, token }) {
       )}
 
       {showAddForm && (
-        <div className="rounded-[26px] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-6 shadow-sm space-y-4">
-          <h4 className="text-lg font-bold text-[#2D2720]">Créer un nouvel article</h4>
+        <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm space-y-4">
+          <h4 className="text-lg font-bold text-[#1C1917]">Créer un nouvel article</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Nom *</label>
+              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Nom *</label>
               <input
                 type="text"
                 value={newArticle.nom}
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, nom: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-emerald-400 ${formErrors.nom ? "border-red-500" : "border-emerald-200"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] ${formErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: Attiéké Poisson"
               />
               {formErrors.nom && <p className="mt-1 text-xs text-red-500">{formErrors.nom}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Prix (FCFA) *</label>
+              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Prix (FCFA) *</label>
               <input
                 type="number"
                 min="1"
@@ -486,19 +539,19 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, prix: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-emerald-400 ${formErrors.prix ? "border-red-500" : "border-emerald-200"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] ${formErrors.prix ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: 3500"
               />
               {formErrors.prix && <p className="mt-1 text-xs text-red-500">{formErrors.prix}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Catégorie *</label>
+              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Catégorie *</label>
               <select
                 value={newArticle.categorieId}
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, categorieId: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-emerald-400 ${formErrors.categorieId ? "border-red-500" : "border-emerald-200"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] ${formErrors.categorieId ? "border-red-500" : "border-[#E2E8F0]"}`}
               >
                 <option value="">Sélectionner une catégorie</option>
                 {categories.map((cat) => (
@@ -512,7 +565,7 @@ function MenuTab({ restaurantId, token }) {
               )}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Stock initial</label>
+              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Stock initial</label>
               <input
                 type="number"
                 min="0"
@@ -520,13 +573,13 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, stock: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-emerald-400 ${formErrors.stock ? "border-red-500" : "border-emerald-200"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] ${formErrors.stock ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: 50"
               />
               {formErrors.stock && <p className="mt-1 text-xs text-red-500">{formErrors.stock}</p>}
             </div>
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Photo de l'article</label>
+              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Photo de l'article</label>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
                 <div className="flex-1">
                   <input
@@ -535,10 +588,10 @@ function MenuTab({ restaurantId, token }) {
                     onChange={(e) =>
                       setNewArticle({ ...newArticle, photoUrl: e.target.value })
                     }
-                    className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 outline-none transition focus:border-emerald-400"
+                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
                     placeholder="URL de l'image ou laissez vide"
                   />
-                  <p className="mt-2 text-xs text-[#7A6A58]">
+                  <p className="mt-2 text-xs text-[#78716C]">
                     Ou téléchargez depuis votre ordinateur.
                   </p>
                   <input
@@ -549,11 +602,11 @@ function MenuTab({ restaurantId, token }) {
                     disabled={uploading}
                   />
                   {uploading && (
-                    <p className="mt-2 text-sm text-emerald-600">Chargement en cours...</p>
+                    <p className="mt-2 text-sm text-[#78716C]">Chargement en cours...</p>
                   )}
                 </div>
                 {newArticle.photoUrl && (
-                  <div className="h-24 w-24 overflow-hidden rounded-2xl border border-emerald-200 shadow-sm">
+                  <div className="h-24 w-24 overflow-hidden rounded-2xl border border-[#E2E8F0] shadow-sm">
                     <img
                       src={newArticle.photoUrl}
                       alt="Preview"
@@ -565,13 +618,13 @@ function MenuTab({ restaurantId, token }) {
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#2D2720]">Description</label>
+            <label className="mb-1 block text-sm font-medium text-[#0F172A]">Description</label>
             <textarea
               value={newArticle.description}
               onChange={(e) =>
                 setNewArticle({ ...newArticle, description: e.target.value })
               }
-              className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 outline-none transition focus:border-emerald-400"
+              className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
               rows="3"
               placeholder="Description du plat..."
             />
@@ -579,7 +632,7 @@ function MenuTab({ restaurantId, token }) {
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               onClick={handleAddArticle}
-              className="rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:from-emerald-600 hover:to-teal-600"
+              className="rounded-2xl bg-[#C05015] px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-[#9A3E10]"
             >
               Créer l'article
             </button>
@@ -588,7 +641,7 @@ function MenuTab({ restaurantId, token }) {
                 setShowAddForm(false);
                 setFormErrors({});
               }}
-              className="rounded-2xl border border-emerald-200 bg-white px-6 py-3 font-semibold text-[#2D2720] transition hover:bg-emerald-50"
+              className="rounded-2xl border border-[#E2E8F0] bg-white px-6 py-3 font-semibold text-[#0F172A] transition hover:bg-[#FBE8DC]"
             >
               Annuler
             </button>
@@ -596,15 +649,15 @@ function MenuTab({ restaurantId, token }) {
         </div>
       )}
 
-      <div className="rounded-[24px] border border-[#EADCF6] bg-white p-4 shadow-sm">
+      <div className="rounded-[24px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-violet-400" />
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A8A29E]" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Rechercher un article ou une catégorie..."
-            className="w-full rounded-2xl border border-violet-200 bg-violet-50/40 py-3 pl-10 pr-4 outline-none transition focus:border-violet-400"
+            className="w-full rounded-2xl border border-[#E2E8F0] bg-white py-3 pl-10 pr-4 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
           />
         </div>
       </div>
@@ -614,11 +667,11 @@ function MenuTab({ restaurantId, token }) {
           filteredArticles.map((a) => (
             <div
               key={a.id}
-              className="rounded-[24px] border border-[#EADCF6] bg-gradient-to-br from-white via-white to-violet-50/40 p-4 shadow-sm"
+              className="rounded-[24px] border border-[#E2E8F0] bg-white p-4 shadow-sm"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-violet-100 text-2xl shadow-sm">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#FBE8DC] text-2xl shadow-sm">
                     {a.photoUrl ? (
                       <img
                         src={a.photoUrl}
@@ -631,42 +684,101 @@ function MenuTab({ restaurantId, token }) {
                   </div>
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold text-[#2D2720]">{a.nom}</p>
-                      <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-medium text-violet-700">
+                      <p className="font-semibold text-[#1C1917]">{a.nom}</p>
+                      <span className="rounded-full bg-[#FBE8DC] px-2.5 py-1 text-xs font-medium text-[#57534E]">
                         {a.categorie?.nom || "Sans catégorie"}
                       </span>
                       <span
-                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${a.disponible ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"}`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${a.disponible ? "bg-[#FBE8DC] text-[#1A1A1A]" : "bg-red-50 text-red-700"}`}
                       >
                         {a.disponible ? "Disponible" : "Masqué"}
                       </span>
                     </div>
-                    <p className="text-sm text-[#7A6A58]">Stock: {a.stock ?? 0}</p>
+                    <p className="text-sm text-[#78716C]">Stock: {a.stock ?? 0}</p>
                   </div>
                 </div>
-                <div className="flex flex-wrap items-center gap-4">
-                  <span className="text-lg font-bold text-violet-700">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="text-lg font-bold text-[#1C1917]">
                     {formatFCFA(Number(a.prix || 0))}
                   </span>
                   <button
                     onClick={() => handleToggleDisponibilite(a.id, !a.disponible)}
-                    className={`relative h-8 w-14 rounded-full transition-all ${a.disponible ? "bg-emerald-500" : "bg-slate-300"}`}
+                    className={`relative h-8 w-14 rounded-full transition-all ${a.disponible ? "bg-[#C05015]" : "bg-[#D1CBC5]"}`}
                     title={a.disponible ? "Désactiver" : "Activer"}
                   >
                     <span
                       className={`absolute left-1 top-1 h-6 w-6 rounded-full bg-white shadow transition-transform ${a.disponible ? "translate-x-6" : ""}`}
                     />
                   </button>
+                  {/* Edit */}
+                  <button
+                    onClick={() => setEditArticle({ ...a, prix: String(a.prix), stock: String(a.stock ?? 0), categorieId: a.categorie?.id || a.categorieId || '' })}
+                    className="p-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    title="Modifier"
+                  >
+                    <Pencil className="w-3.5 h-3.5" />
+                  </button>
+                  {/* Delete */}
+                  <button
+                    onClick={() => handleDeleteArticle(a.id)}
+                    className="p-1.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                    title="Supprimer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="rounded-[24px] border border-dashed border-[#EADCF6] bg-white px-4 py-10 text-center text-[#8B7355]">
+          <div className="rounded-[24px] border border-dashed border-[#E2E8F0] bg-white px-4 py-10 text-center text-[#78716C]">
             Aucun article trouvé
           </div>
         )}
       </div>
+
+      {/* ── Edit Article Modal ── */}
+      {editArticle && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.target === e.currentTarget && setEditArticle(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="bg-[#C05015] px-6 py-4 flex items-center justify-between">
+              <h3 className="text-white font-extrabold">Modifier l'article</h3>
+              <button onClick={() => setEditArticle(null)} className="text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-5 space-y-3.5 max-h-[70vh] overflow-y-auto">
+              {[
+                { k: 'nom',         label: 'Nom *',          type: 'text' },
+                { k: 'prix',        label: 'Prix (F CFA) *', type: 'number' },
+                { k: 'stock',       label: 'Stock',          type: 'number' },
+                { k: 'description', label: 'Description',    type: 'text' },
+                { k: 'photoUrl',    label: 'URL photo',      type: 'text' },
+              ].map(f => (
+                <div key={f.k} className="space-y-1">
+                  <label className="text-xs font-semibold text-[#1A1A1A]">{f.label}</label>
+                  <input type={f.type} value={editArticle[f.k] || ''} onChange={e => setEditArticle(p => ({ ...p, [f.k]: e.target.value }))}
+                    className="w-full bg-[#FDDDD4] border-0 rounded-xl px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C05015]/40" />
+                </div>
+              ))}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-[#1A1A1A]">Catégorie</label>
+                <select value={editArticle.categorieId || ''} onChange={e => setEditArticle(p => ({ ...p, categorieId: e.target.value }))}
+                  className="w-full bg-[#FDDDD4] border-0 rounded-xl px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C05015]/40">
+                  <option value="">Sélectionner…</option>
+                  {categories.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="edit-dispo" checked={!!editArticle.disponible} onChange={e => setEditArticle(p => ({ ...p, disponible: e.target.checked }))} />
+                <label htmlFor="edit-dispo" className="text-sm font-semibold text-[#1A1A1A]">Disponible</label>
+              </div>
+              <button onClick={handleUpdateArticle}
+                className="w-full py-3 rounded-2xl bg-[#C05015] hover:bg-[#9A3E10] text-white font-bold text-sm flex items-center justify-center gap-2">
+                <Pencil className="w-3.5 h-3.5" />Enregistrer les modifications
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -762,15 +874,15 @@ function OrdersTab({ restaurantId }) {
 
   const getStatusColor = (status) => {
     const colors = {
-      RECUE: "bg-sky-100 text-sky-800",
-      CONFIRMEE: "bg-violet-100 text-violet-800",
-      EN_PREP: "bg-amber-100 text-amber-800",
-      PRETE: "bg-green-100 text-green-800",
-      LIVREE: "bg-teal-100 text-teal-800",
-      ANNULEE: "bg-rose-100 text-rose-800",
-      EN_ATTENTE: "bg-yellow-100 text-yellow-800",
+      RECUE: "bg-[#FBE8DC] text-[#C05015]",
+      CONFIRMEE: "bg-[#FBE8DC] text-[#1A1A1A]",
+      EN_PREP: "bg-[#FBE8DC] text-[#9A3E10]",
+      PRETE: "bg-[#FBE8DC] text-[#1C1917]",
+      LIVREE: "bg-[#FBE8DC] text-[#57534E]",
+      ANNULEE: "bg-red-50 text-red-700",
+      EN_ATTENTE: "bg-[#FFFBEB] text-[#92400E]",
     };
-    return colors[status] || "bg-gray-100 text-gray-800";
+    return colors[status] || "bg-[#FBE8DC] text-[#1A1A1A]";
   };
 
   const getStatusLabel = (status) => {
@@ -800,7 +912,7 @@ function OrdersTab({ restaurantId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="w-8 h-8 border-4 border-violet-500 border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#C05015] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -820,13 +932,13 @@ function OrdersTab({ restaurantId }) {
         {orders.map((order) => (
           <div
             key={order.id}
-            className="bg-white rounded-2xl border border-violet-100 p-4"
+            className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="font-semibold">Commande #{order.numero}</span>
-                  <span className="text-xs px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                  <span className="text-xs px-2 py-1 rounded-full bg-[#FBE8DC] text-slate-700">
                     {order.source}
                   </span>
                   <span
@@ -838,8 +950,8 @@ function OrdersTab({ restaurantId }) {
                 <p className="text-sm text-gray-600">
                   {new Date(order.createdAt).toLocaleString("fr-FR")}
                 </p>
-                <p className="text-sm text-gray-500">Référence CDC: {order.numero}</p>
-                <p className="font-medium text-violet-600">
+                <p className="text-sm text-[#9A7060]">Référence CDC: {order.numero}</p>
+                <p className="font-bold text-[#1C1917]">
                   {Number(order.amount || 0).toLocaleString()} FCFA
                 </p>
               </div>
@@ -847,7 +959,7 @@ function OrdersTab({ restaurantId }) {
                 {order.type === "CLIENT" && canCancelOrder(order) && (
                   <button
                     onClick={() => updateOrderStatus(order.id, "ANNULEE")}
-                    className="px-3 py-1.5 bg-rose-500 text-white rounded-lg text-sm hover:bg-rose-600 transition"
+                    className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition"
                   >
                     Annuler
                   </button>
@@ -855,7 +967,7 @@ function OrdersTab({ restaurantId }) {
                 {order.type === "CLIENT" && canConfirmOrder(order) && (
                   <button
                     onClick={() => updateOrderStatus(order.id, "CONFIRMEE")}
-                    className="px-3 py-1.5 bg-violet-500 text-white rounded-lg text-sm hover:bg-violet-600 transition"
+                    className="px-3 py-1.5 bg-[#C05015] text-white rounded-lg text-sm hover:bg-[#9A3E10] transition"
                   >
                     Valider
                   </button>
@@ -863,7 +975,7 @@ function OrdersTab({ restaurantId }) {
                 {order.type === "CLIENT" && canPrepareOrder(order) && (
                   <button
                     onClick={() => updateOrderStatus(order.id, "EN_PREP")}
-                    className="px-3 py-1.5 bg-amber-500 text-white rounded-lg text-sm hover:bg-amber-600 transition"
+                    className="px-3 py-1.5 bg-[#0F172A] text-white rounded-lg text-sm hover:bg-black transition"
                   >
                     En préparation
                   </button>
@@ -871,7 +983,7 @@ function OrdersTab({ restaurantId }) {
                 {order.type === "CLIENT" && canMarkReady(order) && (
                   <button
                     onClick={() => updateOrderStatus(order.id, "PRETE")}
-                    className="px-3 py-1.5 bg-green-500 text-white rounded-lg text-sm hover:bg-green-600 transition"
+                    className="px-3 py-1.5 bg-[#1A1A1A] text-white rounded-lg text-sm hover:bg-[#292524] transition"
                   >
                     Prête
                   </button>
@@ -879,13 +991,13 @@ function OrdersTab({ restaurantId }) {
                 {order.type === "CLIENT" && canCompleteOrder(order) && (
                   <button
                     onClick={() => updateOrderStatus(order.id, "LIVREE")}
-                    className="px-3 py-1.5 bg-cyan-500 text-white rounded-lg text-sm hover:bg-cyan-600 transition"
+                    className="px-3 py-1.5 bg-[#57534E] text-white rounded-lg text-sm hover:bg-[#1A1A1A] transition"
                   >
                     Valider remise
                   </button>
                 )}
                 {order.type === "B2B" && (
-                  <span className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm">
+                  <span className="px-3 py-1.5 bg-[#FBE8DC] text-slate-700 rounded-lg text-sm">
                     Commande entreprise - lecture seule
                   </span>
                 )}
@@ -913,259 +1025,196 @@ function OrdersTab({ restaurantId }) {
 // ==================== STOCKS MODULE ====================
 function StocksTab({ restaurantId }) {
   const [stocks, setStocks] = useState([]);
-  const [alerts, setAlerts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [adjustmentForm, setAdjustmentForm] = useState({
-    articleId: "",
-    quantity: "",
-    motif: "",
-  });
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+  const [adjustmentForm, setAdjustmentForm] = useState({ articleId: '', quantity: '', motif: '' });
 
-  useEffect(() => {
-    const loadStocks = async () => {
-      if (!restaurantId) return;
-      try {
-        setLoading(true);
-        const stocksRes = await stocksAPI.getAll({ restaurantId });
-        setStocks(stocksRes.data || []);
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-        const alertsRes = await stocksAPI.getAlerts({ restaurantId });
-        setAlerts(alertsRes.data || []);
-      } catch (error) {
-        console.error("Erreur chargement stocks:", error);
-        // Fallback to mock data
-        setStocks([
-          {
-            id: "1",
-            nom: "Riz",
-            stock: 25,
-            unite: "kg",
-            seuil: 10,
-          },
-          {
-            id: "2",
-            nom: "Poisson",
-            stock: 8,
-            unite: "kg",
-            seuil: 5,
-          },
-          {
-            id: "3",
-            nom: "Tomates",
-            stock: 15,
-            unite: "kg",
-            seuil: 8,
-          },
-        ]);
-        setAlerts([
-          { id: "2", nom: "Poisson", stock: 8, seuil: 10 },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadStocks();
+  const loadStocks = useCallback(async () => {
+    if (!restaurantId) return;
+    try {
+      setLoading(true);
+      const stocksRes = await stocksAPI.getAll({ restaurantId });
+      setStocks(stocksRes.data || []);
+    } catch {
+      setStocks([
+        { id: '1', nom: 'Riz', stock: 25, unite: 'kg', seuil: 10 },
+        { id: '2', nom: 'Poisson', stock: 3, unite: 'kg', seuil: 5 },
+        { id: '3', nom: 'Tomates', stock: 15, unite: 'kg', seuil: 8 },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   }, [restaurantId]);
 
-  const handleAdjustStock = async () => {
-    try {
-      if (!adjustmentForm.articleId || !adjustmentForm.quantity) {
-        alert("Article et quantité sont requis");
-        return;
-      }
+  useEffect(() => { loadStocks(); }, [loadStocks]);
 
+  const handleAdjustStock = async () => {
+    if (!adjustmentForm.articleId || !adjustmentForm.quantity) {
+      showToast('Article et quantité requis');
+      return;
+    }
+    try {
+      setSaving(true);
       await stocksAPI.adjust(
         adjustmentForm.articleId,
         parseInt(adjustmentForm.quantity),
-        adjustmentForm.motif || "Ajustement manuel",
+        adjustmentForm.motif || 'Ajustement manuel',
       );
-
-      alert("Stock ajusté avec succès!");
-      setAdjustmentForm({ articleId: "", quantity: "", motif: "" });
-
-      // Refresh data
-      const stocksRes = await stocksAPI.getAll({ restaurantId });
-      setStocks(stocksRes.data || []);
-    } catch (error) {
-      console.error("Erreur ajustement stock:", error);
-      alert("Erreur lors de l'ajustement du stock");
+      setAdjustmentForm({ articleId: '', quantity: '', motif: '' });
+      showToast('Stock ajusté avec succès');
+      await loadStocks();
+    } catch {
+      showToast("Erreur lors de l'ajustement");
+    } finally {
+      setSaving(false);
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="h-9 w-9 rounded-full border-4 border-amber-500 border-t-transparent animate-spin shadow-[0_0_24px_rgba(245,158,11,0.2)]" />
+        <div className="h-9 w-9 rounded-full border-4 border-[#C05015] border-t-transparent animate-spin" />
       </div>
     );
   }
 
+  const criticalItems = stocks.filter(s => Number(s.stock) <= Number(s.seuilMin || s.seuil || 5));
+  const okItems = stocks.length - criticalItems.length;
+
   return (
-    <div className="space-y-6">
-      <section className="rounded-[28px] border border-[#F5DFC0] bg-gradient-to-br from-amber-50 via-white to-orange-50 p-6 shadow-sm">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-amber-700 shadow-sm">
-              <AlertTriangle className="h-3.5 w-3.5" />
-              Pilotage de l'inventaire
+    <div className="space-y-5">
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl">{toast}</div>
+      )}
+
+      {/* KPI header */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {[
+          { label: 'Articles suivis', value: stocks.length, icon: Package, iconBg: '#FBE8DC', iconColor: '#C05015' },
+          { label: 'Niveaux OK', value: okItems, icon: CheckCircle, iconBg: '#F0FDF4', iconColor: '#16A34A' },
+          { label: 'Alertes critiques', value: criticalItems.length, icon: AlertTriangle, iconBg: criticalItems.length > 0 ? '#FEF2F2' : '#F0FDF4', iconColor: criticalItems.length > 0 ? '#DC2626' : '#16A34A' },
+        ].map(({ label, value, icon: Icon, iconBg, iconColor }) => (
+          <div key={label} className="rounded-2xl bg-white border border-[#E2E8F0] p-4 shadow-sm flex items-center gap-4">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+              <Icon className="w-5 h-5" style={{ color: iconColor }} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#2D2720]">Gestion des stocks</h3>
-              <p className="mt-1 text-sm text-[#7A6A58]">
-                Inventaire en temps réel, seuils critiques et ajustements rapides.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-white px-3 py-1.5 text-amber-700 shadow-sm">
-                {stocks.length} article(s) suivis
-              </span>
-              <span className="rounded-full bg-white px-3 py-1.5 text-rose-700 shadow-sm">
-                {alerts.length} alerte(s)
-              </span>
+              <p className="text-xs font-semibold text-[#9A7060] uppercase tracking-wide">{label}</p>
+              <p className="text-2xl font-extrabold text-[#0F172A]">{value}</p>
             </div>
           </div>
-          <button
-            onClick={handleAdjustStock}
-            className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-600"
-          >
-            <RefreshCcw className="h-4 w-4" />
-            Ajuster un stock
-          </button>
-        </div>
-      </section>
+        ))}
+      </div>
 
-      {alerts.length > 0 && (
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-          {alerts.map((alert) => (
-            <div
-              key={alert.id}
-              className="rounded-[22px] border border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50 p-4 shadow-sm"
-            >
-              <div className="flex items-start gap-3">
-                <div className="rounded-2xl bg-rose-100 p-2 text-rose-600">
-                  <AlertTriangle className="h-4 w-4" />
-                </div>
-                <div>
-                  <div className="font-semibold text-[#2D2720]">{alert.nom}</div>
-                  <div className="mt-1 text-sm text-rose-700">
-                    Stock actuel {Math.max(0, Number(alert.stock || 0))} / seuil {Math.max(0, Number(alert.seuil || 0))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+      {/* Alert banner */}
+      {criticalItems.length > 0 && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-3">
+          <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-red-700">
+            <span className="font-bold">{criticalItems.length} article{criticalItems.length > 1 ? 's' : ''} en alerte :</span>{' '}
+            {criticalItems.map(i => i.nom).join(', ')}
+          </p>
         </div>
       )}
 
-      <div className="rounded-[26px] border border-[#F5DFC0] bg-white p-6 shadow-sm">
-        <h4 className="text-lg font-bold text-[#2D2720]">Ajustement manuel de stock</h4>
-        <p className="mt-1 text-sm text-[#7A6A58]">
-          Utilisez ce panneau pour corriger un écart, enregistrer une réception ou une casse.
-        </p>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Inventory table */}
+      <div className="rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[#F4F6F8]">
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#2D2720]">Article</label>
-            <select
-              value={adjustmentForm.articleId}
-              onChange={(e) =>
-                setAdjustmentForm({
-                  ...adjustmentForm,
-                  articleId: e.target.value,
-                })
-              }
-              className="w-full rounded-2xl border border-amber-200 bg-amber-50/30 px-4 py-3 outline-none transition focus:border-amber-400"
-            >
+            <h4 className="text-sm font-bold text-[#0F172A]">Inventaire</h4>
+            <p className="text-xs text-[#9A7060] mt-0.5">Vue détaillée par article avec niveau de stock</p>
+          </div>
+          <button onClick={loadStocks}
+            className="flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-semibold text-[#475569] hover:border-[#C05015]/40 hover:text-[#C05015] transition-colors">
+            <RefreshCcw className="w-3.5 h-3.5" />
+            Actualiser
+          </button>
+        </div>
+        {stocks.length === 0 ? (
+          <div className="px-5 py-12 text-center text-[#9A7060] text-sm">
+            <AlertTriangle className="mx-auto mb-3 h-10 w-10 text-[#E2E8F0]" />
+            Aucun article dans le stock
+          </div>
+        ) : (
+          <div className="divide-y divide-[#F4F6F8]">
+            {stocks.map((item) => {
+              const stockVal = Math.max(0, Number(item.stock || 0));
+              const seuil    = Math.max(1, Number(item.seuilMin || item.seuil || 5));
+              const pct      = Math.min(100, Math.round((stockVal / Math.max(seuil * 3, 1)) * 100));
+              const isAlert  = stockVal <= seuil;
+              return (
+                <div key={item.id} className="flex items-center gap-4 px-5 py-4">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-2">
+                      <p className="font-semibold text-[#0F172A] text-sm truncate">{item.nom}</p>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold flex-shrink-0 ${isAlert ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}`}>
+                        {isAlert ? 'Alerte' : 'OK'}
+                      </span>
+                    </div>
+                    <div className="h-1.5 w-full bg-[#F4F6F8] rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all ${isAlert ? 'bg-red-400' : 'bg-emerald-400'}`} style={{ width: pct + '%' }} />
+                    </div>
+                  </div>
+                  <div className="text-right flex-shrink-0">
+                    <p className={`text-lg font-extrabold ${isAlert ? 'text-red-600' : 'text-[#0F172A]'}`}>{stockVal}</p>
+                    <p className="text-xs text-[#9A7060]">{item.unite || 'unités'}</p>
+                  </div>
+                  <div className="text-right flex-shrink-0 hidden sm:block w-20">
+                    <p className="text-[10px] text-[#9A7060] uppercase tracking-wide">Seuil min.</p>
+                    <p className="text-sm font-semibold text-[#475569]">{seuil} {item.unite || 'u.'}</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Adjustment form */}
+      <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-8 h-8 rounded-xl bg-[#FBE8DC] flex items-center justify-center">
+            <Plus className="w-4 h-4 text-[#C05015]" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-[#0F172A]">Ajustement de stock</h4>
+            <p className="text-xs text-[#9A7060]">Correction, réception ou casse</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div>
+            <label className="mb-1 block text-xs font-semibold text-[#475569]">Article</label>
+            <select value={adjustmentForm.articleId}
+              onChange={e => setAdjustmentForm({ ...adjustmentForm, articleId: e.target.value })}
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition">
               <option value="">Sélectionner un article</option>
-              {stocks.map((item) => (
-                <option key={item.id} value={item.id}>
-                  {item.nom}
-                </option>
-              ))}
+              {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
             </select>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#2D2720]">Quantité</label>
-            <input
-              type="number"
-              value={adjustmentForm.quantity}
-              onChange={(e) =>
-                setAdjustmentForm({
-                  ...adjustmentForm,
-                  quantity: e.target.value,
-                })
-              }
-              className="w-full rounded-2xl border border-amber-200 bg-amber-50/30 px-4 py-3 outline-none transition focus:border-amber-400"
-              placeholder="Ex: +5 ou -2"
-            />
+            <label className="mb-1 block text-xs font-semibold text-[#475569]">Quantité (+réception / -casse)</label>
+            <input type="number" value={adjustmentForm.quantity}
+              onChange={e => setAdjustmentForm({ ...adjustmentForm, quantity: e.target.value })}
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+              placeholder="Ex: +5 ou -2" />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#2D2720]">Motif</label>
-            <input
-              type="text"
-              value={adjustmentForm.motif}
-              onChange={(e) =>
-                setAdjustmentForm({ ...adjustmentForm, motif: e.target.value })
-              }
-              className="w-full rounded-2xl border border-amber-200 bg-amber-50/30 px-4 py-3 outline-none transition focus:border-amber-400"
-              placeholder="Optionnel"
-            />
+            <label className="mb-1 block text-xs font-semibold text-[#475569]">Motif</label>
+            <input type="text" value={adjustmentForm.motif}
+              onChange={e => setAdjustmentForm({ ...adjustmentForm, motif: e.target.value })}
+              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+              placeholder="Réception, casse, correction..." />
           </div>
         </div>
-        <button
-          onClick={handleAdjustStock}
-          className="mt-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-600"
-        >
-          Enregistrer l'ajustement
+        <button onClick={handleAdjustStock} disabled={saving}
+          className="mt-4 flex items-center gap-2 rounded-xl bg-[#C05015] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10] disabled:opacity-60">
+          {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
+          {saving ? 'Enregistrement...' : 'Enregistrer'}
         </button>
       </div>
-
-      <div className="rounded-[26px] border border-[#F5DFC0] bg-white p-4 shadow-sm">
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h4 className="text-lg font-bold text-[#2D2720]">Inventaire</h4>
-          <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-            Vue détaillée
-          </span>
-        </div>
-        <div className="grid gap-3">
-          {stocks.map((item) => {
-            const stockValue = Math.max(0, Number(item.stock || 0));
-            const seuil = Math.max(0, Number(item.seuilMin || item.seuil || 5));
-            const enAlerte = stockValue <= seuil;
-            return (
-              <div
-                key={item.id}
-                className={`rounded-[22px] border p-4 shadow-sm ${enAlerte ? "border-rose-200 bg-gradient-to-br from-rose-50 via-white to-orange-50" : "border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50"}`}
-              >
-                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                  <div>
-                    <div className="font-semibold text-[#2D2720]">{item.nom}</div>
-                    <div className="mt-1 text-sm text-[#7A6A58]">
-                      Stock: {stockValue} {item.unite || "unités"}
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-3">
-                    <span className="rounded-full bg-white px-3 py-1.5 text-xs font-medium text-[#7A6A58] shadow-sm">
-                      Seuil min: {seuil} {item.unite || "unités"}
-                    </span>
-                    <span
-                      className={`rounded-full px-3 py-1.5 text-xs font-semibold ${enAlerte ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700"}`}
-                    >
-                      {enAlerte ? "Alerte" : "OK"}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {stocks.length === 0 && (
-        <div className="rounded-[24px] border border-dashed border-[#F5DFC0] bg-white px-4 py-12 text-center text-[#8B7355]">
-          <AlertTriangle className="mx-auto mb-4 h-12 w-12 text-amber-300" />
-          <p>Aucun stock configuré</p>
-        </div>
-      )}
     </div>
   );
 }
@@ -1174,326 +1223,232 @@ function StocksTab({ restaurantId }) {
 function FinanceTab({ restaurantId }) {
   const [kpiData, setKpiData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState("day");
-  const [expenseForm, setExpenseForm] = useState({
-    categorie: "",
-    montant: "",
-    description: "",
-  });
-  const [budgetConfig, setBudgetConfig] = useState({
-    plafondMensuel: "",
-    alerte80: true,
-    alerte100: true,
-  });
+  const [period, setPeriod] = useState('day');
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+  const [expenseForm, setExpenseForm] = useState({ categorie: '', montant: '', description: '' });
+  const [budgetConfig, setBudgetConfig] = useState({ plafondMensuel: '', alerte80: true, alerte100: true });
 
-  useEffect(() => {
-    const loadFinanceData = async () => {
-      if (!restaurantId) return;
-      try {
-        setLoading(true);
-        const statsRes = await tresorerieAPI.getStats(period);
-        setKpiData(statsRes.data);
-      } catch (error) {
-        console.error("Erreur chargement données financières:", error);
-        // Fallback to mock data
-        setKpiData({
-          caJour: 125000,
-          caSemaine: 875000,
-          caMois: 3500000,
-          nbCommandes: 42,
-          ticketMoyen: 29762,
-          margesBrutes: 68.5,
-        });
-      } finally {
-        setLoading(false);
-      }
-    };
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
-    loadFinanceData();
+  const loadData = useCallback(async () => {
+    if (!restaurantId) return;
+    try {
+      setLoading(true);
+      const r = await tresorerieAPI.getStats(period);
+      setKpiData(r.data);
+    } catch {
+      setKpiData({ caJour: 125000, caSemaine: 875000, caMois: 3500000, nbCommandes: 42, ticketMoyen: 29762, margesBrutes: 68.5 });
+    } finally {
+      setLoading(false);
+    }
   }, [restaurantId, period]);
 
-  const handleRecordExpense = async () => {
-    try {
-      if (!expenseForm.categorie || !expenseForm.montant) {
-        alert("Catégorie et montant sont requis");
-        return;
-      }
+  useEffect(() => { loadData(); }, [loadData]);
 
-      const expenseData = {
+  const handleRecordExpense = async () => {
+    if (!expenseForm.categorie || !expenseForm.montant) { showToast('Catégorie et montant requis'); return; }
+    try {
+      setSaving(true);
+      await tresorerieAPI.recordExpense({
         categorie: expenseForm.categorie,
         montant: parseFloat(expenseForm.montant),
-        description: expenseForm.description || "",
+        description: expenseForm.description || '',
         date: new Date().toISOString(),
-      };
-
-      await tresorerieAPI.recordExpense(expenseData);
-      alert("Dépense enregistrée avec succès!");
-      setExpenseForm({ categorie: "", montant: "", description: "" });
-    } catch (error) {
-      console.error("Erreur enregistrement dépense:", error);
-      alert("Erreur lors de l'enregistrement de la dépense");
+      });
+      setExpenseForm({ categorie: '', montant: '', description: '' });
+      showToast('Dépense enregistrée');
+    } catch {
+      showToast("Erreur lors de l'enregistrement");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleGenerateReport = async (reportPeriod) => {
+  const handleGenerateReport = async (rp) => {
     try {
-      const reportRes = await tresorerieAPI.generateReport(reportPeriod);
-      const report = reportRes.data || {};
-      const pdfBlob = buildSimplePdfBlob(
-        `Rapport ${reportPeriod} ${report.restaurantId || restaurantId || "restaurant"}`,
-        [
-          `Periode: ${reportPeriod}`,
-          `Genere le: ${new Date().toLocaleString("fr-FR")}`,
-          `Revenus: ${formatFCFA(report.summary?.totalRevenue || 0)}`,
-          `Depenses: ${formatFCFA(report.summary?.totalExpenses || 0)}`,
-          `Profit net: ${formatFCFA(report.summary?.netProfit || 0)}`,
-          `Marge: ${report.summary?.profitMargin || 0}%`,
-        ],
-      );
-      downloadAndOpenBlob(pdfBlob, `rapport-${reportPeriod}-${restaurantId || "restaurant"}.pdf`);
-    } catch (error) {
-      console.error("Erreur génération rapport:", error);
-      alert("Erreur lors de la génération du rapport");
+      const r = await tresorerieAPI.generateReport(rp);
+      const report = r.data || {};
+      const blob = buildSimplePdfBlob(`Rapport ${rp}`, [
+        `Periode: ${rp}`,
+        `Généré le: ${new Date().toLocaleString('fr-FR')}`,
+        `Revenus: ${formatFCFA(report.summary?.totalRevenue || 0)}`,
+        `Dépenses: ${formatFCFA(report.summary?.totalExpenses || 0)}`,
+        `Profit net: ${formatFCFA(report.summary?.netProfit || 0)}`,
+        `Marge: ${report.summary?.profitMargin || 0}%`,
+      ]);
+      downloadAndOpenBlob(blob, `rapport-${rp}-${restaurantId || 'restaurant'}.pdf`);
+    } catch {
+      showToast('Erreur génération rapport');
     }
   };
 
   const handleConfigureBudget = async () => {
+    if (!budgetConfig.plafondMensuel) { showToast('Plafond mensuel requis'); return; }
     try {
-      if (!budgetConfig.plafondMensuel) {
-        alert("Plafond mensuel est requis");
-        return;
-      }
-
-      const configData = {
+      await tresorerieAPI.configureBudgetAlerts({
         plafondMensuel: parseFloat(budgetConfig.plafondMensuel),
         alerte80: budgetConfig.alerte80,
         alerte100: budgetConfig.alerte100,
-      };
-
-      await tresorerieAPI.configureBudgetAlerts(configData);
-      alert("Configuration du budget sauvegardée!");
-    } catch (error) {
-      console.error("Erreur configuration budget:", error);
-      alert("Erreur lors de la configuration du budget");
+      });
+      showToast('Budget configuré');
+    } catch {
+      showToast('Erreur configuration budget');
     }
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="h-9 w-9 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin shadow-[0_0_24px_rgba(16,185,129,0.18)]" />
+        <div className="h-9 w-9 rounded-full border-4 border-[#C05015] border-t-transparent animate-spin" />
       </div>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <section className="rounded-[28px] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-6 shadow-sm">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-          <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-emerald-700 shadow-sm">
-              <Wallet className="h-3.5 w-3.5" />
-              Trésorerie & reporting
-            </div>
-            <div>
-              <h3 className="text-xl font-bold text-[#2D2720]">Pilotage financier</h3>
-              <p className="mt-1 text-sm text-[#7A6A58]">
-                Analysez les revenus, enregistrez les dépenses et pilotez les budgets.
-              </p>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {["day", "week", "month"].map((p) => (
-              <button
-                key={p}
-                onClick={() => setPeriod(p)}
-                className={`rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                  period === p
-                    ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-sm"
-                    : "bg-white text-emerald-700 border border-emerald-200 hover:bg-emerald-50"
-                }`}
-              >
-                {p === "day" ? "Jour" : p === "week" ? "Semaine" : "Mois"}
-              </button>
-            ))}
-          </div>
-        </div>
-      </section>
+  const caValue = period === 'day' ? kpiData.caJour : period === 'week' ? kpiData.caSemaine : kpiData.caMois;
+  const caLabel = period === 'day' ? "CA aujourd'hui" : period === 'week' ? 'CA semaine' : 'CA mois';
+  const EXPENSE_CATS = ['loyer', 'salaires', 'fournitures', 'electricite', 'eau', 'autre'];
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="rounded-[24px] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4 shadow-sm">
-          <div className="text-sm font-medium text-emerald-700">
-            {period === "day"
-              ? "CA Aujourd'hui"
-              : period === "week"
-                ? "CA Semaine"
-                : "CA Mois"}
-          </div>
-          <div className="mt-2 text-2xl font-bold text-[#14532D]">
-            {formatFCFA(
-              period === "day"
-                ? kpiData.caJour
-                : period === "week"
-                  ? kpiData.caSemaine
-                  : kpiData.caMois,
-            )}
-          </div>
+  return (
+    <div className="space-y-5">
+      {toast && (
+        <div className="fixed bottom-4 right-4 z-50 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl">{toast}</div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-extrabold text-[#0F172A]">Trésorerie & finances</h3>
+          <p className="text-xs text-[#9A7060] mt-0.5">CA, dépenses et pilotage du budget restaurant</p>
         </div>
-        <div className="rounded-[24px] border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-4 shadow-sm">
-          <div className="text-sm font-medium text-violet-700">Nb commandes</div>
-          <div className="mt-2 text-2xl font-bold text-[#2D2720]">{kpiData.nbCommandes}</div>
-        </div>
-        <div className="rounded-[24px] border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4 shadow-sm">
-          <div className="text-sm font-medium text-amber-700">Ticket moyen</div>
-          <div className="mt-2 text-2xl font-bold text-[#2D2720]">
-            {formatFCFA(kpiData.ticketMoyen)}
-          </div>
-        </div>
-        <div className="rounded-[24px] border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-4 shadow-sm">
-          <div className="text-sm font-medium text-sky-700">Marge brute</div>
-          <div className="mt-2 text-2xl font-bold text-[#2D2720]">{kpiData.margesBrutes}%</div>
+        <div className="flex p-1 bg-[#F4F6F8] rounded-2xl gap-1">
+          {[{ v: 'day', l: "Aujourd'hui" }, { v: 'week', l: 'Semaine' }, { v: 'month', l: 'Mois' }].map(p => (
+            <button key={p.v} onClick={() => setPeriod(p.v)}
+              className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${period === p.v ? 'bg-white text-[#C05015] shadow-sm' : 'text-[#9A7060] hover:text-[#C05015]'}`}>
+              {p.l}
+            </button>
+          ))}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.05fr_0.95fr] gap-6">
-        <div className="rounded-[26px] border border-emerald-200 bg-white p-6 shadow-sm">
-          <h4 className="text-lg font-bold text-[#2D2720]">Saisir une dépense opérationnelle</h4>
-          <p className="mt-1 text-sm text-[#7A6A58]">
-            Chaque dépense saisie est destinée à la vue trésorerie du restaurant.
-          </p>
-          <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* KPI cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="rounded-2xl p-5 shadow-sm border border-transparent" style={{ background: '#0F172A' }}>
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-white/50">{caLabel}</p>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(192,80,21,0.25)' }}>
+              <TrendingUp className="w-4 h-4 text-[#C05015]" />
+            </div>
+          </div>
+          <p className="text-2xl font-extrabold text-white leading-none">{formatFCFA(caValue)}</p>
+        </div>
+        {[
+          { label: 'Nb commandes', value: kpiData.nbCommandes, icon: ShoppingBag, iconBg: '#FBE8DC', iconColor: '#C05015' },
+          { label: 'Ticket moyen', value: formatFCFA(kpiData.ticketMoyen), icon: CreditCard, iconBg: '#F0FDF4', iconColor: '#16A34A' },
+          { label: 'Marge brute', value: kpiData.margesBrutes + '%', icon: PieChart, iconBg: '#EFF6FF', iconColor: '#2563EB' },
+        ].map(({ label, value, icon: Icon, iconBg, iconColor }) => (
+          <div key={label} className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-xs font-semibold uppercase tracking-wide text-[#9A7060]">{label}</p>
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: iconBg }}>
+                <Icon className="w-4 h-4" style={{ color: iconColor }} />
+              </div>
+            </div>
+            <p className="text-2xl font-extrabold text-[#0F172A] leading-none">{value}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-5">
+        {/* Expense form */}
+        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-8 h-8 rounded-xl bg-[#FBE8DC] flex items-center justify-center">
+              <DollarSign className="w-4 h-4 text-[#C05015]" />
+            </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Catégorie *</label>
-              <select
-                value={expenseForm.categorie}
-                onChange={(e) =>
-                  setExpenseForm({ ...expenseForm, categorie: e.target.value })
-                }
-                className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 outline-none transition focus:border-emerald-400"
-              >
+              <h4 className="text-sm font-bold text-[#0F172A]">Saisir une dépense</h4>
+              <p className="text-xs text-[#9A7060]">Enregistrée dans la vue trésorerie</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-[#475569]">Catégorie *</label>
+              <select value={expenseForm.categorie}
+                onChange={e => setExpenseForm({ ...expenseForm, categorie: e.target.value })}
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition capitalize">
                 <option value="">Sélectionner...</option>
-                <option value="loyer">Loyer</option>
-                <option value="salaires">Salaires</option>
-                <option value="fournitures">Fournitures</option>
-                <option value="electricite">Électricité</option>
-                <option value="eau">Eau</option>
-                <option value="autre">Autre</option>
+                {EXPENSE_CATS.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Montant (FCFA) *</label>
-              <input
-                type="number"
-                min="1"
-                value={expenseForm.montant}
-                onChange={(e) =>
-                  setExpenseForm({ ...expenseForm, montant: e.target.value })
-                }
-                className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 outline-none transition focus:border-emerald-400"
-                placeholder="Ex: 50000"
-              />
+              <label className="mb-1 block text-xs font-semibold text-[#475569]">Montant (FCFA) *</label>
+              <input type="number" min="1" value={expenseForm.montant}
+                onChange={e => setExpenseForm({ ...expenseForm, montant: e.target.value })}
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+                placeholder="Ex: 50 000" />
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#2D2720]">Description</label>
-              <input
-                type="text"
-                value={expenseForm.description}
-                onChange={(e) =>
-                  setExpenseForm({ ...expenseForm, description: e.target.value })
-                }
-                className="w-full rounded-2xl border border-emerald-200 bg-emerald-50/30 px-4 py-3 outline-none transition focus:border-emerald-400"
-                placeholder="Optionnel"
-              />
+              <label className="mb-1 block text-xs font-semibold text-[#475569]">Description</label>
+              <input type="text" value={expenseForm.description}
+                onChange={e => setExpenseForm({ ...expenseForm, description: e.target.value })}
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+                placeholder="Optionnel" />
             </div>
           </div>
-          <button
-            onClick={handleRecordExpense}
-            className="mt-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 px-6 py-3 font-semibold text-white shadow-sm transition hover:from-emerald-600 hover:to-teal-600"
-          >
-            Enregistrer la dépense
+          <button onClick={handleRecordExpense} disabled={saving}
+            className="mt-4 flex items-center gap-2 rounded-xl bg-[#C05015] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10] disabled:opacity-60">
+            {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
+            {saving ? 'Enregistrement...' : 'Enregistrer la dépense'}
           </button>
         </div>
 
-        <div className="rounded-[26px] border border-violet-200 bg-white p-6 shadow-sm">
-          <h4 className="text-lg font-bold text-[#2D2720]">Actions disponibles</h4>
-          <p className="mt-1 text-sm text-[#7A6A58]">
-            Exports financiers et paramètres de budget centralisés.
-          </p>
-          <div className="mt-4 grid grid-cols-1 gap-3">
-            <button
-              onClick={() => handleGenerateReport("monthly")}
-              className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-violet-500 to-fuchsia-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-violet-600 hover:to-fuchsia-600"
-            >
-              <Download className="h-5 w-5" />
-              Rapport mensuel (PDF/Excel)
-            </button>
-            <button
-              onClick={() => handleGenerateReport("quarterly")}
-              className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-amber-600 hover:to-orange-600"
-            >
-              <BarChart3 className="h-5 w-5" />
-              Rapport trimestriel
-            </button>
-            <button
-              onClick={() => handleGenerateReport("yearly")}
-              className="flex items-center gap-3 rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-sky-600 hover:to-cyan-600"
-            >
-              <TrendingUp className="h-5 w-5" />
-              Rapport annuel
-            </button>
-            <div className="rounded-[22px] border border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50 p-4">
-              <h5 className="font-semibold text-[#2D2720]">Configuration budget</h5>
-              <div className="mt-3 grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-2">
-                <input
-                  type="number"
-                  min="0"
-                  value={budgetConfig.plafondMensuel}
-                  onChange={(e) =>
-                    setBudgetConfig({
-                      ...budgetConfig,
-                      plafondMensuel: e.target.value,
-                    })
-                  }
-                  className="rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-sm outline-none transition focus:border-emerald-400"
-                  placeholder="Plafond (FCFA)"
-                />
-                <button
-                  onClick={handleConfigureBudget}
-                  className="rounded-2xl bg-[#1F8A70] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#166D58]"
-                >
-                  Sauvegarder
+        {/* Reports + budget */}
+        <div className="space-y-4">
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+            <h4 className="text-sm font-bold text-[#0F172A] mb-3">Exports financiers</h4>
+            <div className="space-y-2">
+              {[
+                { rp: 'monthly',   label: 'Rapport mensuel',     icon: Download,  bg: '#0F172A' },
+                { rp: 'quarterly', label: 'Rapport trimestriel', icon: BarChart3,  bg: '#1A1A1A' },
+                { rp: 'yearly',    label: 'Rapport annuel',      icon: TrendingUp, bg: '#C05015' },
+              ].map(({ rp, label, icon: Icon, bg }) => (
+                <button key={rp} onClick={() => handleGenerateReport(rp)}
+                  className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+                  style={{ background: bg }}>
+                  <Icon className="h-4 w-4 flex-shrink-0" />
+                  {label}
                 </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="w-8 h-8 rounded-xl bg-[#FBE8DC] flex items-center justify-center flex-shrink-0">
+                <Wallet className="w-4 h-4 text-[#C05015]" />
               </div>
-              <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-[#2D2720]">
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={budgetConfig.alerte80}
-                    onChange={(e) =>
-                      setBudgetConfig({
-                        ...budgetConfig,
-                        alerte80: e.target.checked,
-                      })
-                    }
-                    className="h-4 w-4 rounded text-emerald-500"
-                  />
-                  Alerte à 80%
+              <h4 className="text-sm font-bold text-[#0F172A]">Plafond mensuel</h4>
+            </div>
+            <div className="flex gap-2">
+              <input type="number" min="0" value={budgetConfig.plafondMensuel}
+                onChange={e => setBudgetConfig({ ...budgetConfig, plafondMensuel: e.target.value })}
+                className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+                placeholder="Plafond (FCFA)" />
+              <button onClick={handleConfigureBudget}
+                className="rounded-xl bg-[#C05015] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10]">
+                Sauvegarder
+              </button>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-4">
+              {[{ key: 'alerte80', label: 'Alerte à 80%' }, { key: 'alerte100', label: 'Alerte à 100%' }].map(({ key, label }) => (
+                <label key={key} className="inline-flex items-center gap-2 cursor-pointer">
+                  <input type="checkbox" checked={budgetConfig[key]}
+                    onChange={e => setBudgetConfig({ ...budgetConfig, [key]: e.target.checked })}
+                    className="h-4 w-4 rounded accent-[#C05015]" />
+                  <span className="text-xs font-medium text-[#0F172A]">{label}</span>
                 </label>
-                <label className="inline-flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={budgetConfig.alerte100}
-                    onChange={(e) =>
-                      setBudgetConfig({
-                        ...budgetConfig,
-                        alerte100: e.target.checked,
-                      })
-                    }
-                    className="h-4 w-4 rounded text-emerald-500"
-                  />
-                  Alerte à 100%
-                </label>
-              </div>
+              ))}
             </div>
           </div>
         </div>
@@ -1532,6 +1487,66 @@ function SettingsTab({ restaurantId, user }) {
   });
   const [staffCreationNotice, setStaffCreationNotice] = useState("");
   const [loadingStaff, setLoadingStaff] = useState(false);
+
+  /* ── Security state ── */
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [secPwd, setSecPwd] = useState({ current: "", next: "", confirm: "" });
+  const [showSecPwd, setShowSecPwd] = useState({ current: false, next: false, confirm: false });
+  const [secSaving, setSecSaving] = useState(false);
+  const [secSuccess, setSecSuccess] = useState("");
+  const [secError, setSecError] = useState("");
+  const [twoFactorEnabled, setTwoFactorEnabled] = useState(user?.twoFactorEnabled ?? false);
+  const [show2FA, setShow2FA] = useState(false);
+  const [qrData, setQrData] = useState(null);
+  const [backupCodes, setBackupCodes] = useState(null);
+  const [twoFactorCode, setTwoFactorCode] = useState("");
+
+  const handleChangePwd = async () => {
+    setSecError(""); setSecSuccess("");
+    if (!secPwd.current) { setSecError("Mot de passe actuel requis"); return; }
+    if (secPwd.next.length < 6) { setSecError("Minimum 6 caractères"); return; }
+    if (secPwd.next !== secPwd.confirm) { setSecError("Les mots de passe ne correspondent pas"); return; }
+    setSecSaving(true);
+    try {
+      await authAPI.changePassword({ currentPassword: secPwd.current, newPassword: secPwd.next });
+      setSecSuccess("Mot de passe modifié avec succès.");
+      setSecPwd({ current: "", next: "", confirm: "" });
+      setTimeout(() => { setShowPasswordForm(false); setSecSuccess(""); }, 2500);
+    } catch (e) { setSecError(e?.response?.data?.message || "Mot de passe actuel incorrect."); }
+    finally { setSecSaving(false); }
+  };
+
+  const handleSetup2FA = async () => {
+    setSecSaving(true); setSecError(""); setSecSuccess("");
+    try {
+      const res = await authAPI.setup2FA();
+      setQrData(res.data); setShow2FA(true);
+    } catch { setSecError("Erreur lors de la configuration 2FA"); }
+    finally { setSecSaving(false); }
+  };
+
+  const handleEnable2FA = async () => {
+    if (!/^\d{6}$/.test(twoFactorCode)) { setSecError("Code à 6 chiffres requis"); return; }
+    setSecSaving(true); setSecError("");
+    try {
+      const res = await authAPI.enable2FA(twoFactorCode);
+      setTwoFactorEnabled(true); setShow2FA(false);
+      if (res.data?.backupCodes?.length) setBackupCodes(res.data.backupCodes);
+      setSecSuccess("2FA activée avec succès — conservez vos codes de secours !");
+      setTwoFactorCode("");
+    } catch (e) { setSecError(e?.response?.data?.message || "Code invalide"); }
+    finally { setSecSaving(false); }
+  };
+
+  const handleDisable2FA = async () => {
+    setSecSaving(true); setSecError(""); setSecSuccess("");
+    try {
+      await authAPI.disable2FA();
+      setTwoFactorEnabled(false); setShow2FA(false);
+      setSecSuccess("2FA désactivée.");
+    } catch { setSecError("Erreur lors de la désactivation"); }
+    finally { setSecSaving(false); }
+  };
 
   const syncStoredUserRestaurant = useCallback((restaurantData) => {
     const cachedUser = JSON.parse(localStorage.getItem("user") || "{}");
@@ -1767,34 +1782,34 @@ function SettingsTab({ restaurantId, user }) {
   if (loadingProfile) {
     return (
       <div className="flex min-h-[280px] items-center justify-center">
-        <div className="h-10 w-10 rounded-full border-4 border-sky-500 border-t-transparent animate-spin" />
+        <div className="h-10 w-10 rounded-full border-4 border-[#C05015] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50 p-6 shadow-sm">
+      <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="space-y-3">
-            <div className="inline-flex items-center gap-2 rounded-full bg-white px-3 py-1 text-xs font-medium text-sky-700 shadow-sm">
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#FBE8DC] px-3 py-1 text-xs font-medium text-[#C05015]">
               <Settings className="h-3.5 w-3.5" />
               Paramètres & configuration
             </div>
             <div>
-              <h3 className="text-xl font-bold text-[#2D2720]">Centre de configuration</h3>
-              <p className="mt-1 text-sm text-[#7A6A58]">
+              <h3 className="text-xl font-bold text-[#1C1917]">Centre de configuration</h3>
+              <p className="mt-1 text-sm text-[#78716C]">
                 Profil restaurant, horaires, apparence, zones de livraison et comptes staff.
               </p>
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full bg-white px-3 py-1.5 text-sky-700 shadow-sm">
+              <span className="rounded-full bg-[#FBE8DC] px-3 py-1.5 text-[#1A1A1A]">
                 {settings.zonesLivraison.length} zone(s)
               </span>
-              <span className="rounded-full bg-white px-3 py-1.5 text-violet-700 shadow-sm">
+              <span className="rounded-full bg-[#FBE8DC] px-3 py-1.5 text-[#1A1A1A]">
                 {staffAccounts.length} staff
               </span>
-              <span className="rounded-full bg-white px-3 py-1.5 text-emerald-700 shadow-sm">
+              <span className="rounded-full bg-[#FBE8DC] px-3 py-1.5 text-[#1A1A1A]">
                 {settings.horaires.ouverture} - {settings.horaires.fermeture}
               </span>
             </div>
@@ -1803,12 +1818,12 @@ function SettingsTab({ restaurantId, user }) {
             <button
               onClick={handleSaveSettings}
               disabled={savingSettings}
-              className="rounded-2xl bg-gradient-to-r from-sky-500 to-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:from-sky-600 hover:to-cyan-600 disabled:cursor-not-allowed disabled:opacity-70"
+              className="rounded-2xl bg-[#C05015] px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10] disabled:cursor-not-allowed disabled:opacity-70"
             >
               {savingSettings ? "Sauvegarde..." : "Sauvegarder les paramètres"}
             </button>
             {settingsSaved && (
-              <p className="text-sm font-medium text-emerald-600">
+              <p className="text-sm font-medium text-[#1A1A1A]">
                 Paramètres sauvegardés avec succès.
               </p>
             )}
@@ -1819,81 +1834,81 @@ function SettingsTab({ restaurantId, user }) {
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_1fr] gap-6">
         <div className="space-y-6">
           <div className="rounded-[26px] border border-[#FFD8CC] bg-white p-6 shadow-sm">
-            <h4 className="text-lg font-bold text-[#2D2720]">Profil du restaurant</h4>
+            <h4 className="text-lg font-bold text-[#0F172A]">Profil du restaurant</h4>
             <p className="mt-1 text-sm text-[#7A6A58]">
               Ces informations alimentent la première carte du dashboard et la fiche publique du restaurant.
             </p>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Nom du restaurant</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Nom du restaurant</label>
                 <input
                   type="text"
                   value={settings.nom}
                   onChange={(e) => setSettings((prev) => ({ ...prev, nom: e.target.value }))}
-                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FFF8F3] px-4 py-3 outline-none transition focus:border-[#FF6B35]"
+                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#E8906A]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Téléphone</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Téléphone</label>
                 <input
                   type="tel"
                   value={settings.telephone}
                   onChange={(e) => setSettings((prev) => ({ ...prev, telephone: e.target.value }))}
-                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FFF8F3] px-4 py-3 outline-none transition focus:border-[#FF6B35]"
+                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#E8906A]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Email</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Email</label>
                 <input
                   type="email"
                   value={settings.email}
                   onChange={(e) => setSettings((prev) => ({ ...prev, email: e.target.value }))}
-                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FFF8F3] px-4 py-3 outline-none transition focus:border-[#FF6B35]"
+                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#E8906A]"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Logo / photo</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Logo / photo</label>
                 <input
                   type="text"
                   value={settings.logo}
                   onChange={(e) => setSettings((prev) => ({ ...prev, logo: e.target.value }))}
                   placeholder="URL du logo"
-                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FFF8F3] px-4 py-3 outline-none transition focus:border-[#FF6B35]"
+                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#E8906A]"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Adresse</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Adresse</label>
                 <input
                   type="text"
                   value={settings.adresse}
                   onChange={(e) => setSettings((prev) => ({ ...prev, adresse: e.target.value }))}
-                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FFF8F3] px-4 py-3 outline-none transition focus:border-[#FF6B35]"
+                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#E8906A]"
                 />
               </div>
               <div className="md:col-span-2">
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Description</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Description</label>
                 <textarea
                   value={settings.description}
                   onChange={(e) => setSettings((prev) => ({ ...prev, description: e.target.value }))}
                   rows={4}
-                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FFF8F3] px-4 py-3 outline-none transition focus:border-[#FF6B35]"
+                  className="w-full rounded-2xl border border-[#FFD8CC] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#E8906A]"
                 />
               </div>
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-sky-200 bg-white p-6 shadow-sm">
+          <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <h4 className="text-lg font-bold text-[#2D2720]">Apparence</h4>
-                <p className="mt-1 text-sm text-[#7A6A58]">
+                <h4 className="text-lg font-bold text-[#1C1917]">Apparence</h4>
+                <p className="mt-1 text-sm text-[#78716C]">
                   Le mode sombre s'applique à tout le circuit gérant/admin.
                 </p>
               </div>
               <button
                 onClick={toggleDarkMode}
                 className={`relative h-8 w-14 rounded-full transition-all ${
-                  settings.darkMode ? "bg-gradient-to-r from-sky-500 to-cyan-500" : "bg-gray-300"
+                  settings.darkMode ? "bg-[#0F172A]" : "bg-[#D1CBC5]"
                 }`}
               >
                 <span
@@ -1903,22 +1918,22 @@ function SettingsTab({ restaurantId, user }) {
                 />
               </button>
             </div>
-            <div className="mt-4 rounded-[22px] border border-sky-100 bg-gradient-to-r from-sky-50 via-white to-cyan-50 p-4">
-              <p className="text-sm font-medium text-[#2D2720]">Thème actuel</p>
+            <div className="mt-4 rounded-[22px] border border-[#E2E8F0] bg-white p-4">
+              <p className="text-sm font-medium text-[#0F172A]">Thème actuel</p>
               <p className="mt-1 text-sm text-[#7A6A58]">
                 {settings.darkMode ? "Mode sombre activé" : "Mode clair activé"}
               </p>
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-violet-200 bg-white p-6 shadow-sm">
-            <h4 className="text-lg font-bold text-[#2D2720]">Horaires d'ouverture</h4>
+          <div className="rounded-[26px] border border-[rgba(224,78,26,0.15)] bg-white p-6 shadow-sm">
+            <h4 className="text-lg font-bold text-[#0F172A]">Horaires d'ouverture</h4>
             <p className="mt-1 text-sm text-[#7A6A58]">
               Les horaires utilisés proviennent désormais du profil restaurant et peuvent être modifiés ici.
             </p>
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Ouverture</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Ouverture</label>
                 <input
                   type="time"
                   value={settings.horaires.ouverture}
@@ -1928,11 +1943,11 @@ function SettingsTab({ restaurantId, user }) {
                       horaires: { ...prev.horaires, ouverture: e.target.value },
                     }))
                   }
-                  className="w-full rounded-2xl border border-violet-200 bg-violet-50/30 px-4 py-3 outline-none transition focus:border-violet-400"
+                  className="w-full rounded-2xl border border-[rgba(224,78,26,0.15)] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#C05015]/50"
                 />
               </div>
               <div>
-                <label className="mb-1 block text-sm font-medium text-[#2D2720]">Fermeture</label>
+                <label className="mb-1 block text-sm font-medium text-[#0F172A]">Fermeture</label>
                 <input
                   type="time"
                   value={settings.horaires.fermeture}
@@ -1942,7 +1957,7 @@ function SettingsTab({ restaurantId, user }) {
                       horaires: { ...prev.horaires, fermeture: e.target.value },
                     }))
                   }
-                  className="w-full rounded-2xl border border-violet-200 bg-violet-50/30 px-4 py-3 outline-none transition focus:border-violet-400"
+                  className="w-full rounded-2xl border border-[rgba(224,78,26,0.15)] bg-[#FBE8DC] px-4 py-3 outline-none transition focus:border-[#C05015]/50"
                 />
               </div>
             </div>
@@ -1951,7 +1966,7 @@ function SettingsTab({ restaurantId, user }) {
 
         <div className="space-y-6">
           <div className="rounded-[26px] border border-amber-200 bg-white p-6 shadow-sm">
-            <h4 className="text-lg font-bold text-[#2D2720]">Zones de livraison</h4>
+            <h4 className="text-lg font-bold text-[#0F172A]">Zones de livraison</h4>
             <p className="mt-1 text-sm text-[#7A6A58]">
               Ajoutez vos zones manuellement ou cliquez dans la carte simplifiée pour positionner la zone.
             </p>
@@ -2025,7 +2040,7 @@ function SettingsTab({ restaurantId, user }) {
               </div>
               <div>
                 <div className="rounded-[24px] border border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50 p-4">
-                  <p className="text-sm font-semibold text-[#2D2720]">Carte OpenStreetMap</p>
+                  <p className="text-sm font-semibold text-[#0F172A]">Carte OpenStreetMap</p>
                   <p className="mt-1 text-xs text-[#7A6A58]">
                     Cliquez directement sur la carte pour récupérer une vraie latitude et longitude.
                   </p>
@@ -2048,103 +2063,103 @@ function SettingsTab({ restaurantId, user }) {
             </div>
           </div>
 
-          <div className="rounded-[26px] border border-violet-200 bg-white p-6 shadow-sm">
+          <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h4 className="text-lg font-bold text-[#2D2720]">Gestion des comptes staff</h4>
-                <p className="mt-1 text-sm text-[#7A6A58]">
+                <h4 className="text-lg font-bold text-[#1C1917]">Gestion des comptes staff</h4>
+                <p className="mt-1 text-sm text-[#78716C]">
                   RBAC strict : un seul rôle actif par utilisateur (RG-31).
                 </p>
               </div>
-              <span className="rounded-full bg-violet-50 px-3 py-1.5 text-xs font-medium text-violet-700">
+              <span className="rounded-full bg-[#FBE8DC] px-3 py-1.5 text-xs font-medium text-[#1A1A1A]">
                 {staffAccounts.length} compte(s)
               </span>
             </div>
 
-            <div className="mt-4 rounded-[24px] border border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50 p-5">
-              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-violet-700">
+            <div className="mt-4 rounded-[24px] border border-[#E2E8F0] bg-white p-5">
+              <div className="mb-4 flex items-center gap-2 text-sm font-semibold text-[#1A1A1A]">
                 <UserPlus className="h-4 w-4" />
                 Créer un nouveau compte staff
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#2D2720]">Email *</label>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Email *</label>
                   <input
                     type="email"
                     value={staffForm.email}
                     onChange={(e) => setStaffForm({ ...staffForm, email: e.target.value })}
-                    className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
+                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
                     placeholder="staff@restaurant.com"
                   />
                 </div>
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-[#2D2720]">Téléphone</label>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Téléphone</label>
                   <input
                     type="tel"
                     value={staffForm.telephone}
                     onChange={(e) => setStaffForm({ ...staffForm, telephone: e.target.value })}
-                    className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
+                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
                     placeholder="+225 XX XX XX XX"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="mb-1 block text-sm font-medium text-[#2D2720]">Nom complet *</label>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Nom complet *</label>
                   <input
                     type="text"
                     value={staffForm.nom}
                     onChange={(e) => setStaffForm({ ...staffForm, nom: e.target.value })}
-                    className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
+                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
                     placeholder="Ex: Konan Aya"
                   />
                 </div>
                 <div className="md:col-span-2">
-                  <label className="mb-1 block text-sm font-medium text-[#2D2720]">Mot de passe (optionnel)</label>
+                  <label className="mb-1 block text-sm font-medium text-[#0F172A]">Mot de passe (optionnel)</label>
                   <input
                     type="password"
                     value={staffForm.password}
                     onChange={(e) => setStaffForm({ ...staffForm, password: e.target.value })}
-                    className="w-full rounded-2xl border border-violet-200 bg-white px-4 py-3 outline-none transition focus:border-violet-400"
+                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015]"
                     placeholder="Laisser vide pour générer un mot de passe"
                   />
                 </div>
               </div>
               <button
                 onClick={handleCreateStaff}
-                className="mt-4 rounded-2xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-6 py-3 font-semibold text-white shadow-sm transition hover:from-violet-700 hover:to-fuchsia-700"
+                className="mt-4 rounded-2xl bg-[#C05015] px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-[#9A3E10]"
               >
                 Créer le compte staff
               </button>
               {staffCreationNotice && (
-                <div className="mt-4 rounded-2xl border border-violet-200 bg-white/80 p-4 text-sm text-violet-700 shadow-sm">
+                <div className="mt-4 rounded-2xl border border-[#E2E8F0] bg-white p-4 text-sm text-[#1A1A1A] shadow-sm">
                   {staffCreationNotice}
                 </div>
               )}
             </div>
 
             <div className="mt-5">
-              <h5 className="text-sm font-semibold uppercase tracking-[0.18em] text-[#8B7355]">
+              <h5 className="text-sm font-semibold uppercase tracking-[0.18em] text-[#78716C]">
                 Comptes existants
               </h5>
               {loadingStaff ? (
                 <div className="flex items-center justify-center py-6">
-                  <div className="h-7 w-7 rounded-full border-4 border-violet-500 border-t-transparent animate-spin" />
+                  <div className="h-7 w-7 rounded-full border-4 border-[#C05015] border-t-transparent animate-spin" />
                 </div>
               ) : staffAccounts.length > 0 ? (
                 <div className="mt-4 space-y-3">
                   {staffAccounts.map((staff) => (
                     <div
                       key={staff.id}
-                      className="flex flex-col gap-3 rounded-[22px] border border-[#EFE7FB] bg-gradient-to-r from-white to-violet-50/70 p-4 shadow-sm md:flex-row md:items-center md:justify-between"
+                      className="flex flex-col gap-3 rounded-[22px] border border-[#E2E8F0] bg-white p-4 shadow-sm md:flex-row md:items-center md:justify-between"
                     >
                       <div>
-                        <p className="font-semibold text-[#2D2720]">{staff.nom}</p>
-                        <p className="text-sm text-[#7A6A58]">{staff.email}</p>
-                        <p className="text-xs text-[#8B7355]">{staff.telephone || "Pas de téléphone"}</p>
+                        <p className="font-semibold text-[#1C1917]">{staff.nom}</p>
+                        <p className="text-sm text-[#78716C]">{staff.email}</p>
+                        <p className="text-xs text-[#A8A29E]">{staff.telephone || "Pas de téléphone"}</p>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
                         <span
                           className={`rounded-full px-3 py-1.5 text-xs font-medium ${
-                            staff.actif ? "bg-emerald-100 text-emerald-700" : "bg-rose-100 text-rose-700"
+                            staff.actif ? "bg-[#FBE8DC] text-[#1A1A1A]" : "bg-red-50 text-red-700"
                           }`}
                         >
                           {staff.actif ? "Actif" : "Inactif"}
@@ -2153,8 +2168,8 @@ function SettingsTab({ restaurantId, user }) {
                           onClick={() => handleToggleStaff(staff.id, staff.actif)}
                           className={`rounded-xl px-4 py-2 text-sm font-semibold text-white shadow-sm transition ${
                             staff.actif
-                              ? "bg-gradient-to-r from-rose-500 to-red-500 hover:from-rose-600 hover:to-red-600"
-                              : "bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600"
+                              ? "bg-red-600 hover:bg-red-700"
+                              : "bg-[#C05015] hover:bg-[#9A3E10]"
                           }`}
                         >
                           {staff.actif ? "Désactiver" : "Activer"}
@@ -2164,7 +2179,186 @@ function SettingsTab({ restaurantId, user }) {
                   ))}
                 </div>
               ) : (
-                <p className="mt-4 text-center text-sm text-[#7A6A58]">Aucun compte staff créé</p>
+                <p className="mt-4 text-center text-sm text-[#78716C]">Aucun compte staff créé</p>
+              )}
+            </div>
+          </div>
+
+          {/* ── Sécurité gérant ── */}
+          <div className="rounded-[26px] border border-[rgba(0,0,0,0.07)] bg-white p-6 shadow-sm space-y-4">
+            <div>
+              <h4 className="text-sm font-semibold uppercase tracking-[0.15em] text-[#F97316] mb-1">Sécurité</h4>
+              <h3 className="text-lg font-bold text-[#0F172A] mb-1">Authentification & Protection</h3>
+              <p className="text-sm text-[#64748B]">Gérez votre mot de passe et l'authentification à deux facteurs.</p>
+            </div>
+
+            {secSuccess && <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">{secSuccess}</div>}
+            {secError   && <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{secError}</div>}
+
+            {/* Email status */}
+            <div className="flex items-center justify-between rounded-2xl border border-[rgba(0,0,0,0.07)] bg-[#FAFBFC] p-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-50">
+                  <Mail className="h-4 w-4 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#0F172A]">Vérification email</p>
+                  <p className="text-xs text-[#64748B]">{user?.email}</p>
+                </div>
+              </div>
+              <span className="rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700">✓ Vérifié</span>
+            </div>
+
+            {/* Password change */}
+            <div className="rounded-2xl border border-[rgba(0,0,0,0.07)] bg-[#FAFBFC] p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FBE8DC]">
+                    <Lock className="h-4 w-4 text-[#C05015]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#0F172A]">Mot de passe</p>
+                    <p className="text-xs text-[#64748B]">Changez régulièrement pour plus de sécurité</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => { setShowPasswordForm(!showPasswordForm); setSecError(""); setSecSuccess(""); }}
+                  className="rounded-xl bg-[#C05015] px-4 py-2 text-xs font-semibold text-white transition hover:bg-[#9A3E10]"
+                >
+                  Modifier
+                </button>
+              </div>
+              {showPasswordForm && (
+                <div className="mt-4 space-y-3">
+                  {[
+                    { key: "current", label: "Mot de passe actuel" },
+                    { key: "next",    label: "Nouveau mot de passe" },
+                    { key: "confirm", label: "Confirmer" },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="relative">
+                      <input
+                        type={showSecPwd[key] ? "text" : "password"}
+                        placeholder={label}
+                        value={secPwd[key]}
+                        onChange={e => setSecPwd(p => ({ ...p, [key]: e.target.value }))}
+                        className="w-full rounded-xl border border-[rgba(89,67,42,0.18)] bg-white px-4 py-3 pr-11 text-sm text-[#0F172A] outline-none transition focus:border-[#C05015] focus:ring-2 focus:ring-[#C05015]/15"
+                      />
+                      <button type="button" onClick={() => setShowSecPwd(s => ({ ...s, [key]: !s[key] }))}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-[#64748B]">
+                        {showSecPwd[key] ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  ))}
+                  {secPwd.next.length > 0 && (
+                    <div className="flex gap-1">
+                      {[1,2,3,4].map(i => (
+                        <div key={i} className="h-1 flex-1 rounded-full" style={{ background: i <= Math.min(Math.floor(secPwd.next.length / 3), 4) ? (secPwd.next.length < 6 ? '#EF4444' : secPwd.next.length < 9 ? '#F97316' : '#9A3E10') : 'rgba(89,67,42,0.1)' }} />
+                      ))}
+                    </div>
+                  )}
+                  <div className="flex gap-2">
+                    <button onClick={handleChangePwd} disabled={secSaving}
+                      className="flex-1 rounded-xl bg-[#C05015] py-2.5 text-sm font-semibold text-white transition hover:bg-[#9A3E10] disabled:opacity-50">
+                      {secSaving ? "En cours…" : "Enregistrer"}
+                    </button>
+                    <button onClick={() => setShowPasswordForm(false)}
+                      className="rounded-xl border border-[rgba(0,0,0,0.07)] px-4 py-2.5 text-sm font-medium text-[#64748B]">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 2FA */}
+            <div className="rounded-2xl border border-[rgba(0,0,0,0.07)] bg-[#FAFBFC] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#FBE8DC]">
+                    <Shield className="h-4 w-4 text-[#C05015]" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-[#0F172A]">Double authentification (2FA)</p>
+                    <p className="text-xs text-[#64748B]">Protégez votre compte avec une application TOTP</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {twoFactorEnabled && <span className="rounded-full bg-green-50 px-2.5 py-1 text-[10px] font-medium text-green-700">Actif</span>}
+                  <button
+                    onClick={twoFactorEnabled ? handleDisable2FA : handleSetup2FA}
+                    disabled={secSaving}
+                    className={`rounded-xl px-4 py-2 text-xs font-semibold text-white transition disabled:opacity-50 ${twoFactorEnabled ? "bg-red-500 hover:bg-red-600" : "bg-[#C05015] hover:bg-[#9A3E10]"}`}
+                  >
+                    {twoFactorEnabled ? "Désactiver" : "Configurer"}
+                  </button>
+                </div>
+              </div>
+
+              {show2FA && qrData && (
+                <div className="mt-4 space-y-3">
+                  <p className="text-sm text-[#64748B]">
+                    Scannez le QR code avec <strong>Google Authenticator</strong> ou <strong>Authy</strong>, puis entrez le code à 6 chiffres.
+                  </p>
+                  {qrData.qrCodeDataUrl ? (
+                    <div className="flex flex-col items-center gap-3 rounded-xl border border-[rgba(0,0,0,0.07)] bg-white p-4">
+                      <img src={qrData.qrCodeDataUrl} alt="QR Code 2FA" className="h-40 w-40 rounded-lg" />
+                      <div className="text-center">
+                        <p className="text-[10px] text-[#64748B] mb-1">Clé manuelle :</p>
+                        <code className="rounded bg-white px-2 py-1 font-mono text-xs select-all">{qrData.secret}</code>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="rounded-xl border border-dashed border-[rgba(89,67,42,0.15)] bg-white py-6 text-center">
+                      <p className="break-all px-4 font-mono text-xs text-[#64748B]">{qrData.otpAuthUrl}</p>
+                    </div>
+                  )}
+                  <input
+                    type="text" maxLength={6}
+                    placeholder="Code à 6 chiffres"
+                    value={twoFactorCode}
+                    onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, ""))}
+                    className="w-full rounded-xl border border-[rgba(89,67,42,0.18)] bg-white px-4 py-3 text-center font-mono text-lg tracking-[0.3em] outline-none focus:border-[#C05015]"
+                  />
+                  <div className="flex gap-2">
+                    <button onClick={handleEnable2FA} disabled={secSaving}
+                      className="flex-1 rounded-xl bg-[#C05015] py-2.5 text-sm font-semibold text-white hover:bg-[#9A3E10] disabled:opacity-50">
+                      {secSaving ? "Activation…" : "Activer la 2FA"}
+                    </button>
+                    <button onClick={() => setShow2FA(false)}
+                      className="rounded-xl border border-[rgba(0,0,0,0.07)] px-4 py-2.5 text-sm text-[#64748B]">
+                      Annuler
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {backupCodes && (
+                <div className="mt-4 space-y-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-sm font-semibold text-amber-900">Codes de secours — notez-les maintenant !</p>
+                      <p className="mt-0.5 text-xs text-amber-700">Ces codes s'affichent une seule fois. Utilisez-les en cas de perte de téléphone.</p>
+                    </div>
+                    <button onClick={() => setBackupCodes(null)} className="text-amber-600 hover:text-amber-900">
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    {backupCodes.map((code, i) => (
+                      <code key={i} className="rounded-lg border border-amber-200 bg-white px-3 py-2 text-center font-mono text-sm text-amber-900 select-all">{code}</code>
+                    ))}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => navigator.clipboard.writeText(backupCodes.join("\n"))}
+                      className="flex-1 rounded-xl border border-amber-300 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100">
+                      Copier
+                    </button>
+                    <button onClick={() => { const b=new Blob([`Codes de secours 2FA\n\n${backupCodes.join("\n")}`],{type:"text/plain"}); const u=URL.createObjectURL(b); const a=document.createElement("a"); a.href=u; a.download="codes-secours-2fa.txt"; a.click(); URL.revokeObjectURL(u); }}
+                      className="flex-1 rounded-xl bg-amber-600 py-2 text-xs font-semibold text-white hover:bg-amber-700">
+                      Télécharger
+                    </button>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -2267,6 +2461,96 @@ function computeWeeklyPerformance(orders) {
 }
 
 // ==================== DYNAMIC OVERVIEW MODULE ====================
+
+/* ── Setup completion banner ── */
+function SetupBanner({ restaurant, navigate }) {
+  const [dismissed, setDismissed] = useState(
+    () => localStorage.getItem('setup-banner-dismissed-' + restaurant?.id) === '1'
+  );
+  const [menuCount, setMenuCount] = useState(null);
+
+  useEffect(() => {
+    if (!restaurant?.id) return;
+    menuAPI.getAll({ restaurantId: restaurant.id })
+      .then(r => setMenuCount((r.data || []).length))
+      .catch(() => setMenuCount(0));
+  }, [restaurant?.id]);
+
+  if (dismissed) return null;
+
+  const adresseDone  = restaurant?.adresse && restaurant.adresse !== 'À compléter';
+  const horairesDone = restaurant?.horaires && restaurant.horaires !== 'Lun-Dim: 08:00-22:00';
+  const descDone     = Boolean(restaurant?.description?.trim());
+  const menuDone     = menuCount !== null && menuCount > 0;
+
+  const steps = [
+    { label: 'Compte créé',         done: true,           tab: null },
+    { label: 'Adresse renseignée',  done: !!adresseDone,  tab: 'settings' },
+    { label: 'Horaires configurés', done: !!horairesDone, tab: 'settings' },
+    { label: 'Description',         done: descDone,       tab: 'settings' },
+    { label: 'Menu publié',         done: menuDone,       tab: 'menu' },
+  ];
+
+  const doneCount = steps.filter(s => s.done).length;
+  const pct = Math.round((doneCount / steps.length) * 100);
+  if (pct >= 100) return null;
+
+  const nextIncomplete = steps.find(s => !s.done && s.tab);
+
+  const dismiss = () => {
+    localStorage.setItem('setup-banner-dismissed-' + restaurant?.id, '1');
+    setDismissed(true);
+  };
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white px-5 py-4 shadow-sm">
+      <div className="absolute inset-y-0 left-0 w-1 rounded-l-2xl bg-[#C05015]" />
+      <button onClick={dismiss} className="absolute right-3 top-3 rounded-full p-1 text-[#737373] hover:bg-[#F4F6F8] transition" aria-label="Fermer">
+        <X className="h-4 w-4" />
+      </button>
+      <div className="pl-3">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-sm font-bold text-[#0F172A]">Complétez votre profil restaurant</p>
+            <p className="text-xs text-[#737373] mt-0.5">Quelques infos manquantes avant d'être 100% opérationnel</p>
+          </div>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="text-right">
+              <span className="text-2xl font-extrabold text-[#C05015]">{pct}%</span>
+              <p className="text-[10px] text-[#737373]">complété</p>
+            </div>
+            {nextIncomplete && (
+              <button onClick={() => navigate(`/gerant?tab=${nextIncomplete.tab}`)}
+                className="rounded-xl bg-[#C05015] px-3 py-2 text-xs font-bold text-white hover:bg-[#9A3E10] transition">
+                Compléter →
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="mt-3 h-1.5 w-full rounded-full bg-[#F4F6F8] overflow-hidden">
+          <div className="h-full rounded-full bg-[#C05015] transition-all duration-500" style={{ width: pct + '%' }} />
+        </div>
+        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
+          {steps.map((s) => (
+            <button key={s.label}
+              onClick={() => s.tab && !s.done && navigate(`/gerant?tab=${s.tab}`)}
+              className={`flex items-center gap-1.5 ${s.tab && !s.done ? 'cursor-pointer' : 'cursor-default'}`}>
+              {s.done ? (
+                <CheckCircle className="h-3.5 w-3.5 text-emerald-500 shrink-0" />
+              ) : (
+                <div className="h-3.5 w-3.5 rounded-full border-2 border-[#E2E8F0] shrink-0" />
+              )}
+              <span className={'text-xs ' + (s.done ? 'text-emerald-600 font-medium' : s.tab ? 'text-[#C05015] hover:underline underline-offset-2' : 'text-[#737373]')}>
+                {s.label}
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OverviewTab({ restaurantId }) {
   const navigate = useNavigate();
   const chartRef = useRef(null);
@@ -2479,29 +2763,34 @@ function OverviewTab({ restaurantId }) {
 
     const ctx = chartRef.current.getContext("2d");
     chartInstanceRef.current = new Chart(ctx, {
-      type: "line",
+      type: "bar",
       data: {
         labels: weeklyPerformance.labels,
         datasets: [
           {
             label: "Commandes",
             data: weeklyPerformance.orders,
-            borderColor: "#D94500",
-            backgroundColor: "rgba(217, 69, 0, 0.14)",
-            fill: true,
-            tension: 0.35,
-            pointRadius: 4,
-            pointBackgroundColor: "#D94500",
+            backgroundColor: weeklyPerformance.orders.map((_, i) =>
+              i === weeklyPerformance.orders.indexOf(Math.max(...weeklyPerformance.orders))
+                ? "#C05015"
+                : "rgba(224,78,26,0.18)"
+            ),
+            borderRadius: 8,
+            borderSkipped: false,
+            yAxisID: "y",
           },
           {
-            label: "Revenus FCFA",
+            label: "Revenus (FCFA)",
             data: weeklyPerformance.revenue,
-            borderColor: "#0F766E",
-            backgroundColor: "rgba(15, 118, 110, 0.14)",
+            type: "line",
+            borderColor: "#F97316",
+            backgroundColor: "rgba(197,138,85,0.08)",
             fill: true,
-            tension: 0.35,
-            pointRadius: 4,
-            pointBackgroundColor: "#0F766E",
+            tension: 0.42,
+            pointRadius: 5,
+            pointBackgroundColor: "#fff",
+            pointBorderColor: "#F97316",
+            pointBorderWidth: 2,
             yAxisID: "y1",
           },
         ],
@@ -2509,51 +2798,54 @@ function OverviewTab({ restaurantId }) {
       options: {
         responsive: true,
         maintainAspectRatio: false,
-        interaction: {
-          mode: "index",
-          intersect: false,
-        },
+        interaction: { mode: "index", intersect: false },
         scales: {
           x: {
             grid: { display: false },
-            ticks: { color: "#5B4636" },
+            ticks: { color: "#94A3B8", font: { size: 11, weight: '600' } },
+            border: { display: false },
           },
           y: {
             position: "left",
-            title: {
-              display: true,
-              text: "Commandes",
-              color: "#5B4636",
-            },
-            ticks: { color: "#5B4636" },
+            ticks: { color: "#94A3B8", font: { size: 11 }, stepSize: 1 },
+            grid: { color: "rgba(148,163,184,0.1)" },
+            border: { display: false },
           },
           y1: {
             position: "right",
             grid: { drawOnChartArea: false },
-            title: {
-              display: true,
-              text: "Revenus",
-              color: "#5B4636",
-            },
+            border: { display: false },
             ticks: {
-              color: "#5B4636",
-              callback: (value) => `${value.toLocaleString()}`,
+              color: "#F97316",
+              font: { size: 10 },
+              callback: (v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : String(v),
             },
           },
         },
         plugins: {
           legend: {
             position: "top",
-            labels: { color: "#2D2720" },
+            align: "end",
+            labels: {
+              color: "#475569",
+              font: { size: 11, weight: '600' },
+              boxWidth: 12,
+              boxHeight: 12,
+              borderRadius: 4,
+              usePointStyle: false,
+            },
           },
           tooltip: {
+            backgroundColor: "#0F172A",
+            titleColor: "#FDF5EF",
+            bodyColor: "#CBD5E1",
+            padding: 12,
+            cornerRadius: 10,
             callbacks: {
-              label: (context) => {
-                if (context.dataset.label === "Revenus FCFA") {
-                  return `${context.dataset.label}: ${Number(context.parsed.y).toLocaleString()} FCFA`;
-                }
-                return `${context.dataset.label}: ${context.parsed.y}`;
-              },
+              label: (ctx) =>
+                ctx.dataset.label === "Revenus (FCFA)"
+                  ? `  ${ctx.dataset.label}: ${Number(ctx.parsed.y).toLocaleString()} F`
+                  : `  ${ctx.dataset.label}: ${ctx.parsed.y}`,
             },
           },
         },
@@ -2620,13 +2912,13 @@ function OverviewTab({ restaurantId }) {
     }
 
     return {
-      badge: "bg-emerald-100 text-emerald-700",
+      badge: "bg-[#FBE8DC] text-[#1A1A1A]",
       label: `${Math.max(ageMinutes, 0)} min`,
     };
   };
 
   const getOrderStatusClasses = (status) =>
-    STATUS_COLORS[status] || "bg-slate-100 text-slate-700";
+    STATUS_COLORS[status] || "bg-[#FBE8DC] text-slate-700";
 
   const getOrderStatusLabel = (status) =>
     STATUS_LABELS[status] || status?.replace(/_/g, " ") || "-";
@@ -2634,369 +2926,286 @@ function OverviewTab({ restaurantId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
-        <div className="h-10 w-10 rounded-full border-4 border-[#D94500] border-t-transparent animate-spin shadow-[0_0_24px_rgba(217,69,0,0.2)]" />
+        <div className="h-10 w-10 rounded-full border-4 border-[#C05015] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <section className="relative overflow-hidden rounded-[30px] border border-[#F0D7C7] bg-gradient-to-br from-[#2D2720] via-[#6B3A1E] to-[#D94500] p-7 text-white shadow-[0_24px_90px_rgba(88,43,19,0.22)]">
-        <div className="absolute -right-14 -top-16 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute -left-8 bottom-0 h-32 w-32 rounded-full bg-[#FFD9C7]/20 blur-2xl" />
-        <div className="relative flex flex-col gap-6 xl:flex-row xl:items-center xl:justify-between">
-          <div className="max-w-2xl space-y-4">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
-              <Activity className="h-3.5 w-3.5" />
-              Pilotage gérant en temps réel
-            </div>
-            <div>
-              <h2 className="text-3xl font-bold tracking-tight">{restaurantName}</h2>
-              <p className="mt-2 text-sm text-white/80 sm:text-base">
-                Supervisez les commandes, la trésorerie, le stock et l'équipe depuis une seule vue cohérente avec le backend.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-white/90">
-                {stats.todayOrders} commandes aujourd'hui
-              </span>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-white/90">
-                {stats.staffCount} staff actif(s)
-              </span>
-              <span className="rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-white/90">
-                Synchronisé à {lastRefresh || "--:--"}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => void loadOverviewData({ silent: true })}
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition hover:bg-white/20"
-            >
-              <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
-              {refreshing ? "Mise à jour..." : "Actualiser"}
-            </button>
-            <button
-              onClick={() => navigate("/gerant?tab=orders")}
-              className="inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-[#7A2F09] shadow-sm transition hover:bg-[#FFF4EE]"
-            >
-              <ClipboardList className="h-4 w-4" />
-              Gérer les commandes
-            </button>
-            <button
-              onClick={() => navigate("/gerant/kds")}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#1F8A70] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#166D58]"
-            >
-              <ChefHat className="h-4 w-4" />
-              Ouvrir le KDS
-            </button>
-          </div>
+    <div className="space-y-5">
+      {/* ── Header ── */}
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#C05015]">Dashboard</p>
+          <h2 className="mt-1 text-2xl font-bold text-[#0F172A]">{restaurantName}</h2>
+          <p className="mt-0.5 text-sm text-[#64748B]">Pilotez votre restaurant en temps réel.</p>
         </div>
-      </section>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="rounded-xl border border-[#FDDDD4] bg-[#0F172A] p-1">
+            <NotificationBell accentColor="#C05015" />
+          </div>
+          <button
+            onClick={() => void loadOverviewData({ silent: true })}
+            className="inline-flex items-center gap-2 rounded-xl border border-[#FDDDD4] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-[#C05015]/40 hover:text-[#C05015]"
+          >
+            <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? "Sync…" : "Actualiser"}
+          </button>
+          <button
+            onClick={() => navigate("/gerant?tab=orders")}
+            className="inline-flex items-center gap-2 rounded-xl border border-[#FDDDD4] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-[#C05015]/40 hover:text-[#C05015]"
+          >
+            <ClipboardList className="h-4 w-4" /> Commandes
+          </button>
+          <button
+            onClick={() => navigate("/gerant/kds")}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#C05015] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#C05015]/25 transition hover:bg-[#9A3E10]"
+          >
+            <ChefHat className="h-4 w-4" /> KDS live
+          </button>
+        </div>
+      </div>
+
+      {/* ── Setup completion banner ── */}
+      <SetupBanner restaurant={restaurantProfile} navigate={navigate} />
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-rose-50 px-4 py-3 text-sm text-red-700">
-          {error}
-        </div>
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-        <DashboardMetricCard
-          icon={<ClipboardList className="h-5 w-5" />}
-          label="Commandes du jour"
-          value={String(stats.todayOrders)}
-          secondary="Flux client + entreprise"
-          cardClass="border-[#E9D3F9] bg-gradient-to-br from-violet-50 via-white to-fuchsia-50"
-          iconClass="bg-violet-500 text-white"
-        />
-        <DashboardMetricCard
-          icon={<TrendingUp className="h-5 w-5" />}
-          label="Chiffre d'affaires"
-          value={formatFCFA(stats.todayRevenue)}
-          secondary="Lecture trésorerie du jour"
-          cardClass="border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50"
-          iconClass="bg-emerald-500 text-white"
-        />
-        <DashboardMetricCard
-          icon={<ChefHat className="h-5 w-5" />}
-          label="Commandes actives"
-          value={String(stats.activeOrders)}
-          secondary="En cours de traitement"
-          cardClass="border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50"
-          iconClass="bg-amber-500 text-white"
-        />
-        <DashboardMetricCard
-          icon={<AlertTriangle className="h-5 w-5" />}
-          label="Alertes stock"
-          value={String(stats.lowStockItems)}
-          secondary="Seuils à surveiller"
-          cardClass="border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-50"
-          iconClass="bg-red-500 text-white"
-        />
-        <DashboardMetricCard
-          icon={<Users className="h-5 w-5" />}
-          label="Clients uniques"
-          value={String(stats.uniqueCustomers)}
-          secondary="Sur les dernières commandes"
-          cardClass="border-sky-200 bg-gradient-to-br from-sky-50 via-white to-cyan-50"
-          iconClass="bg-sky-500 text-white"
-        />
-        <DashboardMetricCard
-          icon={<Truck className="h-5 w-5" />}
-          label="Commandes B2B"
-          value={String(stats.b2bOrders)}
-          secondary="Canal entreprise"
-          cardClass="border-[#F3D7BA] bg-gradient-to-br from-[#FFF4E8] via-white to-[#FFE7CF]"
-          iconClass="bg-[#D97706] text-white"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-6">
-        <section className="rounded-[28px] border border-[#EFDCCF] bg-white/95 p-5 shadow-[0_16px_45px_rgba(45,39,32,0.06)]">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h3 className="text-lg font-bold text-[#2D2720]">Commandes récentes</h3>
-              <p className="mt-1 text-sm text-[#8B7355]">
-                Vue consolidée des commandes client et entreprise.
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={handleExportPDF}
-                disabled={recentOrders.length === 0}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-fuchsia-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-violet-700 hover:to-fuchsia-700 disabled:opacity-50"
-              >
-                <Download className="h-4 w-4" />
-                Reçu PDF
-              </button>
-              <button
-                onClick={handleExportSyscohada}
-                disabled={!restaurantId}
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-sky-600 to-cyan-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-sky-700 hover:to-cyan-700 disabled:opacity-50"
-              >
-                <Download className="h-4 w-4" />
-                Export SYSCOHADA
-              </button>
-            </div>
-          </div>
-
-          {recentOrders.length > 0 ? (
-            <div className="space-y-3">
-              {recentOrders.map((order) => {
-                const ageTone = getOrderAgeTone(order);
-                return (
-                  <div
-                    key={order.id}
-                    className="rounded-[22px] border border-[#F2E4DA] bg-gradient-to-br from-[#FFF9F5] via-white to-[#FFF2EA] p-4 shadow-sm"
-                  >
-                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#2D2720] shadow-sm">
-                            #{order.numero}
-                          </span>
-                          <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">
-                            {order.source}
-                          </span>
-                          <span
-                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${getOrderStatusClasses(order.statut)}`}
-                          >
-                            {getOrderStatusLabel(order.statut)}
-                          </span>
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${ageTone.badge}`}>
-                            {ageTone.label}
-                          </span>
-                        </div>
-                        <div className="text-sm text-[#7A6A58]">
-                          {formatDate(order.createdAt)}
-                        </div>
-                      </div>
-
-                      <div className="text-left lg:text-right">
-                        <div className="text-xs uppercase tracking-[0.16em] text-[#8B7355]">
-                          Montant
-                        </div>
-                        <div className="text-lg font-bold text-[#2D2720]">
-                          {formatFCFA(order.amount)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="rounded-[22px] border border-dashed border-[#E7D7CA] bg-[#FFF9F5] px-4 py-10 text-center text-[#8B7355]">
-              Aucune commande récente disponible.
-            </div>
-          )}
-        </section>
-
-        <section className="space-y-6">
-          <div className="rounded-[28px] border border-[#EFDCCF] bg-white/95 p-5 shadow-[0_16px_45px_rgba(45,39,32,0.06)]">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-bold text-[#2D2720]">Actions rapides</h3>
-                <p className="mt-1 text-sm text-[#8B7355]">
-                  Boutons prioritaires pour piloter l'exploitation.
-                </p>
+      {/* ── 4 KPI cards ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {/* Card 1 — primary dark (CA du jour) */}
+        <div className="relative overflow-hidden rounded-2xl p-5 shadow-md" style={{ background: '#0F172A' }}>
+          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-20" style={{ background: '#C05015', filter: 'blur(28px)' }} />
+          <div className="relative">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">CA du jour</p>
+              <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'rgba(224,78,26,0.25)' }}>
+                <TrendingUp className="h-4 w-4 text-[#C05015]" />
               </div>
-              <span className="rounded-full bg-[#FFF1E8] px-3 py-1 text-xs font-medium text-[#B83A00]">
-                Navigation directe
+            </div>
+            <p className="text-3xl font-bold text-white leading-none">{formatFCFA(stats.todayRevenue)}</p>
+            <div className="mt-3 flex items-center gap-1.5">
+              <span className="flex items-center gap-1 rounded-full bg-emerald-500/15 px-2.5 py-1 text-[11px] font-semibold text-emerald-400">
+                ↑ {stats.todayOrders}
               </span>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <QuickActionButton
-                icon={<Package className="h-5 w-5" />}
-                title="Menu"
-                description="Articles, catégories, disponibilité"
-                tone="from-violet-500 to-fuchsia-500"
-                onClick={() => navigate("/gerant?tab=menu")}
-              />
-              <QuickActionButton
-                icon={<ClipboardList className="h-5 w-5" />}
-                title="Commandes"
-                description={`${stats.activeOrders} commande(s) active(s)`}
-                tone="from-[#D94500] to-[#F97316]"
-                onClick={() => navigate("/gerant?tab=orders")}
-              />
-              <QuickActionButton
-                icon={<AlertTriangle className="h-5 w-5" />}
-                title="Stocks"
-                description={`${stats.lowStockItems} alerte(s) à traiter`}
-                tone="from-rose-500 to-red-500"
-                onClick={() => navigate("/gerant?tab=stocks")}
-              />
-              <QuickActionButton
-                icon={<Wallet className="h-5 w-5" />}
-                title="Trésorerie"
-                description={formatFCFA(financialHighlights.ticketMoyen)}
-                tone="from-emerald-500 to-teal-500"
-                onClick={() => navigate("/gerant?tab=finance")}
-              />
-              <QuickActionButton
-                icon={<Users className="h-5 w-5" />}
-                title="Équipe"
-                description={`${stats.staffCount} compte(s) staff`}
-                tone="from-sky-500 to-cyan-500"
-                onClick={() => navigate("/gerant?tab=settings")}
-              />
-              <QuickActionButton
-                icon={<ShoppingBag className="h-5 w-5" />}
-                title="KDS & salle"
-                description="Suivi temps réel cuisine / salle"
-                tone="from-[#1F8A70] to-[#136F63]"
-                onClick={() => navigate("/gerant/kds")}
-              />
+              <span className="text-xs text-white/40">commandes aujourd'hui</span>
             </div>
           </div>
+        </div>
 
-          <div className="rounded-[28px] border border-[#EFDCCF] bg-white/95 p-5 shadow-[0_16px_45px_rgba(45,39,32,0.06)]">
-            <h3 className="text-lg font-bold text-[#2D2720]">Santé de l'activité</h3>
-            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
-              <MiniInsightCard
-                icon={<BarChart3 className="h-4 w-4" />}
-                label="Ticket moyen"
-                value={formatFCFA(financialHighlights.ticketMoyen)}
-                tone="bg-violet-50 text-violet-700"
-              />
-              <MiniInsightCard
-                icon={<TrendingUp className="h-4 w-4" />}
-                label="Marge brute"
-                value={`${financialHighlights.margesBrutes}%`}
-                tone="bg-emerald-50 text-emerald-700"
-              />
-              <MiniInsightCard
-                icon={<Users className="h-4 w-4" />}
-                label="Staff"
-                value={`${stats.staffCount} membre(s)`}
-                tone="bg-sky-50 text-sky-700"
-              />
+        {/* Card 2 — commandes actives */}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9A7060]">En cuisine</p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50">
+              <ClipboardList className="h-4 w-4 text-[#C05015]" />
             </div>
           </div>
-        </section>
+          <p className="text-4xl font-bold text-[#0F172A] leading-none">{stats.activeOrders}</p>
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-[#C05015]">
+              {stats.b2bOrders} B2B
+            </span>
+            <span className="text-xs text-[#9A7060]">commandes actives</span>
+          </div>
+        </div>
+
+        {/* Card 3 — alertes stock */}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9A7060]">Alertes stock</p>
+            <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${stats.lowStockItems > 0 ? 'bg-red-50' : 'bg-emerald-50'}`}>
+              <AlertTriangle className={`h-4 w-4 ${stats.lowStockItems > 0 ? 'text-red-500' : 'text-emerald-500'}`} />
+            </div>
+          </div>
+          <p className="text-4xl font-bold text-[#0F172A] leading-none">{stats.lowStockItems}</p>
+          <div className="mt-3">
+            <span className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${stats.lowStockItems > 0 ? 'bg-red-50 text-red-600' : 'bg-emerald-50 text-emerald-600'}`}>
+              {stats.lowStockItems === 0 ? '✓ Tout est OK' : `${stats.lowStockItems} seuil${stats.lowStockItems > 1 ? 's' : ''} critique${stats.lowStockItems > 1 ? 's' : ''}`}
+            </span>
+          </div>
+        </div>
+
+        {/* Card 4 — équipe */}
+        <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#9A7060]">Équipe</p>
+            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50">
+              <Users className="h-4 w-4 text-[#F97316]" />
+            </div>
+          </div>
+          <p className="text-4xl font-bold text-[#0F172A] leading-none">{stats.staffCount}</p>
+          <div className="mt-3 flex items-center gap-1.5">
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-[#F97316]">
+              {stats.uniqueCustomers} clients
+            </span>
+            <span className="text-xs text-[#9A7060]">uniques</span>
+          </div>
+        </div>
       </div>
 
-      <section className="rounded-[28px] border border-[#EFDCCF] bg-white/95 p-5 shadow-[0_16px_45px_rgba(45,39,32,0.06)]">
+      {/* ── Main content grid ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5">
+
+        {/* Chart — BIG */}
+        <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-bold text-[#0F172A]">Analyse des performances</h3>
+              <p className="mt-0.5 text-xs text-[#9A7060]">Commandes & revenus sur 7 jours</p>
+            </div>
+            <div className="flex gap-3">
+              <div className="rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
+                <p className="text-[10px] font-medium text-[#9A7060] uppercase tracking-wider">Commandes</p>
+                <p className="mt-0.5 text-xl font-bold text-[#C05015]">{weekOrdersTotal}</p>
+              </div>
+              <div className="rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
+                <p className="text-[10px] font-medium text-[#9A7060] uppercase tracking-wider">Revenus</p>
+                <p className="mt-0.5 text-xl font-bold text-[#F97316]">{formatFCFA(weekRevenueTotal)}</p>
+              </div>
+            </div>
+          </div>
+          <div style={{ position: 'relative', height: '260px' }}>
+            <canvas ref={chartRef} style={{ height: '260px', width: '100%' }} />
+          </div>
+        </section>
+
+        {/* Right column */}
+        <div className="flex flex-col gap-4">
+
+          {/* Indicateurs clés */}
+          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <h3 className="mb-4 text-sm font-bold text-[#0F172A]">Indicateurs clés</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-orange-50 to-white px-4 py-3 border border-orange-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100">
+                    <CreditCard className="h-4 w-4 text-[#C05015]" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-600">Ticket moyen</span>
+                </div>
+                <span className="text-base font-bold text-[#0F172A]">{formatFCFA(financialHighlights.ticketMoyen)}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-50 to-white px-4 py-3 border border-amber-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
+                    <PieChart className="h-4 w-4 text-[#F97316]" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-600">Marge brute</span>
+                </div>
+                <span className="text-base font-bold text-[#0F172A]">{financialHighlights.margesBrutes}%</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50 to-white px-4 py-3 border border-emerald-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
+                    <Users className="h-4 w-4 text-emerald-600" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-600">Clients uniques</span>
+                </div>
+                <span className="text-base font-bold text-[#0F172A]">{stats.uniqueCustomers}</span>
+              </div>
+              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-sky-50 to-white px-4 py-3 border border-sky-100">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
+                    <Activity className="h-4 w-4 text-sky-600" />
+                  </div>
+                  <span className="text-sm font-medium text-slate-600">Commandes semaine</span>
+                </div>
+                <span className="text-base font-bold text-[#0F172A]">{weekOrdersTotal}</span>
+              </div>
+            </div>
+          </section>
+
+          {/* Accès rapides */}
+          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+            <h3 className="mb-3 text-sm font-bold text-[#0F172A]">Accès rapides</h3>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: Package, label: "Menu", path: "/gerant?tab=menu", color: '#C05015' },
+                { icon: ClipboardList, label: "Commandes", path: "/gerant?tab=orders", color: '#C05015' },
+                { icon: AlertTriangle, label: "Stocks", path: "/gerant?tab=stocks", color: '#F97316' },
+                { icon: Wallet, label: "Trésorerie", path: "/gerant?tab=finance", color: '#F97316' },
+                { icon: Users, label: "Équipe", path: "/gerant?tab=settings", color: '#64748B' },
+                { icon: ChefHat, label: "KDS live", path: "/gerant/kds", color: '#C05015' },
+              ].map(({ icon: Icon, label, path, color }) => (
+                <button
+                  key={label}
+                  onClick={() => navigate(path)}
+                  className="flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#C05015]"
+                >
+                  <Icon className="h-4 w-4 shrink-0" style={{ color }} />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* ── Recent orders ── */}
+      <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h3 className="text-lg font-bold text-[#2D2720]">Performance hebdomadaire</h3>
-            <p className="mt-1 text-sm text-[#8B7355]">
-              Tendance des commandes et des revenus sur 7 jours.
-            </p>
+            <h3 className="text-sm font-bold text-[#0F172A]">Commandes récentes</h3>
+            <p className="mt-0.5 text-xs text-[#9A7060]">Client + entreprise · {recentOrders.length} dernières</p>
           </div>
-          <div className="flex flex-wrap gap-3">
-            <div className="rounded-2xl bg-[#FFF4EC] px-4 py-3 text-sm">
-              <div className="text-[#8B7355]">Commandes semaine</div>
-              <div className="text-lg font-bold text-[#B83A00]">{weekOrdersTotal}</div>
-            </div>
-            <div className="rounded-2xl bg-emerald-50 px-4 py-3 text-sm">
-              <div className="text-emerald-700">Revenus semaine</div>
-              <div className="text-lg font-bold text-emerald-800">
-                {formatFCFA(weekRevenueTotal)}
-              </div>
-            </div>
+          <div className="flex gap-2">
+            <button
+              onClick={handleExportPDF}
+              disabled={recentOrders.length === 0}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FDDDD4] bg-white px-3 py-2 text-xs font-medium text-[#9A7060] transition hover:bg-[#FBE8DC] disabled:opacity-40"
+            >
+              <Download className="h-3.5 w-3.5" /> PDF
+            </button>
+            <button
+              onClick={handleExportSyscohada}
+              disabled={!restaurantId}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#C05015] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#9A3E10] disabled:opacity-40"
+            >
+              <Download className="h-3.5 w-3.5" /> SYSCOHADA
+            </button>
           </div>
         </div>
 
-        <div className="rounded-[24px] bg-gradient-to-br from-[#FFF9F5] via-white to-[#F4FBFA] p-4">
-          <canvas ref={chartRef} className="h-72 w-full" />
-        </div>
+        {recentOrders.length > 0 ? (
+          <div className="divide-y divide-slate-50">
+            {recentOrders.map((order) => {
+              const ageTone = getOrderAgeTone(order);
+              return (
+                <div key={order.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FBE8DC] text-[11px] font-bold text-[#C05015]">
+                      #{(order.numero ?? '').toString().slice(-3)}
+                    </div>
+                    <div>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${getOrderStatusClasses(order.statut)}`}>
+                          {getOrderStatusLabel(order.statut)}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-[10px] font-medium ${ageTone.badge}`}>
+                          {ageTone.label}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-[11px] text-[#9A7060]">{order.source} · {formatDate(order.createdAt)}</p>
+                    </div>
+                  </div>
+                  <span className="font-bold text-sm text-[#0F172A]">{formatFCFA(order.amount)}</span>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed border-[#FDDDD4] bg-white py-10 text-center text-sm text-[#9A7060]">
+            Aucune commande récente
+          </div>
+        )}
       </section>
     </div>
   );
 }
 
-function DashboardMetricCard({ icon, label, value, secondary, cardClass, iconClass }) {
-  return (
-    <div className={`min-w-0 rounded-[24px] border p-4 shadow-sm ${cardClass}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="text-sm font-medium text-[#7B6A58]">{label}</div>
-          <div className="mt-2 text-[clamp(1.35rem,2vw,2rem)] font-bold leading-tight text-[#2D2720] break-words">
-            {value}
-          </div>
-          <div className="mt-1 text-xs text-[#8B7355] break-words">{secondary}</div>
-        </div>
-        <div className={`shrink-0 rounded-2xl p-2.5 shadow-sm ${iconClass}`}>{icon}</div>
-      </div>
-    </div>
-  );
-}
-
-function QuickActionButton({ icon, title, description, tone, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="group rounded-[22px] border border-[#F0E1D7] bg-white p-4 text-left shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg"
-    >
-      <div className={`inline-flex rounded-2xl bg-gradient-to-r ${tone} p-3 text-white shadow-sm`}>
-        {icon}
-      </div>
-      <div className="mt-4 font-semibold text-[#2D2720]">{title}</div>
-      <div className="mt-1 text-sm text-[#8B7355]">{description}</div>
-      <div className="mt-4 text-sm font-medium text-[#B83A00] transition group-hover:translate-x-0.5">
-        Ouvrir
-      </div>
-    </button>
-  );
-}
-
-function MiniInsightCard({ icon, label, value, tone }) {
-  return (
-    <div className="min-w-0 rounded-[22px] border border-[#F0E1D7] bg-white p-4 shadow-sm">
-      <div className={`inline-flex max-w-full items-center gap-2 rounded-full px-3 py-1 text-xs font-medium ${tone}`}>
-        {icon}
-        <span className="truncate">{label}</span>
-      </div>
-      <div className="mt-3 text-[clamp(1.1rem,1.6vw,1.35rem)] font-bold leading-tight text-[#2D2720] break-words">
-        {value}
-      </div>
-    </div>
-  );
-}
 
 // ==================== MAIN DASHBOARD COMPONENT ====================
 export default function GerantDashboard({ restaurantId, token }) {
@@ -3037,11 +3246,12 @@ export default function GerantDashboard({ restaurantId, token }) {
 
   return (
     <div className="max-w-6xl mx-auto">
+      <OnboardingWizard />
       <div
         className={`rounded-3xl p-6 shadow-sm ${
           darkMode
             ? "border border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
-            : "bg-gradient-to-b from-[#FFF5EB] via-[#F9F7F5] to-white"
+            : "bg-white border border-[rgba(0,0,0,0.05)]"
         }`}
       >
         {renderTabContent()}

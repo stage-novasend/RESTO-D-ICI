@@ -42,7 +42,7 @@ export default function PaymentSuccessPage() {
   };
 
   return (
-    <div className="min-h-screen bg-stone-50 flex items-center justify-center p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-[#FDF5EF] flex items-center justify-center p-4 sm:p-6 lg:p-8">
       <div className="bg-white rounded-3xl shadow-xl max-w-md w-full p-8 sm:p-10 border border-stone-100">
         
         {/* Icône succès - Cercle vert */}

@@ -1,240 +1,196 @@
 import { useState, useEffect } from 'react';
-import { TrendingUp, Users, Clock, Package, FileText, Calendar } from 'lucide-react';
+import { TrendingUp, Users, FileText, Download, BarChart3 } from 'lucide-react';
 import { b2bAPI } from '../../services/api';
+
+const ACCENT = '#C05015';
+const CREAM = '#0F172A';
+const MUTED = '#64748B';
+const GOLD = '#F97316';
+const BORDER = 'rgba(89,67,42,0.10)';
+
+function exportCSV(data, filename) {
+  if (!data.length) return;
+  const headers = Object.keys(data[0]);
+  const rows = data.map(r => headers.map(h => JSON.stringify(r[h] ?? '')).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; a.click();
+  URL.revokeObjectURL(url);
+}
 
 export default function B2BReports() {
   const [reports, setReports] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState('expenses');
-
-  // Mock data for expense tracking and audit logs (US-26, US-36)
-  const mockReports = {
-    expenses: [
-      { 
-        collaborator: 'Jean Kouassi', 
-        email: 'jean.kouassi@entreprise.ci', 
-        totalSpent: 32000, 
-        ordersCount: 8,
-        averageOrder: 4000,
-        lastOrder: '2026-05-10'
-      },
-      { 
-        collaborator: 'Marie Koné', 
-        email: 'marie.kone@entreprise.ci', 
-        totalSpent: 68000, 
-        ordersCount: 12,
-        averageOrder: 5667,
-        lastOrder: '2026-05-11'
-      },
-      { 
-        collaborator: 'Paul Traoré', 
-        email: 'paul.traore@entreprise.ci', 
-        totalSpent: 45000, 
-        ordersCount: 9,
-        averageOrder: 5000,
-        lastOrder: '2026-05-08'
-      }
-    ],
-    auditLogs: [
-      { 
-        date: '2026-05-11 14:30', 
-        user: 'Marie Koné', 
-        action: 'Commande groupée', 
-        details: '50 repas (30 Attiéké, 20 Alloco)', 
-        amount: 325000 
-      },
-      { 
-        date: '2026-05-10 12:15', 
-        user: 'Jean Kouassi', 
-        action: 'Commande individuelle', 
-        details: 'Riz Sauce + Jus', 
-        amount: 4500 
-      },
-      { 
-        date: '2026-05-09 18:45', 
-        user: 'Responsable B2B', 
-        action: 'Ajout collaborateur', 
-        details: 'Paul Traoré - Limite 45,000 FCFA', 
-        amount: 0 
-      },
-      { 
-        date: '2026-05-08 13:20', 
-        user: 'Paul Traoré', 
-        action: 'Commande individuelle', 
-        details: 'Attiéké Poisson', 
-        amount: 5000 
-      }
-    ]
-  };
+  const [tab, setTab] = useState('collaborateurs');
 
   useEffect(() => {
-    const loadReports = async () => {
-      try {
-        setLoading(true);
-        const response = await b2bAPI.getReports();
-        setReports(response.data || mockReports);
-      } catch (err) {
-        console.error('Error loading reports:', err);
-        setError('Impossible de charger les rapports');
-        setReports(mockReports);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadReports();
+    b2bAPI.getReports()
+      .then(r => setReports(r.data))
+      .catch(() => {})
+      .finally(() => setLoading(false));
   }, []);
+
+  const collaborateurs = reports?.collaborateurs ?? [];
+  const auditLogs = reports?.auditLogs ?? [];
+  const factures = reports?.factures ?? [];
+
+  const totalDepenses = collaborateurs.reduce((s, c) => s + (c.totalDepense ?? 0), 0);
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#F9F7F5] p-6">
-        <div className="max-w-6xl mx-auto">
-          <h1 className="text-3xl font-bold text-[#2D2720] mb-6">Rapports & Audit</h1>
-          <div className="bg-white rounded-2xl p-8 border border-[#E8E2D9]">
-            <div className="animate-pulse space-y-4">
-              <div className="h-4 bg-[#F9F7F5] rounded w-1/4"></div>
-              <div className="h-12 bg-[#F9F7F5] rounded"></div>
-              <div className="h-12 bg-[#F9F7F5] rounded"></div>
-            </div>
-          </div>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-[#FDF5EF]">
+        <div className="h-8 w-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F7F5] p-6">
-      <div className="max-w-6xl mx-auto">
-        <h1 className="text-3xl font-bold text-[#2D2720] mb-6">Rapports & Audit</h1>
-        
-        {error && (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-6">
-            {error}
-          </div>
-        )}
+    <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8 bg-[#FDF5EF]">
+      <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* Tab Navigation */}
-        <div className="flex space-x-1 bg-[#F9F7F5] p-1 rounded-xl mb-6 border border-[#E8E2D9]">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: GOLD }}>Rapports & Audit</p>
+            <h1 className="mt-1 text-2xl font-bold" style={{ color: CREAM }}>Tableau de bord analytique</h1>
+            <p className="mt-1 text-sm" style={{ color: MUTED }}>
+              {reports?.moisEnCours} {reports?.anneeEnCours} · {collaborateurs.length} collaborateur(s)
+            </p>
+          </div>
           <button
-            onClick={() => setActiveTab('expenses')}
-            className={`px-6 py-3 rounded-xl font-medium transition-colors ${
-              activeTab === 'expenses' 
-                ? 'bg-white text-[#2D2720] shadow-sm' 
-                : 'text-[#8B7355] hover:text-[#2D2720]'
-            }`}
+            onClick={() => exportCSV(
+              collaborateurs.map(c => ({ Nom: c.collaborateur, Email: c.email, Dépensé: c.totalDepense, Limite: c.limite, Solde: c.soldeRestant })),
+              'rapport-collaborateurs.csv'
+            )}
+            className="inline-flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-medium transition hover:bg-white"
+            style={{ borderColor: BORDER, color: CREAM }}
           >
-            <TrendingUp className="w-4 h-4 inline mr-2" />
-            Suivi des Dépenses
-          </button>
-          <button
-            onClick={() => setActiveTab('audit')}
-            className={`px-6 py-3 rounded-xl font-medium transition-colors ${
-              activeTab === 'audit' 
-                ? 'bg-white text-[#2D2720] shadow-sm' 
-                : 'text-[#8B7355] hover:text-[#2D2720]'
-            }`}
-          >
-            <FileText className="w-4 h-4 inline mr-2" />
-            Journal d'Audit
+            <Download className="h-4 w-4" style={{ color: GOLD }} />
+            Exporter CSV
           </button>
         </div>
 
-        {activeTab === 'expenses' && (
-          <div className="bg-white rounded-2xl p-6 border border-[#E8E2D9]">
-            <h2 className="text-xl font-bold text-[#2D2720] mb-6 flex items-center">
-              <Users className="w-5 h-5 mr-2" />
-              Dépenses par Collaborateur
-            </h2>
-            
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-[#E8E2D9]">
-                    <th className="text-left py-3 px-4 font-medium text-[#8B7355]">Collaborateur</th>
-                    <th className="text-left py-3 px-4 font-medium text-[#8B7355]">Email</th>
-                    <th className="text-right py-3 px-4 font-medium text-[#8B7355]">Total Dépensé</th>
-                    <th className="text-right py-3 px-4 font-medium text-[#8B7355]">Nb Commandes</th>
-                    <th className="text-right py-3 px-4 font-medium text-[#8B7355]">Moyenne</th>
-                    <th className="text-left py-3 px-4 font-medium text-[#8B7355]">Dernière Cmd</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {reports.expenses.map((expense, index) => (
-                    <tr key={index} className="border-b border-[#E8E2D9] hover:bg-[#FFF5EB]">
-                      <td className="py-3 px-4 font-medium text-[#2D2720]">{expense.collaborator}</td>
-                      <td className="py-3 px-4 text-[#8B7355] text-sm">{expense.email}</td>
-                      <td className="py-3 px-4 text-right font-bold text-[#2D2720]">
-                        {expense.totalSpent.toLocaleString()} FCFA
-                      </td>
-                      <td className="py-3 px-4 text-right text-[#2D2720]">{expense.ordersCount}</td>
-                      <td className="py-3 px-4 text-right text-[#2D2720]">
-                        {expense.averageOrder.toLocaleString()} FCFA
-                      </td>
-                      <td className="py-3 px-4 text-[#8B7355]">
-                        {new Date(expense.lastOrder).toLocaleDateString('fr-FR')}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* KPI strip */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {[
+            { label: 'Total dépensé', value: `${totalDepenses.toLocaleString()} FCFA`, color: ACCENT },
+            { label: 'Collaborateurs', value: collaborateurs.length, color: GOLD },
+            { label: 'Commandes mois', value: reports?.totalCommandesMois ?? 0, color: CREAM },
+            { label: 'Factures', value: factures.length, color: MUTED },
+          ].map(({ label, value, color }) => (
+            <div key={label} className="rounded-xl border bg-white p-4" style={{ borderColor: BORDER }}>
+              <p className="text-xs" style={{ color: MUTED }}>{label}</p>
+              <p className="mt-1 text-lg font-bold" style={{ color }}>{value}</p>
             </div>
-            
-            <div className="mt-6 p-4 bg-[#EBF5FB] rounded-xl border border-[#D4E8F2]">
-              <h3 className="font-bold text-[#3498DB] mb-2">💡 Insights</h3>
-              <p className="text-[#2D2720] text-sm">
-                Total dépensé ce mois: {reports.expenses.reduce((sum, e) => sum + e.totalSpent, 0).toLocaleString()} FCFA
-                {' • '}
-                Moyenne par collaborateur: {Math.round(reports.expenses.reduce((sum, e) => sum + e.totalSpent, 0) / reports.expenses.length).toLocaleString()} FCFA
-              </p>
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
 
-        {activeTab === 'audit' && (
-          <div className="bg-white rounded-2xl p-6 border border-[#E8E2D9]">
-            <h2 className="text-xl font-bold text-[#2D2720] mb-6 flex items-center">
-              <FileText className="w-5 h-5 mr-2" />
-              Journal d'Audit Complet
-            </h2>
-            
-            <div className="space-y-4">
-              {reports.auditLogs.map((log, index) => (
-                <div key={index} className="border border-[#E8E2D9] rounded-xl p-4 hover:bg-[#FFF5EB] transition-colors">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between">
-                    <div className="mb-3 md:mb-0">
-                      <div className="flex items-center mb-2">
-                        <Clock className="w-4 h-4 text-[#8B7355] mr-2" />
-                        <span className="text-sm text-[#8B7355]">
-                          {new Date(log.date).toLocaleString('fr-FR')}
-                        </span>
-                      </div>
-                      <div className="font-medium text-[#2D2720]">{log.user}</div>
-                      <div className="text-sm text-[#8B7355]">{log.action}</div>
-                      <div className="text-sm mt-1">{log.details}</div>
-                    </div>
-                    <div className="text-right">
-                      {log.amount > 0 && (
-                        <div className="font-bold text-[#2D2720]">
-                          {log.amount.toLocaleString()} FCFA
+        {/* Tabs */}
+        <div className="flex gap-1 border-b" style={{ borderColor: BORDER }}>
+          {[
+            { id: 'collaborateurs', label: 'Collaborateurs', icon: Users },
+            { id: 'audit', label: 'Historique', icon: FileText },
+            { id: 'factures', label: 'Factures', icon: BarChart3 },
+          ].map(({ id, label, icon: Icon }) => (
+            <button
+              key={id} onClick={() => setTab(id)}
+              className="flex items-center gap-1.5 px-4 py-2.5 text-sm font-medium border-b-2 transition"
+              style={{
+                borderBottomColor: tab === id ? ACCENT : 'transparent',
+                color: tab === id ? ACCENT : MUTED,
+              }}
+            >
+              <Icon className="h-4 w-4" /> {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Tab: Collaborateurs */}
+        {tab === 'collaborateurs' && (
+          <div className="space-y-3">
+            {collaborateurs.length === 0 ? (
+              <div className="rounded-2xl border bg-white p-10 text-center" style={{ borderColor: BORDER }}>
+                <p className="text-sm" style={{ color: MUTED }}>Aucune donnée de consommation ce mois</p>
+              </div>
+            ) : collaborateurs.map((c, i) => {
+              const pct = c.limite > 0 ? Math.min(100, (c.totalDepense / c.limite) * 100) : 0;
+              const barColor = pct >= 100 ? '#C05015' : pct >= 80 ? '#D97706' : '#9A3E10';
+              return (
+                <div key={i} className="rounded-xl border bg-white p-4" style={{ borderColor: BORDER }}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm" style={{ color: CREAM }}>{c.collaborateur}</p>
+                      <p className="text-xs" style={{ color: MUTED }}>{c.email}</p>
+                      <div className="mt-2">
+                        <div className="flex justify-between text-xs mb-1" style={{ color: MUTED }}>
+                          <span>{(c.totalDepense ?? 0).toLocaleString()} FCFA dépensés</span>
+                          <span>{Math.round(pct)}%</span>
                         </div>
-                      )}
-                      {log.amount === 0 && (
-                        <div className="text-[#8B7355] text-sm">Action administrative</div>
-                      )}
+                        <div className="h-1.5 rounded-full overflow-hidden bg-[#F2EBE1]">
+                          <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className="text-xs" style={{ color: MUTED }}>Solde restant</p>
+                      <p className="font-bold text-sm" style={{ color: CREAM }}>{(c.soldeRestant ?? 0).toLocaleString()} FCFA</p>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-            
-            <div className="mt-6 p-4 bg-[#FDEDEC] rounded-xl border border-[#FADBD8]">
-              <h3 className="font-bold text-[#E74C3C] mb-2">🔒 Transparence Entreprise</h3>
-              <p className="text-[#2D2720] text-sm">
-                Ce journal d'audit fournit une traçabilité complète de toutes les actions effectuées 
-                dans votre compte entreprise, conformément aux exigences de transparence en milieu professionnel.
-              </p>
-            </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* Tab: Audit */}
+        {tab === 'audit' && (
+          <div className="space-y-2">
+            {auditLogs.length === 0 ? (
+              <div className="rounded-2xl border bg-white p-10 text-center" style={{ borderColor: BORDER }}>
+                <p className="text-sm" style={{ color: MUTED }}>Aucune action enregistrée</p>
+              </div>
+            ) : auditLogs.map((log, i) => (
+              <div key={i} className="flex items-start gap-3 rounded-xl border bg-white p-3" style={{ borderColor: BORDER }}>
+                <div className="h-7 w-7 shrink-0 rounded-lg flex items-center justify-center text-[10px] font-bold" style={{ background: '#FDF5EF', color: GOLD }}>
+                  {(log.actorEmail ?? log.user ?? '?')[0]?.toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium" style={{ color: CREAM }}>{log.type?.replaceAll('_', ' ') ?? log.action}</p>
+                  <p className="text-[11px] mt-0.5" style={{ color: MUTED }}>
+                    {log.actorEmail ?? log.user} · {log.meta ? JSON.stringify(log.meta).slice(0, 60) : log.details ?? ''}
+                  </p>
+                </div>
+                <span className="text-[10px] shrink-0" style={{ color: MUTED }}>
+                  {new Date(log.createdAt ?? log.date).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Tab: Factures */}
+        {tab === 'factures' && (
+          <div className="space-y-3">
+            {factures.length === 0 ? (
+              <div className="rounded-2xl border bg-white p-10 text-center" style={{ borderColor: BORDER }}>
+                <p className="text-sm" style={{ color: MUTED }}>Aucune facture générée</p>
+              </div>
+            ) : factures.map((f, i) => (
+              <div key={i} className="flex items-center justify-between rounded-xl border bg-white px-4 py-3" style={{ borderColor: BORDER }}>
+                <div>
+                  <p className="font-semibold text-sm" style={{ color: CREAM }}>{f.periode ?? f.mois} {f.annee}</p>
+                  <p className="text-xs" style={{ color: MUTED }}>#{f.numeroFacture}</p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-sm" style={{ color: CREAM }}>{(f.montantTTC ?? f.amount ?? 0).toLocaleString()} FCFA</p>
+                  <span className={`text-[11px] rounded-full px-2 py-0.5 ${f.statut === 'PAYEE' || f.statut === 'paid' ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                    {f.statut === 'PAYEE' || f.statut === 'paid' ? 'Payée' : 'En attente'}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
         )}
       </div>

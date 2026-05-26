@@ -55,24 +55,24 @@ export default function OrdersPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#D94500] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-[#8B7355]">Chargement de vos commandes...</p>
+          <div className="w-8 h-8 border-4 border-[#C05015] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-[#737373]">Chargement de vos commandes...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#F9F7F5] py-8">
+    <div className="min-h-screen bg-white py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 mb-8">
           <button 
             onClick={() => navigate(-1)}
             className="p-2 hover:bg-white hover:rounded-xl transition"
           >
-            <ArrowLeft className="w-6 h-6 text-[#8B7355]" />
+            <ArrowLeft className="w-6 h-6 text-[#737373]" />
           </button>
-          <h1 className="text-2xl font-bold text-[#2D2720] flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-2">
             <History className="w-6 h-6" />
             Mes Commandes
           </h1>
@@ -80,14 +80,14 @@ export default function OrdersPage() {
 
         {orders.length === 0 ? (
           <div className="bg-white rounded-2xl p-12 text-center">
-            <History className="w-16 h-16 text-[#8B7355] mx-auto mb-4 opacity-50" />
-            <h3 className="text-xl font-semibold text-[#2D2720] mb-2">Aucune commande trouvée</h3>
-            <p className="text-[#8B7355] mb-6">
+            <History className="w-16 h-16 text-[#737373] mx-auto mb-4 opacity-50" />
+            <h3 className="text-xl font-semibold text-[#0F172A] mb-2">Aucune commande trouvée</h3>
+            <p className="text-[#737373] mb-6">
               Vous n'avez pas encore passé de commande.
             </p>
             <Link
               to="/menu"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#D94500] text-white rounded-xl font-semibold hover:bg-[#B83A00] transition"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#C05015] text-white rounded-xl font-semibold hover:bg-[#9A3E10] transition"
             >
               <Store className="w-5 h-5" />
               Commander maintenant
@@ -95,15 +95,15 @@ export default function OrdersPage() {
           </div>
         ) : (
           orders.map((order) => (
-            <div key={order.id} className="bg-white rounded-2xl p-6 shadow-sm border border-[#E8E2D9] mb-6">
+            <div key={order.id} className="bg-white rounded-2xl p-6 shadow-sm border border-[#E2E8F0] mb-6">
               {/* Order header */}
               <div className="flex justify-between items-start mb-4">
                 <div>
-                  <h3 className="font-bold text-lg text-[#2D2720]">Commande #{order.id}</h3>
-                  <p className="text-sm text-[#8B7355]">
+                  <h3 className="font-bold text-lg text-[#0F172A]">Commande #{order.id}</h3>
+                  <p className="text-sm text-[#737373]">
                     {new Date(order.timestamp).toLocaleDateString('fr-FR')}
                   </p>
-                  <p className="text-sm text-[#8B7355] mt-1">
+                  <p className="text-sm text-[#737373] mt-1">
                     Restaurant: {order.restaurantName}
                   </p>
                 </div>
@@ -116,14 +116,14 @@ export default function OrdersPage() {
                     }
                     {orderStatusConfig[order.status]?.label || order.status}
                   </span>
-                  <p className="text-lg font-bold text-[#D94500] mt-1">
+                  <p className="text-lg font-bold text-[#C05015] mt-1">
                     {formatFCFA(order.total)} FCFA
                   </p>
                 </div>
               </div>
 
               {/* Order mode */}
-              <div className="flex items-center gap-2 text-sm text-[#8B7355] mb-4">
+              <div className="flex items-center gap-2 text-sm text-[#737373] mb-4">
                 {order.orderMode === 'sur_place' && <Store className="w-4 h-4" />}
                 {order.orderMode === 'emporter' && <Package className="w-4 h-4" />}
                 {order.orderMode === 'livraison' && <Truck className="w-4 h-4" />}
@@ -140,10 +140,10 @@ export default function OrdersPage() {
               <div className="space-y-2 mb-4">
                 {order.items.map((item, index) => (
                   <div key={index} className="flex justify-between text-sm">
-                    <span className="text-[#2D2720]">
+                    <span className="text-[#0F172A]">
                       {item.quantite}x {item.nom}
                     </span>
-                    <span className="text-[#8B7355]">
+                    <span className="text-[#737373]">
                       {formatFCFA(item.prix * item.quantite)} FCFA
                     </span>
                   </div>
@@ -154,7 +154,7 @@ export default function OrdersPage() {
               <div className="flex justify-end">
                 <button
                   onClick={() => setActiveOrder(activeOrder === order.id ? null : order.id)}
-                  className="px-4 py-2 text-sm text-[#D94500] hover:bg-[#FFF5EB] rounded-lg transition"
+                  className="px-4 py-2 text-sm text-[#C05015] hover:bg-[#FBE8DC] rounded-lg transition"
                 >
                   {activeOrder === order.id ? 'Masquer les détails' : 'Voir les détails'}
                 </button>
@@ -162,8 +162,8 @@ export default function OrdersPage() {
 
               {/* Detailed view */}
               {activeOrder === order.id && (
-                <div className="mt-4 pt-4 border-t border-[#E8E2D9] bg-[#F9F7F5] rounded-xl p-4">
-                  <h4 className="font-semibold text-[#2D2720] mb-3">Détails de la commande</h4>
+                <div className="mt-4 pt-4 border-t border-[#E2E8F0] bg-white rounded-xl p-4">
+                  <h4 className="font-semibold text-[#0F172A] mb-3">Détails de la commande</h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <p><strong>Numéro de commande:</strong> {order.id}</p>

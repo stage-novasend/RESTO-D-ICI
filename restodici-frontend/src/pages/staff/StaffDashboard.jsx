@@ -1,751 +1,905 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+// src/pages/staff/StaffDashboard.jsx
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  AlertTriangle,
-  ArrowRight,
-  Bell,
-  CheckCircle2,
-  ChefHat,
-  CircleDollarSign,
-  Flame,
-  Package,
-  RefreshCw,
-  Sparkles,
+  AlertTriangle, ArrowRight, BarChart2, CheckCircle2, ChefHat,
+  CircleDollarSign, Flame, Mail, Package, Phone,
+  RefreshCw, Save, Shield, ShieldCheck, User,
+  Eye, EyeOff, X, Pencil, Activity, Clock, Bell,
+  Wallet, TrendingUp, Truck, Calendar, Settings,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import OnboardingWizard from '../../components/wizard/OnboardingWizard';
+import { commandesService, createCommandesSocket } from '../../services/commandes.service';
+import { stocksAPI, authAPI, b2bAPI } from '../../services/api';
+import SecurityPanel from '../../components/security/SecurityPanel';
+import NotificationBell from '../../components/notifications/NotificationBell';
 import {
-  commandesService,
-  createCommandesSocket,
-} from '../../services/commandes.service';
-import { stocksAPI } from '../../services/api';
-import {
-  formatDate,
-  formatDeliveryMode,
-  formatFCFA,
-  STATUS_COLORS,
-  STATUS_LABELS,
-  timeAgo,
+  formatDate, formatDeliveryMode, formatFCFA,
+  STATUS_COLORS, STATUS_LABELS, timeAgo,
 } from '../../utils/formatters';
 
+const ACCENT = '#1C3A1C';
+
 const STATUS_FLOW = {
-  RECUE: ['CONFIRMEE'],
-  CONFIRMEE: ['EN_PREP'],
-  EN_PREP: ['PRETE'],
-  PRETE: ['EN_LIVRAISON', 'LIVREE'],
-  EN_LIVRAISON: ['LIVREE'],
-  LIVREE: [],
-  ANNULEE: [],
+  RECUE: ['CONFIRMEE'], CONFIRMEE: ['EN_PREP'], EN_PREP: ['PRETE'],
+  PRETE: ['EN_LIVRAISON', 'LIVREE'], EN_LIVRAISON: ['LIVREE'],
+  LIVREE: [], ANNULEE: [],
+};
+const ACTION_LABELS = {
+  CONFIRMEE:    'Accepter la commande',
+  EN_PREP:      'Commencer la préparation',
+  PRETE:        'Marquer Prêt',
+  EN_LIVRAISON: 'Envoyer en livraison',
+  LIVREE:       'Confirmer livraison',
+};
+const PAYMENT_MODES = { SUR_PLACE: 'ESPECES', EMPORTER: 'ESPECES', LIVRAISON: 'ESPECES' };
+
+const B2B_STATUS_FLOW = {
+  EN_ATTENTE: ['CONFIRMEE'], CONFIRMEE: ['EN_PREPARATION'],
+  EN_PREPARATION: ['LIVREE'], LIVREE: [], ANNULEE: [],
+};
+const B2B_STATUS_LABELS = {
+  EN_ATTENTE: 'En attente', CONFIRMEE: 'Confirmée',
+  EN_PREPARATION: 'En préparation', LIVREE: 'Livrée', ANNULEE: 'Annulée',
+};
+const B2B_ACTION_LABELS = {
+  CONFIRMEE: 'Confirmer',
+  EN_PREPARATION: 'Démarrer préparation',
+  LIVREE: 'Marquer livrée',
 };
 
-const PAYMENT_MODES = {
-  SUR_PLACE: 'ESPECES',
-  EMPORTER: 'ESPECES',
-  LIVRAISON: 'LIVRAISON',
-};
+const WEEK_DAYS = [
+  { init: 'LU', name: 'Lundi'    },
+  { init: 'MA', name: 'Mardi'    },
+  { init: 'ME', name: 'Mercredi' },
+  { init: 'JE', name: 'Jeudi'    },
+  { init: 'VE', name: 'Vendredi' },
+  { init: 'SA', name: 'Samedi'   },
+  { init: 'DI', name: 'Dimanche' },
+];
 
-const METRIC_STYLES = {
-  active: {
-    card: 'border-orange-200 bg-gradient-to-br from-[#FFF4EC] via-white to-[#FFE4D4]',
-    icon: 'bg-[#D94500] text-white',
-    ring: 'from-[#D94500]/20 to-transparent',
-  },
-  ready: {
-    card: 'border-emerald-200 bg-gradient-to-br from-emerald-50 via-white to-teal-50',
-    icon: 'bg-emerald-500 text-white',
-    ring: 'from-emerald-200 to-transparent',
-  },
-  payment: {
-    card: 'border-violet-200 bg-gradient-to-br from-violet-50 via-white to-fuchsia-50',
-    icon: 'bg-violet-500 text-white',
-    ring: 'from-violet-200 to-transparent',
-  },
-  stock: {
-    card: 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-yellow-50',
-    icon: 'bg-amber-500 text-white',
-    ring: 'from-amber-200 to-transparent',
-  },
-};
+// Build weekly schedule from restaurant hours (same hours every day per current model)
+function buildWeek(openingTime, closingTime) {
+  const label = openingTime && closingTime ? `${openingTime} – ${closingTime}` : null;
+  return WEEK_DAYS.map(({ init, name }) => ({
+    init, name,
+    hours: label || 'Horaires non configurés',
+    rest: !label,
+  }));
+}
 
+// Is the restaurant currently in service?
+function isInService(openingTime, closingTime) {
+  if (!openingTime || !closingTime) return false;
+  const now = new Date();
+  const [oh, om] = openingTime.split(':').map(Number);
+  const [ch, cm] = closingTime.split(':').map(Number);
+  const cur = now.getHours() * 60 + now.getMinutes();
+  return cur >= oh * 60 + om && cur < ch * 60 + cm;
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function Spinner() {
+  return (
+    <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', animation: 'spin 0.8s linear infinite' }} />
+  );
+}
+
+function KpiCard({ icon: Icon, iconBg, iconColor, label, value, unit, sub, subColor }) {
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E8ECE8', borderRadius: 20, padding: '20px 22px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <p style={{ fontSize: 13, color: '#6B7280', margin: 0, fontWeight: 500 }}>{label}</p>
+        <div style={{ width: 38, height: 38, borderRadius: 12, background: iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <Icon style={{ width: 18, height: 18, color: iconColor }} />
+        </div>
+      </div>
+      <p style={{ fontSize: 28, fontWeight: 800, color: '#111827', margin: '0 0 6px', letterSpacing: '-0.02em', lineHeight: 1 }}>
+        {value} <span style={{ fontSize: 14, fontWeight: 600, color: '#9CA3AF' }}>{unit}</span>
+      </p>
+      {sub && (
+        <p style={{ fontSize: 12, color: subColor || '#6B7280', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+          {sub}
+        </p>
+      )}
+    </div>
+  );
+}
+
+function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDraft, saving }) {
+  const isUrgent = order.createdAt && Date.now() - new Date(order.createdAt).getTime() >= 15 * 60 * 1000;
+  const nextStatuses = STATUS_FLOW[order.statut] || [];
+  const [primaryStatus] = nextStatuses;
+  const timeStr = order.createdAt
+    ? new Date(order.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : '';
+  const minutesAgo = order.createdAt
+    ? Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000)
+    : null;
+  const articleNames = (order.lignes || []).map(l => l.article?.nom).filter(Boolean).join(', ');
+  // All 3 modes can require manual payment: SUR_PLACE/EMPORTER = counter, LIVRAISON = on delivery
+  const showPayment = !order.estPaye;
+  const draft = paymentDraft || {};
+
+  return (
+    <div style={{ background: '#fff', border: `1px solid ${isUrgent ? '#FECACA' : '#E8ECE8'}`, borderRadius: 18, padding: '18px 20px', background: isUrgent ? '#FFFAFA' : '#fff' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        {/* Left: icon + info */}
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: isUrgent ? '#FEE2E2' : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <ChefHat style={{ width: 20, height: 20, color: isUrgent ? '#DC2626' : '#6B7280' }} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+              <span style={{ background: '#F3F4F6', color: '#374151', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>
+                #{order.numero}
+              </span>
+              {isUrgent && (
+                <span style={{ background: '#FEE2E2', color: '#DC2626', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>
+                  URGENT
+                </span>
+              )}
+              <span style={{ background: '#F0F2F0', color: '#374151', fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 99 }}>
+                {formatDeliveryMode(order.modeLivraison)}
+              </span>
+            </div>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {articleNames || `Commande ${order.numero}`}
+            </p>
+            <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Clock style={{ width: 11, height: 11 }} />
+              Reçue à {timeStr}{minutesAgo !== null ? ` · ${minutesAgo} min` : ''}
+            </p>
+          </div>
+        </div>
+
+        {/* Right: amount */}
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <p style={{ fontSize: 11, color: '#9CA3AF', margin: '0 0 2px' }}>À percevoir</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: '#D97706', margin: 0, lineHeight: 1 }}>
+            {(Number(order.montantTotal) || 0).toLocaleString('fr-FR')}
+          </p>
+          <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>CFA</p>
+        </div>
+      </div>
+
+      {/* Order lines */}
+      {(order.lignes || []).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+          {order.lignes.slice(0, 4).map((l, i) => (
+            <span key={i} style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#374151' }}>
+              {l.quantite}× {l.article?.nom || 'Article'}
+            </span>
+          ))}
+          {order.lignes.length > 4 && (
+            <span style={{ background: '#F9FAFB', border: '1px solid #E5E7EB', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#9CA3AF' }}>
+              +{order.lignes.length - 4}
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Payment */}
+      {showPayment && (
+        <div style={{ marginTop: 12, padding: '12px 14px', background: '#F9FAFB', border: '1px solid #E8ECE8', borderRadius: 12 }}>
+          <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 6 }}>
+            <CircleDollarSign style={{ width: 13, height: 13, color: ACCENT }} />
+            Encaissement
+          </p>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <select value={draft.modePaiement || PAYMENT_MODES[order.modeLivraison] || 'ESPECES'}
+              onChange={e => setPaymentDraft({ ...draft, modePaiement: e.target.value })}
+              style={{ flex: 1, borderRadius: 10, border: '1px solid #D1D5DB', padding: '6px 10px', fontSize: 12, outline: 'none', background: '#fff' }}>
+              <option value="ESPECES">Espèces</option>
+              <option value="LIVRAISON">À la livraison</option>
+            </select>
+            <input type="number" min="0" value={draft.montantRemis ?? Number(order.montantTotal)}
+              onChange={e => setPaymentDraft({ ...draft, montantRemis: e.target.value })}
+              style={{ width: 90, borderRadius: 10, border: '1px solid #D1D5DB', padding: '6px 10px', fontSize: 12, outline: 'none', background: '#fff' }} />
+            <button onClick={() => onPayment(order)} disabled={saving}
+              style={{ borderRadius: 10, border: 'none', background: ACCENT, color: '#fff', padding: '6px 14px', fontSize: 12, fontWeight: 700, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+              {saving ? '...' : 'Encaisser'}
+            </button>
+          </div>
+          {Number(draft.montantRemis) > Number(order.montantTotal) && (
+            <p style={{ fontSize: 12, color: '#16A34A', fontWeight: 600, margin: '6px 0 0' }}>
+              Rendu : {formatFCFA(Number(draft.montantRemis) - Number(order.montantTotal))}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Action buttons */}
+      {nextStatuses.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          {nextStatuses.map((ns, i) => (
+            <button key={ns} onClick={() => onAction(order.id, ns)} disabled={saving}
+              style={{
+                flex: 1, padding: '10px', borderRadius: 12,
+                border: i === 0 ? 'none' : `1px solid ${ACCENT}`,
+                background: i === 0 ? ACCENT : '#fff',
+                color: i === 0 ? '#fff' : ACCENT,
+                fontSize: 13, fontWeight: 700,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}>
+              {saving ? '...' : (ACTION_LABELS[ns] || ns)}
+            </button>
+          ))}
+        </div>
+      )}
+      {order.statut === 'RECUE' && Date.now() - new Date(order.createdAt).getTime() < 5 * 60 * 1000 && (
+        <button onClick={() => onAction(order.id, 'ANNULEE')} disabled={saving}
+          style={{ width: '100%', marginTop: 6, padding: '8px', borderRadius: 10, border: '1px solid #FECACA', background: '#FFF5F5', color: '#DC2626', fontSize: 12, fontWeight: 600, cursor: saving ? 'not-allowed' : 'pointer', opacity: saving ? 0.6 : 1 }}>
+          Annuler la commande
+        </button>
+      )}
+    </div>
+  );
+}
+
+function B2BStaffOrderCard({ order, onAction, saving }) {
+  const nextStatuses = B2B_STATUS_FLOW[order.statut] || [];
+  const isUrgent = order.createdAt && Date.now() - new Date(order.createdAt).getTime() >= 15 * 60 * 1000;
+  const timeStr = order.createdAt
+    ? new Date(order.createdAt).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
+    : '';
+  const minutesAgo = order.createdAt
+    ? Math.floor((Date.now() - new Date(order.createdAt).getTime()) / 60000)
+    : null;
+
+  return (
+    <div style={{ background: isUrgent ? '#FFFAF5' : '#FFFDF5', border: `1px solid ${isUrgent ? '#FBBF24' : '#FDE68A'}`, borderRadius: 18, padding: '18px 20px' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, flex: 1, minWidth: 0 }}>
+          <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FEF3C7', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <Package style={{ width: 20, height: 20, color: '#D97706' }} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 6, marginBottom: 6 }}>
+              <span style={{ background: '#FEF3C7', color: '#B45309', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>
+                #{order.numero}
+              </span>
+              <span style={{ background: '#D97706', color: '#fff', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 99, letterSpacing: '0.05em' }}>
+                B2B
+              </span>
+              {isUrgent && (
+                <span style={{ background: '#FEE2E2', color: '#DC2626', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 99 }}>
+                  URGENT
+                </span>
+              )}
+              <span style={{ background: '#F3F4F6', color: '#6B7280', fontSize: 11, fontWeight: 500, padding: '2px 8px', borderRadius: 99, border: '1px solid #E5E7EB' }}>
+                {B2B_STATUS_LABELS[order.statut] || order.statut}
+              </span>
+            </div>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: '0 0 2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {order.entreprise || 'Entreprise'}
+            </p>
+            <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Clock style={{ width: 11, height: 11 }} />
+              Reçue à {timeStr}{minutesAgo !== null ? ` · ${minutesAgo} min` : ''}
+            </p>
+            {(order.dateLivraison || order.heureLivraison || order.lieuLivraison) && (
+              <p style={{ fontSize: 12, color: '#B45309', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <Truck style={{ width: 11, height: 11 }} />
+                {order.dateLivraison ? new Date(order.dateLivraison).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
+                {order.heureLivraison ? ` à ${order.heureLivraison}` : ''}
+                {order.lieuLivraison ? ` · ${order.lieuLivraison}` : ''}
+              </p>
+            )}
+          </div>
+        </div>
+        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+          <p style={{ fontSize: 11, color: '#9CA3AF', margin: '0 0 2px' }}>Total estimé</p>
+          <p style={{ fontSize: 20, fontWeight: 800, color: '#D97706', margin: 0, lineHeight: 1 }}>
+            {(Number(order.totalEstime) || 0).toLocaleString('fr-FR')}
+          </p>
+          <p style={{ fontSize: 11, color: '#9CA3AF', margin: '2px 0 0' }}>CFA</p>
+        </div>
+      </div>
+
+      {(order.lignes || []).length > 0 && (
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 12 }}>
+          {order.lignes.slice(0, 4).map((l, i) => (
+            <span key={i} style={{ background: '#FEF9C3', border: '1px solid #FEF08A', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#713F12' }}>
+              {l.quantite}× {l.nomArticle || 'Article'}
+            </span>
+          ))}
+          {order.lignes.length > 4 && (
+            <span style={{ background: '#FEF9C3', border: '1px solid #FEF08A', borderRadius: 8, padding: '4px 10px', fontSize: 12, color: '#9CA3AF' }}>
+              +{order.lignes.length - 4}
+            </span>
+          )}
+        </div>
+      )}
+
+      {nextStatuses.length > 0 && (
+        <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          {nextStatuses.map((ns, i) => (
+            <button key={ns} onClick={() => onAction(order.id, ns)} disabled={saving}
+              style={{
+                flex: 1, padding: '10px', borderRadius: 12,
+                border: i === 0 ? 'none' : `1px solid ${ACCENT}`,
+                background: i === 0 ? ACCENT : '#fff',
+                color: i === 0 ? '#fff' : ACCENT,
+                fontSize: 13, fontWeight: 700,
+                cursor: saving ? 'not-allowed' : 'pointer',
+                opacity: saving ? 0.6 : 1,
+              }}>
+              {saving ? '...' : (B2B_ACTION_LABELS[ns] || ns)}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function WeeklySchedule({ openingTime, closingTime }) {
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const week = buildWeek(openingTime, closingTime);
+  const inService = isInService(openingTime, closingTime);
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #E8ECE8', borderRadius: 20, padding: '20px' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Planning de la semaine</h3>
+        <Calendar style={{ width: 16, height: 16, color: '#9CA3AF' }} />
+      </div>
+
+      {/* Current service status */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 14 }}>
+        <span style={{ width: 7, height: 7, borderRadius: '50%', background: inService ? '#22C55E' : '#9CA3AF', flexShrink: 0 }} />
+        <span style={{ fontSize: 12, color: inService ? '#16A34A' : '#9CA3AF', fontWeight: 600 }}>
+          {inService ? 'En service actuellement' : 'Hors service'}
+        </span>
+        {openingTime && closingTime && (
+          <span style={{ fontSize: 11, color: '#D1D5DB', marginLeft: 'auto' }}>
+            {openingTime} – {closingTime}
+          </span>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+        {week.map((day, i) => {
+          const isToday = i === todayIdx;
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 12,
+              padding: '10px 12px', borderRadius: 12,
+              background: isToday ? '#F0F5F0' : 'transparent',
+              border: isToday ? '1px solid #D1E0D1' : '1px solid transparent',
+            }}>
+              <div style={{
+                width: 36, height: 36, borderRadius: '50%', flexShrink: 0,
+                background: isToday ? ACCENT : '#F3F4F6',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 11, fontWeight: 700,
+                color: isToday ? '#fff' : '#6B7280',
+              }}>
+                {day.init}
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: isToday ? 700 : 500, color: '#111827', margin: 0 }}>{day.name}</p>
+                <p style={{ fontSize: 11, color: day.rest ? '#EF4444' : '#9CA3AF', margin: '1px 0 0' }}>
+                  {day.hours}
+                </p>
+              </div>
+              {isToday && (
+                <span style={{
+                  width: 8, height: 8, borderRadius: '50%',
+                  background: inService ? '#22C55E' : '#D97706',
+                  flexShrink: 0,
+                }} />
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ── Profile Panel ─── */
+function PanelField({ label, icon: Icon, type = 'text', value, onChange, placeholder }) {
+  return (
+    <div>
+      <label style={{ display: 'block', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6 }}>{label}</label>
+      <div style={{ position: 'relative' }}>
+        {Icon && <Icon style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: '#64748B', pointerEvents: 'none' }} />}
+        <input type={type} value={value} onChange={e => onChange(e.target.value)} placeholder={placeholder}
+          style={{ width: '100%', boxSizing: 'border-box', padding: `10px 12px 10px ${Icon ? 36 : 12}px`, border: '1px solid #E8ECE8', borderRadius: 9, fontSize: 13, color: '#0F172A', outline: 'none', background: '#F9FAFB' }}
+          onFocus={e => e.target.style.borderColor = ACCENT}
+          onBlur={e => e.target.style.borderColor = '#E8ECE8'}
+        />
+      </div>
+    </div>
+  );
+}
+
+function ProfilePanel({ user, onClose, profileForm, setProfileForm, onSaveProfile, savingProfile, profileError, profileSuccess }) {
+  const [tab, setTab] = useState('profil');
+  const initials = ((user?.prenom?.[0] ?? '') + (user?.nom?.[0] ?? '')).toUpperCase() || 'S';
+  const fullName = [user?.prenom, user?.nom].filter(Boolean).join(' ') || 'Mon Profil';
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 40, backdropFilter: 'blur(4px)' }} />
+      <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: 'min(440px,100vw)', background: '#fff', zIndex: 50, overflowY: 'auto', boxShadow: '-20px 0 60px rgba(0,0,0,0.15)', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: ACCENT, padding: '28px 24px 24px' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: 20, fontWeight: 800, color: '#fff' }}>{initials}</span>
+              </div>
+              <div>
+                <p style={{ fontSize: 16, fontWeight: 700, color: '#fff', margin: '0 0 2px' }}>{fullName}</p>
+                <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: 0 }}>{user?.email}</p>
+                <span style={{ display: 'inline-block', marginTop: 6, background: 'rgba(255,255,255,0.15)', borderRadius: 99, padding: '2px 10px', fontSize: 10, fontWeight: 700, color: '#fff', letterSpacing: '0.1em' }}>STAFF</span>
+              </div>
+            </div>
+            <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.12)', border: 'none', borderRadius: 10, padding: 8, cursor: 'pointer', lineHeight: 0 }}>
+              <X style={{ width: 16, height: 16, color: '#fff' }} />
+            </button>
+          </div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            {[{ id: 'profil', label: 'Profil', icon: User }, { id: 'securite', label: 'Sécurité', icon: ShieldCheck }].map(({ id, label, icon: Icon }) => (
+              <button key={id} onClick={() => setTab(id)} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 0', border: 'none', borderRadius: 10, cursor: 'pointer', fontSize: 12, fontWeight: 700, background: tab === id ? 'rgba(255,255,255,0.2)' : 'transparent', color: tab === id ? '#fff' : 'rgba(255,255,255,0.55)' }}>
+                <Icon style={{ width: 13, height: 13 }} />{label}
+              </button>
+            ))}
+          </div>
+        </div>
+        <div style={{ padding: 24, flex: 1 }}>
+          {tab === 'profil' && (
+            <>
+              {profileError   && <div style={{ padding: '10px 14px', borderRadius: 10, background: '#FEF2F2', border: '1px solid #FCA5A5', color: '#EF4444', fontSize: 13, marginBottom: 12 }}>{profileError}</div>}
+              {profileSuccess && <div style={{ padding: '10px 14px', borderRadius: 10, background: '#F0FDF4', border: '1px solid #86EFAC', color: '#16A34A', fontSize: 13, marginBottom: 12 }}>{profileSuccess}</div>}
+              <form onSubmit={onSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+                  <PanelField label="Prénom" icon={User}  value={profileForm.prenom}    onChange={v => setProfileForm(p => ({ ...p, prenom: v }))} placeholder="Jean" />
+                  <PanelField label="Nom"    icon={User}  value={profileForm.nom}       onChange={v => setProfileForm(p => ({ ...p, nom: v }))}    placeholder="Kouassi" />
+                </div>
+                <PanelField label="Email"     icon={Mail}  type="email" value={profileForm.email}     onChange={v => setProfileForm(p => ({ ...p, email: v }))}     placeholder="jean@staff.ci" />
+                <PanelField label="Téléphone" icon={Phone} type="tel"   value={profileForm.telephone} onChange={v => setProfileForm(p => ({ ...p, telephone: v }))} placeholder="+225 07 00 00 00" />
+                <button type="submit" disabled={savingProfile} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: savingProfile ? '#6B7280' : ACCENT, color: '#fff', border: 'none', borderRadius: 10, padding: '12px 0', fontSize: 14, fontWeight: 700, cursor: savingProfile ? 'not-allowed' : 'pointer', marginTop: 4 }}>
+                  {savingProfile ? <><Spinner />Enregistrement…</> : <><Save style={{ width: 15, height: 15 }} />Enregistrer</>}
+                </button>
+              </form>
+            </>
+          )}
+          {tab === 'securite' && <SecurityPanel user={user} accentColor={ACCENT} />}
+        </div>
+      </div>
+    </>
+  );
+}
+
+/* ── MAIN COMPONENT ────────────────────────────────────────────────────────── */
 export default function StaffDashboard() {
-  const { user } = useAuth();
-  const [orders, setOrders] = useState([]);
-  const [alerts, setAlerts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [savingOrderId, setSavingOrderId] = useState('');
-  const [savingStockId, setSavingStockId] = useState('');
-  const [paymentDrafts, setPaymentDrafts] = useState({});
-  const [error, setError] = useState('');
-  const [lastEvent, setLastEvent] = useState('');
-  const [actionHistory, setActionHistory] = useState([]);
+  const { user, syncUser, refreshProfile } = useAuth();
+  const stocksRef = useRef(null);
+  const [showPanel,      setShowPanel]      = useState(false);
+  const [isAvailable,    setIsAvailable]    = useState(true);
+  const [orders,         setOrders]         = useState([]);
+  const [stocks,         setStocks]         = useState([]);
+  const [stockFilter,    setStockFilter]    = useState('all');
+  const [loading,        setLoading]        = useState(true);
+  const [savingOrderId,  setSavingOrderId]  = useState('');
+  const [savingStockId,  setSavingStockId]  = useState('');
+  const [b2bOrders,      setB2bOrders]      = useState([]);
+  const [savingB2BId,    setSavingB2BId]    = useState('');
+  const [paymentDrafts,  setPaymentDrafts]  = useState({});
+  const [error,          setError]          = useState('');
+  const [actionHistory,  setActionHistory]  = useState([]);
+  const [now,            setNow]            = useState(new Date());
+
+  const [profileForm,    setProfileForm]    = useState({ nom: '', prenom: '', email: '', telephone: '' });
+  const [savingProfile,  setSavingProfile]  = useState(false);
+  const [profileError,   setProfileError]   = useState('');
+  const [profileSuccess, setProfileSuccess] = useState('');
+
+  useEffect(() => {
+    if (user) setProfileForm({ nom: user.nom ?? '', prenom: user.prenom ?? '', email: user.email ?? '', telephone: user.telephone ?? '' });
+  }, [user]);
+
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(t);
+  }, []);
+
+  const handleProfileUpdate = async (e) => {
+    e?.preventDefault();
+    setProfileError(''); setProfileSuccess('');
+    if (!profileForm.nom.trim() || !profileForm.email.trim()) { setProfileError('Nom et email requis'); return; }
+    setSavingProfile(true);
+    try {
+      const res = await authAPI.updateProfile(profileForm);
+      syncUser(res.data);
+      setProfileSuccess('Profil mis à jour avec succès.');
+      setTimeout(() => setProfileSuccess(''), 3000);
+    } catch (err) { setProfileError(err?.response?.data?.message || 'Erreur lors de la mise à jour'); }
+    finally { setSavingProfile(false); }
+  };
+
+  const actionHistoryKey = user?.restaurant?.id
+    ? `staff-action-history:${user.restaurant.id}` : user?.id ? `staff-action-history:${user.id}` : 'staff-action-history:global';
+
+  const appendHistory = useCallback((type, title, description) => {
+    const entry = { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, type, title, description, createdAt: new Date().toISOString() };
+    setActionHistory(current => {
+      const next = [entry, ...current].slice(0, 8);
+      try { localStorage.setItem(actionHistoryKey, JSON.stringify(next)); } catch { localStorage.removeItem(actionHistoryKey); }
+      return next;
+    });
+  }, [actionHistoryKey]);
 
   const refreshDashboard = useCallback(async ({ silent = false } = {}) => {
     try {
-      if (!silent) {
-        setLoading(true);
-      }
+      if (!silent) setLoading(true);
       setError('');
-      const [kdsRes, alertsRes] = await Promise.all([
+      const [kdsRes, b2bRes, stocksRes] = await Promise.allSettled([
         commandesService.getKDS(),
-        stocksAPI.getAlerts(),
+        b2bAPI.getRestaurantKDS(),
+        stocksAPI.getAll(),
       ]);
-      setOrders(kdsRes.data || []);
-      setAlerts(alertsRes.data || []);
-    } catch {
-      setError('Impossible de charger le dashboard staff');
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
-    }
+      setOrders(kdsRes.status === 'fulfilled' ? (kdsRes.value.data || []) : []);
+      setB2bOrders(b2bRes.status === 'fulfilled' ? (b2bRes.value.data || []) : []);
+      setStocks(stocksRes.status === 'fulfilled' ? (stocksRes.value.data || []) : []);
+    } catch { setError('Impossible de charger le dashboard staff'); }
+    finally { if (!silent) setLoading(false); }
   }, []);
 
-  const actionHistoryKey = user?.restaurant?.id
-    ? `staff-action-history:${user.restaurant.id}`
-    : user?.id
-      ? `staff-action-history:${user.id}`
-      : 'staff-action-history:global';
-
-  const appendHistory = useCallback(
-    (type, title, description) => {
-      const entry = {
-        id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-        type,
-        title,
-        description,
-        createdAt: new Date().toISOString(),
-      };
-
-      setActionHistory((current) => {
-        const nextHistory = [entry, ...current].slice(0, 8);
-        try {
-          localStorage.setItem(actionHistoryKey, JSON.stringify(nextHistory));
-        } catch {
-          localStorage.removeItem(actionHistoryKey);
-        }
-        return nextHistory;
-      });
-    },
-    [actionHistoryKey],
-  );
-
   useEffect(() => {
+    // Sync fresh profile from DB (ensures restaurant.id is always up-to-date)
+    void refreshProfile();
     void refreshDashboard();
-  }, [refreshDashboard]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!user?.id) return;
-
     try {
-      const storedHistory = JSON.parse(localStorage.getItem(actionHistoryKey) || '[]');
-      setActionHistory(Array.isArray(storedHistory) ? storedHistory : []);
-    } catch {
-      setActionHistory([]);
-    }
+      const stored = JSON.parse(localStorage.getItem(actionHistoryKey) || '[]');
+      setActionHistory(Array.isArray(stored) ? stored : []);
+    } catch { setActionHistory([]); }
   }, [actionHistoryKey, user?.id]);
 
+  // Stable primitives so the socket effect only re-runs when identity / restaurant changes
+  const userId        = user?.id;
+  const restaurantId  = user?.restaurant?.id;
+  const userRole      = user?.role;
+
   useEffect(() => {
-    if (!user?.id) return;
+    if (!userId) return;
+    // 8-second fallback poll — covers missed WebSocket events
+    const poll = setInterval(() => void refreshDashboard({ silent: true }), 8000);
+    const socket = createCommandesSocket({ id: userId, role: userRole, restaurant: restaurantId ? { id: restaurantId } : undefined });
 
-    const pollingInterval = setInterval(() => {
-      void refreshDashboard({ silent: true });
-    }, 30000);
+    socket.on('commande.nouvelle',    p => { appendHistory('commande', `Nouvelle commande ${p?.numero || ''}`.trim(), 'Commande reçue en cuisine'); void refreshDashboard({ silent: true }); });
+    socket.on('commande.statut',      p => { appendHistory('statut',   `Statut mis à jour ${p?.numero || ''}`.trim(), `→ ${p?.statut || '?'}`);    void refreshDashboard({ silent: true }); });
+    socket.on('commande.paiement',    p => { appendHistory('paiement', `Paiement confirmé ${p?.numero || ''}`.trim(), 'Paiement validé');            void refreshDashboard({ silent: true }); });
+    socket.on('commande.b2b.nouvelle',p => { appendHistory('commande', `B2B ${p?.entreprise || ''} – ${p?.numero || ''}`.trim(), 'Commande B2B reçue'); void refreshDashboard({ silent: true }); });
+    socket.on('commande.b2b.statut',  () => void refreshDashboard({ silent: true }));
+    // Refresh immediately after reconnection to catch any missed events
+    socket.on('reconnect',            () => void refreshDashboard({ silent: true }));
 
-    const socket = createCommandesSocket(user);
+    return () => { clearInterval(poll); socket.disconnect(); };
+  }, [appendHistory, refreshDashboard, userId, restaurantId, userRole]);
 
-    socket.on('commande.nouvelle', (payload) => {
-      const label = `Nouvelle commande ${payload?.numero || ''}`.trim();
-      setLastEvent(label);
-      appendHistory('commande', label, 'Commande reçue en cuisine');
-      void refreshDashboard({ silent: true });
-    });
+  const activeOrders  = useMemo(() => orders.filter(o => ['RECUE','CONFIRMEE','EN_PREP','PRETE','EN_LIVRAISON'].includes(o.statut)), [orders]);
+  const urgentOrders  = useMemo(() => activeOrders.filter(o => o.createdAt && Date.now() - new Date(o.createdAt).getTime() >= 15 * 60 * 1000), [activeOrders]);
+  const todayStr      = useMemo(() => new Date().toDateString(), []);
+  const completedToday = useMemo(() => orders.filter(o => o.statut === 'LIVREE' && new Date(o.updatedAt || o.createdAt).toDateString() === todayStr), [orders, todayStr]);
+  const encaissementsToday = useMemo(() => completedToday.reduce((s, o) => s + Number(o.montantTotal || 0), 0), [completedToday]);
+  const stockAlerts     = useMemo(() => stocks.filter(s => s.stock <= s.seuil), [stocks]);
+  const activeB2BOrders = useMemo(() => b2bOrders.filter(o => !['LIVREE', 'ANNULEE'].includes(o.statut)), [b2bOrders]);
+  const allActiveOrders = useMemo(() => [
+    ...activeOrders.map(o => ({ ...o, _type: 'client' })),
+    ...activeB2BOrders.map(o => ({ ...o, _type: 'b2b' })),
+  ].sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)), [activeOrders, activeB2BOrders]);
+  const displayedStocks = useMemo(() => stockFilter === 'alerts' ? stockAlerts : stocks, [stocks, stockAlerts, stockFilter]);
 
-    socket.on('commande.statut', (payload) => {
-      const label = `Statut mis à jour ${payload?.numero || ''}`.trim();
-      setLastEvent(label);
-      appendHistory('statut', label, `Commande passée à ${payload?.statut || 'mise à jour'}`);
-      void refreshDashboard({ silent: true });
-    });
-
-    socket.on('commande.paiement', (payload) => {
-      const label = `Paiement confirmé ${payload?.numero || ''}`.trim();
-      setLastEvent(label);
-      appendHistory('paiement', label, 'Paiement validé pour la commande');
-      void refreshDashboard({ silent: true });
-    });
-
-    socket.on('restaurant.profile.updated', () => {
-      setLastEvent('Profil restaurant mis à jour');
-      appendHistory('profil', 'Profil restaurant mis à jour', 'Les informations opérationnelles ont été synchronisées');
-      void refreshDashboard({ silent: true });
-    });
-
-    return () => {
-      clearInterval(pollingInterval);
-      socket.disconnect();
-    };
-  }, [appendHistory, refreshDashboard, user]);
-
-  const activeOrders = useMemo(
-    () =>
-      orders.filter((order) =>
-        ['RECUE', 'CONFIRMEE', 'EN_PREP', 'PRETE', 'EN_LIVRAISON'].includes(
-          order.statut,
-        ),
-      ),
-    [orders],
-  );
-
-  const readyOrders = useMemo(
-    () => orders.filter((order) => ['PRETE', 'EN_LIVRAISON'].includes(order.statut)),
-    [orders],
-  );
-
-  const unpaidOrders = useMemo(
-    () =>
-      orders.filter(
-        (order) =>
-          ['SUR_PLACE', 'LIVRAISON'].includes(order.modeLivraison) && !order.estPaye,
-      ),
-    [orders],
-  );
-
-  const totalActiveAmount = useMemo(
-    () =>
-      activeOrders.reduce(
-        (sum, order) => sum + Number(order.montantTotal || 0),
-        0,
-      ),
-    [activeOrders],
-  );
-
-  const urgentOrders = useMemo(
-    () =>
-      activeOrders.filter((order) => {
-        const createdAt = new Date(order.createdAt).getTime();
-        if (!createdAt) return false;
-        return new Date().getTime() - createdAt >= 15 * 60 * 1000;
-      }),
-    [activeOrders],
-  );
-
-  const updateStatus = async (orderId, nextStatus) => {
-    try {
-      setSavingOrderId(orderId);
-      setError('');
-      await commandesService.updateStatut(orderId, nextStatus);
-      appendHistory('action', `Commande ${orderId} mise à jour`, `Statut changé vers ${STATUS_LABELS[nextStatus] || nextStatus}`);
-      await refreshDashboard();
-    } catch {
-      setError('Mise à jour du statut impossible');
-    } finally {
-      setSavingOrderId('');
-    }
+  const updateStatus = async (id, next) => {
+    try { setSavingOrderId(id); setError(''); await commandesService.updateStatut(id, next); appendHistory('action', `Commande ${id} mise à jour`, `→ ${STATUS_LABELS[next] || next}`); await refreshDashboard(); }
+    catch { setError('Mise à jour du statut impossible'); }
+    finally { setSavingOrderId(''); }
   };
 
   const registerPayment = async (order) => {
     const draft = paymentDrafts[order.id] || {};
     const montantRemis = Number(draft.montantRemis ?? order.montantTotal);
     const modePaiement = draft.modePaiement || PAYMENT_MODES[order.modeLivraison] || 'ESPECES';
-
-    if (!Number.isFinite(montantRemis)) {
-      setError('Montant remis invalide');
-      return;
-    }
-
-    try {
-      setSavingOrderId(order.id);
-      setError('');
-      await commandesService.registerPayment(order.id, {
-        montantRemis,
-        modePaiement,
-      });
-      appendHistory('paiement', `Paiement ${order.numero}`, `Encaissement validé en ${modePaiement}`);
-      await refreshDashboard();
-    } catch {
-      setError('Paiement refusé: le montant doit être exact');
-    } finally {
-      setSavingOrderId('');
-    }
+    if (!Number.isFinite(montantRemis)) { setError('Montant remis invalide'); return; }
+    try { setSavingOrderId(order.id); setError(''); await commandesService.registerPayment(order.id, { montantRemis, modePaiement }); appendHistory('paiement', `Paiement ${order.numero}`, `Encaissement en ${modePaiement}`); await refreshDashboard(); }
+    catch { setError('Paiement refusé: montant doit être exact'); }
+    finally { setSavingOrderId(''); }
   };
 
-  const adjustStock = async (articleId, quantity, motif) => {
-    try {
-      setSavingStockId(articleId);
-      setError('');
-      await stocksAPI.adjust(articleId, quantity, motif);
-      appendHistory('stock', `Stock ajusté ${articleId}`, `${motif} (${quantity > 0 ? '+' : ''}${quantity})`);
-      await refreshDashboard();
-    } catch {
-      setError('Ajustement de stock impossible');
-    } finally {
-      setSavingStockId('');
-    }
+  const updateB2BStatus = async (id, statut) => {
+    try { setSavingB2BId(id); setError(''); await b2bAPI.updateCommandeGroupeeStatut(id, statut); appendHistory('statut', 'B2B commande mise à jour', `→ ${B2B_STATUS_LABELS[statut] || statut}`); await refreshDashboard(); }
+    catch { setError('Mise à jour commande B2B impossible'); }
+    finally { setSavingB2BId(''); }
   };
+
+  const adjustStock = async (id, qty, motif) => {
+    try { setSavingStockId(id); setError(''); await stocksAPI.adjust(id, qty, motif); appendHistory('stock', 'Stock ajusté', `${motif} (${qty > 0 ? '+' : ''}${qty})`); await refreshDashboard(); }
+    catch { setError('Ajustement de stock impossible'); }
+    finally { setSavingStockId(''); }
+  };
+
+  const initials = ((user?.prenom?.[0] ?? '') + (user?.nom?.[0] ?? '')).toUpperCase() || 'S';
+  const firstName = user?.prenom || user?.nom || 'vous';
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-72">
-        <div className="w-10 h-10 border-4 border-[#D94500] border-t-transparent rounded-full animate-spin shadow-[0_0_30px_rgba(217,69,0,0.25)]" />
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 300 }}>
+        <div style={{ width: 40, height: 40, border: `4px solid #E8ECE8`, borderTopColor: ACCENT, borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+        <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
       </div>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
-      <section className="relative overflow-hidden rounded-[28px] border border-[#F3D5C4] bg-gradient-to-br from-[#2D2720] via-[#5B3219] to-[#D94500] px-6 py-7 text-white shadow-[0_24px_80px_rgba(92,39,11,0.22)]">
-        <div className="absolute -top-16 right-0 h-44 w-44 rounded-full bg-white/10 blur-3xl" />
-        <div className="absolute bottom-0 left-0 h-32 w-32 rounded-full bg-[#FFD4BF]/20 blur-2xl" />
-        <div className="relative flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-2xl space-y-3">
-            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-medium text-white/90 backdrop-blur">
-              <Sparkles className="h-3.5 w-3.5" />
-              Staff en direct
-            </span>
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Dashboard Staff</h1>
-              <p className="mt-2 text-sm text-white/80 sm:text-base">
-                Vue opérationnelle en temps réel pour{' '}
-                <span className="font-semibold text-white">
-                  {user?.restaurant?.nom || 'votre restaurant'}
-                </span>
-              </p>
-            </div>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <LiveChip label="Commandes actives" value={activeOrders.length} />
-              <LiveChip label="Urgentes" value={urgentOrders.length} />
-              <LiveChip label="Encaissements" value={unpaidOrders.length} />
-            </div>
-          </div>
+    <div style={{ minHeight: '100vh', background: '#F0F2F0', padding: '28px 32px' }}>
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <OnboardingWizard />
 
-          <div className="flex flex-wrap items-center gap-2">
-            {lastEvent && (
-              <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-2 text-xs text-white/90 backdrop-blur">
-                <Bell className="h-3.5 w-3.5" />
-                {lastEvent}
-              </span>
-            )}
-            <button
-              onClick={() => void refreshDashboard()}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/15 bg-white/10 px-4 py-2.5 text-sm font-medium text-white backdrop-blur transition hover:bg-white/20"
-            >
-              <RefreshCw className="w-4 h-4" />
-              Actualiser
-            </button>
-            <Link
-              to="/staff/kds"
-              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#7A2F09] transition hover:bg-[#FFF2EA]"
-            >
-              KDS complet <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
+      {/* ── TOP BAR ── */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 28 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#374151', margin: 0 }}>Staff Portal</h2>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <NotificationBell accentColor={ACCENT} />
+          <button onClick={() => void refreshDashboard()} style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid #E8ECE8', background: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <RefreshCw style={{ width: 16, height: 16, color: '#6B7280' }} />
+          </button>
+          <Link to="/staff/kds" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: ACCENT, color: '#fff', padding: '8px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+            KDS <ArrowRight style={{ width: 14, height: 14 }} />
+          </Link>
+          <button onClick={() => setShowPanel(true)} style={{ width: 38, height: 38, borderRadius: '50%', background: ACCENT, border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', fontSize: 14, fontWeight: 700, color: '#fff' }}>
+            {initials}
+          </button>
         </div>
-      </section>
+      </div>
+
+      {/* ── WELCOME + STATUS ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16, marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontSize: 36, fontWeight: 900, color: '#111827', margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+            Bonjour, {firstName}
+          </h1>
+          <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>
+            Voici un résumé de votre journée et vos tâches en cours.
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#fff', border: '1px solid #E8ECE8', borderRadius: 99, padding: '6px 8px' }}>
+          <button onClick={() => setIsAvailable(true)} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99,
+            border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            background: isAvailable ? ACCENT : 'transparent',
+            color: isAvailable ? '#fff' : '#9CA3AF',
+          }}>
+            {isAvailable && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#4ADE80', flexShrink: 0 }} />}
+            Disponible
+          </button>
+          <button onClick={() => setIsAvailable(false)} style={{
+            display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px', borderRadius: 99,
+            border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+            background: !isAvailable ? '#6B7280' : 'transparent',
+            color: !isAvailable ? '#fff' : '#9CA3AF',
+          }}>
+            {!isAvailable && <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#D1D5DB', flexShrink: 0 }} />}
+            Occupé
+          </button>
+        </div>
+      </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-gradient-to-r from-red-50 to-rose-50 px-4 py-3 text-sm text-red-700 shadow-sm">
-          {error}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '12px 16px', borderRadius: 12, background: '#FEF2F2', border: '1px solid #FECACA', color: '#DC2626', fontSize: 13, marginBottom: 20 }}>
+          <AlertTriangle style={{ width: 14, height: 14, flexShrink: 0 }} />{error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <MetricCard
-          icon={<ChefHat className="w-5 h-5" />}
-          label="Commandes actives"
-          value={String(activeOrders.length)}
-          secondary="Suivi en cuisine et en salle"
-          tone="active"
+      {/* ── 3 KPI CARDS ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 24 }}>
+        <KpiCard
+          icon={Wallet}
+          iconBg="#F0FDF4"
+          iconColor="#16A34A"
+          label="Encaissements du jour"
+          value={(encaissementsToday / 1000).toFixed(0) + ' k'}
+          unit="CFA"
+          sub={encaissementsToday > 0 ? `↑ ${completedToday.length} commande${completedToday.length > 1 ? 's' : ''} livrée${completedToday.length > 1 ? 's' : ''}` : 'Aucun encaissement pour l\'instant'}
+          subColor={encaissementsToday > 0 ? '#16A34A' : '#9CA3AF'}
         />
-        <MetricCard
-          icon={<CheckCircle2 className="w-5 h-5" />}
-          label="Prêtes / en livraison"
-          value={String(readyOrders.length)}
-          secondary="Commandes proches de la remise"
-          tone="ready"
+        <KpiCard
+          icon={Truck}
+          iconBg="#FFF7ED"
+          iconColor="#D97706"
+          label="Livraisons effectuées"
+          value={completedToday.length}
+          unit=""
+          sub={`Objectif journalier : ${Math.max(completedToday.length + activeOrders.length, 10)}`}
+          subColor="#9CA3AF"
         />
-        <MetricCard
-          icon={<CircleDollarSign className="w-5 h-5" />}
-          label="Paiements en attente"
-          value={String(unpaidOrders.length)}
-          secondary="Encaissements à valider"
-          tone="payment"
-        />
-        <MetricCard
-          icon={<Package className="w-5 h-5" />}
-          label="Alertes stock"
-          value={String(alerts.length)}
-          secondary={formatFCFA(totalActiveAmount)}
-          tone="stock"
+        <KpiCard
+          icon={Clock}
+          iconBg="#F0F5FF"
+          iconColor="#6366F1"
+          label="Commandes en cours"
+          value={allActiveOrders.length}
+          unit=""
+          sub={urgentOrders.length > 0 ? `⚠ ${urgentOrders.length} urgente${urgentOrders.length > 1 ? 's' : ''}` : 'Tout sous contrôle'}
+          subColor={urgentOrders.length > 0 ? '#D97706' : '#16A34A'}
         />
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.4fr_1fr] gap-6">
-        <section className="rounded-[26px] border border-[#F0E0D4] bg-white/95 p-4 shadow-[0_16px_45px_rgba(45,39,32,0.06)] backdrop-blur">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 font-semibold text-[#2D2720]">
-                <Bell className="w-4 h-4 text-[#D94500]" /> Flux commandes
-              </div>
-              <p className="mt-1 text-sm text-[#8B7355]">
-                Progression rapide des commandes avec actions prioritaires.
-              </p>
+      {/* ── 2-COLUMN MAIN GRID ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20, alignItems: 'start' }}>
+
+        {/* Left: active orders */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <div style={{ background: '#fff', border: '1px solid #E8ECE8', borderRadius: 20, overflow: 'hidden' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 20px 16px' }}>
+              <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>
+                Mes Livraisons / Commandes en cours
+              </h3>
+              <button onClick={() => void refreshDashboard({ silent: true })} style={{ fontSize: 12, color: '#D97706', fontWeight: 600, background: 'none', border: 'none', cursor: 'pointer' }}>
+                Voir l'historique
+              </button>
             </div>
-            <span className="rounded-full bg-[#FFF1E8] px-3 py-1 text-xs font-medium text-[#B83A00]">
-              {activeOrders.length} en cours
-            </span>
-          </div>
 
-          {activeOrders.length === 0 && (
-            <EmptyState
-              icon={<ChefHat className="h-6 w-6 text-[#D94500]" />}
-              title="Aucune commande active"
-              description="Les nouvelles commandes apparaîtront ici en temps réel."
-            />
-          )}
-
-          <div className="space-y-4">
-            {activeOrders.map((order) => {
-              const nextStatuses = STATUS_FLOW[order.statut] || [];
-              const draft = paymentDrafts[order.id] || {};
-              const showPayment =
-                ['SUR_PLACE', 'LIVRAISON'].includes(order.modeLivraison) && !order.estPaye;
-              const urgency = getOrderUrgency(order.createdAt);
-
-              return (
-                <div
-                  key={order.id}
-                  className={`relative overflow-hidden rounded-[24px] border p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${urgency.card}`}
-                >
-                  <div className="absolute inset-y-0 left-0 w-1.5 bg-gradient-to-b from-[#D94500] to-[#FF9F66]" />
-                  <div className="pl-2">
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <span className="rounded-full bg-white px-3 py-1 text-sm font-semibold text-[#2D2720] shadow-sm">
-                            #{order.numero}
-                          </span>
-                          <span
-                            className={`px-2.5 py-1 text-xs font-medium rounded-full ${STATUS_COLORS[order.statut]}`}
-                          >
-                            {STATUS_LABELS[order.statut] || order.statut}
-                          </span>
-                          <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${urgency.badge}`}>
-                            {timeAgo(order.createdAt)}
-                          </span>
-                        </div>
-                        <div className="flex flex-wrap gap-2 text-xs text-[#6C5B49]">
-                          <span className="rounded-full bg-white/80 px-2.5 py-1">
-                            {formatDeliveryMode(order.modeLivraison)}
-                          </span>
-                          <span className="rounded-full bg-white/80 px-2.5 py-1">
-                            {formatDate(order.createdAt)}
-                          </span>
-                          <span className="rounded-full bg-white/80 px-2.5 py-1">
-                            {order.lignes?.length || 0} article{order.lignes?.length > 1 ? 's' : ''}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-xs uppercase tracking-[0.18em] text-[#8B7355]">
-                          Total
-                        </div>
-                        <div className="text-xl font-bold text-[#2D2720]">
-                          {formatFCFA(order.montantTotal)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
-                      {order.lignes?.map((ligne) => (
-                        <div
-                          key={ligne.id}
-                          className="rounded-2xl border border-white/70 bg-white/80 px-3 py-2 text-sm shadow-sm backdrop-blur"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <div>
-                              <div className="font-semibold text-[#2D2720]">
-                                {ligne.quantite}× {ligne.article?.nom}
-                              </div>
-                              {ligne.instructions && (
-                                <div className="mt-1 text-xs text-[#8B7355]">
-                                  {ligne.instructions}
-                                </div>
-                              )}
-                            </div>
-                            <div className="font-semibold text-[#7A2F09]">
-                              {formatFCFA(Number(ligne.prixUnitaire) * Number(ligne.quantite))}
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-
-                    {showPayment && (
-                      <div className="mt-4 rounded-[22px] border border-violet-100 bg-gradient-to-r from-violet-50 via-white to-fuchsia-50 p-3">
-                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#3E2A5A]">
-                          <CircleDollarSign className="h-4 w-4" /> Encaissement exact requis
-                        </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <select
-                            value={draft.modePaiement || PAYMENT_MODES[order.modeLivraison] || 'ESPECES'}
-                            onChange={(e) =>
-                              setPaymentDrafts((prev) => ({
-                                ...prev,
-                                [order.id]: {
-                                  ...(prev[order.id] || {}),
-                                  modePaiement: e.target.value,
-                                },
-                              }))
-                            }
-                            className="rounded-xl border border-violet-100 bg-white px-3 py-2 text-sm text-[#2D2720] outline-none ring-0 transition focus:border-violet-300"
-                          >
-                            <option value="ESPECES">Espèces</option>
-                            <option value="LIVRAISON">À la livraison</option>
-                          </select>
-                          <input
-                            type="number"
-                            min="0"
-                            value={draft.montantRemis ?? Number(order.montantTotal)}
-                            onChange={(e) =>
-                              setPaymentDrafts((prev) => ({
-                                ...prev,
-                                [order.id]: {
-                                  ...(prev[order.id] || {}),
-                                  montantRemis: e.target.value,
-                                },
-                              }))
-                            }
-                            className="rounded-xl border border-violet-100 bg-white px-3 py-2 text-sm text-[#2D2720] outline-none transition focus:border-violet-300"
-                          />
-                          <button
-                            onClick={() => void registerPayment(order)}
-                            disabled={savingOrderId === order.id}
-                            className="rounded-xl bg-[#2D2720] px-3 py-2 text-sm font-semibold text-white transition hover:bg-black disabled:opacity-50"
-                          >
-                            {savingOrderId === order.id ? 'Encaissement...' : 'Encaisser'}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {nextStatuses.length > 0 && (
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        {nextStatuses.map((nextStatus) => (
-                          <button
-                            key={nextStatus}
-                            onClick={() => void updateStatus(order.id, nextStatus)}
-                            disabled={savingOrderId === order.id}
-                            className="rounded-xl bg-gradient-to-r from-[#D94500] to-[#F97316] px-3 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:from-[#C43E00] hover:to-[#EA6A15] disabled:opacity-50"
-                          >
-                            {savingOrderId === order.id
-                              ? 'Mise à jour...'
-                              : STATUS_LABELS[nextStatus] || nextStatus}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+            {allActiveOrders.length === 0 ? (
+              <div style={{ padding: '32px 20px', textAlign: 'center' }}>
+                <div style={{ width: 52, height: 52, borderRadius: 16, background: '#F9FAFB', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 12px' }}>
+                  <ChefHat style={{ width: 24, height: 24, color: '#D1D5DB' }} />
                 </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="rounded-[26px] border border-[#F0E0D4] bg-white/95 p-4 shadow-[0_16px_45px_rgba(45,39,32,0.06)] backdrop-blur">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 font-semibold text-[#2D2720]">
-                <Package className="w-4 h-4 text-amber-500" /> Stocks & alertes
+                <p style={{ fontSize: 14, fontWeight: 600, color: '#374151', margin: '0 0 4px' }}>Aucune commande active</p>
+                <p style={{ fontSize: 12, color: '#9CA3AF', margin: 0 }}>Les nouvelles commandes apparaîtront ici en temps réel.</p>
               </div>
-              <p className="mt-1 text-sm text-[#8B7355]">
-                Corrections rapides et réception express des produits sensibles.
-              </p>
-            </div>
-            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
-              {alerts.length} alerte{alerts.length > 1 ? 's' : ''}
-            </span>
+            ) : (
+              <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {allActiveOrders.map(order => order._type === 'b2b' ? (
+                  <B2BStaffOrderCard
+                    key={order.id}
+                    order={order}
+                    onAction={updateB2BStatus}
+                    saving={savingB2BId === order.id}
+                  />
+                ) : (
+                  <StaffOrderCard
+                    key={order.id}
+                    order={order}
+                    onAction={updateStatus}
+                    onPayment={registerPayment}
+                    paymentDraft={paymentDrafts[order.id]}
+                    setPaymentDraft={v => setPaymentDrafts(p => ({ ...p, [order.id]: v }))}
+                    saving={savingOrderId === order.id}
+                  />
+                ))}
+              </div>
+            )}
           </div>
 
-          {alerts.length === 0 && (
-            <EmptyState
-              icon={<CheckCircle2 className="h-6 w-6 text-emerald-500" />}
-              title="Aucune alerte stock"
-              description="Les seuils critiques de stock sont actuellement sous contrôle."
-            />
-          )}
-
-          <div className="space-y-3">
-            {alerts.map((item) => {
-              const tone = getStockTone(item);
-              return (
-                <div
-                  key={item.id}
-                  className={`rounded-[22px] border p-4 shadow-sm transition hover:shadow-md ${tone.card}`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className={`rounded-full p-2 ${tone.icon}`}>
-                          {item.stock <= 0 ? (
-                            <AlertTriangle className="h-4 w-4" />
-                          ) : (
-                            <Flame className="h-4 w-4" />
-                          )}
-                        </span>
-                        <div>
-                          <div className="font-semibold text-[#2D2720]">{item.nom}</div>
-                          <div className={`mt-1 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${tone.badge}`}>
-                            Stock: {item.stock} / seuil {item.seuil}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => void adjustStock(item.id, -1, 'Correction staff')}
-                        disabled={savingStockId === item.id}
-                        className="h-9 w-9 rounded-xl border border-white/70 bg-white/90 text-lg font-semibold text-[#8A3A11] shadow-sm transition hover:bg-white disabled:opacity-50"
-                      >
-                        -
-                      </button>
-                      <button
-                        onClick={() => void adjustStock(item.id, 1, 'Réception rapide')}
-                        disabled={savingStockId === item.id}
-                        className="h-9 w-9 rounded-xl bg-[#2D2720] text-lg font-semibold text-white shadow-sm transition hover:bg-black disabled:opacity-50"
-                      >
-                        +
-                      </button>
-                    </div>
+          {/* Stocks & Inventaire temps réel */}
+          {stocks.length > 0 && (
+            <div ref={stocksRef} style={{ background: '#fff', border: `1px solid ${stockAlerts.length > 0 ? '#FEE2E2' : '#E8ECE8'}`, borderRadius: 20, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '18px 20px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 10, background: stockAlerts.length > 0 ? '#FEF2F2' : '#F0F5F0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <BarChart2 style={{ width: 16, height: 16, color: stockAlerts.length > 0 ? '#EF4444' : ACCENT }} />
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
-        <section className="rounded-[26px] border border-[#F0E0D4] bg-white/95 p-4 shadow-[0_16px_45px_rgba(45,39,32,0.06)] backdrop-blur">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2 font-semibold text-[#2D2720]">
-                <Bell className="w-4 h-4 text-[#D94500]" /> Historique d'actions
-              </div>
-              <p className="mt-1 text-sm text-[#8B7355]">
-                Les dernières actions staff et événements reçus en temps réel.
-              </p>
-            </div>
-            <span className="rounded-full bg-[#FFF5EB] px-3 py-1 text-xs font-medium text-[#D94500]">
-              {actionHistory.length} entrée{actionHistory.length > 1 ? 's' : ''}
-            </span>
-          </div>
-
-          {actionHistory.length === 0 && (
-            <EmptyState
-              icon={<RefreshCw className="h-6 w-6 text-[#D94500]" />}
-              title="Aucun historique pour le moment"
-              description="Les prochaines actions apparaîtront ici dès qu'une commande, un paiement ou un ajustement sera traité."
-            />
-          )}
-
-          <div className="space-y-3">
-            {actionHistory.map((entry) => (
-              <div
-                key={entry.id}
-                className="rounded-[22px] border border-[#EEE8DF] bg-[#FCFBFA] px-4 py-3 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="font-semibold text-[#2D2720]">{entry.title}</div>
-                    <div className="mt-1 text-sm text-[#8B7355]">{entry.description}</div>
-                  </div>
-                  <div className="text-right text-xs text-[#8B7355]">
-                    <div className="uppercase tracking-[0.16em] text-[#D94500]">{entry.type}</div>
-                    <div className="mt-1">{formatDate(entry.createdAt)}</div>
+                    <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0 }}>Stocks & Inventaire</p>
+                    <p style={{ fontSize: 11, color: '#9CA3AF', margin: '1px 0 0' }}>
+                      {stocks.length} article{stocks.length > 1 ? 's' : ''}
+                      {stockAlerts.length > 0 && ` · ${stockAlerts.length} alerte${stockAlerts.length > 1 ? 's' : ''}`}
+                    </p>
                   </div>
                 </div>
+                <div style={{ display: 'flex', background: '#F3F4F6', borderRadius: 10, padding: '3px', gap: 2 }}>
+                  {[['all', 'Tous'], ['alerts', 'Alertes']].map(([key, label]) => (
+                    <button key={key} onClick={() => setStockFilter(key)}
+                      style={{ padding: '4px 10px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 11, fontWeight: 600, background: stockFilter === key ? '#fff' : 'transparent', color: stockFilter === key ? '#111827' : '#9CA3AF', boxShadow: stockFilter === key ? '0 1px 3px rgba(0,0,0,0.1)' : 'none' }}>
+                      {label}{key === 'alerts' && stockAlerts.length > 0 ? ` (${stockAlerts.length})` : ''}
+                    </button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        </section>
+
+              {displayedStocks.length === 0 ? (
+                <div style={{ padding: '20px', textAlign: 'center', paddingBottom: 24 }}>
+                  <CheckCircle2 style={{ width: 22, height: 22, color: '#16A34A', margin: '0 auto 8px', display: 'block' }} />
+                  <p style={{ fontSize: 13, color: '#6B7280', margin: 0 }}>Tous les stocks sont suffisants</p>
+                </div>
+              ) : (
+                <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 6, maxHeight: 360, overflowY: 'auto' }}>
+                  {displayedStocks.map(item => {
+                    const isRupture = item.stock <= 0;
+                    const isLow = !isRupture && item.stock <= item.seuil;
+                    const pct = item.seuil > 0 ? Math.min(100, Math.round((item.stock / (item.seuil * 2)) * 100)) : 50;
+                    return (
+                      <div key={item.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: isRupture ? '#FFF5F5' : isLow ? '#FFFDF5' : '#F9FAFB', border: `1px solid ${isRupture ? '#FCA5A5' : isLow ? '#FDE68A' : '#E5E7EB'}`, borderRadius: 12 }}>
+                        <div style={{ width: 30, height: 30, borderRadius: 9, flexShrink: 0, background: isRupture ? '#FEE2E2' : isLow ? '#FEF3C7' : '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {isRupture ? <AlertTriangle style={{ width: 13, height: 13, color: '#EF4444' }} /> : isLow ? <Flame style={{ width: 13, height: 13, color: '#D97706' }} /> : <CheckCircle2 style={{ width: 13, height: 13, color: '#16A34A' }} />}
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                            <p style={{ fontSize: 12, fontWeight: 600, color: '#111827', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.nom}</p>
+                            {item.categorie && (
+                              <span style={{ fontSize: 9, color: '#9CA3AF', background: '#F3F4F6', borderRadius: 99, padding: '1px 5px', flexShrink: 0 }}>{item.categorie}</span>
+                            )}
+                          </div>
+                          <div style={{ height: 3, background: '#E5E7EB', borderRadius: 99, overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${pct}%`, background: isRupture ? '#EF4444' : isLow ? '#F59E0B' : '#22C55E', borderRadius: 99, transition: 'width 0.4s' }} />
+                          </div>
+                          <p style={{ fontSize: 10, color: '#9CA3AF', margin: '2px 0 0' }}>
+                            {item.stock} en stock · seuil min {item.seuil}
+                          </p>
+                        </div>
+                        <span style={{ fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99, flexShrink: 0, background: isRupture ? '#FEE2E2' : isLow ? '#FEF3C7' : '#F0FDF4', color: isRupture ? '#EF4444' : isLow ? '#D97706' : '#16A34A' }}>
+                          {isRupture ? 'RUPTURE' : isLow ? 'FAIBLE' : 'OK'}
+                        </span>
+                        <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                          <button onClick={() => void adjustStock(item.id, -1, 'Correction stock')} disabled={savingStockId === item.id || item.stock <= 0}
+                            style={{ width: 26, height: 26, borderRadius: 8, border: '1px solid #E5E7EB', background: '#fff', fontSize: 14, color: '#EF4444', cursor: item.stock <= 0 ? 'not-allowed' : 'pointer', fontWeight: 700, opacity: item.stock <= 0 ? 0.4 : 1, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
+                          <button onClick={() => void adjustStock(item.id, 1, 'Réception stock')} disabled={savingStockId === item.id}
+                            style={{ width: 26, height: 26, borderRadius: 8, border: 'none', background: ACCENT, color: '#fff', fontSize: 14, cursor: 'pointer', fontWeight: 700, padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>+</button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          <WeeklySchedule
+            openingTime={user?.restaurant?.openingTime}
+            closingTime={user?.restaurant?.closingTime}
+          />
+
+          {/* Recent activity */}
+          {actionHistory.length > 0 && (
+            <div style={{ background: '#fff', border: '1px solid #E8ECE8', borderRadius: 20, padding: '20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <h3 style={{ fontSize: 15, fontWeight: 700, color: '#111827', margin: 0 }}>Activité récente</h3>
+                <Activity style={{ width: 16, height: 16, color: '#9CA3AF' }} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {actionHistory.slice(0, 5).map(entry => (
+                  <div key={entry.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', background: '#F9FAFB', borderRadius: 12 }}>
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: entry.type === 'paiement' ? '#16A34A' : entry.type === 'commande' ? ACCENT : '#D97706', flexShrink: 0 }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 12, fontWeight: 600, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{entry.title}</p>
+                      <p style={{ fontSize: 11, color: '#9CA3AF', margin: '1px 0 0' }}>{entry.description}</p>
+                    </div>
+                    <p style={{ fontSize: 10, color: '#D1D5DB', margin: 0, flexShrink: 0 }}>{formatDate(entry.createdAt)}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* Profile Panel */}
+      {showPanel && (
+        <ProfilePanel
+          user={user}
+          onClose={() => setShowPanel(false)}
+          profileForm={profileForm}
+          setProfileForm={setProfileForm}
+          onSaveProfile={handleProfileUpdate}
+          savingProfile={savingProfile}
+          profileError={profileError}
+          profileSuccess={profileSuccess}
+        />
+      )}
     </div>
   );
-}
-
-function LiveChip({ label, value }) {
-  return (
-    <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-white/90 backdrop-blur">
-      <span className="text-[11px] uppercase tracking-[0.18em] text-white/65">{label}</span>
-      <span className="rounded-full bg-white/15 px-2 py-0.5 font-semibold text-white">{value}</span>
-    </span>
-  );
-}
-
-function MetricCard({ icon, label, value, secondary, tone }) {
-  const style = METRIC_STYLES[tone] || METRIC_STYLES.active;
-
-  return (
-    <div className={`relative overflow-hidden rounded-[24px] border p-4 shadow-sm ${style.card}`}>
-      <div className={`absolute -right-6 -top-6 h-24 w-24 rounded-full bg-gradient-to-br opacity-80 blur-2xl ${style.ring}`} />
-      <div className="relative flex items-center justify-between">
-        <div className="text-[#7B6A58] text-sm font-medium">{label}</div>
-        <div className={`rounded-2xl p-2.5 shadow-sm ${style.icon}`}>{icon}</div>
-      </div>
-      <div className="relative mt-3 text-3xl font-bold text-[#2D2720]">{value}</div>
-      {secondary && <div className="relative mt-1 text-xs text-[#7B6A58]">{secondary}</div>}
-    </div>
-  );
-}
-
-function EmptyState({ icon, title, description }) {
-  return (
-    <div className="rounded-[24px] border border-dashed border-[#E8D8CC] bg-gradient-to-br from-[#FFF9F5] to-white px-4 py-8 text-center">
-      <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm">
-        {icon}
-      </div>
-      <div className="font-semibold text-[#2D2720]">{title}</div>
-      <div className="mt-1 text-sm text-[#8B7355]">{description}</div>
-    </div>
-  );
-}
-
-function getOrderUrgency(createdAt) {
-  const ageMinutes = Math.floor(
-    (new Date().getTime() - new Date(createdAt).getTime()) / 60000,
-  );
-
-  if (ageMinutes >= 20) {
-    return {
-      card: 'border-red-200 bg-gradient-to-br from-red-50 via-white to-orange-50',
-      badge: 'bg-red-100 text-red-700',
-    };
-  }
-
-  if (ageMinutes >= 10) {
-    return {
-      card: 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-orange-50',
-      badge: 'bg-amber-100 text-amber-700',
-    };
-  }
-
-  return {
-    card: 'border-[#F0DFD2] bg-gradient-to-br from-[#FFF9F5] via-white to-[#FFF1E8]',
-    badge: 'bg-emerald-100 text-emerald-700',
-  };
-}
-
-function getStockTone(item) {
-  if (item.stock <= 0) {
-    return {
-      card: 'border-red-200 bg-gradient-to-br from-red-50 via-white to-rose-50',
-      badge: 'bg-red-100 text-red-700',
-      icon: 'bg-red-100 text-red-600',
-    };
-  }
-
-  return {
-    card: 'border-amber-200 bg-gradient-to-br from-amber-50 via-white to-yellow-50',
-    badge: 'bg-amber-100 text-amber-700',
-    icon: 'bg-amber-100 text-amber-600',
-  };
 }

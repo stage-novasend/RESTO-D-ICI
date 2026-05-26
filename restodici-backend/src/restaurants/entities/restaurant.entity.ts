@@ -34,6 +34,12 @@ export class Restaurant {
   email!: string;
 
   @Column({ nullable: true })
+  nif?: string;
+
+  @Column({ nullable: true })
+  rccm?: string;
+
+  @Column({ nullable: true })
   openingTime!: string;
 
   @Column({ nullable: true })
@@ -54,6 +60,12 @@ export class Restaurant {
 
   @Column({ default: true })
   actif!: boolean;
+
+  @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
+  noteMoyenne!: number;
+
+  @Column({ default: 0 })
+  nbAvis!: number;
 
   @OneToMany(() => User, (user) => user.restaurant)
   users!: User[];

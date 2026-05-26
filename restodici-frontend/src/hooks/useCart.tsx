@@ -39,7 +39,17 @@ interface CartContextType {
 }
 
 const CART_TTL_MS = 30 * 60 * 1000;
-const CART_STORAGE_KEY = 'cart';
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const validUUID = (v: unknown): string | null =>
+  typeof v === 'string' && UUID_RE.test(v) ? v : null;
+
+function getCartKey(): string {
+  try {
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user?.id) return `cart:${user.id}`;
+  } catch { /* ignore */ }
+  return 'cart';
+}
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -87,21 +97,23 @@ function readSavedCart(): SavedCart | null {
   }
 
   try {
-    const raw = localStorage.getItem(CART_STORAGE_KEY);
+    const key = getCartKey();
+    const raw = localStorage.getItem(key);
     if (!raw) {
       return null;
     }
 
     const saved = JSON.parse(raw) as SavedCart;
     if (Date.now() - saved.updatedAt > CART_TTL_MS) {
-      localStorage.removeItem(CART_STORAGE_KEY);
+      localStorage.removeItem(key);
       return null;
     }
 
+    const validId = validUUID(saved.restaurantId);
     return {
       items: normalizeSavedItems(saved.items),
-      restaurantId: saved.restaurantId || null,
-      restaurantName: saved.restaurantName || null,
+      restaurantId: validId,
+      restaurantName: validId ? (saved.restaurantName || null) : null,
       updatedAt: saved.updatedAt,
     };
   } catch {
@@ -127,7 +139,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
       restaurantName,
       updatedAt: Date.now(),
     };
-    localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(payload));
+    localStorage.setItem(getCartKey(), JSON.stringify(payload));
   }, [items, restaurantId, restaurantName]);
 
   const addItem = (
@@ -161,14 +173,24 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setRestaurantName(item.restaurantName);
     }
 
-    setItems((prev) => [
-      ...prev,
-      {
-        ...item,
-        lineId: createLineId(),
-        quantite: Math.max(1, quantite),
-      },
-    ]);
+    setItems((prev) => {
+      const existing = prev.find((i) => i.articleId === item.articleId);
+      if (existing) {
+        return prev.map((i) =>
+          i.articleId === item.articleId
+            ? { ...i, quantite: i.quantite + Math.max(1, quantite) }
+            : i,
+        );
+      }
+      return [
+        ...prev,
+        {
+          ...item,
+          lineId: createLineId(),
+          quantite: Math.max(1, quantite),
+        },
+      ];
+    });
   };
 
   const updateQuantity = (lineId: string, quantite: number) => {
@@ -214,7 +236,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const raw = localStorage.getItem(CART_STORAGE_KEY);
+      const key = getCartKey();
+      const raw = localStorage.getItem(key);
       if (!raw) {
         return false;
       }
@@ -225,7 +248,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         setItems([]);
         setRestaurantId(null);
         setRestaurantName(null);
-        localStorage.removeItem(CART_STORAGE_KEY);
+        localStorage.removeItem(key);
       }
       return expired;
     } catch {

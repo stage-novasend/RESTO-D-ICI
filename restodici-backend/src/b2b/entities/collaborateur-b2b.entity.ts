@@ -20,13 +20,23 @@ export class CollaborateurB2B {
   @Column({ unique: true })
   email!: string;
 
-  // Limite de dépense individuelle (RG-33)
+  // Limite de dépense individuelle mensuelle (RG-33)
   @Column('decimal', { precision: 14, scale: 2 })
   limiteBudget!: number;
+
+  // Lien optionnel vers un User (si le collaborateur a un compte)
+  @Column({ nullable: true })
+  userId?: string;
+
+  @Column({ default: true })
+  actif!: boolean;
 
   @ManyToOne(() => CompteB2B, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'compteB2BId' })
   compteB2B!: CompteB2B;
+
+  @Column()
+  compteB2BId!: string;
 
   @CreateDateColumn()
   createdAt!: Date;

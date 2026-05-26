@@ -1,163 +1,252 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChefHat, MapPin, Minus, Plus, Store, Truck, X } from 'lucide-react';
+import { ChefHat, MapPin, Minus, Plus, ShoppingBag, Store, X } from 'lucide-react';
 import { useCart } from '../../hooks/useCart';
-import { commandesService } from '../../services/commandes.service';
 import { useAuth } from '../../hooks/useAuth';
 import { formatFCFA } from '../../utils/formatters';
 
+const KENTE = ['#C05015', '#F97316', '#0F172A', '#9A3E10'];
+
+function KenteStrip() {
+  return (
+    <div style={{ display: 'flex', height: 4, flexShrink: 0 }}>
+      {KENTE.map((c, i) => <div key={i} style={{ flex: 1, background: c }} />)}
+    </div>
+  );
+}
+
+function ItemPhoto({ item }) {
+  if (item.photoUrl) {
+    return (
+      <img
+        src={item.photoUrl}
+        alt={item.nom}
+        style={{ width: 52, height: 52, borderRadius: 10, objectFit: 'cover', flexShrink: 0 }}
+        onError={e => { e.currentTarget.style.display = 'none'; }}
+      />
+    );
+  }
+  const initials = item.nom.slice(0, 2).toUpperCase();
+  const hue = item.nom.charCodeAt(0) % 360;
+  return (
+    <div style={{ width: 52, height: 52, borderRadius: 10, background: `hsl(${hue},55%,92%)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      <span style={{ fontSize: 14, fontWeight: 800, color: `hsl(${hue},45%,38%)` }}>{initials}</span>
+    </div>
+  );
+}
+
+const MODES = [
+  { id: 'SUR_PLACE', label: 'Sur place', icon: Store },
+  { id: 'EMPORTER',  label: 'À emporter', icon: ShoppingBag },
+  { id: 'LIVRAISON', label: 'Livraison',  icon: MapPin },
+];
+
 export default function CartDrawer({ isOpen, onClose }) {
-  const { items, total, updateQuantity, removeItem, clearCart, checkExpiration } = useCart();
+  const { items, total, updateQuantity, removeItem, restaurantId, restaurantName } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [mode, setMode] = useState('SUR_PLACE');
+  const [mode, setMode]       = useState('SUR_PLACE');
   const [address, setAddress] = useState('');
-  const [loading, setLoading] = useState(false);
 
-  if (!isOpen) return null;
+  const totalItems = items.reduce((s, i) => s + i.quantite, 0);
 
-  const handleCheckout = async () => {
-    if (checkExpiration()) {
-      alert('Panier expiré par inactivité (30 min). Veuillez recommencer.');
-      return;
-    }
-
+  const handleCheckout = () => {
     if (mode === 'LIVRAISON' && !address.trim()) {
       alert('Adresse obligatoire pour la livraison');
       return;
     }
-
-    setLoading(true);
-
-    try {
-      const payload = {
-        lignes: items.map((item) => ({
-          articleId: item.articleId,
-          quantite: item.quantite,
-          instructions: item.instructions,
-        })),
-        modeLivraison: mode,
-        adresseLivraison: mode === 'LIVRAISON' ? address : null,
-      };
-
-      const res = await commandesService.create(payload);
-      clearCart();
-      onClose();
-      navigate(`/suivi/${res.data.id}`);
-    } catch (err) {
-      alert(err.response?.data?.message || 'Erreur commande');
-    } finally {
-      setLoading(false);
-    }
+    const pendingOrder = {
+      restaurantId,
+      restaurantName: restaurantName || 'Restaurant',
+      orderMode: mode.toLowerCase(),
+      deliveryAddress: mode === 'LIVRAISON' ? address : null,
+      total: total(),
+      items: items.map(item => ({
+        articleId: item.articleId,
+        nom: item.nom,
+        prix: item.prix,
+        quantite: item.quantite,
+        instructions: item.instructions,
+        photoUrl: item.photoUrl,
+      })),
+    };
+    localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+    onClose();
+    navigate('/checkout');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-sm" onClick={onClose}>
+    <>
+      {/* Backdrop */}
       <div
-        className="flex h-full w-full max-w-md flex-col bg-[#F9F7F5] shadow-2xl"
-        onClick={(event) => event.stopPropagation()}
+        onClick={onClose}
+        style={{
+          position: 'fixed', inset: 0, zIndex: 49,
+          background: 'rgba(0,0,0,0.48)',
+          backdropFilter: 'blur(3px)',
+          opacity: isOpen ? 1 : 0,
+          pointerEvents: isOpen ? 'auto' : 'none',
+          transition: 'opacity 0.25s',
+        }}
+      />
+
+      {/* Panel */}
+      <div
+        style={{
+          position: 'fixed', right: 0, top: 0, bottom: 0, zIndex: 50,
+          width: 'min(420px, 100vw)',
+          background: '#FDFAF7',
+          boxShadow: '-16px 0 60px rgba(0,0,0,0.22)',
+          display: 'flex', flexDirection: 'column',
+          transform: isOpen ? 'translateX(0)' : 'translateX(100%)',
+          transition: 'transform 0.28s cubic-bezier(0.32,0.72,0,1)',
+        }}
       >
-        <div className="flex items-center justify-between border-b border-[#E8E2D9] bg-white p-6">
-          <h2 className="text-xl font-bold text-[#2D2720]">Mon panier ({items.length})</h2>
-          <button onClick={onClose} className="rounded-full p-2 transition-colors hover:bg-[#F9F7F5]">
-            <X className="h-5 w-5" />
+        <KenteStrip />
+
+        {/* Header */}
+        <div style={{ background: '#0F172A', padding: '16px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+          <div>
+            <p style={{ fontSize: 10, fontWeight: 700, color: '#C05015', textTransform: 'uppercase', letterSpacing: '0.2em', margin: '0 0 4px' }}>Mon panier</p>
+            <p style={{ fontSize: 15, fontWeight: 700, color: '#fff', margin: 0, lineHeight: 1.2 }}>
+              {restaurantName || 'Sélectionnez un restaurant'}
+              {totalItems > 0 && (
+                <span style={{ marginLeft: 8, background: '#C05015', color: '#fff', borderRadius: 20, padding: '1px 8px', fontSize: 11, fontWeight: 800 }}>
+                  {totalItems}
+                </span>
+              )}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 10, padding: '8px', cursor: 'pointer', color: 'rgba(255,255,255,0.75)', lineHeight: 0 }}
+          >
+            <X style={{ width: 16, height: 16 }} />
           </button>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-6">
+        {/* Items */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 8 }}>
           {items.length === 0 ? (
-            <div className="py-12 text-center text-[#8B7355]">
-              <ChefHat className="mx-auto mb-3 h-12 w-12 opacity-50" />
-              <p>Votre panier est vide</p>
+            <div style={{ padding: '60px 20px', textAlign: 'center' }}>
+              <ChefHat style={{ width: 52, height: 52, color: '#D0C4B8', margin: '0 auto 14px', display: 'block' }} />
+              <p style={{ fontFamily: 'Georgia, serif', fontSize: 16, fontWeight: 700, color: '#64748B', margin: '0 0 6px' }}>Panier vide</p>
+              <p style={{ fontSize: 13, color: '#BDB0A7', margin: 0 }}>Ajoutez des articles depuis le menu</p>
             </div>
           ) : (
             items.map((item) => (
-              <div key={item.lineId} className="rounded-2xl border border-[#E8E2D9] bg-white p-4 shadow-sm">
-                <div className="mb-2 flex justify-between gap-3">
-                  <h3 className="font-semibold text-[#2D2720]">{item.nom}</h3>
-                  <button onClick={() => removeItem(item.lineId)} className="text-red-500 hover:text-red-700">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-                {item.instructions && (
-                  <p className="mb-2 text-xs italic text-[#8B7355]">{item.instructions}</p>
-                )}
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-3 rounded-lg bg-[#F9F7F5] p-1">
-                    <button
-                      onClick={() => updateQuantity(item.lineId, item.quantite - 1)}
-                      className="rounded-md p-1 transition hover:bg-white"
-                    >
-                      <Minus className="h-4 w-4" />
-                    </button>
-                    <span className="w-6 text-center font-bold">{item.quantite}</span>
-                    <button
-                      onClick={() => updateQuantity(item.lineId, item.quantite + 1)}
-                      className="rounded-md p-1 transition hover:bg-white"
-                    >
-                      <Plus className="h-4 w-4" />
+              <div key={item.lineId} style={{ background: '#fff', border: '1px solid rgba(89,67,42,0.1)', borderRadius: 14, padding: '12px', display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                <ItemPhoto item={item} />
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: 4 }}>
+                    <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0, lineHeight: 1.3 }}>{item.nom}</p>
+                    <button onClick={() => removeItem(item.lineId)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#D0C4B8', padding: 2, flexShrink: 0, lineHeight: 0 }}>
+                      <X style={{ width: 13, height: 13 }} />
                     </button>
                   </div>
-                  <span className="font-bold text-[#D94500]">
-                    {formatFCFA(Number(item.prix) * Number(item.quantite))}
-                  </span>
+                  {item.instructions && (
+                    <p style={{ fontSize: 11, color: '#9E8B7A', fontStyle: 'italic', margin: '0 0 8px' }}>{item.instructions}</p>
+                  )}
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    {/* Qty controls */}
+                    <div style={{ display: 'inline-flex', alignItems: 'center', background: '#FDF5EF', borderRadius: 20, padding: '2px 4px', gap: 2 }}>
+                      <button
+                        onClick={() => updateQuantity(item.lineId, item.quantite - 1)}
+                        style={{ width: 26, height: 26, borderRadius: '50%', background: item.quantite <= 1 ? '#E8E0D6' : '#C05015', color: item.quantite <= 1 ? '#B0A090' : '#fff', border: 'none', cursor: item.quantite <= 1 ? 'default' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                      >
+                        <Minus style={{ width: 10, height: 10 }} />
+                      </button>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', minWidth: 24, textAlign: 'center' }}>{item.quantite}</span>
+                      <button
+                        onClick={() => updateQuantity(item.lineId, item.quantite + 1)}
+                        style={{ width: 26, height: 26, borderRadius: '50%', background: '#C05015', color: '#fff', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'all 0.15s' }}
+                      >
+                        <Plus style={{ width: 10, height: 10 }} />
+                      </button>
+                    </div>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: '#C05015' }}>
+                      {formatFCFA(Number(item.prix) * item.quantite)}
+                    </span>
+                  </div>
                 </div>
               </div>
             ))
           )}
         </div>
 
-        <div className="space-y-4 border-t border-[#E8E2D9] bg-white p-6">
-          <div className="flex items-center justify-between gap-3">
-            <h3 className="font-bold text-[#2D2720]">Mode de retrait</h3>
-            {!user && <span className="text-xs text-[#8B7355]">Connexion requise</span>}
+        {/* Footer */}
+        {items.length > 0 && (
+          <div style={{ borderTop: '1px solid rgba(89,67,42,0.12)', background: '#fff', padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 14, flexShrink: 0 }}>
+            {/* Mode */}
+            <div>
+              <p style={{ fontSize: 10, fontWeight: 700, color: '#9E8B7A', textTransform: 'uppercase', letterSpacing: '0.15em', margin: '0 0 10px' }}>Mode de commande</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {MODES.map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setMode(id)}
+                    style={{
+                      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                      padding: '10px 6px',
+                      border: `2px solid ${mode === id ? '#C05015' : 'rgba(89,67,42,0.12)'}`,
+                      borderRadius: 12,
+                      background: mode === id ? '#FFF4EE' : '#FDFAF7',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s',
+                    }}
+                  >
+                    <Icon style={{ width: 15, height: 15, color: mode === id ? '#C05015' : '#9E8B7A' }} />
+                    <span style={{ fontSize: 10, fontWeight: 700, color: mode === id ? '#C05015' : '#9E8B7A' }}>{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {mode === 'LIVRAISON' && (
+              <input
+                type="text"
+                placeholder="Adresse complète de livraison..."
+                value={address}
+                onChange={e => setAddress(e.target.value)}
+                style={{ border: '1.5px solid rgba(89,67,42,0.18)', borderRadius: 10, padding: '10px 14px', fontSize: 13, color: '#0F172A', outline: 'none', background: '#FDFAF7', boxSizing: 'border-box', width: '100%' }}
+                onFocus={e => e.target.style.borderColor = '#C05015'}
+                onBlur={e => e.target.style.borderColor = 'rgba(89,67,42,0.18)'}
+              />
+            )}
+
+            {/* Total */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 0', borderTop: '1px solid rgba(89,67,42,0.1)' }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#64748B' }}>Total</span>
+              <span style={{ fontSize: 22, fontWeight: 900, color: '#C05015', fontFamily: 'Georgia, serif', letterSpacing: '-0.02em' }}>
+                {formatFCFA(total())}
+              </span>
+            </div>
+
+            {!user && (
+              <p style={{ fontSize: 11, color: '#9E8B7A', textAlign: 'center', margin: '-6px 0 0' }}>Connexion requise pour commander</p>
+            )}
+
+            <button
+              onClick={handleCheckout}
+              disabled={!user}
+              style={{
+                background: !user ? '#D0C4B8' : '#C05015',
+                color: '#fff', border: 'none', borderRadius: 14,
+                padding: '15px 0', fontSize: 15, fontWeight: 800,
+                cursor: !user ? 'not-allowed' : 'pointer',
+                width: '100%', letterSpacing: '-0.01em',
+                boxShadow: !user ? 'none' : '0 6px 24px rgba(224,78,26,0.35)',
+                transition: 'all 0.2s',
+              }}
+              onMouseEnter={e => { if (user) e.currentTarget.style.background = '#9A3E10'; }}
+              onMouseLeave={e => { if (user) e.currentTarget.style.background = '#C05015'; }}
+            >
+              Commander · {formatFCFA(total())}
+            </button>
           </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: 'SUR_PLACE', label: 'Sur place', icon: <Store className="h-4 w-4" /> },
-              { id: 'EMPORTER', label: 'À emporter', icon: <Truck className="h-4 w-4" /> },
-              { id: 'LIVRAISON', label: 'Livraison', icon: <MapPin className="h-4 w-4" /> },
-            ].map((option) => (
-              <button
-                key={option.id}
-                onClick={() => setMode(option.id)}
-                className={`flex flex-col items-center gap-2 rounded-xl border-2 p-3 transition-all ${
-                  mode === option.id
-                    ? 'border-[#D94500] bg-[#FFF5EB] text-[#D94500]'
-                    : 'border-[#E8E2D9] text-[#8B7355] hover:border-[#D94500]/50'
-                }`}
-              >
-                {option.icon}
-                <span className="text-xs font-medium">{option.label}</span>
-              </button>
-            ))}
-          </div>
-
-          {mode === 'LIVRAISON' && (
-            <input
-              type="text"
-              placeholder="Adresse complète de livraison..."
-              value={address}
-              onChange={(event) => setAddress(event.target.value)}
-              className="w-full rounded-xl border border-[#E8E2D9] bg-[#F9F7F5] px-4 py-3 outline-none focus:ring-2 focus:ring-[#D94500]"
-            />
-          )}
-
-          <div className="flex items-center justify-between border-t border-[#E8E2D9] pt-2">
-            <span className="text-lg font-bold">Total</span>
-            <span className="text-2xl font-bold text-[#D94500]">{formatFCFA(total())}</span>
-          </div>
-
-          <button
-            onClick={handleCheckout}
-            disabled={loading || items.length === 0 || !user}
-            className="w-full rounded-2xl bg-[#D94500] py-4 font-bold text-white shadow-lg transition-all hover:bg-[#B83A00] disabled:opacity-50"
-          >
-            {loading ? 'Validation...' : 'VALIDER LA COMMANDE'}
-          </button>
-        </div>
+        )}
       </div>
-    </div>
+    </>
   );
 }

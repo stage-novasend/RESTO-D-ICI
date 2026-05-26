@@ -144,6 +144,12 @@ export const commandesService = {
     }),
   getRecentOrders: (restaurantId, limit = 50) =>
     api.get("/commandes", { params: { restaurantId, limit } }),
+
+  // POST /commandes/:id/avis — laisser un avis après livraison
+  addAvis: (id, data) => api.post(`/commandes/${id}/avis`, data),
+
+  // GET /commandes/:id/avis
+  getAvis: (id) => api.get(`/commandes/${id}/avis`),
 };
 
 export const stocksAPI = {
@@ -159,13 +165,51 @@ export const stocksAPI = {
 };
 
 export const b2bAPI = {
+  // Dashboard
   getDashboard: () => api.get("/b2b/dashboard"),
+
+  // Compte entreprise
+  getCompte: () => api.get("/b2b/compte"),
+  createCompte: (data) => api.post("/b2b/compte", data),
+  updateCompte: (data) => api.patch("/b2b/compte", data),
+  validerCompte: (compteId, approved) => api.put(`/b2b/compte/${compteId}/valider`, { approved }),
+
+  // Collaborateurs (new system with budget)
+  getCollaborateurs: () => api.get("/b2b/collaborateurs"),
+  createCollaborateur: (data) => api.post("/b2b/collaborateurs", data),
+  getCollaborateurSolde: (id) => api.get(`/b2b/collaborateurs/${id}/solde`),
+  deleteCollaborateur: (id) => api.delete(`/b2b/collaborateurs/${id}`),
+
+  // Legacy collaborators (backward compat)
   getCollaborators: () => api.get("/b2b/collaborators"),
   createCollaborator: (data) => api.post("/b2b/collaborators", data),
+
+  // Commandes groupées
+  createCommandeGroupee: (data) => api.post("/b2b/commandes-groupees", data),
+  getCommandesGroupees: () => api.get("/b2b/commandes-groupees"),
+
+  // Staff/Gérant KDS for B2B orders
+  getRestaurantKDS: () => api.get("/b2b/restaurant-kds"),
+  updateCommandeGroupeeStatut: (id, statut) => api.patch(`/b2b/commandes-groupees/${id}/statut`, { statut }),
+
+  // Bulk orders (legacy)
   bulkOrder: (data) => api.post("/b2b/bulk-orders", data),
+
+  // All orders (bulk + groupées)
   getOrders: () => api.get("/b2b/orders"),
   getManagerOrders: () => api.get("/b2b/orders/management"),
+
+  // Factures mensuelles (new)
+  getFacturesMensuelles: () => api.get("/b2b/factures-mensuelles"),
+  payerFacture: (id) => api.post(`/b2b/factures-mensuelles/${id}/payer`),
+
+  // Legacy invoices
   getInvoices: () => api.get("/b2b/invoices"),
+
+  // Audit logs
+  getAuditLogs: () => api.get("/b2b/audit-logs"),
+
+  // Reports
   getReports: () => api.get("/b2b/reports"),
 };
 
@@ -175,6 +219,15 @@ export const authAPI = {
   me: () => api.get("/auth/me"),
   updateProfile: (data) => api.patch("/auth/me", data),
   logout: () => api.post("/auth/logout"),
+  changePassword: (data) => api.patch("/auth/change-password", data),
+  setup2FA: () => api.post("/auth/2fa/setup"),
+  enable2FA: (code) => api.post("/auth/2fa/enable", { code }),
+  disable2FA: () => api.post("/auth/2fa/disable"),
+  verify2FALogin: (tempToken, code) => api.post("/auth/2fa/verify-login", { tempToken, code }),
+  verifyEmail: (token) => api.post("/auth/verify-email", { token }),
+  resendVerification: (email) => api.post("/auth/resend-verification", { email }),
+  forgotPassword: (email) => api.post("/auth/forgot-password", { email }),
+  resetPassword: (token, newPassword) => api.post("/auth/reset-password", { token, newPassword }),
 };
 
 export const tresorerieAPI = {

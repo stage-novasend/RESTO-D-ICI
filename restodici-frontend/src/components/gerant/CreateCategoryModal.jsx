@@ -29,28 +29,28 @@ export default function CreateCategoryModal({ isOpen, onClose, onSuccess }) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4" onClick={onClose}>
       <div className="bg-white rounded-2xl w-full max-w-md p-6 shadow-2xl" onClick={e => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-bold text-[#2D2720]">Nouvelle catégorie</h3>
-          <button onClick={onClose} className="p-2 hover:bg-[#F9F7F5] rounded-full"><X className="w-5 h-5" /></button>
+          <h3 className="text-lg font-bold text-[#0F172A]">Nouvelle catégorie</h3>
+          <button onClick={onClose} className="p-2 hover:bg-white rounded-full"><X className="w-5 h-5" /></button>
         </div>
 
         {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm font-semibold text-[#2D2720]">Nom</label>
+            <label className="text-sm font-semibold text-[#0F172A]">Nom</label>
             <input 
               value={form.nom} 
               onChange={e => setForm({...form, nom: e.target.value})}
-              className="w-full px-4 py-2.5 bg-[#F9F7F5] border border-[#E8E2D9] rounded-xl focus:ring-2 focus:ring-[#D94500] outline-none"
+              className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-xl focus:ring-2 focus:ring-[#C05015] outline-none"
               placeholder="Ex: Plats du jour"
             />
           </div>
           <div>
-            <label className="text-sm font-semibold text-[#2D2720]">Icône</label>
+            <label className="text-sm font-semibold text-[#0F172A]">Icône</label>
             <select 
               value={form.icone} 
               onChange={e => setForm({...form, icone: e.target.value})}
-              className="w-full px-4 py-2.5 bg-[#F9F7F5] border border-[#E8E2D9] rounded-xl focus:ring-2 focus:ring-[#D94500] outline-none"
+              className="w-full px-4 py-2.5 bg-white border border-[#E2E8F0] rounded-xl focus:ring-2 focus:ring-[#C05015] outline-none"
             >
               <option value="️">🍽️ Plat</option>
               <option value="🥗">🥗 Entrée</option>
@@ -62,7 +62,7 @@ export default function CreateCategoryModal({ isOpen, onClose, onSuccess }) {
           <button 
             type="submit" 
             disabled={loading}
-            className="w-full bg-[#D94500] hover:bg-[#B83A00] disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+            className="w-full bg-[#C05015] hover:bg-[#9A3E10] disabled:opacity-50 text-white font-bold py-3 rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
           >
             {loading ? 'Création...' : <><Plus className="w-4 h-4" /> Créer la catégorie</>}
           </button>

@@ -1,32 +1,25 @@
+// src/pages/VerifyEmail.jsx
 import { useEffect, useState } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import axios from 'axios';
-import { ArrowLeft, CheckCircle, AlertCircle, Mail } from 'lucide-react';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+import { authAPI } from '../services/api';
+import { ArrowLeft, CheckCircle, AlertCircle, Mail, UtensilsCrossed } from 'lucide-react';
 
 export default function VerifyEmail() {
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
 
   const [email, setEmail] = useState('');
-  const [status, setStatus] = useState('loading'); // loading | success | error
+  const [status, setStatus] = useState('loading');
   const [message, setMessage] = useState('');
   const [isResending, setIsResending] = useState(false);
 
   useEffect(() => {
-    if (!token) {
-      setStatus('error');
-      setMessage("Token de vérification manquant.");
-      return;
-    }
-
+    if (!token) { setStatus('error'); setMessage("Token de vérification manquant."); return; }
     (async () => {
       try {
-        const res = await axios.post(`${API_URL}/auth/verify-email`, { token });
+        const res = await authAPI.verifyEmail(token);
         setStatus('success');
-        setMessage(res.data?.message || 'Email vérifié.');
-        // On ne récupère pas l'email côté back dans la réponse actuelle
+        setMessage(res.data?.message || 'Email vérifié avec succès.');
       } catch (err) {
         setStatus('error');
         setMessage(err.response?.data?.message || 'Erreur lors de la vérification.');
@@ -38,7 +31,7 @@ export default function VerifyEmail() {
     setIsResending(true);
     setMessage('');
     try {
-      const res = await axios.post(`${API_URL}/auth/resend-verification`, { email });
+      const res = await authAPI.resendVerification(email);
       setStatus('success');
       setMessage(res.data?.message || 'Lien de vérification renvoyé.');
     } catch (err) {
@@ -50,73 +43,84 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F9F7F5] flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-xl w-full max-w-md p-8 space-y-6 border border-[#E8E2D9]">
-        <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-[#FFF5EB] mb-2">
-            <Mail className="w-8 h-8 text-[#D94500]" />
+    <div className="min-h-screen flex items-center justify-center bg-[#C05015] p-4 lg:p-8">
+      <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
+
+        {/* Header */}
+        <div className="bg-[#C05015] px-8 pt-8 pb-10">
+          <div className="flex items-center gap-2.5 mb-4">
+            <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/30">
+              <UtensilsCrossed className="w-4 h-4 text-white" />
+            </div>
+            <span className="text-white font-extrabold text-lg">Resto d'ici</span>
           </div>
-          <h1 className="text-3xl font-bold text-[#2D2720]">Vérification email</h1>
-          <p className="text-[#8B7355] text-sm">Confirmez votre adresse pour activer votre compte</p>
+          <div className="flex items-center justify-center w-14 h-14 rounded-full bg-white/20 mx-auto mt-2">
+            {status === 'success'
+              ? <CheckCircle className="w-7 h-7 text-white" />
+              : status === 'error'
+              ? <AlertCircle className="w-7 h-7 text-white" />
+              : <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            }
+          </div>
         </div>
 
-        {status === 'loading' && (
-          <div className="flex items-center justify-center py-8">
-            <div className="w-10 h-10 border-2 border-[#E8E2D9] border-t-[#D94500] rounded-full animate-spin" />
-          </div>
-        )}
-
-        {status !== 'loading' && (
-          <div className={status === 'success' ? 'text-green-700' : 'text-red-700'}>
-            <div className="flex items-center justify-center gap-2">
-              {status === 'success' ? (
-                <CheckCircle className="w-6 h-6" />
-              ) : (
-                <AlertCircle className="w-6 h-6" />
-              )}
-              <p className="text-sm font-semibold">{message}</p>
+        {/* Body */}
+        <div className="px-8 py-8">
+          {status === 'loading' && (
+            <div className="text-center">
+              <h2 className="text-xl font-extrabold text-[#1A1A1A] mb-2">Vérification en cours…</h2>
+              <p className="text-[#9A7060] text-sm">Veuillez patienter quelques secondes.</p>
             </div>
+          )}
 
-            {status === 'error' && (
-              <div className="mt-6 space-y-4">
-                <p className="text-xs text-[#8B7355] text-center">
-                  Renseignez votre email pour renvoyer le lien de vérification.
-                </p>
+          {status === 'success' && (
+            <div className="text-center">
+              <h2 className="text-xl font-extrabold text-[#1A1A1A] mb-2">Email confirmé !</h2>
+              <p className="text-[#9A7060] text-sm mb-8">{message}</p>
+              <Link to="/login"
+                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#C05015] hover:bg-[#9A3E10] transition-colors text-sm shadow-sm">
+                Se connecter
+              </Link>
+            </div>
+          )}
 
-                <div className="space-y-2">
-                  <label className="text-sm font-semibold text-[#2D2720]">Email</label>
+          {status === 'error' && (
+            <div>
+              <div className="text-center mb-6">
+                <h2 className="text-xl font-extrabold text-[#1A1A1A] mb-2">Lien invalide</h2>
+                <p className="text-[#9A7060] text-sm">{message}</p>
+              </div>
+
+              <div className="space-y-3 bg-[#FBE8DC] rounded-2xl p-5">
+                <p className="text-sm font-semibold text-[#1A1A1A]">Renvoyer le lien de vérification</p>
+                <div className="relative">
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C05015]/60" />
                   <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    type="email"
-                    placeholder="votre@email.com"
-                    className="block w-full px-3 py-3 bg-[#F9F7F5] border border-[#E8E2D9] rounded-xl focus:outline-none focus:ring-2 focus:ring-[#D94500] focus:border-transparent"
+                    value={email} onChange={(e) => setEmail(e.target.value)}
+                    type="email" placeholder="votre@email.com"
+                    className="w-full pl-10 pr-4 py-3.5 bg-white border-0 rounded-2xl text-[#1A1A1A] placeholder-[#9A7060]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#C05015]/40"
                   />
                 </div>
-
-                <button
-                  type="button"
-                  disabled={isResending || !email}
-                  onClick={handleResend}
-                  className={`w-full py-3 px-4 rounded-2xl font-bold text-white bg-[#D94500] hover:bg-[#B83A00] transition-colors ${
-                    isResending || !email ? 'opacity-75 cursor-not-allowed' : ''
-                  }`}
-                >
-                  {isResending ? 'Envoi...' : 'Renvoyer le lien'}
+                <button type="button" disabled={isResending || !email} onClick={handleResend}
+                  className="w-full py-3 px-4 rounded-2xl font-bold text-white bg-[#C05015] hover:bg-[#9A3E10] transition-colors disabled:opacity-60 text-sm">
+                  {isResending ? (
+                    <span className="flex items-center justify-center gap-2">
+                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Envoi…
+                    </span>
+                  ) : 'Renvoyer le lien'}
                 </button>
               </div>
-            )}
-          </div>
-        )}
 
-        <div className="pt-4 border-t border-[#E8E2D9]">
-          <Link to="/login" className="flex items-center text-[#8B7355] hover:text-[#2D2720] text-sm">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Retour à la connexion
-          </Link>
+              <div className="mt-5">
+                <Link to="/login" className="flex items-center gap-2 text-[#9A7060] hover:text-[#C05015] text-sm">
+                  <ArrowLeft className="w-4 h-4" />Retour à la connexion
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
   );
 }
-

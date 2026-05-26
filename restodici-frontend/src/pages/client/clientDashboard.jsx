@@ -1,805 +1,763 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+// src/pages/client/clientDashboard.jsx
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Calendar,
-  ChevronRight,
-  CreditCard,
-  Download,
-  Loader2,
-  Mail,
-  MapPin,
-  Package,
-  Phone,
-  Save,
-  ShoppingBag,
-  Sparkles,
-  Store,
-  Truck,
-  User,
+  ShoppingBag, Clock, CheckCircle, Star, Download, Eye,
+  User, Shield, ChefHat, Package, TrendingUp, X, Send,
+  Printer, RefreshCw, Receipt, MapPin, Truck, ArrowRight,
+  UtensilsCrossed, Wallet
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
-import { authAPI, commandesService } from '../../services/api';
-import { createCommandesSocket } from '../../services/commandes.service';
-import {
-  getClientOrdersPath,
-  readDeliveryFeedback,
-  writeDeliveryFeedback,
-} from '../../utils/order-ux';
-import {
-  formatDate,
-  formatDeliveryMode,
-  formatFCFA,
-  STATUS_COLORS,
-  STATUS_LABELS,
-} from '../../utils/formatters';
+import { commandesService as svcTs, createCommandesSocket } from '../../services/commandes.service';
+import { authAPI } from '../../services/api';
+import SecurityPanel from '../../components/security/SecurityPanel';
+import NotificationBell from '../../components/notifications/NotificationBell';
+import { formatFCFA } from '../../utils/formatters';
 
-const tabs = [
-  { id: 'overview', label: "Vue d'ensemble", icon: Sparkles },
-  { id: 'orders', label: 'Commandes', icon: Package },
-  { id: 'payments', label: 'Paiements', icon: CreditCard },
-  { id: 'profile', label: 'Profil', icon: User },
-];
+const ORDER_STATUS = {
+  RECUE:        { label: 'Reçue',           bg: '#FFFBEB', color: '#D97706' },
+  CONFIRMEE:    { label: 'Confirmée',       bg: '#F0FDF4', color: '#16A34A' },
+  EN_PREP:      { label: 'En préparation',  bg: '#FEF3C7', color: '#B45309' },
+  PRETE:        { label: 'Prête',           bg: '#F0FDF4', color: '#16A34A' },
+  EN_LIVRAISON: { label: 'En livraison',    bg: '#EFF6FF', color: '#2563EB' },
+  LIVREE:       { label: 'Livrée ✓',        bg: '#F0FDF4', color: '#15803D' },
+  ANNULEE:      { label: 'Annulée',         bg: '#FFF1F2', color: '#E11D48' },
+};
 
-export default function ClientDashboard() {
-  const { user, refreshProfile, syncUser } = useAuth();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const userId = user?.id;
-  const [activeTab, setActiveTab] = useState(() => {
-    const initialTab = new URLSearchParams(location.search).get('tab');
-    return tabs.some((tab) => tab.id === initialTab) ? initialTab : 'overview';
-  });
-  const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [savingProfile, setSavingProfile] = useState(false);
-  const [downloadingId, setDownloadingId] = useState(null);
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
-  const [profileForm, setProfileForm] = useState({
-    nom: user?.nom || '',
-    prenom: user?.prenom || '',
-    email: user?.email || '',
-    telephone: user?.telephone || '',
-  });
+const STEPS = ['RECUE', 'CONFIRMEE', 'EN_PREP', 'PRETE', 'EN_LIVRAISON', 'LIVREE'];
+const MODE_LABELS = { SUR_PLACE: 'Sur place', EMPORTER: 'À emporter', LIVRAISON: 'Livraison' };
+const MODE_ICONS  = { SUR_PLACE: UtensilsCrossed, EMPORTER: Package, LIVRAISON: Truck };
 
-  const refreshClientData = useCallback(async () => {
-    setError('');
-    try {
-      const [ordersResponse, freshProfile] = await Promise.all([
-        commandesService.getMyOrders(),
-        refreshProfile(),
-      ]);
+function currentMonthYear() {
+  return new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+}
 
-      const nextOrders = Array.isArray(ordersResponse.data)
-        ? ordersResponse.data
-        : [];
-      setOrders(nextOrders);
+// ── localStorage helpers ───────────────────────────────────────────────────────
+function ordersKey(userId) { return userId ? `orders:${userId}` : 'orders'; }
+function avisKey(userId)   { return userId ? `avis_given:${userId}` : 'avis_given'; }
 
-      if (freshProfile) {
-        setProfileForm({
-          nom: freshProfile.nom || '',
-          prenom: freshProfile.prenom || '',
-          email: freshProfile.email || '',
-          telephone: freshProfile.telephone || '',
-        });
-      }
-    } catch (loadError) {
-      setError(
-        loadError?.response?.data?.message ||
-          'Impossible de charger votre espace client.',
-      );
-    }
-  }, [refreshProfile]);
+function loadCachedOrders(userId) {
+  try {
+    const raw = localStorage.getItem(ordersKey(userId));
+    if (!raw) return [];
+    const { orders, ts } = JSON.parse(raw);
+    if (Date.now() - ts < 10 * 60 * 1000) return orders || [];
+  } catch { /* ignore */ }
+  return [];
+}
+function saveOrdersCache(userId, orders) {
+  try { localStorage.setItem(ordersKey(userId), JSON.stringify({ orders, ts: Date.now() })); }
+  catch { /* ignore */ }
+}
+function loadAvisGiven(userId) {
+  try { const raw = localStorage.getItem(avisKey(userId)); return raw ? new Set(JSON.parse(raw)) : new Set(); }
+  catch { return new Set(); }
+}
+function saveAvisGiven(userId, set) {
+  try { localStorage.setItem(avisKey(userId), JSON.stringify([...set])); }
+  catch { /* ignore */ }
+}
 
-  useEffect(() => {
-    if (!userId) {
-      navigate('/login');
-      return;
-    }
-
-    let active = true;
-
-    const loadData = async () => {
-      setLoading(true);
-      setError('');
-
-      try {
-        await refreshClientData();
-      } finally {
-        if (active) {
-          setLoading(false);
-        }
-      }
-    };
-
-    loadData();
-
-    return () => {
-      active = false;
-    };
-  }, [userId, navigate, refreshClientData]);
-
-  useEffect(() => {
-    const requestedTab = new URLSearchParams(location.search).get('tab');
-    if (requestedTab && tabs.some((tab) => tab.id === requestedTab)) {
-      setActiveTab(requestedTab);
-    }
-  }, [location.search]);
-
-  useEffect(() => {
-    if (!userId) return;
-
-    const pollingInterval = setInterval(() => {
-      void refreshClientData();
-    }, 30000);
-
-    const socket = createCommandesSocket(user);
-
-    const handleClientEvent = async () => {
-      await refreshClientData();
-    };
-
-    socket.on('commande.creee', handleClientEvent);
-    socket.on('commande.statut', handleClientEvent);
-    socket.on('commande.paiement', handleClientEvent);
-
-    return () => {
-      clearInterval(pollingInterval);
-      socket.disconnect();
-    };
-  }, [user, userId, refreshClientData]);
-
-  const paidOrders = useMemo(
-    () => orders.filter((order) => order.estPaye),
-    [orders],
-  );
-
-  const deliveryAddresses = useMemo(() => {
-    const seen = new Set();
-
-    return orders
-      .filter((order) => order.modeLivraison === 'LIVRAISON' && order.adresseLivraison)
-      .map((order) => order.adresseLivraison.trim())
-      .filter((address) => {
-        if (!address || seen.has(address)) {
-          return false;
-        }
-        seen.add(address);
-        return true;
-      });
-  }, [orders]);
-
-  const stats = useMemo(() => {
-    const totalDepenses = paidOrders.reduce(
-      (sum, order) => sum + Number(order.montantTotal || 0),
-      0,
-    );
-
-    return {
-      totalCommandes: orders.length,
-      totalDepenses,
-      commandesPayees: paidOrders.length,
-      adresses: deliveryAddresses.length,
-    };
-  }, [deliveryAddresses.length, orders.length, paidOrders]);
-
-  const handleProfileChange = (event) => {
-    const { name, value } = event.target;
-    setProfileForm((current) => ({ ...current, [name]: value }));
+// ── Receipt Modal ─────────────────────────────────────────────────────────────
+function ReceiptModal({ order, onClose, onDownload }) {
+  const printRef = useRef(null);
+  const date  = new Date(order.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const total = order.total || order.montantTotal || 0;
+  const handlePrint = () => {
+    const content = printRef.current?.innerHTML;
+    if (!content) return;
+    const win = window.open('', '_blank');
+    win.document.write(`<html><head><title>Reçu ${order.numero}</title><style>
+      body{font-family:sans-serif;max-width:360px;margin:20px auto;color:#1a1a1a}
+      h2{margin:0 0 4px}p{margin:2px 0;font-size:13px;color:#555}
+      .divider{border:none;border-top:1px dashed #ccc;margin:12px 0}
+      .row{display:flex;justify-content:space-between;font-size:13px;margin:4px 0}
+      .total{font-size:16px;font-weight:bold;color:#D97706}
+    </style></head><body>${content}</body></html>`);
+    win.document.close(); win.print();
   };
-
-  const handleSaveProfile = async (event) => {
-    event.preventDefault();
-    setSavingProfile(true);
-    setMessage('');
-    setError('');
-
-    try {
-      const response = await authAPI.updateProfile(profileForm);
-      syncUser(response.data);
-      setProfileForm({
-        nom: response.data?.nom || '',
-        prenom: response.data?.prenom || '',
-        email: response.data?.email || '',
-        telephone: response.data?.telephone || '',
-      });
-      setMessage('Profil mis à jour avec succès.');
-    } catch (saveError) {
-      setError(
-        saveError?.response?.data?.message ||
-          'Impossible de sauvegarder votre profil.',
-      );
-    } finally {
-      setSavingProfile(false);
-    }
-  };
-
-  const handleDownloadReceipt = async (order) => {
-    setDownloadingId(order.id);
-    setMessage('');
-    setError('');
-
-    try {
-      const response = await commandesService.getReceiptPdf(order.id);
-      const blob = new Blob([response.data], { type: 'application/pdf' });
-      downloadAndOpenBlob(blob, `recu-commande-${order.numero}.pdf`);
-    } catch (downloadError) {
-      setError(
-        downloadError?.response?.data?.message ||
-          'Le reçu PDF est indisponible pour cette commande.',
-      );
-    } finally {
-      setDownloadingId(null);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-[calc(100vh-64px)] bg-[#F9F7F5] flex items-center justify-center px-4">
-        <div className="rounded-[28px] border border-[#E8E2D9] bg-white px-8 py-10 text-center shadow-sm">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#FFF5EB] text-[#D94500]">
-            <Loader2 className="h-6 w-6 animate-spin" />
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between" style={{ background: '#D97706' }}>
+          <div>
+            <h3 className="text-white font-extrabold flex items-center gap-2"><Receipt className="w-4 h-4" />Reçu de commande</h3>
+            <p className="text-white/70 text-xs">#{order.numero}</p>
           </div>
-          <p className="mt-4 font-semibold text-[#2D2720]">Chargement de votre espace client...</p>
+          <button onClick={onClose} className="text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="p-5 max-h-[70vh] overflow-y-auto">
+          <div ref={printRef}>
+            <h2 style={{ margin: '0 0 4px', fontSize: 18 }}>Resto d'ici</h2>
+            <p style={{ margin: '0 0 2px', fontSize: 13, color: '#555' }}>{date}</p>
+            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#555' }}>
+              {MODE_LABELS[order.mode] || order.mode} · Commande #{order.numero}
+            </p>
+            <hr style={{ borderTop: '1px dashed #ccc', margin: '8px 0' }} />
+            {(order.lignes || []).map((l, i) => (
+              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, margin: '4px 0' }}>
+                <span>{l.quantite}× {l.article?.nom || l.nom}</span>
+                <span>{formatFCFA((l.prixUnitaire || l.prix || 0) * l.quantite)}</span>
+              </div>
+            ))}
+            <hr style={{ borderTop: '1px dashed #ccc', margin: '8px 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', color: '#D97706' }}>
+              <span>Total</span><span>{formatFCFA(total)}</span>
+            </div>
+          </div>
+        </div>
+        <div className="px-5 pb-5 flex gap-2">
+          <button onClick={handlePrint} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm bg-[#FEF3C7] text-[#B45309]">
+            <Printer className="w-3.5 h-3.5" />Imprimer
+          </button>
+          <button onClick={() => onDownload(order.id)} className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#D97706]">
+            <Download className="w-3.5 h-3.5" />PDF
+          </button>
         </div>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
+// ── Avis Modal ────────────────────────────────────────────────────────────────
+function AvisModal({ order, onClose, onSubmit }) {
+  const [note, setNote] = useState(5);
+  const [commentaire, setCommentaire] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try { await onSubmit(order.id, note, commentaire); onClose(); }
+    finally { setSubmitting(false); }
+  };
   return (
-    <div className="min-h-[calc(100vh-64px)] bg-[#F9F7F5] px-4 py-6 sm:px-6 lg:px-8">
-      <div className="mx-auto max-w-7xl space-y-6">
-        <section className="rounded-[32px] border border-[#E8E2D9] bg-white p-6 shadow-sm sm:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF5EB] px-4 py-2 text-sm font-semibold text-[#D94500]">
-                <Sparkles className="h-4 w-4" />
-                Espace client premium
-              </span>
-              <h1 className="mt-4 text-3xl font-bold text-[#2D2720] sm:text-4xl">
-                Bonjour {user?.prenom || user?.nom || 'client'}
-              </h1>
-              <p className="mt-3 max-w-2xl text-[#8B7355]">
-                Suivez vos commandes, retrouvez vos paiements et mettez à jour votre profil dans un espace plus propre, plus stable et plus agréable à utiliser.
-              </p>
-              <div className="mt-5 flex flex-wrap gap-3">
-                <button
-                  onClick={() => navigate('/menu')}
-                  className="inline-flex items-center gap-2 rounded-2xl bg-[#D94500] px-5 py-3 font-semibold text-white shadow-md transition hover:bg-[#B83A00]"
-                >
-                  <ShoppingBag className="h-4 w-4" />
-                  Commander maintenant
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between bg-[#D97706]">
+          <div>
+            <h3 className="text-white font-extrabold">Laisser un avis</h3>
+            <p className="text-white/70 text-xs">Commande #{order.numero}</p>
+          </div>
+          <button onClick={onClose} className="text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="p-5 space-y-4">
+          <div>
+            <p className="text-sm font-semibold text-[#1A1A1A] mb-2">Votre note</p>
+            <div className="flex gap-2">
+              {[1,2,3,4,5].map(n => (
+                <button key={n} onClick={() => setNote(n)}
+                  className="w-10 h-10 rounded-xl flex items-center justify-center transition-all"
+                  style={{ background: n <= note ? '#D97706' : '#FEF3C7', color: n <= note ? '#fff' : '#B45309' }}>
+                  <Star className="w-4.5 h-4.5" fill={n <= note ? 'currentColor' : 'none'} />
                 </button>
-                <button
-                  onClick={() => navigate(getClientOrdersPath())}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[#E8E2D9] px-5 py-3 font-semibold text-[#2D2720] transition hover:bg-[#F9F7F5]"
-                >
-                  <Package className="h-4 w-4 text-[#D94500]" />
-                  Voir commande
-                </button>
-                <button
-                  onClick={() => setActiveTab('payments')}
-                  className="inline-flex items-center gap-2 rounded-2xl border border-[#E8E2D9] px-5 py-3 font-semibold text-[#2D2720] transition hover:bg-[#F9F7F5]"
-                >
-                  <CreditCard className="h-4 w-4 text-[#00A7CB]" />
-                  Voir mes paiements
-                </button>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 sm:min-w-[340px]">
-              <MiniStatCard label="Commandes" value={stats.totalCommandes} tone="orange" />
-              <MiniStatCard label="Montant payé" value={formatFCFA(stats.totalDepenses)} tone="green" />
-              <MiniStatCard label="Paiements" value={stats.commandesPayees} tone="blue" />
-              <MiniStatCard label="Adresses" value={stats.adresses} tone="neutral" />
+              ))}
             </div>
           </div>
-        </section>
+          <div>
+            <label className="text-sm font-semibold text-[#1A1A1A] block mb-1.5">Commentaire (optionnel)</label>
+            <textarea value={commentaire} onChange={e => setCommentaire(e.target.value)}
+              rows={3} placeholder="Partagez votre expérience…"
+              className="w-full bg-[#FEF3C7] border-0 rounded-2xl px-4 py-3 text-sm text-[#1A1A1A] placeholder-gray-400 focus:outline-none resize-none" />
+          </div>
+          <button onClick={handleSubmit} disabled={submitting}
+            className="w-full py-3 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-60 text-white bg-[#D97706]">
+            {submitting ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Send className="w-3.5 h-3.5" />}
+            Envoyer l'avis
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        <div className="rounded-[28px] border border-[#E8E2D9] bg-white p-3 shadow-sm">
-          <div className="flex flex-wrap gap-2">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
+// ── Active Order Card (compact, visual progress) ───────────────────────────────
+function ActiveOrderCard({ order, onTrack, onReceipt }) {
+  const currentIdx = STEPS.indexOf(order.statut);
+  const progress = currentIdx >= 0 ? Math.round(((currentIdx + 1) / STEPS.length) * 100) : 0;
+  const status = ORDER_STATUS[order.statut] || { label: order.statut, bg: '#F3F4F6', color: '#6B7280' };
+  const ModeIcon = MODE_ICONS[order.modeLivraison] || Package;
+  const restaurantName = order.restaurant?.nom || '';
+
+  return (
+    <div style={{ padding: '16px 20px', borderBottom: '1px solid #F9FAFB' }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 10 }}>
+        <div style={{ width: 40, height: 40, borderRadius: 12, background: '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <ModeIcon style={{ width: 17, height: 17, color: '#6B7280' }} />
+        </div>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 14, fontWeight: 700, color: '#111827' }}>#{order.numero}</span>
+            <span style={{ fontSize: 11, fontWeight: 600, color: status.color, background: status.bg, padding: '2px 8px', borderRadius: 99 }}>
+              {status.label}
+            </span>
+            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#4ADE80', animation: 'pulse 2s infinite', flexShrink: 0 }} />
+          </div>
+          <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 2 }}>
+            {restaurantName && `${restaurantName} · `}{MODE_LABELS[order.modeLivraison] || order.modeLivraison}
+          </p>
+        </div>
+        <div style={{ flexShrink: 0, textAlign: 'right' }}>
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0 }}>
+            {formatFCFA(order.total || order.montantTotal || 0)} <span style={{ fontSize: 11, fontWeight: 400, color: '#9CA3AF' }}>CFA</span>
+          </p>
+        </div>
+      </div>
+      {/* Progress bar */}
+      <div style={{ height: 4, background: '#F3F4F6', borderRadius: 99, overflow: 'hidden', marginBottom: 10 }}>
+        <div style={{
+          height: '100%', width: `${progress}%`, borderRadius: 99,
+          background: order.statut === 'LIVREE' ? '#16A34A' : '#D97706',
+          transition: 'width 0.5s',
+        }} />
+      </div>
+      <div style={{ display: 'flex', gap: 8 }}>
+        <button onClick={onTrack} style={{
+          flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+          padding: '7px 0', borderRadius: 10, border: '1.5px solid #E8ECE8', background: '#fff',
+          fontSize: 12, fontWeight: 600, color: '#374151', cursor: 'pointer',
+        }}>
+          <Eye style={{ width: 13, height: 13 }} /> Suivre
+        </button>
+        {order.estPaye && (
+          <button onClick={onReceipt} style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            padding: '7px 14px', borderRadius: 10, border: 'none',
+            background: '#D97706', fontSize: 12, fontWeight: 600, color: '#fff', cursor: 'pointer',
+          }}>
+            <Receipt style={{ width: 13, height: 13 }} /> Reçu
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Delivered Order Row ───────────────────────────────────────────────────────
+function DeliveredOrderRow({ order, onReceipt, onDownload, onAvis, canAvis }) {
+  const date = new Date(order.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' });
+  const restaurantName = order.restaurant?.nom || '';
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 20px', borderBottom: '1px solid #F9FAFB' }}>
+      <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+        <CheckCircle style={{ width: 16, height: 16, color: '#16A34A' }} />
+      </div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: '#111827', margin: 0 }}>#{order.numero}</p>
+        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+          {date}{restaurantName ? ` · ${restaurantName}` : ''} · {order.lignes?.length || 0} article(s)
+        </p>
+      </div>
+      <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', flexShrink: 0 }}>
+        {formatFCFA(order.total || order.montantTotal || 0)}
+      </p>
+      <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+        {(order.estPaye || order.statut === 'LIVREE') && (
+          <button onClick={onReceipt} title="Voir reçu" style={{
+            width: 28, height: 28, borderRadius: 8, border: 'none',
+            background: '#FEF3C7', color: '#B45309', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Receipt style={{ width: 12, height: 12 }} />
+          </button>
+        )}
+        <button onClick={onDownload} title="PDF" style={{
+          width: 28, height: 28, borderRadius: 8, border: 'none',
+          background: '#F3F4F6', color: '#6B7280', cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <Download style={{ width: 12, height: 12 }} />
+        </button>
+        {canAvis && (
+          <button onClick={onAvis} title="Avis" style={{
+            width: 28, height: 28, borderRadius: 8, border: 'none',
+            background: '#FFFBEB', color: '#D97706', cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Star style={{ width: 12, height: 12 }} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Order Track Modal ─────────────────────────────────────────────────────────
+function OrderTrackModal({ order, onClose, onReceipt }) {
+  const currentIdx = STEPS.indexOf(order.statut);
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+        <div className="px-6 py-4 flex items-center justify-between bg-[#D97706]">
+          <div>
+            <h3 className="text-white font-extrabold">Suivi commande</h3>
+            <p className="text-white/70 text-xs">#{order.numero} · {MODE_LABELS[order.modeLivraison] || order.modeLivraison}</p>
+          </div>
+          <button onClick={onClose} className="text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
+        </div>
+        <div className="p-5">
+          <div className="space-y-2.5">
+            {STEPS.map((step, i) => {
+              const done = i < currentIdx;
+              const active = i === currentIdx;
               return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`inline-flex items-center gap-2 rounded-2xl px-4 py-3 text-sm font-semibold transition ${
-                    isActive
-                      ? 'bg-[#D94500] text-white shadow-sm'
-                      : 'text-[#8B7355] hover:bg-[#F9F7F5] hover:text-[#2D2720]'
-                  }`}
-                >
-                  <Icon className="h-4 w-4" />
-                  {tab.label}
-                </button>
+                <div key={step} className="flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
+                    style={{ background: active ? '#D97706' : done ? '#22C55E' : '#F3F4F6', color: active || done ? '#fff' : '#9CA3AF', boxShadow: active ? '0 0 0 4px #FEF3C7' : 'none' }}>
+                    {done ? <CheckCircle className="w-3.5 h-3.5" /> : i + 1}
+                  </div>
+                  <p className="text-sm font-medium" style={{ color: active ? '#D97706' : done ? '#16A34A' : '#9CA3AF' }}>
+                    {ORDER_STATUS[step]?.label || step}
+                  </p>
+                  {active && <span className="ml-auto text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#FEF3C7] text-[#B45309]">Statut actuel</span>}
+                </div>
               );
             })}
           </div>
+          <div className="mt-4 pt-4 border-t border-gray-100 space-y-1.5">
+            {(order.lignes || []).map((l, i) => (
+              <div key={i} className="flex justify-between text-sm">
+                <span className="text-gray-600">{l.quantite}× {l.article?.nom || l.nom}</span>
+                <span className="font-semibold text-[#1A1A1A]">{formatFCFA((l.prixUnitaire || l.prix || 0) * l.quantite)}</span>
+              </div>
+            ))}
+            <div className="flex justify-between font-bold text-[#1A1A1A] pt-2 border-t border-gray-100">
+              <span>Total</span>
+              <span className="text-[#D97706]">{formatFCFA(order.total || order.montantTotal || 0)}</span>
+            </div>
+          </div>
+          {(order.estPaye || order.statut === 'LIVREE') && (
+            <button onClick={() => { onClose(); onReceipt(order); }}
+              className="mt-4 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-sm text-white bg-[#D97706]">
+              <Receipt className="w-3.5 h-3.5" />Voir le reçu
+            </button>
+          )}
         </div>
-
-        {(message || error) && (
-          <div
-            className={`rounded-[24px] border px-5 py-4 text-sm font-semibold ${
-              error
-                ? 'border-red-200 bg-red-50 text-red-700'
-                : 'border-green-200 bg-green-50 text-green-700'
-            }`}
-          >
-            {error || message}
-          </div>
-        )}
-
-        {activeTab === 'overview' && (
-          <div className="grid gap-6 xl:grid-cols-[1.4fr,1fr]">
-            <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex items-center justify-between gap-4">
-                <div>
-                  <h2 className="text-xl font-bold text-[#2D2720]">Commandes récentes</h2>
-                  <p className="mt-1 text-sm text-[#8B7355]">Les dernières commandes restent accessibles et lisibles en un coup d’œil.</p>
-                </div>
-                <button
-                  onClick={() => setActiveTab('orders')}
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#D94500]"
-                >
-                  Tout voir
-                  <ChevronRight className="h-4 w-4" />
-                </button>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {orders.slice(0, 3).map((order) => (
-                  <OrderRow
-                    key={order.id}
-                    order={order}
-                    onTrack={() => navigate(`/suivi/${order.id}`)}
-                    onDownload={() => handleDownloadReceipt(order)}
-                    downloading={downloadingId === order.id}
-                  />
-                ))}
-
-                {orders.length === 0 && (
-                  <EmptyBlock
-                    title="Aucune commande pour le moment"
-                    description="Votre activité client s’affichera ici dès votre premier achat."
-                    actionLabel="Découvrir les restaurants"
-                    onAction={() => navigate('/menu')}
-                  />
-                )}
-              </div>
-            </section>
-
-            <section className="space-y-6">
-              <div className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-                <h2 className="text-xl font-bold text-[#2D2720]">Adresses utilisées</h2>
-                <div className="mt-5 space-y-3">
-                  {deliveryAddresses.map((address, index) => (
-                    <div key={`${address}-${index}`} className="rounded-[22px] border border-[#EEE8DF] bg-[#FCFBFA] p-4">
-                      <div className="flex items-start gap-3">
-                        <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#FFF5EB] text-[#D94500]">
-                          <MapPin className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <p className="font-semibold text-[#2D2720]">Adresse {index + 1}</p>
-                          <p className="mt-1 text-sm text-[#8B7355]">{address}</p>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-
-                  {deliveryAddresses.length === 0 && (
-                    <EmptyBlock
-                      title="Aucune adresse enregistrée"
-                      description="Vos futures commandes en livraison alimenteront automatiquement cette liste."
-                    />
-                  )}
-                </div>
-              </div>
-
-              <div className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-                <h2 className="text-xl font-bold text-[#2D2720]">Dernier paiement</h2>
-                {paidOrders[0] ? (
-                  <div className="mt-5 rounded-[24px] bg-[#FFF5EB] px-5 py-5">
-                    <p className="text-sm font-semibold text-[#8B7355]">Commande</p>
-                    <p className="mt-1 text-lg font-bold text-[#2D2720]">{paidOrders[0].numero}</p>
-                    <p className="mt-3 text-3xl font-bold text-[#D94500]">
-                      {formatFCFA(paidOrders[0].montantTotal)}
-                    </p>
-                    <button
-                      onClick={() => handleDownloadReceipt(paidOrders[0])}
-                      className="mt-4 inline-flex items-center gap-2 rounded-2xl bg-white px-4 py-2.5 font-semibold text-[#D94500] transition hover:bg-[#FFF7F1]"
-                    >
-                      <Download className="h-4 w-4" />
-                      Télécharger le reçu
-                    </button>
-                  </div>
-                ) : (
-                  <div className="mt-5">
-                    <EmptyBlock
-                      title="Aucun paiement disponible"
-                      description="Les paiements validés apparaîtront ici avec leur reçu PDF téléchargeable."
-                    />
-                  </div>
-                )}
-              </div>
-            </section>
-          </div>
-        )}
-
-        {activeTab === 'orders' && (
-          <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-            <h2 className="text-2xl font-bold text-[#2D2720]">Historique des commandes</h2>
-            <div className="mt-5 space-y-4">
-              {orders.map((order) => (
-                <OrderRow
-                  key={order.id}
-                  order={order}
-                  onTrack={() => navigate(`/suivi/${order.id}`)}
-                  onDownload={() => handleDownloadReceipt(order)}
-                  downloading={downloadingId === order.id}
-                  expanded
-                />
-              ))}
-
-              {orders.length === 0 && (
-                <EmptyBlock
-                  title="Aucune commande trouvée"
-                  description="Commandez votre premier repas pour faire apparaître votre historique ici."
-                  actionLabel="Commander maintenant"
-                  onAction={() => navigate('/menu')}
-                />
-              )}
-            </div>
-          </section>
-        )}
-
-        {activeTab === 'payments' && (
-          <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-[#2D2720]">Historique des paiements</h2>
-                <p className="mt-1 text-sm text-[#8B7355]">Tous vos règlements validés avec accès direct au reçu PDF.</p>
-              </div>
-              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-[#EAF8F0] px-4 py-2 text-sm font-semibold text-[#2ECC71]">
-                {paidOrders.length} paiement{paidOrders.length > 1 ? 's' : ''}
-              </span>
-            </div>
-
-            <div className="mt-5 space-y-4">
-              {paidOrders.map((order) => (
-                <div key={order.id} className="rounded-[24px] border border-[#EEE8DF] bg-[#FCFBFA] p-4 sm:p-5">
-                  <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <p className="text-lg font-bold text-[#2D2720]">{order.numero}</p>
-                        <span className="rounded-full bg-[#EAF8F0] px-3 py-1 text-xs font-semibold text-[#2ECC71]">
-                          Payée
-                        </span>
-                        {order.modePaiement && (
-                          <span className="rounded-full bg-[#EAF7FB] px-3 py-1 text-xs font-semibold text-[#00A7CB]">
-                            {order.modePaiement}
-                          </span>
-                        )}
-                      </div>
-                      <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-[#8B7355]">
-                        <span className="inline-flex items-center gap-2">
-                          <Calendar className="h-4 w-4" />
-                          {formatDate(order.payeAt || order.updatedAt || order.createdAt)}
-                        </span>
-                        <span className="inline-flex items-center gap-2">
-                          {order.modeLivraison === 'LIVRAISON' ? (
-                            <Truck className="h-4 w-4" />
-                          ) : (
-                            <Store className="h-4 w-4" />
-                          )}
-                          {formatDeliveryMode(order.modeLivraison)}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-3">
-                      <p className="text-2xl font-bold text-[#D94500]">
-                        {formatFCFA(order.montantTotal)}
-                      </p>
-                      <button
-                        onClick={() => handleDownloadReceipt(order)}
-                        disabled={downloadingId === order.id}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-[#D94500] px-4 py-3 font-semibold text-white transition hover:bg-[#B83A00] disabled:opacity-70"
-                      >
-                        {downloadingId === order.id ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Download className="h-4 w-4" />
-                        )}
-                        Télécharger le reçu
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              {paidOrders.length === 0 && (
-                <EmptyBlock
-                  title="Aucun paiement validé"
-                  description="Vos paiements s’afficheront ici avec leurs reçus dès qu’une commande sera réglée."
-                />
-              )}
-            </div>
-          </section>
-        )}
-
-        {activeTab === 'profile' && (
-          <section className="rounded-[28px] border border-[#E8E2D9] bg-white p-5 shadow-sm sm:p-6">
-            <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-[#2D2720]">Mon profil</h2>
-                <p className="mt-1 text-sm text-[#8B7355]">
-                  Mettez à jour vos informations personnelles. Les changements sont sauvegardés proprement côté serveur.
-                </p>
-              </div>
-              <div className="rounded-[22px] bg-[#FCFBFA] px-4 py-3 border border-[#EEE8DF]">
-                <p className="text-sm font-semibold text-[#2D2720]">Compte connecté</p>
-                <p className="mt-1 text-sm text-[#8B7355]">{user?.email}</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleSaveProfile} className="grid gap-6 lg:grid-cols-[1.1fr,0.9fr]">
-              <div className="space-y-5 rounded-[24px] border border-[#EEE8DF] bg-[#FCFBFA] p-5">
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField label="Nom" name="nom" value={profileForm.nom} onChange={handleProfileChange} />
-                  <FormField label="Prénom" name="prenom" value={profileForm.prenom} onChange={handleProfileChange} />
-                </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <FormField
-                    label="Email"
-                    name="email"
-                    type="email"
-                    value={profileForm.email}
-                    onChange={handleProfileChange}
-                    icon={<Mail className="h-4 w-4" />}
-                  />
-                  <FormField
-                    label="Téléphone"
-                    name="telephone"
-                    value={profileForm.telephone}
-                    onChange={handleProfileChange}
-                    icon={<Phone className="h-4 w-4" />}
-                  />
-                </div>
-              </div>
-
-              <div className="rounded-[24px] bg-[#FFF5EB] p-5">
-                <h3 className="text-lg font-bold text-[#2D2720]">Résumé rapide</h3>
-                <div className="mt-4 space-y-3 text-sm text-[#8B7355]">
-                  <SummaryRow label="Commandes" value={String(stats.totalCommandes)} />
-                  <SummaryRow label="Paiements" value={String(stats.commandesPayees)} />
-                  <SummaryRow label="Dépenses" value={formatFCFA(stats.totalDepenses)} />
-                </div>
-                <button
-                  type="submit"
-                  disabled={savingProfile}
-                  className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-[#D94500] px-5 py-4 font-semibold text-white transition hover:bg-[#B83A00] disabled:opacity-70"
-                >
-                  {savingProfile ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Save className="h-4 w-4" />
-                  )}
-                  Sauvegarder les modifications
-                </button>
-              </div>
-            </form>
-          </section>
-        )}
       </div>
     </div>
   );
 }
 
-function FormField({ label, icon, ...props }) {
-  return (
-    <label className="block">
-      <span className="mb-2 block text-sm font-semibold text-[#2D2720]">{label}</span>
-      <div className="relative">
-        {icon && (
-          <span className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#8B7355]">
-            {icon}
-          </span>
-        )}
-        <input
-          {...props}
-          className={`w-full rounded-2xl border border-[#E8E2D9] bg-white px-4 py-3 text-[#2D2720] outline-none transition focus:border-[#D94500] focus:ring-2 focus:ring-[#D94500]/15 ${
-            icon ? 'pl-11' : ''
-          }`}
-        />
-      </div>
-    </label>
-  );
-}
+// ── Main Component ────────────────────────────────────────────────────────────
+export default function ClientDashboard() {
+  const { user } = useAuth();
+  const [tab, setTab] = useState('overview');
+  const [orders, setOrders] = useState(() => loadCachedOrders(user?.id));
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [trackOrder, setTrackOrder] = useState(null);
+  const [receiptOrder, setReceiptOrder] = useState(null);
+  const [avisOrder, setAvisOrder] = useState(null);
+  const [avisGiven, setAvisGiven] = useState(() => loadAvisGiven(user?.id));
+  const [profileForm, setProfileForm] = useState({ nom: user?.nom || '', email: user?.email || '', telephone: user?.telephone || '' });
+  const [profileMsg, setProfileMsg] = useState('');
+  const [orderFilter, setOrderFilter] = useState('all');
 
-function SummaryRow({ label, value }) {
-  return (
-    <div className="flex items-center justify-between gap-4">
-      <span>{label}</span>
-      <span className="font-semibold text-[#2D2720]">{value}</span>
-    </div>
-  );
-}
+  const userId = user?.id;
 
-function MiniStatCard({ label, value, tone }) {
-  const tones = {
-    orange: 'bg-[#FFF5EB] text-[#D94500]',
-    green: 'bg-[#EAF8F0] text-[#2ECC71]',
-    blue: 'bg-[#EAF7FB] text-[#00A7CB]',
-    neutral: 'bg-[#FCFBFA] text-[#2D2720]',
-  };
-
-  return (
-    <div className="rounded-[24px] border border-[#E8E2D9] bg-[#FCFBFA] p-4">
-      <div className={`inline-flex rounded-2xl px-3 py-2 text-xs font-semibold ${tones[tone] || tones.neutral}`}>
-        {label}
-      </div>
-      <p className="mt-3 break-words text-2xl font-bold text-[#2D2720]">{value}</p>
-    </div>
-  );
-}
-
-function EmptyBlock({ title, description, actionLabel, onAction }) {
-  return (
-    <div className="rounded-[24px] border border-dashed border-[#E8E2D9] bg-[#FCFBFA] p-8 text-center">
-      <p className="text-lg font-bold text-[#2D2720]">{title}</p>
-      <p className="mx-auto mt-2 max-w-md text-sm text-[#8B7355]">{description}</p>
-      {actionLabel && onAction && (
-        <button
-          onClick={onAction}
-          className="mt-5 inline-flex items-center gap-2 rounded-2xl bg-[#D94500] px-5 py-3 font-semibold text-white transition hover:bg-[#B83A00]"
-        >
-          <ShoppingBag className="h-4 w-4" />
-          {actionLabel}
-        </button>
-      )}
-    </div>
-  );
-}
-
-function OrderRow({ order, onTrack, onDownload, downloading, expanded = false }) {
-  const [deliveryFeedback, setDeliveryFeedback] = useState(() =>
-    readDeliveryFeedback(order.id),
-  );
+  const loadOrders = useCallback(async (silent = false) => {
+    if (!silent) setLoadingOrders(true); else setRefreshing(true);
+    try {
+      const res = await svcTs.getMyOrders();
+      const data = res.data || [];
+      setOrders(data);
+      saveOrdersCache(userId, data);
+    } catch { /* keep cached data on error */ }
+    finally { setLoadingOrders(false); setRefreshing(false); }
+  }, [userId]);
 
   useEffect(() => {
-    setDeliveryFeedback(readDeliveryFeedback(order.id));
-  }, [order.id]);
+    const cached = loadCachedOrders(userId);
+    if (cached.length > 0) { setOrders(cached); setLoadingOrders(false); loadOrders(true); }
+    else { loadOrders(false); }
+  }, [loadOrders, userId]);
 
-  const handleDeliveryFeedback = (value) => {
-    const savedFeedback = writeDeliveryFeedback(order.id, value);
-    setDeliveryFeedback(savedFeedback);
+  useEffect(() => {
+    if (user) setProfileForm({ nom: user.nom || '', email: user.email || '', telephone: user.telephone || '' });
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    const socket = createCommandesSocket(user);
+    const refresh = () => loadOrders(true);
+    socket.on('commande.creee', refresh);
+    socket.on('commande.statut', refresh);
+    socket.on('commande.paiement', refresh);
+    return () => { socket.disconnect(); };
+  }, [user, loadOrders]);
+
+  const handleAvisSubmit = async (orderId, note, commentaire) => {
+    try {
+      await svcTs.submitAvis(orderId, note, commentaire);
+      const next = new Set([...avisGiven, orderId]);
+      setAvisGiven(next);
+      saveAvisGiven(userId, next);
+    } catch (e) { console.error(e); }
+  };
+
+  const handleProfileSave = async (e) => {
+    e.preventDefault();
+    try {
+      await authAPI.updateProfile(profileForm);
+      setProfileMsg('Profil mis à jour !');
+      setTimeout(() => setProfileMsg(''), 3000);
+    } catch { setProfileMsg('Erreur lors de la mise à jour'); }
+  };
+
+  const downloadPdf = async (orderId) => {
+    try {
+      const res = await svcTs.getReceiptPdf(orderId);
+      const url = URL.createObjectURL(new Blob([res.data], { type: 'application/pdf' }));
+      const a = document.createElement('a'); a.href = url; a.download = `recu-${orderId}.pdf`; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    } catch { alert('Reçu PDF non disponible'); }
+  };
+
+  const activeOrders = orders.filter(o => !['LIVREE','ANNULEE'].includes(o.statut));
+  const delivered    = orders.filter(o => o.statut === 'LIVREE');
+  const cancelled    = orders.filter(o => o.statut === 'ANNULEE');
+  const totalSpent   = delivered.reduce((s, o) => s + (o.total || o.montantTotal || 0), 0);
+  const avgOrderValue = delivered.length > 0 ? Math.round(totalSpent / delivered.length) : 0;
+
+  const filteredOrders = orderFilter === 'actives'  ? activeOrders
+                       : orderFilter === 'livrees'  ? delivered
+                       : orderFilter === 'annulees' ? cancelled
+                       : orders;
+
+  const S = {
+    page:  { minHeight: '100vh', background: '#F0F2F0', padding: '28px 32px' },
+    card:  { background: '#fff', borderRadius: 20, border: '1px solid #E8ECE8', overflow: 'hidden' },
+    hdr:   { fontSize: 15, fontWeight: 700, color: '#111827', padding: '14px 20px', borderBottom: '1px solid #F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
   };
 
   return (
-    <article className="rounded-[24px] border border-[#EEE8DF] bg-[#FCFBFA] p-4 sm:p-5">
-      <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
-        <div className="flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-bold text-[#2D2720]">{order.numero}</h3>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_COLORS[order.statut] || 'bg-gray-100 text-gray-700'}`}>
-              {STATUS_LABELS[order.statut] || order.statut}
-            </span>
-            {order.estPaye && (
-              <span className="rounded-full bg-[#EAF8F0] px-3 py-1 text-xs font-semibold text-[#2ECC71]">
-                Payée
-              </span>
-            )}
-          </div>
+    <div style={S.page}>
 
-          <div className="mt-3 flex flex-wrap items-center gap-4 text-sm text-[#8B7355]">
-            <span className="inline-flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              {formatDate(order.createdAt)}
-            </span>
-            <span className="inline-flex items-center gap-2">
-              {order.modeLivraison === 'LIVRAISON' ? (
-                <Truck className="h-4 w-4" />
-              ) : (
-                <Store className="h-4 w-4" />
+      {/* ── Header ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 28 }}>
+        <div>
+          <h1 style={{ fontSize: 26, fontWeight: 800, color: '#111827', margin: 0 }}>Mon Espace</h1>
+          <p style={{ fontSize: 13, color: '#6B7280', marginTop: 4 }}>
+            Bonjour {user?.prenom || user?.nom} · Vos commandes pour {currentMonthYear()}
+          </p>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {[
+            { key: 'overview', label: 'Vue d\'ensemble' },
+            { key: 'orders',   label: 'Commandes', badge: activeOrders.length },
+            { key: 'profile',  label: 'Profil' },
+            { key: 'security', label: 'Sécurité' },
+          ].map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{
+              display: 'flex', alignItems: 'center', gap: 6,
+              padding: '7px 14px', borderRadius: 10, border: 'none', cursor: 'pointer',
+              fontSize: 13, fontWeight: 600,
+              background: tab === t.key ? '#D97706' : '#fff',
+              color: tab === t.key ? '#fff' : '#6B7280',
+              boxShadow: tab === t.key ? '0 2px 8px rgba(217,119,6,0.25)' : '0 1px 3px rgba(0,0,0,0.06)',
+            }}>
+              {t.label}
+              {t.badge > 0 && (
+                <span style={{
+                  fontSize: 10, fontWeight: 700, width: 17, height: 17, borderRadius: '50%',
+                  background: tab === t.key ? 'rgba(255,255,255,0.3)' : '#D97706',
+                  color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {t.badge}
+                </span>
               )}
-              {formatDeliveryMode(order.modeLivraison)}
-            </span>
-            {order.adresseLivraison && (
-              <span className="inline-flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                {order.adresseLivraison}
-              </span>
-            )}
+            </button>
+          ))}
+          <button onClick={() => loadOrders(true)} disabled={refreshing} style={{
+            width: 36, height: 36, borderRadius: 10, border: '1px solid #E5E7EB', background: '#fff',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#6B7280',
+          }}>
+            <RefreshCw style={{ width: 14, height: 14 }} className={refreshing ? 'animate-spin' : ''} />
+          </button>
+          <div style={{ background: '#1C3A1C', borderRadius: 10, padding: 4 }}>
+            <NotificationBell accentColor="#D97706" />
+          </div>
+        </div>
+      </div>
+
+      {/* ── OVERVIEW ── */}
+      {tab === 'overview' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
+
+          {/* 3 KPI cards */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+
+            {/* Commandes actives */}
+            <div style={{ ...S.card, padding: 22 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FFFBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <Clock style={{ width: 16, height: 16, color: '#D97706' }} />
+              </div>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 6px' }}>Commandes actives</p>
+              {loadingOrders ? (
+                <div style={{ height: 44, background: '#F3F4F6', borderRadius: 8 }} />
+              ) : (
+                <p style={{ fontSize: 40, fontWeight: 800, color: '#111827', lineHeight: 1, margin: 0 }}>
+                  {activeOrders.length}
+                </p>
+              )}
+              {activeOrders.length > 0 && (
+                <p style={{ fontSize: 12, color: '#D97706', marginTop: 8, fontWeight: 600 }}>
+                  En cours de traitement
+                </p>
+              )}
+            </div>
+
+            {/* Total dépensé */}
+            <div style={{ ...S.card, padding: 22 }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Wallet style={{ width: 16, height: 16, color: '#16A34A' }} />
+                </div>
+              </div>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 6px' }}>Total dépensé</p>
+              {loadingOrders ? (
+                <div style={{ height: 44, background: '#F3F4F6', borderRadius: 8 }} />
+              ) : (
+                <p style={{ fontSize: 28, fontWeight: 800, color: '#111827', lineHeight: 1.1, margin: 0 }}>
+                  {formatFCFA(totalSpent)}
+                  <span style={{ fontSize: 16, fontWeight: 600, marginLeft: 4 }}>CFA</span>
+                </p>
+              )}
+              {avgOrderValue > 0 && (
+                <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
+                  Ticket moyen : {formatFCFA(avgOrderValue)} CFA
+                </p>
+              )}
+            </div>
+
+            {/* Commandes livrées */}
+            <div style={{ ...S.card, padding: 22 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EFF6FF', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+                <CheckCircle style={{ width: 16, height: 16, color: '#2563EB' }} />
+              </div>
+              <p style={{ fontSize: 12, color: '#6B7280', margin: '0 0 6px' }}>Commandes livrées</p>
+              {loadingOrders ? (
+                <div style={{ height: 44, background: '#F3F4F6', borderRadius: 8 }} />
+              ) : (
+                <p style={{ fontSize: 40, fontWeight: 800, color: '#111827', lineHeight: 1, margin: 0 }}>
+                  {delivered.length}
+                </p>
+              )}
+              <p style={{ fontSize: 12, color: '#9CA3AF', marginTop: 8 }}>
+                {orders.length} commande{orders.length !== 1 ? 's' : ''} au total
+              </p>
+            </div>
           </div>
 
-          {order.statut === 'LIVREE' && (
-            <div className="mt-4 rounded-[22px] border border-[#E8E2D9] bg-white px-4 py-4">
-              <p className="text-sm font-semibold text-[#2D2720]">Votre commande est-elle bien arrivée ?</p>
-              <p className="mt-1 text-xs text-[#8B7355]">Répondez Oui ou Non sans modifier le statut de la commande.</p>
-              {deliveryFeedback ? (
-                <div className="mt-3 rounded-xl bg-[#FFF5EB] px-4 py-3 text-sm font-semibold text-[#D94500]">
-                  Merci pour votre retour : {deliveryFeedback.value}
+          {/* 2-col: active orders + CTA */}
+          <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 16 }}>
+
+            {/* Active orders */}
+            <div style={S.card}>
+              <div style={S.hdr}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span>Commandes en cours</span>
+                  {activeOrders.length > 0 && (
+                    <span style={{ fontSize: 11, fontWeight: 700, color: '#D97706', background: '#FFFBEB', padding: '2px 8px', borderRadius: 99 }}>
+                      {activeOrders.length} active{activeOrders.length > 1 ? 's' : ''}
+                    </span>
+                  )}
+                </div>
+                <button onClick={() => setTab('orders')} style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, fontWeight: 600, color: '#D97706', background: 'none', border: 'none', cursor: 'pointer' }}>
+                  Voir tout <ArrowRight style={{ width: 12, height: 12 }} />
+                </button>
+              </div>
+              {loadingOrders ? (
+                <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {[1,2].map(i => <div key={i} style={{ height: 70, background: '#F3F4F6', borderRadius: 12 }} />)}
+                </div>
+              ) : activeOrders.length === 0 ? (
+                <div style={{ padding: 32, textAlign: 'center' }}>
+                  <ShoppingBag style={{ width: 36, height: 36, color: '#D1D5DB', margin: '0 auto 10px' }} />
+                  <p style={{ fontSize: 13, color: '#9CA3AF', margin: 0 }}>Aucune commande en cours</p>
                 </div>
               ) : (
-                <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-                  <button
-                    onClick={() => handleDeliveryFeedback('OUI')}
-                    className="flex-1 rounded-xl bg-[#2ECC71] px-4 py-2.5 text-sm font-bold text-white transition hover:bg-[#26B565]"
-                  >
-                    Oui
-                  </button>
-                  <button
-                    onClick={() => handleDeliveryFeedback('NON')}
-                    className="flex-1 rounded-xl border border-[#E8E2D9] bg-white px-4 py-2.5 text-sm font-bold text-[#D94500] transition hover:bg-[#FFF5EB]"
-                  >
-                    Non
-                  </button>
+                activeOrders.slice(0, 3).map(o => (
+                  <ActiveOrderCard key={o.id} order={o}
+                    onTrack={() => setTrackOrder(o)}
+                    onReceipt={() => setReceiptOrder(o)} />
+                ))
+              )}
+            </div>
+
+            {/* Right column: Commander CTA + quick stats */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {/* Commander CTA */}
+              <div style={{
+                borderRadius: 20, padding: 22, background: 'linear-gradient(135deg, #D97706 0%, #B45309 100%)',
+                display: 'flex', flexDirection: 'column', gap: 12,
+              }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ChefHat style={{ width: 18, height: 18, color: '#fff' }} />
+                </div>
+                <div>
+                  <p style={{ fontSize: 16, fontWeight: 800, color: '#fff', margin: '0 0 4px' }}>Commander maintenant</p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', margin: 0 }}>Plats frais disponibles</p>
+                </div>
+                <Link to="/menu" style={{
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  background: '#fff', color: '#D97706', fontWeight: 700, fontSize: 13,
+                  padding: '9px 18px', borderRadius: 10, textDecoration: 'none',
+                }}>
+                  Parcourir le menu <ArrowRight style={{ width: 14, height: 14 }} />
+                </Link>
+              </div>
+
+              {/* Last delivery */}
+              {delivered.length > 0 && (
+                <div style={{ ...S.card, padding: 18 }}>
+                  <p style={{ fontSize: 12, color: '#9CA3AF', margin: '0 0 8px' }}>Dernière livraison</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 10, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <CheckCircle style={{ width: 15, height: 15, color: '#16A34A' }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p style={{ fontSize: 13, fontWeight: 700, color: '#111827', margin: 0 }}>#{delivered[0].numero}</p>
+                      <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 2 }}>
+                        {formatFCFA(delivered[0].total || delivered[0].montantTotal || 0)} CFA
+                      </p>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>
-          )}
+          </div>
 
-          {expanded && Array.isArray(order.lignes) && order.lignes.length > 0 && (
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {order.lignes.map((line) => (
-                <div key={line.id} className="rounded-[20px] border border-[#EEE8DF] bg-white px-4 py-3">
-                  <p className="font-semibold text-[#2D2720]">
-                    {line.quantite}x {line.article?.nom || 'Article'}
-                  </p>
-                  <p className="mt-1 text-sm text-[#8B7355]">
-                    {formatFCFA(Number(line.prixUnitaire || 0) * Number(line.quantite || 0))}
-                  </p>
-                  {line.instructions && (
-                    <p className="mt-2 text-xs text-[#8B7355]">{line.instructions}</p>
-                  )}
-                </div>
+          {/* Recent delivered */}
+          {delivered.length > 0 && (
+            <div style={S.card}>
+              <div style={S.hdr}>
+                <span>Dernières commandes livrées</span>
+                <button onClick={() => setTab('orders')} style={{ fontSize: 13, fontWeight: 600, color: '#D97706', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  Historique complet <ArrowRight style={{ width: 12, height: 12 }} />
+                </button>
+              </div>
+              {delivered.slice(0, 4).map(o => (
+                <DeliveredOrderRow key={o.id} order={o}
+                  onReceipt={() => setReceiptOrder(o)}
+                  onDownload={() => downloadPdf(o.id)}
+                  onAvis={() => setAvisOrder(o)}
+                  canAvis={o.statut === 'LIVREE' && !avisGiven.has(o.id) && !o.avis}
+                />
               ))}
             </div>
           )}
         </div>
+      )}
 
-        <div className="min-w-[220px] xl:text-right">
-          <p className="text-2xl font-bold text-[#D94500]">{formatFCFA(order.montantTotal)}</p>
-          <p className="mt-1 text-sm text-[#8B7355]">{order.restaurant?.nom || 'Restaurant'}</p>
-          <div className="mt-4 flex flex-wrap gap-2 xl:justify-end">
-            {order.estPaye && (
-              <button
-                onClick={onDownload}
-                disabled={downloading}
-                className="inline-flex items-center gap-2 rounded-2xl border border-[#D94500] px-4 py-2.5 font-semibold text-[#D94500] transition hover:bg-[#FFF5EB] disabled:opacity-70"
-              >
-                {downloading ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="h-4 w-4" />
-                )}
-                Reçu PDF
+      {/* ── ORDERS ── */}
+      {tab === 'orders' && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {/* Filter bar */}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {[
+              { k: 'all',      label: `Toutes (${orders.length})` },
+              { k: 'actives',  label: `En cours (${activeOrders.length})` },
+              { k: 'livrees',  label: `Livrées (${delivered.length})` },
+              { k: 'annulees', label: `Annulées (${cancelled.length})` },
+            ].map(f => (
+              <button key={f.k} onClick={() => setOrderFilter(f.k)} style={{
+                padding: '7px 14px', borderRadius: 99, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                background: orderFilter === f.k ? '#D97706' : '#fff',
+                color: orderFilter === f.k ? '#fff' : '#6B7280',
+                border: `1.5px solid ${orderFilter === f.k ? '#D97706' : '#E5E7EB'}`,
+              }}>
+                {f.label}
               </button>
+            ))}
+          </div>
+
+          <div style={S.card}>
+            <div style={S.hdr}>
+              <div>
+                <span>Mes commandes</span>
+                <span style={{ marginLeft: 8, fontSize: 12, color: '#9CA3AF', fontWeight: 400 }}>
+                  {filteredOrders.length} résultat{filteredOrders.length !== 1 ? 's' : ''}
+                </span>
+              </div>
+              <Link to="/menu" style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, color: '#D97706', textDecoration: 'none' }}>
+                <ShoppingBag style={{ width: 13, height: 13 }} /> Commander
+              </Link>
+            </div>
+            {loadingOrders ? (
+              <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+                <div className="w-8 h-8 border-2 border-[#D97706] border-t-transparent rounded-full animate-spin" />
+              </div>
+            ) : filteredOrders.length === 0 ? (
+              <div style={{ padding: 40, textAlign: 'center' }}>
+                <ShoppingBag style={{ width: 40, height: 40, color: '#D1D5DB', margin: '0 auto 12px' }} />
+                <p style={{ fontSize: 14, color: '#9CA3AF', margin: 0 }}>Aucune commande dans cette catégorie</p>
+                <Link to="/menu" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 16,
+                  background: '#D97706', color: '#fff', fontWeight: 700, fontSize: 13,
+                  padding: '9px 18px', borderRadius: 10, textDecoration: 'none',
+                }}>
+                  Commander maintenant
+                </Link>
+              </div>
+            ) : (
+              filteredOrders.map(o =>
+                ['LIVREE','ANNULEE'].includes(o.statut) ? (
+                  <DeliveredOrderRow key={o.id} order={o}
+                    onReceipt={() => setReceiptOrder(o)}
+                    onDownload={() => downloadPdf(o.id)}
+                    onAvis={() => setAvisOrder(o)}
+                    canAvis={o.statut === 'LIVREE' && !avisGiven.has(o.id) && !o.avis}
+                  />
+                ) : (
+                  <ActiveOrderCard key={o.id} order={o}
+                    onTrack={() => setTrackOrder(o)}
+                    onReceipt={() => setReceiptOrder(o)} />
+                )
+              )
             )}
-            <button
-              onClick={onTrack}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#D94500] px-4 py-2.5 font-semibold text-white transition hover:bg-[#B83A00]"
-            >
-              Suivre
-              <ChevronRight className="h-4 w-4" />
-            </button>
           </div>
         </div>
-      </div>
-    </article>
-  );
-}
+      )}
 
-function downloadAndOpenBlob(blob, fileName) {
-  const url = window.URL.createObjectURL(blob);
-  const anchor = document.createElement('a');
-  anchor.href = url;
-  anchor.download = fileName;
-  document.body.appendChild(anchor);
-  anchor.click();
-  document.body.removeChild(anchor);
-  window.open(url, '_blank', 'noopener,noreferrer');
-  window.setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      {/* ── PROFILE ── */}
+      {tab === 'profile' && (
+        <div style={{ maxWidth: 480 }}>
+          <div style={S.card}>
+            <div style={S.hdr}>Mon profil</div>
+            <form onSubmit={handleProfileSave} style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 16 }}>
+              {[
+                { k: 'nom',       label: 'Nom complet',  type: 'text' },
+                { k: 'email',     label: 'Email',        type: 'email' },
+                { k: 'telephone', label: 'Téléphone',    type: 'tel' },
+              ].map(f => (
+                <div key={f.k}>
+                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 6 }}>{f.label}</label>
+                  <input value={profileForm[f.k]} type={f.type}
+                    onChange={e => setProfileForm(p => ({ ...p, [f.k]: e.target.value }))}
+                    style={{ width: '100%', background: '#F3F4F6', border: 'none', borderRadius: 12, padding: '12px 14px', fontSize: 14, outline: 'none', boxSizing: 'border-box' }} />
+                </div>
+              ))}
+              {profileMsg && (
+                <p style={{ fontSize: 13, fontWeight: 600, color: profileMsg.includes('Erreur') ? '#EF4444' : '#16A34A', margin: 0 }}>{profileMsg}</p>
+              )}
+              <button type="submit" style={{ background: '#D97706', color: '#fff', fontWeight: 700, fontSize: 14, padding: 13, borderRadius: 14, border: 'none', cursor: 'pointer' }}>
+                Enregistrer
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── SECURITY ── */}
+      {tab === 'security' && (
+        <div style={{ maxWidth: 560 }}>
+          <SecurityPanel user={user} accentColor="#D97706" />
+        </div>
+      )}
+
+      {/* Modals */}
+      {trackOrder   && <OrderTrackModal order={trackOrder}   onClose={() => setTrackOrder(null)}   onReceipt={o => { setTrackOrder(null); setReceiptOrder(o); }} />}
+      {receiptOrder && <ReceiptModal    order={receiptOrder} onClose={() => setReceiptOrder(null)} onDownload={downloadPdf} />}
+      {avisOrder    && <AvisModal       order={avisOrder}    onClose={() => setAvisOrder(null)}    onSubmit={handleAvisSubmit} />}
+    </div>
+  );
 }

@@ -31,6 +31,10 @@ export enum ModeLivraison {
 export enum ModePaiementCommande {
   ESPECES = 'ESPECES',
   LIVRAISON = 'LIVRAISON',
+  ORANGE_MONEY = 'ORANGE_MONEY',
+  MTN_MONEY = 'MTN_MONEY',
+  MOOV_MONEY = 'MOOV_MONEY',
+  CARTE_BANCAIRE = 'CARTE_BANCAIRE',
 }
 
 @Entity('commandes')

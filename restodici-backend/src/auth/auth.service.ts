@@ -17,6 +17,13 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { ConfigService } from '@nestjs/config';
+import {
+  generateSecret as otpGenerateSecret,
+  generateURI as otpGenerateURI,
+  verifySync as otpVerifySync,
+} from 'otplib';
+import * as QRCode from 'qrcode';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AuthService {
@@ -28,6 +35,7 @@ export class AuthService {
     @InjectRepository(PasswordReset)
     private passwordResetRepository: Repository<PasswordReset>,
     private jwtService: JwtService,
+    private emailService: EmailService,
     // ConfigService n'est pas essentiel pour la logique métier (liens/console logs)
     // le rendre optionnel évite les problèmes de résolution lors des tests.
     private configService?: ConfigService,
@@ -108,6 +116,8 @@ export class AuthService {
         nom: user.nom,
         prenom: user.prenom,
         telephone: user.telephone,
+        twoFactorEnabled: user.twoFactorEnabled ?? false,
+        emailVerified: user.emailVerified ?? false,
         restaurant: user.restaurant
           ? {
               id: user.restaurant.id,
@@ -270,30 +280,66 @@ export class AuthService {
     const savedUser = await this.userRepository.save(user);
     savedUser.restaurant = restaurant ?? undefined;
 
-    // Marquer l'email comme vérifié par défaut — suppression du flow de vérification
-    savedUser.emailVerified = true;
+    // Générer un token de vérification d'email
+    const verificationToken = crypto.randomBytes(32).toString('hex');
+    const verificationExpires = new Date(Date.now() + 24 * 3600 * 1000); // 24h
+    savedUser.emailVerificationToken = verificationToken;
+    savedUser.emailVerificationExpires = verificationExpires;
     await this.userRepository.save(savedUser);
 
+    // Envoyer l'email de vérification (non bloquant)
+    const frontendUrl =
+      this.configService?.get('FRONTEND_URL') || 'http://localhost:5173';
+    try {
+      await this.emailService.sendEmailVerification(
+        savedUser.email,
+        verificationToken,
+        frontendUrl,
+      );
+    } catch (emailErr) {
+      // Ne pas bloquer l'inscription si l'envoi d'email échoue
+      console.error(
+        'Failed to send verification email:',
+        (emailErr as Error).message,
+      );
+    }
+
     // Retourner le token et les infos utilisateur pour la redirection
-    return this.buildAuthResponse(savedUser, 'Compte créé avec succès');
+    return this.buildAuthResponse(
+      savedUser,
+      'Compte créé avec succès. Vérifiez votre email pour activer votre compte.',
+    );
   }
 
   async login(dto: LoginDto) {
     const email = dto.email.trim().toLowerCase();
     const user = await this.userRepository.findOne({
       where: { email },
-      relations: ['restaurant'], // Charger le restaurant
+      relations: ['restaurant'],
     });
 
     if (!user || !(await bcrypt.compare(dto.password, user.password))) {
       throw new UnauthorizedException('Identifiants incorrects');
     }
+    if (!user.actif) throw new BadRequestException('Compte désactivé');
 
-    if (!user.actif) {
-      throw new BadRequestException('Compte désactivé');
+    if (!user.emailVerified) {
+      throw new UnauthorizedException(
+        'Email non vérifié — vérifiez votre boîte mail pour activer votre compte',
+      );
     }
 
-    // NOTE: suppression du contrôle d'emailVerified — l'utilisateur peut se connecter immédiatement
+    if (user.twoFactorEnabled) {
+      // Return a short-lived temp token for 2FA step
+      const tempToken = this.jwtService.sign(
+        { sub: user.id, type: 'two_factor_pending' },
+        { expiresIn: '5m' },
+      );
+      user.twoFactorTempToken = tempToken;
+      user.twoFactorTempTokenExpires = new Date(Date.now() + 5 * 60 * 1000);
+      await this.userRepository.save(user);
+      return { requiresTwoFactor: true, tempToken };
+    }
 
     return this.buildAuthResponse(user);
   }
@@ -328,12 +374,17 @@ export class AuthService {
 
     await this.passwordResetRepository.save(resetRequest);
 
-    // In production, send email with reset link
-    // For now, log the token (you would send this via email)
-    console.log(`Password reset token for ${email}: ${token}`);
-    console.log(
-      `Reset link: ${this.configService?.get('FRONTEND_URL') || this.configService?.get('FRONTEND_URL') || 'http://localhost:5173'}/reset-password?token=${token}`,
-    );
+    // Envoyer l'email de réinitialisation
+    const frontendUrl =
+      this.configService?.get('FRONTEND_URL') || 'http://localhost:5173';
+    try {
+      await this.emailService.sendPasswordReset(userEmail, token, frontendUrl);
+    } catch (emailErr) {
+      console.error(
+        'Failed to send password reset email:',
+        (emailErr as Error).message,
+      );
+    }
 
     return {
       message: "Si l'email existe, un lien de réinitialisation a été envoyé",
@@ -376,11 +427,24 @@ export class AuthService {
 
   // Verify email with token
   async verifyEmail(token: string) {
-    // Email verification flow disabled — always succeed for backward compatibility
-    return {
-      message: 'Email verification disabled in this deployment',
-      emailVerified: true,
-    };
+    const user = await this.userRepository.findOne({
+      where: { emailVerificationToken: token },
+    });
+
+    if (
+      !user ||
+      !user.emailVerificationExpires ||
+      user.emailVerificationExpires < new Date()
+    ) {
+      throw new BadRequestException('Lien de vérification invalide ou expiré');
+    }
+
+    user.emailVerified = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await this.userRepository.save(user);
+
+    return { message: 'Email vérifié avec succès', emailVerified: true };
   }
 
   // Resend verification email
@@ -389,7 +453,183 @@ export class AuthService {
     const user = await this.userRepository.findOne({
       where: { email: userEmail },
     });
-    // Verification disabled — return neutral message for compatibility
-    return { message: 'Email verification disabled in this deployment' };
+
+    if (user && !user.emailVerified) {
+      const token = crypto.randomBytes(32).toString('hex');
+      const expires = new Date(Date.now() + 24 * 3600 * 1000); // 24h
+      user.emailVerificationToken = token;
+      user.emailVerificationExpires = expires;
+      await this.userRepository.save(user);
+
+      const frontendUrl =
+        this.configService?.get('FRONTEND_URL') || 'http://localhost:5173';
+      try {
+        await this.emailService.sendEmailVerification(
+          user.email,
+          token,
+          frontendUrl,
+        );
+      } catch (emailErr) {
+        console.error(
+          'Failed to resend verification email:',
+          (emailErr as Error).message,
+        );
+      }
+    }
+
+    // Toujours retourner un message neutre pour ne pas révéler si l'email existe
+    return { message: 'Email de vérification envoyé' };
+  }
+
+  // Change password (authenticated user)
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, actif: true },
+    });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const passwordMatches = await bcrypt.compare(
+      currentPassword,
+      user.password,
+    );
+    if (!passwordMatches)
+      throw new BadRequestException('Mot de passe actuel incorrect');
+
+    if (!newPassword || newPassword.length < 6)
+      throw new BadRequestException(
+        'Le nouveau mot de passe doit contenir au moins 6 caractères',
+      );
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await this.userRepository.save(user);
+    return { message: 'Mot de passe modifié avec succès' };
+  }
+
+  async setup2FA(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, actif: true },
+    });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const secret = otpGenerateSecret();
+    user.twoFactorSecret = secret;
+    await this.userRepository.save(user);
+
+    const otpAuthUrl = otpGenerateURI({
+      issuer: "Resto d'ici",
+      label: user.email,
+      secret,
+      strategy: 'totp',
+    });
+    const qrCodeDataUrl = await QRCode.toDataURL(otpAuthUrl);
+
+    return { secret, qrCodeDataUrl, otpAuthUrl };
+  }
+
+  async enable2FA(userId: string, code: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, actif: true },
+    });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+    if (!user.twoFactorSecret)
+      throw new BadRequestException("Configurez d'abord la 2FA");
+
+    const verifyResult = otpVerifySync({
+      secret: user.twoFactorSecret,
+      token: code,
+      strategy: 'totp',
+    });
+    if (!verifyResult.valid)
+      throw new BadRequestException(
+        "Code invalide. Vérifiez l'heure de votre téléphone.",
+      );
+
+    // Generate 8 backup codes
+    const plainCodes = Array.from({ length: 8 }, () =>
+      crypto.randomBytes(4).toString('hex').toUpperCase(),
+    );
+    const hashedCodes = await Promise.all(
+      plainCodes.map((c) => bcrypt.hash(c, 8)),
+    );
+
+    user.twoFactorEnabled = true;
+    user.twoFactorBackupCodes = hashedCodes;
+    await this.userRepository.save(user);
+
+    return {
+      message: '2FA activée avec succès',
+      twoFactorEnabled: true,
+      backupCodes: plainCodes,
+    };
+  }
+
+  async disable2FA(userId: string) {
+    const user = await this.userRepository.findOne({
+      where: { id: userId, actif: true },
+    });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+    user.twoFactorEnabled = false;
+    user.twoFactorSecret = undefined;
+    user.twoFactorBackupCodes = undefined;
+    await this.userRepository.save(user);
+    return { message: '2FA désactivée', twoFactorEnabled: false };
+  }
+
+  async verifyTwoFactorLogin(tempToken: string, code: string) {
+    let payload: any;
+    try {
+      payload = this.jwtService.verify(tempToken);
+    } catch {
+      throw new UnauthorizedException('Session expirée, reconnectez-vous');
+    }
+    if (payload.type !== 'two_factor_pending')
+      throw new UnauthorizedException('Token invalide');
+
+    const user = await this.userRepository.findOne({
+      where: { id: payload.sub, actif: true },
+      relations: ['restaurant'],
+    });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    // Verify TOTP code
+    if (
+      user.twoFactorSecret &&
+      otpVerifySync({
+        secret: user.twoFactorSecret,
+        token: code,
+        strategy: 'totp',
+      }).valid
+    ) {
+      user.twoFactorTempToken = undefined;
+      user.twoFactorTempTokenExpires = undefined;
+      await this.userRepository.save(user);
+      return this.buildAuthResponse(user);
+    }
+
+    // Verify backup codes
+    if (user.twoFactorBackupCodes?.length) {
+      for (let i = 0; i < user.twoFactorBackupCodes.length; i++) {
+        const match = await bcrypt.compare(
+          code.toUpperCase(),
+          user.twoFactorBackupCodes[i],
+        );
+        if (match) {
+          // Remove used backup code
+          user.twoFactorBackupCodes = user.twoFactorBackupCodes.filter(
+            (_, idx) => idx !== i,
+          );
+          user.twoFactorTempToken = undefined;
+          user.twoFactorTempTokenExpires = undefined;
+          await this.userRepository.save(user);
+          return this.buildAuthResponse(user);
+        }
+      }
+    }
+
+    throw new UnauthorizedException('Code invalide ou expiré');
   }
 }

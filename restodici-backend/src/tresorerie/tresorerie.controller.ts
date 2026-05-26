@@ -4,7 +4,6 @@ import {
   Post,
   Body,
   Query,
-  Param,
   UseGuards,
   Req,
   Res,
@@ -32,33 +31,6 @@ export class TresorerieController {
       throw new BadRequestException('Restaurant ID required');
     }
     return this.tresorerieService.getRevenueStats(restaurantId, period);
-  }
-
-  // GET /tresorerie/receipt/:commandeId/pdf — Générer reçu PDF (US-30)
-  @Get('receipt/:commandeId/pdf')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('GERANT', 'ADMIN', 'STAFF')
-  async getReceiptPdf(
-    @Param('commandeId') commandeId: string,
-    @Req() req,
-    @Res() res: any,
-  ) {
-    const restaurantId = req.user?.restaurant?.id;
-    if (!restaurantId) {
-      throw new BadRequestException('Restaurant ID required');
-    }
-
-    const pdfBuffer = await this.tresorerieService.generateReceiptPdf({
-      commandeId,
-      restaurantId,
-    });
-
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader(
-      'Content-Disposition',
-      `attachment; filename=recu-commande-${commandeId}.pdf`,
-    );
-    res.send(pdfBuffer);
   }
 
   // GET /tresorerie/export/syscohada?period=monthly

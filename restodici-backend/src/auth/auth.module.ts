@@ -11,6 +11,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RolesGuard } from './guards/roles.guard';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
+import { EmailModule } from '../email/email.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
       }),
       inject: [ConfigService],
     }),
+    EmailModule,
   ],
   providers: [AuthService, JwtStrategy, RolesGuard],
   controllers: [AuthController],

@@ -246,6 +246,8 @@ export class RestaurantsService {
       role: Role.STAFF,
       restaurant: { id: restaurantId },
       actif: true,
+      // Gérant creates staff directly — no email verification required
+      emailVerified: true,
     });
 
     staffUser.password = await bcrypt.hash(rawPassword, 12);
