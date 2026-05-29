@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle, Minus, Plus, Sparkles, UtensilsCrossed, X } from 'lucide-react';
+import { CheckCircle, Minus, Plus, Sparkles, X } from 'lucide-react';
+import { getArticleImage } from '../../utils/articleImage';
 import { formatFCFA } from '../../utils/formatters';
 
 const supplements = [
@@ -28,15 +29,19 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
     [selectedSupplements],
   );
 
+  const effectiveUnitPrice = (product.promoActif && product.prixPromo)
+    ? Number(product.prixPromo)
+    : parseFloat(product.prix) || 0;
+
   const totalPrice = useMemo(() => {
-    const basePrice = (parseFloat(product.prix) || 0) * quantity;
+    const basePrice = effectiveUnitPrice * quantity;
     const supplementsTotal = selectedSupplementItems.reduce(
       (sum, supplement) => sum + supplement.price * quantity,
       0,
     );
 
     return basePrice + supplementsTotal;
-  }, [product.prix, quantity, selectedSupplementItems]);
+  }, [effectiveUnitPrice, quantity, selectedSupplementItems]);
 
   const handleQuantityChange = (nextQuantity) => {
     if (nextQuantity >= 1 && nextQuantity <= 20) {
@@ -127,20 +132,22 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
             </div>
 
             <div className="mt-6 overflow-hidden rounded-[28px] border border-[#F1E6DE] bg-white shadow-sm">
-              {product.photoUrl ? (
-                <img src={product.photoUrl} alt={product.nom} className="h-64 w-full object-cover" />
-              ) : (
-                <div className="flex h-64 items-center justify-center bg-[#FFF7F2] text-[#C05015]">
-                  <UtensilsCrossed className="h-16 w-16" />
-                </div>
-              )}
+              <img
+                src={getArticleImage(product, { width: 800, quality: 80 })}
+                alt={product.nom}
+                className="h-64 w-full object-cover"
+                loading="lazy"
+              />
               <div className="space-y-4 p-5">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-[#737373]">Prix unitaire</p>
                     <p className="mt-1 text-2xl font-bold text-[#C05015]">
-                      {formatFCFA(parseFloat(product.prix) || 0)}
+                      {formatFCFA(effectiveUnitPrice)}
                     </p>
+                    {product.promoActif && product.prixPromo && (
+                      <p className="text-xs text-[#737373] line-through">{formatFCFA(parseFloat(product.prix) || 0)}</p>
+                    )}
                   </div>
                   <div className="inline-flex items-center gap-3 rounded-2xl border border-[#E2E8F0] bg-[#FFFDFC] px-3 py-2">
                     <button

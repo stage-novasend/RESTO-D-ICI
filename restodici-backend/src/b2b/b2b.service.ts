@@ -194,6 +194,7 @@ export class B2BService {
         return sum + Number(a?.prix ?? 0) * Number(item.quantite);
       }, 0),
       statut: dépasse ? 'EN_VALIDATION' : 'EN_ATTENTE',
+      deadlineAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
     });
 
     await this.commandeRepo.save(commande);
@@ -255,12 +256,16 @@ export class B2BService {
     // Adapter shape attendue par front B2BOrders.jsx
     return commandes.map((c) => ({
       id: c.id,
+      numero: c.numero,
       restaurantNom: '—',
       dateLivraison: new Date(c.dateLivraison).toISOString().slice(0, 10),
       heureLivraison: c.heureLivraison,
       status: c.statut === 'EN_VALIDATION' ? 'EN_VALIDATION' : 'LIVREE',
+      statut: c.statut,
       total: Number(c.totalEstime),
       deliveryAddress: c.adresseLivraison ?? c.lieuLivraison,
+      createdAt: c.createdAt,
+      deadlineAt: c.deadlineAt,
       items: (c.lignes ?? []).slice(0, 10).map((l) => ({
         quantity: Number(l.quantite),
         nom: l.articleId,
@@ -280,6 +285,7 @@ export class B2BService {
       numero: c.numero,
       statut: c.statut,
       createdAt: c.createdAt,
+      deadlineAt: c.deadlineAt,
       total: Number(c.totalEstime),
       type: 'B2B',
       source: c.compteB2B?.raisonSociale ?? 'Entreprise',

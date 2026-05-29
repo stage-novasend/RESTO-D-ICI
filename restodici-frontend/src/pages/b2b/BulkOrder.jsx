@@ -3,13 +3,14 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, MapPin, Clock, Search, CheckCircle,
-  AlertCircle, Loader2, Navigation, UtensilsCrossed, Users,
+  AlertCircle, Loader2, Navigation, Users,
   Star, Store, Phone, Trash2, ShoppingBag, X,
 } from 'lucide-react';
 import { menuAPI, b2bAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import DeliveryMap from '../../components/maps/DeliveryMap';
 import { formatFCFA } from '../../utils/formatters';
+import { getArticleImage } from '../../utils/articleImage';
 import B2BOnboardingWizard from './B2BOnboardingWizard';
 
 const A  = '#C05015';
@@ -551,14 +552,12 @@ export default function BulkOrder() {
                                     style={{ borderColor: qty > 0 ? A + '60' : '#F1E6DE' }}>
                                     {/* Image */}
                                     <div className="relative h-48 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-                                      {product.photoUrl ? (
-                                        <img src={product.photoUrl} alt={product.nom}
-                                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                                      ) : (
-                                        <div className="flex h-full w-full items-center justify-center">
-                                          <UtensilsCrossed className="h-16 w-16 text-orange-200" />
-                                        </div>
-                                      )}
+                                      <img
+                                        src={getArticleImage(product)}
+                                        alt={product.nom}
+                                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                        loading="lazy"
+                                      />
                                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                                       <div className={`absolute left-3 top-3 rounded-full px-2.5 py-1 text-[11px] font-bold backdrop-blur-sm shadow ${product.disponible ? 'bg-emerald-500 text-white' : 'bg-red-500 text-white'}`}>
                                         {product.disponible ? '● Disponible' : '● Rupture'}

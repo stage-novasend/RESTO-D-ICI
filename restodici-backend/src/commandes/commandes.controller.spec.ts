@@ -2,6 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { CommandesController } from './commandes.controller';
 import { CommandesService } from './commandes.service';
 import { TresorerieService } from '../tresorerie/tresorerie.service';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { Restaurant } from '../restaurants/entities/restaurant.entity';
 
 describe('CommandesController create', () => {
   let controller: CommandesController;
@@ -22,6 +24,7 @@ describe('CommandesController create', () => {
       providers: [
         { provide: CommandesService, useValue: commandesService },
         { provide: TresorerieService, useValue: tresorerieService },
+        { provide: getRepositoryToken(Restaurant), useValue: { findOne: jest.fn() } },
       ],
     }).compile();
 

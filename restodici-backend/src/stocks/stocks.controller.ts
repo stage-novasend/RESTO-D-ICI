@@ -2,12 +2,15 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   UseGuards,
   Req,
   Param,
   Body,
   Query,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
 import { StocksService } from './stocks.service';
 import { Roles } from '../common/decorators/roles.decorator';
@@ -36,7 +39,7 @@ export class StocksController {
     return this.stocksService.getAlerts(restaurantId);
   }
 
-  // PATCH /stocks/:id/adjust — Ajustement stock (RG-03)
+  // PATCH /stocks/:id/adjust — Ajustement manuel (correction, casse, etc.)
   @Patch(':id/adjust')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN', 'STAFF')
@@ -48,5 +51,21 @@ export class StocksController {
   ) {
     const restaurantId = req.user?.restaurant?.id;
     return this.stocksService.adjustStock(id, quantity, restaurantId, motif);
+  }
+
+  // POST /stocks/:id/entree — Réception marchandise liée à un fournisseur (RG-24)
+  @Post(':id/entree')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN', 'STAFF')
+  @HttpCode(HttpStatus.OK)
+  entreeStock(
+    @Param('id') id: string,
+    @Body('quantity') quantity: number,
+    @Body('fournisseurId') fournisseurId: string,
+    @Body('motif') motif: string,
+    @Req() req,
+  ) {
+    const restaurantId = req.user?.restaurant?.id;
+    return this.stocksService.entreeStock(id, quantity, fournisseurId, restaurantId, motif);
   }
 }

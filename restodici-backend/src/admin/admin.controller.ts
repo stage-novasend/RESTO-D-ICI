@@ -17,6 +17,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { AdminService } from './admin.service';
+import { BackupService } from './backup.service';
 import { Role } from '../auth/entities/user.entity';
 import { IntegrationType } from '../common/entities/integration.entity';
 import type { Response } from 'express';
@@ -25,7 +26,10 @@ import type { Response } from 'express';
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('ADMIN')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly backupService: BackupService,
+  ) {}
 
   /* ── Statistiques plateforme ── */
   @Get('stats')
@@ -268,5 +272,35 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   testIntegration(@Param('id') id: string) {
     return this.adminService.testIntegration(id);
+  }
+
+  @Get('backup/list')
+  listBackups() {
+    return this.backupService.listBackups();
+  }
+
+  @Post('backup/run')
+  @HttpCode(HttpStatus.OK)
+  async runBackup() {
+    return this.backupService.performBackup();
+  }
+
+  @Get('system-metrics')
+  getSystemMetrics() {
+    const mem = process.memoryUsage();
+    const uptimeSec = process.uptime();
+    const h = Math.floor(uptimeSec / 3600);
+    const m = Math.floor((uptimeSec % 3600) / 60);
+    return {
+      uptime: { seconds: Math.round(uptimeSec), label: `${h}h ${m}m` },
+      memory: {
+        rss:      Math.round(mem.rss / 1024 / 1024),
+        heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
+        heapTotal:Math.round(mem.heapTotal / 1024 / 1024),
+      },
+      node: process.version,
+      env: process.env.NODE_ENV ?? 'development',
+      timestamp: new Date().toISOString(),
+    };
   }
 }

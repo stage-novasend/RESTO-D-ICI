@@ -33,6 +33,21 @@ export class Article {
   @Column('decimal', { precision: 10, scale: 2 })
   prix!: number;
 
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  prixPromo?: number | null;
+
+  @Column({ default: false })
+  promoActif!: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  activationDate?: Date;
+
+  @Column({ type: 'timestamp', nullable: true })
+  expirationDate?: Date;
+
+  @Column({ default: false })
+  estMenuDuJour!: boolean;
+
   @Column({ type: 'text', nullable: true })
   photoUrl!: string | null; // Correction TS
 

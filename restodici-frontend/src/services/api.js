@@ -165,9 +165,13 @@ export const stocksAPI = {
   // GET /stocks/alerts?restaurantId=xxx
   getAlerts: (params) => api.get("/stocks/alerts", { params }),
 
-  // PATCH /stocks/:id/adjust
+  // PATCH /stocks/:id/adjust — ajustement manuel (casse, correction)
   adjust: (id, quantity, motif = "") =>
     api.patch(`/stocks/${id}/adjust`, { quantity, motif }),
+
+  // POST /stocks/:id/entree — réception marchandise (RG-24, fournisseurId obligatoire)
+  entreeStock: (id, quantity, fournisseurId, motif = "") =>
+    api.post(`/stocks/${id}/entree`, { quantity, fournisseurId, motif }),
 
   // GET /stocks — inventaire complet
   getAll: (params) => api.get("/stocks", { params }),
@@ -309,6 +313,13 @@ export const adminAPI = {
   updateIntegration:  (id, data)   => api.patch(`/admin/integrations/${id}`, data),
   deleteIntegration:  (id)         => api.delete(`/admin/integrations/${id}`),
   testIntegration:    (id)         => api.post(`/admin/integrations/${id}/test`),
+
+  // Métriques système
+  getSystemMetrics:   ()           => api.get('/admin/system-metrics'),
+
+  // Backup DB
+  getBackups:         ()           => api.get('/admin/backup/list'),
+  runBackup:          ()           => api.post('/admin/backup/run'),
 };
 
 export const uploadsAPI = {
@@ -323,6 +334,27 @@ export const uploadsAPI = {
   getStatus: () => api.get('/uploads/status'),
 };
 
+export const promosAPI = {
+  // GET /promos — liste codes promo du restaurant (gérant)
+  getAll: () => api.get('/promos'),
+
+  // POST /promos — créer un code promo
+  create: (data) => api.post('/promos', data),
+
+  // PATCH /promos/:id — modifier
+  update: (id, data) => api.patch(`/promos/${id}`, data),
+
+  // PATCH /promos/:id/toggle — activer/désactiver
+  toggle: (id) => api.patch(`/promos/${id}/toggle`),
+
+  // DELETE /promos/:id
+  remove: (id) => api.delete(`/promos/${id}`),
+
+  // POST /promos/validate — valider un code au checkout (client)
+  validate: (code, restaurantId, montantCommande) =>
+    api.post('/promos/validate', { code, restaurantId, montantCommande }),
+};
+
 export const staffAPI = {
   // POST /restaurants/:restaurantId/staff
   createStaffAccount: (restaurantId, staffData) =>
@@ -335,4 +367,18 @@ export const staffAPI = {
   // GET /restaurants/:restaurantId/staff
   getStaffAccounts: (restaurantId) =>
     api.get(`/restaurants/${restaurantId}/staff`),
+};
+
+export const fournisseursAPI = {
+  getAll: () => api.get('/fournisseurs'),
+  // Retourne uniquement les fournisseurs actifs — pour le sélecteur d'entrée de stock
+  getActifs: () => api.get('/fournisseurs').then(r => ({ ...r, data: r.data.filter(f => f.actif) })),
+  create: (data) => api.post('/fournisseurs', data),
+  update: (id, data) => api.patch(`/fournisseurs/${id}`, data),
+  toggle: (id) => api.patch(`/fournisseurs/${id}/toggle`),
+  remove: (id) => api.delete(`/fournisseurs/${id}`),
+};
+
+export const commandesExtraAPI = {
+  rembourser: (id, motif) => api.patch(`/commandes/${id}/rembourser`, { motif }),
 };

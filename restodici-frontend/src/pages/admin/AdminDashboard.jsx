@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Chart from 'chart.js/auto';
-import { adminAPI, authAPI } from '../../services/api';
+import { adminAPI, authAPI, fournisseursAPI } from '../../services/api';
 import {
   Users, UtensilsCrossed, ScrollText, Download, Settings,
   RefreshCw, ToggleLeft, ToggleRight, Plus, X, Check,
@@ -10,7 +10,7 @@ import {
   TrendingUp, TrendingDown, MoreVertical, Eye, EyeOff, Save,
   Zap, MessageSquare, Bell, Lock, Globe, Database,
   FileText, Calendar, ChevronRight, ExternalLink, Info,
-  CreditCard, Smartphone, Mail, BarChart2, Webhook,
+  CreditCard, Smartphone, Mail, BarChart2, Webhook, Truck, Pencil, Trash2,
 } from 'lucide-react';
 
 /* ── Design tokens ─────────────────────────────────── */
@@ -1531,14 +1531,320 @@ function B2BPendingBanner() {
   );
 }
 
+/* ══════════════════ MÉTRIQUES SYSTÈME ══════════════════ */
+function MetriquesTab() {
+  const [metrics, setMetrics]   = useState(null);
+  const [stats, setStats]       = useState(null);
+  const [backups, setBackups]   = useState([]);
+  const [backupRunning, setBackupRunning] = useState(false);
+  const [loading, setLoading]   = useState(true);
+  const [refreshAt, setRefreshAt] = useState(Date.now());
+
+  useEffect(() => {
+    setLoading(true);
+    Promise.all([
+      adminAPI.getSystemMetrics(),
+      adminAPI.getStats(),
+      adminAPI.getBackups().catch(() => ({ data: [] })),
+    ])
+      .then(([m, s, b]) => { setMetrics(m.data); setStats(s.data); setBackups(Array.isArray(b.data) ? b.data : []); })
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, [refreshAt]);
+
+  const handleRunBackup = async () => {
+    setBackupRunning(true);
+    try {
+      await adminAPI.runBackup();
+      setRefreshAt(Date.now());
+    } catch { alert('Backup échoué — pg_dump doit être installé et DATABASE_URL configuré.'); }
+    finally { setBackupRunning(false); }
+  };
+
+  const Stat = ({ label, value, sub, color = '#4F46E5' }) => (
+    <div style={{ ...card, padding: '18px 22px' }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{label}</p>
+      <p style={{ fontSize: 28, fontWeight: 800, color, margin: 0 }}>{value ?? '—'}</p>
+      {sub && <p style={{ fontSize: 11, color: '#94A3B8', margin: '4px 0 0' }}>{sub}</p>}
+    </div>
+  );
+
+  if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#94A3B8' }}>Chargement des métriques…</div>;
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>Métriques système</h2>
+        <button onClick={() => setRefreshAt(Date.now())} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8EDF5', borderRadius: 9, padding: '7px 14px', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#64748B' }}>
+          <RefreshCw style={{ width: 13, height: 13 }} /> Actualiser
+        </button>
+      </div>
+
+      {/* Process metrics */}
+      {metrics && (
+        <>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Processus Node.js</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14, marginBottom: 24 }}>
+            <Stat label="Uptime serveur" value={metrics.uptime?.label} sub={`${metrics.uptime?.seconds}s`} color="#10B981" />
+            <Stat label="RAM utilisée" value={`${metrics.memory?.heapUsed} Mo`} sub={`sur ${metrics.memory?.heapTotal} Mo alloués`} color="#6366F1" />
+            <Stat label="RSS mémoire" value={`${metrics.memory?.rss} Mo`} sub="Resident Set Size" color="#8B5CF6" />
+            <Stat label="Node.js" value={metrics.node} sub={`Env: ${metrics.env}`} color="#0EA5E9" />
+          </div>
+        </>
+      )}
+
+      {/* Platform stats */}
+      {stats && (
+        <>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: 12 }}>Plateforme</p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
+            <Stat label="Utilisateurs" value={stats.users?.total} sub={`dont ${stats.users?.admins} admin(s)`} color="#F59E0B" />
+            <Stat label="Gérants" value={stats.users?.gerants} sub="restaurants actifs" color="#C05015" />
+            <Stat label="Clients" value={stats.users?.clients} sub={`+ ${stats.users?.b2b ?? 0} B2B`} color="#4F46E5" />
+            <Stat label="Restaurants" value={stats.restaurants?.total} sub={`${stats.restaurants?.active} actifs`} color="#10B981" />
+            <Stat label="B2B en attente" value={stats.b2b?.pending} sub="validations requises" color={stats.b2b?.pending > 0 ? '#EF4444' : '#10B981'} />
+            <Stat label="Logs d'audit" value={stats.audit?.total?.toLocaleString('fr-FR')} sub="événements enregistrés" color="#64748B" />
+          </div>
+        </>
+      )}
+
+      {/* Backup section */}
+      <div style={{ ...card, marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #F1F5F9' }}>
+          <div>
+            <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Sauvegarde Base de données</p>
+            <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>pg_dump automatique chaque nuit à 2h — rétention 30 jours</p>
+          </div>
+          <button
+            onClick={handleRunBackup} disabled={backupRunning}
+            style={{ display: 'flex', alignItems: 'center', gap: 7, background: backupRunning ? '#94A3B8' : '#0F172A', color: '#fff', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: backupRunning ? 'not-allowed' : 'pointer' }}
+          >
+            <Database style={{ width: 14, height: 14 }} />
+            {backupRunning ? 'Backup en cours…' : 'Lancer un backup'}
+          </button>
+        </div>
+        {backups.length === 0 ? (
+          <p style={{ padding: '20px 20px', color: '#94A3B8', fontSize: 13 }}>Aucun backup disponible.</p>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                {['Fichier', 'Taille', 'Date'].map(h => (
+                  <th key={h} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 700, color: '#94A3B8', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {backups.slice(0, 10).map(b => (
+                <tr key={b.file} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                  <td style={{ padding: '9px 16px', fontSize: 12, color: '#0F172A', fontFamily: 'monospace' }}>{b.file}</td>
+                  <td style={{ padding: '9px 16px', fontSize: 12, color: '#64748B' }}>{b.sizeKb} Ko</td>
+                  <td style={{ padding: '9px 16px', fontSize: 12, color: '#64748B' }}>{new Date(b.createdAt).toLocaleString('fr-FR')}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Timestamp */}
+      {metrics && (
+        <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'right' }}>
+          Dernière mise à jour : {new Date(metrics.timestamp).toLocaleString('fr-FR')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* ══════════════════ FOURNISSEURS TAB ══════════════════ */
+const EMPTY_FOURN = { nom: '', contact: '', telephone: '', email: '', adresse: '', delaiLivraison: '', articlesRef: '', notes: '' };
+
+function FournisseursTab() {
+  const [list, setList]         = useState([]);
+  const [loading, setLoading]   = useState(true);
+  const [modal, setModal]       = useState(null); // null | 'create' | { ...fournisseur }
+  const [form, setForm]         = useState(EMPTY_FOURN);
+  const [saving, setSaving]     = useState(false);
+  const [search, setSearch]     = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try { const r = await fournisseursAPI.getAll(); setList(r.data); }
+    catch { setList([]); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => { setForm(EMPTY_FOURN); setModal('create'); };
+  const openEdit   = (f)  => { setForm({ ...f, delaiLivraison: f.delaiLivraison ?? '', articlesRef: f.articlesRef ?? '', notes: f.notes ?? '' }); setModal(f); };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = { ...form, delaiLivraison: form.delaiLivraison ? parseInt(form.delaiLivraison) : null };
+      if (modal === 'create') await fournisseursAPI.create(payload);
+      else await fournisseursAPI.update(modal.id, payload);
+      setModal(null); load();
+    } catch { /* silently keep modal open */ }
+    finally { setSaving(false); }
+  };
+
+  const handleToggle = async (f) => {
+    await fournisseursAPI.toggle(f.id); load();
+  };
+
+  const handleDelete = async (f) => {
+    if (!window.confirm(`Supprimer ${f.nom} ?`)) return;
+    await fournisseursAPI.remove(f.id); load();
+  };
+
+  const filtered = list.filter(f =>
+    !search || f.nom?.toLowerCase().includes(search.toLowerCase()) ||
+    f.contact?.toLowerCase().includes(search.toLowerCase())
+  );
+
+  const Field = ({ label, field, type = 'text', placeholder }) => (
+    <div>
+      <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4 }}>{label}</label>
+      <input
+        type={type} value={form[field] ?? ''}
+        onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
+        placeholder={placeholder}
+        style={{ width: '100%', border: '1px solid #E8EDF5', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+      />
+    </div>
+  );
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>Fournisseurs</h2>
+          <p style={{ fontSize: 12, color: '#94A3B8', margin: '2px 0 0' }}>{list.length} fournisseur{list.length !== 1 ? 's' : ''} enregistré{list.length !== 1 ? 's' : ''}</p>
+        </div>
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <div style={{ position: 'relative' }}>
+            <Search style={{ position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)', width: 14, height: 14, color: '#94A3B8' }} />
+            <input
+              value={search} onChange={e => setSearch(e.target.value)}
+              placeholder="Rechercher..."
+              style={{ border: '1px solid #E8EDF5', borderRadius: 9, padding: '8px 12px 8px 32px', fontSize: 13, outline: 'none', width: 200 }}
+            />
+          </div>
+          <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 7, background: ACCENT, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+            <Plus style={{ width: 14, height: 14 }} /> Ajouter
+          </button>
+        </div>
+      </div>
+
+      {/* Table */}
+      <div style={card}>
+        {loading ? (
+          <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>Chargement…</div>
+        ) : filtered.length === 0 ? (
+          <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>
+            <Truck style={{ width: 32, height: 32, marginBottom: 8, opacity: 0.4 }} />
+            <p style={{ margin: 0 }}>Aucun fournisseur pour l'instant</p>
+          </div>
+        ) : (
+          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+                {['Fournisseur', 'Contact', 'Téléphone', 'Email', 'Délai (j)', 'Statut', 'Actions'].map(h => (
+                  <th key={h} style={{ padding: '10px 16px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map(f => (
+                <tr key={f.id} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                  <td style={{ padding: '12px 16px' }}>
+                    <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', margin: 0 }}>{f.nom}</p>
+                    {f.adresse && <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>{f.adresse}</p>}
+                  </td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{f.contact || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{f.telephone || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569' }}>{f.email || '—'}</td>
+                  <td style={{ padding: '12px 16px', fontSize: 13, color: '#475569', textAlign: 'center' }}>{f.delaiLivraison ?? '—'}</td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 9px', background: f.actif ? '#D1FAE5' : '#FEE2E2', color: f.actif ? '#065F46' : '#991B1B' }}>
+                      {f.actif ? 'Actif' : 'Inactif'}
+                    </span>
+                  </td>
+                  <td style={{ padding: '12px 16px' }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => openEdit(f)} title="Modifier" style={{ border: '1px solid #E8EDF5', borderRadius: 7, padding: '5px 8px', background: '#fff', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}>
+                        <Pencil style={{ width: 13, height: 13 }} />
+                      </button>
+                      <button onClick={() => handleToggle(f)} title={f.actif ? 'Désactiver' : 'Activer'} style={{ border: '1px solid #E8EDF5', borderRadius: 7, padding: '5px 8px', background: f.actif ? '#FEF3C7' : '#D1FAE5', cursor: 'pointer', color: f.actif ? '#92400E' : '#065F46', display: 'flex', alignItems: 'center' }}>
+                        {f.actif ? <ToggleRight style={{ width: 13, height: 13 }} /> : <ToggleLeft style={{ width: 13, height: 13 }} />}
+                      </button>
+                      <button onClick={() => handleDelete(f)} title="Supprimer" style={{ border: '1px solid #FEE2E2', borderRadius: 7, padding: '5px 8px', background: '#FFF5F5', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}>
+                        <Trash2 style={{ width: 13, height: 13 }} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* Modal create/edit */}
+      {modal !== null && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
+          <div style={{ background: '#fff', borderRadius: 16, width: 540, maxWidth: '95vw', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #F1F5F9' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>{modal === 'create' ? 'Nouveau fournisseur' : `Modifier — ${modal.nom}`}</h3>
+              <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
+            </div>
+            <div style={{ padding: '20px 24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
+              <Field label="Nom *" field="nom" placeholder="SYSCO Abidjan" />
+              <Field label="Contact" field="contact" placeholder="Jean Kouassi" />
+              <Field label="Téléphone" field="telephone" placeholder="+225 07 00 00 00" />
+              <Field label="Email" field="email" type="email" placeholder="fournisseur@email.com" />
+              <div style={{ gridColumn: '1 / -1' }}>
+                <Field label="Adresse" field="adresse" placeholder="Zone Industrielle Vridi, Abidjan" />
+              </div>
+              <Field label="Délai livraison (jours)" field="delaiLivraison" type="number" placeholder="3" />
+              <Field label="Articles de référence" field="articlesRef" placeholder="Poulet, riz, légumes..." />
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', fontSize: 11, fontWeight: 600, color: '#64748B', marginBottom: 4 }}>Notes</label>
+                <textarea
+                  value={form.notes ?? ''} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
+                  placeholder="Conditions particulières, historique..."
+                  rows={3}
+                  style={{ width: '100%', border: '1px solid #E8EDF5', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                />
+              </div>
+            </div>
+            <div style={{ padding: '16px 24px', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button onClick={() => setModal(null)} style={{ border: '1px solid #E8EDF5', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 600, background: '#fff', cursor: 'pointer', color: '#64748B' }}>Annuler</button>
+              <button onClick={handleSave} disabled={saving || !form.nom} style={{ border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 600, background: ACCENT, color: '#fff', cursor: 'pointer', opacity: saving || !form.nom ? 0.6 : 1 }}>
+                {saving ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ══════════════════ TABS ══════════════════ */
 const TABS = [
-  { id: 'overview',    label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: 'users',       label: 'Utilisateurs',   icon: Users },
-  { id: 'restaurants', label: 'Restaurants',    icon: UtensilsCrossed },
-  { id: 'audit',       label: 'Audit',          icon: ScrollText },
-  { id: 'exports',     label: 'Exports',        icon: Download },
-  { id: 'config',      label: 'Configuration',  icon: Settings },
+  { id: 'overview',      label: "Vue d'ensemble", icon: LayoutDashboard },
+  { id: 'users',         label: 'Utilisateurs',   icon: Users },
+  { id: 'restaurants',   label: 'Restaurants',    icon: UtensilsCrossed },
+  { id: 'fournisseurs',  label: 'Fournisseurs',   icon: Truck },
+  { id: 'metriques',     label: 'Métriques',      icon: Activity },
+  { id: 'audit',         label: 'Audit',          icon: ScrollText },
+  { id: 'exports',       label: 'Exports',        icon: Download },
+  { id: 'config',        label: 'Configuration',  icon: Settings },
 ];
 
 /* ══════════════════ ROOT ══════════════════ */
@@ -1593,12 +1899,14 @@ export default function AdminDashboard() {
         })}
       </div>
 
-      {tab === 'overview'    && <OverviewTab />}
-      {tab === 'users'       && <UsersTab />}
-      {tab === 'restaurants' && <RestaurantsTab />}
-      {tab === 'audit'       && <AuditTab />}
-      {tab === 'exports'     && <ExportsTab />}
-      {tab === 'config'      && <ConfigTab />}
+      {tab === 'overview'     && <OverviewTab />}
+      {tab === 'users'        && <UsersTab />}
+      {tab === 'restaurants'  && <RestaurantsTab />}
+      {tab === 'fournisseurs' && <FournisseursTab />}
+      {tab === 'metriques'    && <MetriquesTab />}
+      {tab === 'audit'        && <AuditTab />}
+      {tab === 'exports'      && <ExportsTab />}
+      {tab === 'config'       && <ConfigTab />}
     </div>
   );
 }

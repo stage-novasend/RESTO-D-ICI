@@ -16,6 +16,7 @@ import { CreateCategorieDto } from './dto/create-categorie.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
 import type { Cache } from 'cache-manager';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class MenuService {
@@ -366,6 +367,14 @@ export class MenuService {
         : [dto.allergenes];
     }
 
+    // Champs menu du jour
+    if ('activationDate' in dto && dto.activationDate !== undefined)
+      article.activationDate = new Date(dto.activationDate);
+    if ('expirationDate' in dto && dto.expirationDate !== undefined)
+      article.expirationDate = new Date(dto.expirationDate);
+    if ('estMenuDuJour' in dto && dto.estMenuDuJour !== undefined)
+      article.estMenuDuJour = dto.estMenuDuJour;
+
     const updated = await this.articleRepo.save(article);
     await this.invalidateMenuCache(article.restaurant?.id);
 
@@ -430,6 +439,36 @@ export class MenuService {
     }
 
     return this.getMenu(categorieId, cible, undefined, restaurantId);
+  }
+
+  // CRON: Désactiver les articles dont la date d'expiration est passée
+  @Cron(CronExpression.EVERY_MINUTE)
+  async desactiverArticlesExpires(): Promise<void> {
+    const now = new Date();
+    await this.articleRepo
+      .createQueryBuilder()
+      .update()
+      .set({ disponible: false, estMenuDuJour: false })
+      .where(
+        'expirationDate IS NOT NULL AND expirationDate < :now AND disponible = true',
+        { now },
+      )
+      .execute();
+  }
+
+  // CRON: Activer les menus du jour dont la date d'activation est atteinte
+  @Cron(CronExpression.EVERY_MINUTE)
+  async activerMenusDuJour(): Promise<void> {
+    const now = new Date();
+    await this.articleRepo
+      .createQueryBuilder()
+      .update()
+      .set({ disponible: true })
+      .where(
+        'activationDate IS NOT NULL AND activationDate <= :now AND expirationDate > :now AND disponible = false AND estMenuDuJour = true',
+        { now },
+      )
+      .execute();
   }
 
   //  Méthode privée: Invalider le cache menu

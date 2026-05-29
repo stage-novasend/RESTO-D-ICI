@@ -20,6 +20,9 @@ import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { CreateCommandeDto } from './dto/create-commande.dto';
 import { CommandesGateway } from './commandes.gateway';
 import { TresorerieService } from '../tresorerie/tresorerie.service';
+import { PromosService } from '../promos/promos.service';
+import { SmsService } from '../notifications/sms.service';
+import { FcmService } from '../notifications/fcm.service';
 
 const DIGITAL_MODES = [
   ModePaiementCommande.ORANGE_MONEY,
@@ -43,6 +46,9 @@ export class CommandesService {
     private dataSource: DataSource,
     private commandesGateway: CommandesGateway,
     private tresorerieService: TresorerieService,
+    private promosService: PromosService,
+    private smsService: SmsService,
+    private fcmService: FcmService,
   ) {}
 
   async createCommande(
@@ -105,15 +111,32 @@ export class CommandesService {
           );
         }
 
-        montantTotal += Number(article.prix) * ligneDto.quantite;
+        const prixEffectif =
+          article.promoActif && article.prixPromo != null && Number(article.prixPromo) > 0
+            ? Number(article.prixPromo)
+            : Number(article.prix);
+        montantTotal += prixEffectif * ligneDto.quantite;
         ligneEntities.push(
           this.ligneRepo.create({
             article: { id: article.id },
             quantite: ligneDto.quantite,
-            prixUnitaire: article.prix,
+            prixUnitaire: prixEffectif,
             instructions: ligneDto.instructions || undefined,
           }),
         );
+      }
+
+      let montantRemise = 0;
+      let codePromoId: string | undefined;
+      if (dto.codePromo && restaurantId) {
+        try {
+          const res = await this.promosService.validate(dto.codePromo, restaurantId, montantTotal);
+          montantRemise = res.remise;
+          codePromoId = res.promo.id;
+          montantTotal = Math.max(0, montantTotal - montantRemise);
+        } catch {
+          // Code invalide : on ignore silencieusement pour ne pas bloquer la commande
+        }
       }
 
       const created = manager.create(Commande, {
@@ -124,6 +147,8 @@ export class CommandesService {
             ? dto.adresseLivraison
             : undefined,
         montantTotal,
+        montantRemise: montantRemise > 0 ? montantRemise : undefined,
+        codePromoId,
         statut: StatutCommande.RECUE,
         client: { id: clientId },
         restaurant: { id: restaurantId },
@@ -132,6 +157,10 @@ export class CommandesService {
 
       return manager.save(Commande, created);
     });
+
+    if (commande.codePromoId) {
+      await this.promosService.apply(commande.codePromoId).catch(() => undefined);
+    }
 
     await this.historyRepo.save(
       this.historyRepo.create({
@@ -166,6 +195,8 @@ export class CommandesService {
       numero: commande.numero,
       statut: commande.statut,
     });
+
+    await this.fcmService.notifyNewOrder(restaurantId, commande.numero, Number(commande.montantTotal));
 
     return commande;
   }
@@ -364,6 +395,10 @@ export class CommandesService {
       id: saved.id,
       statut: saved.statut,
     });
+
+    if (newStatut === StatutCommande.LIVREE && commande.client?.telephone) {
+      await this.smsService.sendStatusUpdate(commande.client.telephone, commande.numero, 'LIVREE');
+    }
 
     return saved;
   }
@@ -615,5 +650,26 @@ export class CommandesService {
           commandeNumero: raw[i]?.c_numero,
         })),
       ) as any;
+  }
+
+  async rembourser(id: string, motif: string, restaurantId?: string) {
+    const commande = await this.commandeRepo.findOne({ where: { id } });
+    if (!commande) throw new NotFoundException('Commande introuvable');
+    if (restaurantId && (commande as any).restaurantId !== restaurantId)
+      throw new ForbiddenException();
+    if (commande.rembourse) throw new BadRequestException('Déjà remboursée');
+
+    commande.rembourse = true;
+    commande.rembourseLe = new Date();
+    commande.motifRemboursement = motif ?? null;
+    commande.statut = StatutCommande.ANNULEE;
+    await this.commandeRepo.save(commande);
+
+    this.commandesGateway.emitToManagers('commande:remboursee', {
+      commandeId: id,
+      numero: commande.numero,
+    });
+
+    return commande;
   }
 }

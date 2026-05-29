@@ -19,6 +19,7 @@ import { menuAPI } from '../services/api';
 import ProductCustomizationModal from '../components/menu/ProductCustomizationModal';
 import CartDrawer from '../components/cart/CartDrawer';
 import { formatFCFA } from '../utils/formatters';
+import { getArticleImage } from '../utils/articleImage';
 
 function buildDynamicCategories(menuData, categoryList) {
   const categoryMap = new Map();
@@ -480,7 +481,9 @@ export default function MenuPage() {
         {
           articleId: product.id,
           nom: product.nom,
-          prix: parseFloat(product.prix) || 0,
+          prix: (product.promoActif && product.prixPromo)
+            ? Number(product.prixPromo)
+            : parseFloat(product.prix) || 0,
           photoUrl: product.photoUrl,
           instructions,
           categorie: product.categorie,
@@ -1001,7 +1004,7 @@ export default function MenuPage() {
                       {filteredProducts.map((product) => {
                         const quantity = quantities[product.id] || 1;
                         const allergenIcons = getAllergenIcons(product);
-                        const isPromo = parseFloat(product.prix) < 2000;
+                        const isPromo = !!(product.promoActif && product.prixPromo && Number(product.prixPromo) > 0);
 
                         return (
                           <div
@@ -1012,17 +1015,12 @@ export default function MenuPage() {
                           >
                             {/* Image */}
                             <div className="relative h-52 overflow-hidden bg-gradient-to-br from-orange-50 via-amber-50 to-yellow-50">
-                              {product.photoUrl ? (
-                                <img
-                                  src={product.photoUrl}
-                                  alt={product.nom}
-                                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                                />
-                              ) : (
-                                <div className="flex h-full w-full items-center justify-center">
-                                  <UtensilsCrossed className="h-16 w-16 text-orange-200" />
-                                </div>
-                              )}
+                              <img
+                                src={getArticleImage(product)}
+                                alt={product.nom}
+                                className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                                loading="lazy"
+                              />
                               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
                               {/* Status badge */}
@@ -1034,8 +1032,8 @@ export default function MenuPage() {
 
                               {/* Promo badge */}
                               {isPromo && product.disponible && (
-                                <div className="absolute right-3 top-3 rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-emerald-600 shadow">
-                                  🏷️ Promo
+                                <div className="absolute right-3 top-3 rounded-full bg-red-500 backdrop-blur-sm px-2.5 py-1 text-[11px] font-bold text-white shadow">
+                                  -{Math.round((1 - Number(product.prixPromo) / Number(product.prix)) * 100)}%
                                 </div>
                               )}
 
@@ -1067,9 +1065,23 @@ export default function MenuPage() {
 
                               {/* Price + qty */}
                               <div className="flex items-center justify-between gap-3">
-                                <span className={`text-xl font-extrabold ${isPromo ? 'text-emerald-600' : 'text-orange-500'}`}>
-                                  {formatFCFA(parseFloat(product.prix) || 0)}
-                                </span>
+                                {isPromo ? (
+                                  <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-xl font-extrabold text-orange-500">
+                                      {formatFCFA(Number(product.prixPromo))}
+                                    </span>
+                                    <span className="text-sm font-semibold text-gray-400 line-through">
+                                      {formatFCFA(parseFloat(product.prix) || 0)}
+                                    </span>
+                                    <span className="rounded-full bg-red-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                                      PROMO
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xl font-extrabold text-orange-500">
+                                    {formatFCFA(parseFloat(product.prix) || 0)}
+                                  </span>
+                                )}
                                 <div className="flex items-center overflow-hidden rounded-xl border border-gray-100 bg-white text-sm">
                                   <button
                                     type="button"

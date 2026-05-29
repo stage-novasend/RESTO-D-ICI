@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingBag, Clock, CheckCircle, Star, Download, Eye,
   User, Shield, ChefHat, Package, X, Send,
-  Printer, RefreshCw, Receipt, Truck, ArrowRight,
+  Printer, RefreshCw, RefreshCcw, Receipt, Truck, ArrowRight,
   UtensilsCrossed, Wallet, AlertCircle, MessageSquare,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
@@ -250,7 +250,7 @@ function ActiveOrderCard({ order, onTrack, onReceipt }) {
 }
 
 // ── Past Order Row ────────────────────────────────────────────────────────────
-function PastOrderRow({ order, onReceipt, onDownload, onAvis, canAvis }) {
+function PastOrderRow({ order, onReceipt, onDownload, onAvis, canAvis, onReorder }) {
   const date = new Date(order.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short', year: '2-digit' });
   const status = ORDER_STATUS[order.statut] || { label: order.statut, bg: '#F3F4F6', color: '#6B7280' };
 
@@ -287,6 +287,13 @@ function PastOrderRow({ order, onReceipt, onDownload, onAvis, canAvis }) {
           className="w-8 h-8 rounded-xl flex items-center justify-center text-[#9CA3AF] hover:text-[#6B7280] bg-[#F3F4F6] transition">
           <Download className="w-3.5 h-3.5" />
         </button>
+        {order.statut === 'LIVREE' && onReorder && (
+          <button onClick={() => onReorder(order)} title="Commander à nouveau"
+            className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-xs font-semibold text-white transition"
+            style={{ background: ACCENT_DARK }}>
+            <RefreshCcw className="w-3 h-3" /> Commander à nouveau
+          </button>
+        )}
         {canAvis && (
           <button onClick={onAvis} title="Laisser un avis"
             className="flex items-center gap-1.5 px-3 h-8 rounded-xl text-xs font-semibold text-white transition"
@@ -494,6 +501,30 @@ export default function ClientDashboard() {
   };
 
   const canAvis = (o) => o.statut === 'LIVREE' && !avisGiven.has(o.id) && !o.avis;
+
+  const handleReorder = (order) => {
+    const items = (order.lignes || []).map(l => ({
+      articleId: l.article?.id || l.articleId,
+      nom: l.article?.nom || 'Article',
+      prix: Number(l.prixUnitaire || l.article?.prix || 0),
+      quantite: l.quantite || 1,
+      restaurantId: order.restaurant?.id || order.restaurantId,
+    }));
+    if (!items.length) {
+      alert('Impossible de renouveler : détail des articles indisponible');
+      return;
+    }
+    const pendingOrder = {
+      restaurantId: order.restaurant?.id || order.restaurantId,
+      restaurantName: order.restaurant?.nom || 'Restaurant',
+      orderMode: order.modeLivraison || 'SUR_PLACE',
+      deliveryAddress: order.adresseLivraison || '',
+      items,
+      total: items.reduce((s, i) => s + i.prix * i.quantite, 0),
+    };
+    localStorage.setItem('pendingOrder', JSON.stringify(pendingOrder));
+    navigate('/checkout');
+  };
 
   const activeOrders  = orders.filter(o => !['LIVREE', 'ANNULEE'].includes(o.statut));
   const delivered     = orders.filter(o => o.statut === 'LIVREE');
@@ -736,7 +767,8 @@ export default function ClientDashboard() {
                     onReceipt={() => setReceiptOrder(o)}
                     onDownload={() => downloadPdf(o.id)}
                     onAvis={() => setAvisOrder(o)}
-                    canAvis={canAvis(o)} />
+                    canAvis={canAvis(o)}
+                    onReorder={handleReorder} />
                 ))}
               </div>
             )}
@@ -803,7 +835,8 @@ export default function ClientDashboard() {
                       onReceipt={() => setReceiptOrder(o)}
                       onDownload={() => downloadPdf(o.id)}
                       onAvis={() => setAvisOrder(o)}
-                      canAvis={canAvis(o)} />
+                      canAvis={canAvis(o)}
+                      onReorder={handleReorder} />
                   ) : (
                     <div key={o.id} className="p-4 border-b last:border-0" style={{ borderColor: BORDER }}>
                       <ActiveOrderCard order={o}

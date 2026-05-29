@@ -1,9 +1,11 @@
 // src/app.module.ts
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
@@ -15,10 +17,15 @@ import { TresorerieModule } from './tresorerie/tresorerie.module';
 import { B2BModule } from './b2b/b2b.module';
 import { AdminModule } from './admin/admin.module';
 import { UploadsModule } from './uploads/uploads.module';
+import { PromosModule } from './promos/promos.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { PaiementsModule } from './paiements/paiements.module';
+import { FournisseursModule } from './fournisseurs/fournisseurs.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
+    ThrottlerModule.forRoot([{ ttl: 60000, limit: 100 }]),
     TypeOrmModule.forRoot({
       type: 'postgres',
       host: process.env.DB_HOST || 'localhost',
@@ -45,13 +52,20 @@ import { UploadsModule } from './uploads/uploads.module';
     B2BModule,
     AdminModule,
     UploadsModule,
+    PromosModule,
     RestaurantsModule,
     MenuModule,
     CommandesModule,
     StocksModule,
     TresorerieModule,
+    NotificationsModule,
+    PaiementsModule,
+    FournisseursModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+  ],
 })
 export class AppModule {}

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapPin } from 'lucide-react';
+import { LocateFixed, MapPin } from 'lucide-react';
 
 const DEFAULT_CENTER = { lat: 5.3417, lng: -4.0262 }; // Abidjan
 
@@ -8,6 +8,8 @@ export default function DeliveryMap({ value, onChange, heightClassName = 'h-72',
   const mapRef = useRef(null);
   const markerRef = useRef(null);
   const [ready, setReady] = useState(false);
+  const [locating, setLocating] = useState(false);
+  const [geoError, setGeoError] = useState('');
 
   const center = {
     lat: value?.lat ? Number(value.lat) : DEFAULT_CENTER.lat,
@@ -27,6 +29,29 @@ export default function DeliveryMap({ value, onChange, heightClassName = 'h-72',
     } catch {
       onChange?.({ lat, lng, address: '' });
     }
+  };
+
+  const handleLocate = () => {
+    if (!navigator.geolocation) {
+      setGeoError('Géolocalisation non supportée');
+      return;
+    }
+    setLocating(true);
+    setGeoError('');
+    navigator.geolocation.getCurrentPosition(
+      async ({ coords }) => {
+        const { latitude: lat, longitude: lng } = coords;
+        markerRef.current?.setLatLng([lat, lng]);
+        mapRef.current?.setView([lat, lng], 15, { animate: true });
+        await reverseGeocode(lat, lng);
+        setLocating(false);
+      },
+      () => {
+        setGeoError('Position non disponible');
+        setLocating(false);
+      },
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
   };
 
   useEffect(() => {
@@ -105,6 +130,23 @@ export default function DeliveryMap({ value, onChange, heightClassName = 'h-72',
             Chargement de la carte…
           </div>
         </div>
+      )}
+      {ready && (
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={locating}
+          title="Utiliser ma position"
+          className="absolute bottom-3 right-3 z-[1000] flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] shadow-md transition hover:bg-[#FBE8DC] hover:text-[#C05015] disabled:opacity-50"
+        >
+          <LocateFixed className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} />
+          {locating ? 'Localisation…' : 'Ma position'}
+        </button>
+      )}
+      {geoError && (
+        <p className="absolute bottom-14 right-3 z-[1000] rounded-lg bg-red-50 px-3 py-1.5 text-xs font-medium text-red-600 shadow">
+          {geoError}
+        </p>
       )}
     </div>
   );

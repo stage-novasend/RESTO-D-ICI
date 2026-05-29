@@ -58,4 +58,8 @@ export class CreateCommandeDto {
   @IsOptional()
   @IsString()
   restaurantId?: string;
+
+  @IsOptional()
+  @IsString()
+  codePromo?: string;
 }

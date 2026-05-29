@@ -9,6 +9,7 @@ import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
 import { SystemConfig } from '../common/entities/system-config.entity';
 import { Integration } from '../common/entities/integration.entity';
 import { AuthModule } from '../auth/auth.module';
+import { BackupService } from './backup.service';
 
 @Module({
   imports: [
@@ -16,6 +17,6 @@ import { AuthModule } from '../auth/auth.module';
     AuthModule,
   ],
   controllers: [AdminController],
-  providers: [AdminService],
+  providers: [AdminService, BackupService],
 })
 export class AdminModule {}

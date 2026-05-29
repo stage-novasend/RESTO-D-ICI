@@ -8,11 +8,13 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Article } from '../menu/entities/article.entity';
+import { FournisseursService } from '../fournisseurs/fournisseurs.service';
 
 @Injectable()
 export class StocksService {
   constructor(
     @InjectRepository(Article) private articleRepo: Repository<Article>,
+    private readonly fournisseursService: FournisseursService,
   ) {}
 
   // GET /stocks — Inventaire complet
@@ -99,6 +101,47 @@ export class StocksService {
       stock: newStock,
       disponible,
       motif: motif || 'Ajustement manuel',
+    };
+  }
+
+  // POST /stocks/:id/entree — Réception marchandise (RG-24: fournisseurId obligatoire)
+  async entreeStock(
+    articleId: string,
+    quantity: number,
+    fournisseurId: string,
+    restaurantId?: string,
+    motif?: string,
+  ) {
+    if (!fournisseurId) {
+      throw new BadRequestException('fournisseurId obligatoire pour une entrée de stock (RG-24)');
+    }
+    if (!Number.isFinite(Number(quantity)) || Number(quantity) <= 0) {
+      throw new BadRequestException('La quantité doit être un entier positif');
+    }
+
+    // Valide que le fournisseur est référencé et actif (RG-24)
+    const fournisseur = await this.fournisseursService.findOneOrFail(fournisseurId);
+
+    const article = await this.articleRepo.findOne({
+      where: { id: articleId },
+      relations: ['restaurant'],
+    });
+    if (!article) throw new NotFoundException('Article introuvable');
+    if (restaurantId && article.restaurant?.id !== restaurantId) {
+      throw new ForbiddenException("Accès refusé à l'article");
+    }
+
+    const newStock = (article.stock || 0) + Number(quantity);
+    await this.articleRepo.update(articleId, { stock: newStock, disponible: true });
+
+    return {
+      id: articleId,
+      nom: article.nom,
+      stock: newStock,
+      disponible: true,
+      fournisseur: { id: fournisseur.id, nom: fournisseur.nom },
+      quantiteRecue: Number(quantity),
+      motif: motif || `Réception — ${fournisseur.nom}`,
     };
   }
 }

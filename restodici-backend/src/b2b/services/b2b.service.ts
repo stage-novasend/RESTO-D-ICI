@@ -607,6 +607,7 @@ export class B2BService {
       totalEstime,
       statut: 'EN_ATTENTE',
       restaurantId,
+      deadlineAt: new Date(Date.now() + 4 * 60 * 60 * 1000),
     });
 
     const savedCommande = await this.commandeGroupeeRepository.save(commande);
@@ -703,6 +704,7 @@ export class B2BService {
       statut: cmd.statut,
       totalEstime: Number(cmd.totalEstime),
       createdAt: cmd.createdAt,
+      deadlineAt: cmd.deadlineAt,
       lignes: cmd.lignes.map((l) => ({
         id: l.id,
         articleId: l.articleId,
@@ -782,6 +784,7 @@ export class B2BService {
       totalEstime: Number(cmd.totalEstime),
       nbLignes: cmd.lignes?.length ?? 0,
       createdAt: cmd.createdAt,
+      deadlineAt: cmd.deadlineAt,
     }));
   }
 

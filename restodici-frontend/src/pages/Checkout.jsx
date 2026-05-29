@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle, CreditCard, Smartphone, Store, Truck, UtensilsCrossed } from 'lucide-react';
+import { ArrowLeft, CheckCircle, CreditCard, Smartphone, Store, Truck, UtensilsCrossed, Tag, X } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { formatFCFA } from '../utils/formatters';
 import { commandesService } from '../services/commandes.service';
+import { promosAPI } from '../services/api';
 
 const PAYMENT_METHODS = [
   {
@@ -93,6 +94,27 @@ export default function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState('orange_money');
   const [pendingOrder, setPendingOrder] = useState(null);
 
+  // Code promo
+  const [promoCode, setPromoCode] = useState('');
+  const [promoResult, setPromoResult] = useState(null); // { remise, promo }
+  const [promoError, setPromoError] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError('');
+    setPromoResult(null);
+    try {
+      const r = await promosAPI.validate(promoCode.trim(), pendingOrder.restaurantId, pendingOrder.total ?? 0);
+      setPromoResult(r.data);
+    } catch (e) {
+      setPromoError(e?.response?.data?.message || 'Code invalide');
+    } finally { setPromoLoading(false); }
+  };
+
+  const removePromo = () => { setPromoResult(null); setPromoCode(''); setPromoError(''); };
+
   // Simulation state
   const [simOpen, setSimOpen] = useState(false);
   const [simPhase, setSimPhase] = useState(0);
@@ -166,6 +188,7 @@ export default function CheckoutPage() {
               quantite: item.quantite ?? item.quantity ?? 1,
               ...(item.instructions ? { instructions: item.instructions } : {}),
             })),
+            ...(promoResult ? { codePromo: promoResult.promo.code } : {}),
           };
 
           const res = await commandesService.create(payload);
@@ -259,6 +282,7 @@ export default function CheckoutPage() {
 
   const total = pendingOrder.total ?? 0;
   const items = pendingOrder.items ?? [];
+  const effectiveTotal = Math.max(0, total - (promoResult?.remise ?? 0));
 
   return (
     <div className="min-h-screen bg-white">
@@ -314,11 +338,69 @@ export default function CheckoutPage() {
           </div>
 
           <div className="mx-5 border-t border-[rgba(89,67,42,0.08)]" />
-          <div className="px-5 py-4 flex justify-between items-center">
-            <span className="font-bold text-[#0F172A]">Total à payer</span>
-            <span className="text-xl font-extrabold text-[#C05015]">{formatFCFA(total)} FCFA</span>
+          <div className="px-5 py-3 space-y-1.5">
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-[#64748B]">Sous-total</span>
+              <span className="text-sm font-semibold text-[#0F172A]">{formatFCFA(total)}</span>
+            </div>
+            {promoResult && (
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-[#059669] font-semibold flex items-center gap-1">
+                  <Tag className="w-3.5 h-3.5" /> Code {promoResult.promo.code}
+                </span>
+                <span className="text-sm font-bold text-[#059669]">−{formatFCFA(promoResult.remise)}</span>
+              </div>
+            )}
+            <div className="flex justify-between items-center pt-1 border-t border-[rgba(89,67,42,0.08)]">
+              <span className="font-bold text-[#0F172A]">Total à payer</span>
+              <span className="text-xl font-extrabold text-[#C05015]">
+                {formatFCFA(Math.max(0, total - (promoResult?.remise ?? 0)))} FCFA
+              </span>
+            </div>
           </div>
         </section>
+
+        {/* Code promo */}
+        {!isB2B && (
+          <section className="bg-white rounded-2xl border border-[rgba(89,67,42,0.10)] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Tag className="w-4 h-4 text-[#C05015]" />
+              <span className="text-sm font-bold text-[#0F172A]">Code promo</span>
+            </div>
+            {promoResult ? (
+              <div className="flex items-center justify-between rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] px-4 py-3">
+                <div>
+                  <p className="text-sm font-bold text-[#059669]">{promoResult.promo.code} appliqué !</p>
+                  <p className="text-xs text-[#064E3B] mt-0.5">
+                    Réduction de {formatFCFA(promoResult.remise)} déduite du total
+                    {promoResult.promo.type === 'PERCENT' ? ` (−${promoResult.promo.valeur}%)` : ''}
+                  </p>
+                </div>
+                <button onClick={removePromo} className="text-[#059669] hover:text-[#065F46]">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex gap-2">
+                <input
+                  value={promoCode}
+                  onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
+                  placeholder="Entrez votre code…"
+                  className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm font-mono font-semibold uppercase tracking-widest text-[#0F172A] focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] outline-none transition"
+                />
+                <button
+                  onClick={handleApplyPromo}
+                  disabled={promoLoading || !promoCode.trim()}
+                  className="rounded-xl bg-[#C05015] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#9A3E10] disabled:opacity-60 transition"
+                >
+                  {promoLoading ? '…' : 'Appliquer'}
+                </button>
+              </div>
+            )}
+            {promoError && <p className="mt-2 text-xs text-red-600 font-semibold">{promoError}</p>}
+          </section>
+        )}
 
         {/* Payment method — hidden for B2B (facturation mensuelle) */}
         {isB2B ? (
@@ -380,8 +462,8 @@ export default function CheckoutPage() {
           className="w-full py-4 rounded-2xl font-extrabold text-white text-base bg-[#C05015] hover:bg-[#9A3E10] active:scale-[0.98] transition-all shadow-lg shadow-[#C05015]/25"
         >
           {isB2B
-            ? `Confirmer la commande · ${formatFCFA(total)} FCFA`
-            : `Payer ${formatFCFA(total)} FCFA · ${method?.shortName}`}
+            ? `Confirmer la commande · ${formatFCFA(effectiveTotal)} FCFA`
+            : `Payer ${formatFCFA(effectiveTotal)} FCFA · ${method?.shortName}`}
         </button>
 
         <p className="text-center text-xs text-[#64748B]/70">
@@ -402,10 +484,10 @@ export default function CheckoutPage() {
               <span className="text-3xl">{method?.logo}</span>
               <div>
                 <p className="font-bold text-[#0F172A] text-sm">{method?.name}</p>
-                <p className="text-xs text-[#64748B]">{formatFCFA(total)} FCFA</p>
+                <p className="text-xs text-[#64748B]">{formatFCFA(effectiveTotal)} FCFA</p>
               </div>
               <div className="ml-auto font-bold text-[#0F172A]">
-                {formatFCFA(total)}
+                {formatFCFA(effectiveTotal)}
               </div>
             </div>
 

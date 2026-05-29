@@ -175,6 +175,41 @@ function StatusBadge({ status }) {
   return <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${s.bg}`}>{s.label}</span>;
 }
 
+function CountdownBadge({ deadlineAt, statut }) {
+  const DONE = ['LIVREE', 'ANNULEE'];
+  const [ms, setMs] = useState(() => deadlineAt ? new Date(deadlineAt) - Date.now() : null);
+
+  useEffect(() => {
+    if (!deadlineAt || DONE.includes(statut)) return;
+    const id = setInterval(() => setMs(new Date(deadlineAt) - Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [deadlineAt, statut]);
+
+  if (!deadlineAt || DONE.includes(statut) || ms === null) return null;
+
+  if (ms <= 0) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-bold text-red-700">
+        ⏱ Délai dépassé
+      </span>
+    );
+  }
+
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const urgent = ms < 60 * 60 * 1000;
+  const warning = ms < 2 * 60 * 60 * 1000;
+
+  return (
+    <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold ${
+      urgent ? 'bg-red-100 text-red-700' : warning ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-700'
+    }`}>
+      ⏱ {h}h {String(m).padStart(2, '0')}m {String(s).padStart(2, '0')}s
+    </span>
+  );
+}
+
 export default function B2BOrders() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -383,6 +418,7 @@ export default function B2BOrders() {
                               {order.numero ? `#${order.numero}` : `Commande ${order.id?.slice(0, 8)}`}
                             </span>
                             <StatusBadge status={status} />
+                            <CountdownBadge deadlineAt={order.deadlineAt} statut={order.statut ?? order.status} />
                             {isGrouped && (
                               <span className="rounded-full px-2 py-0.5 text-[10px] font-medium bg-white" style={{ color: GOLD }}>
                                 Groupée

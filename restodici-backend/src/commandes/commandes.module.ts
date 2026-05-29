@@ -12,7 +12,10 @@ import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { AuthModule } from '../auth/auth.module';
 import { MenuModule } from '../menu/menu.module';
 import { TresorerieModule } from '../tresorerie/tresorerie.module';
+import { PromosModule } from '../promos/promos.module';
 import { User } from '../auth/entities/user.entity';
+import { NotificationsModule } from '../notifications/notifications.module';
+import { HorairesGuard } from './guards/horaires.guard';
 
 @Module({
   imports: [
@@ -28,9 +31,11 @@ import { User } from '../auth/entities/user.entity';
     AuthModule,
     MenuModule,
     TresorerieModule,
+    PromosModule,
+    NotificationsModule,
   ],
   controllers: [CommandesController],
-  providers: [CommandesService, CommandesGateway],
+  providers: [CommandesService, CommandesGateway, HorairesGuard],
   exports: [CommandesService, CommandesGateway],
 })
 export class CommandesModule {}

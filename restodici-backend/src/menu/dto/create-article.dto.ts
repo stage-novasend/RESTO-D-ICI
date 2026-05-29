@@ -9,6 +9,7 @@ import {
   IsNotEmpty,
   IsArray,
   IsEnum,
+  IsDateString,
 } from 'class-validator';
 import { CibleEnum } from '../entities/article.entity';
 
@@ -58,4 +59,16 @@ export class CreateArticleDto {
   @IsOptional()
   @IsUUID()
   restaurantId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  activationDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  expirationDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  estMenuDuJour?: boolean;
 }

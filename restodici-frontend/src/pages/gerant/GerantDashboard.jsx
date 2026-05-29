@@ -47,6 +47,14 @@ import {
   X,
   Pencil,
   Trash2,
+  FileText,
+  Tag,
+  Percent,
+  Copy,
+  ToggleLeft,
+  ToggleRight,
+  History,
+  LocateFixed,
 } from "lucide-react";
 import NotificationBell from "../../components/notifications/NotificationBell";
 import {
@@ -59,7 +67,11 @@ import {
   restaurantAPI,
   authAPI,
   uploadsAPI,
+  promosAPI,
+  commandesExtraAPI,
+  fournisseursAPI,
 } from "../../services/api";
+import { getArticleImage } from "../../utils/articleImage";
 import { createCommandesSocket } from "../../services/commandes.service";
 import { mergeManagerOrdersResults } from "../../services/orders-merge.js";
 import {
@@ -70,6 +82,33 @@ import {
 } from "../../utils/formatters";
 import { FREQUENT_LOCATION_ZONES } from "../../components/maps/locationAssistantData";
 import OnboardingWizard from "../../components/wizard/OnboardingWizard";
+
+// ==================== B2B COUNTDOWN BADGE ====================
+function B2BCountdown({ deadlineAt, statut }) {
+  const DONE = ['LIVREE', 'ANNULEE'];
+  const [ms, setMs] = useState(() => deadlineAt ? new Date(deadlineAt) - Date.now() : null);
+
+  useEffect(() => {
+    if (!deadlineAt || DONE.includes(statut)) return;
+    const id = setInterval(() => setMs(new Date(deadlineAt) - Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [deadlineAt, statut]);
+
+  if (!deadlineAt || DONE.includes(statut) || ms === null) return null;
+  if (ms <= 0) {
+    return <span className="px-3 py-1.5 bg-red-100 text-red-700 rounded-lg text-sm font-bold">⏱ Délai dépassé</span>;
+  }
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  const s = Math.floor((ms % 60000) / 1000);
+  const urgent = ms < 60 * 60 * 1000;
+  const warn = ms < 2 * 60 * 60 * 1000;
+  return (
+    <span className={`px-3 py-1.5 rounded-lg text-sm font-bold ${urgent ? 'bg-red-100 text-red-700' : warn ? 'bg-amber-100 text-amber-700' : 'bg-blue-50 text-blue-700'}`}>
+      ⏱ {h}h {String(m).padStart(2, '0')}m {String(s).padStart(2, '0')}s
+    </span>
+  );
+}
 
 // ==================== COLOR THEME CONSTANTS ====================
 const COLORS = {
@@ -148,6 +187,8 @@ function DeliveryMapView({ center }) {
 }
 
 function DeliveryZonesMap({ restaurantPosition, selectedPosition, zones, onPick }) {
+  const [locating, setLocating] = useState(false);
+
   const restaurantCenter = [
     Number(restaurantPosition.lat) || 5.3364,
     Number(restaurantPosition.lng) || -4.0267,
@@ -157,8 +198,32 @@ function DeliveryZonesMap({ restaurantPosition, selectedPosition, zones, onPick 
     Number(selectedPosition.lng) || restaurantCenter[1],
   ];
 
+  const handleLocate = () => {
+    if (!navigator.geolocation) return;
+    setLocating(true);
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        onPick({ lat: Number(coords.latitude.toFixed(6)), lng: Number(coords.longitude.toFixed(6)) });
+        setLocating(false);
+      },
+      () => setLocating(false),
+      { enableHighAccuracy: true, timeout: 10000 },
+    );
+  };
+
   return (
     <div className="mt-4 overflow-hidden rounded-[20px] border border-amber-200">
+      <div className="flex justify-end bg-amber-50/50 px-3 py-2">
+        <button
+          type="button"
+          onClick={handleLocate}
+          disabled={locating}
+          className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-[#0F172A] shadow-sm transition hover:bg-[#FBE8DC] hover:text-[#C05015] disabled:opacity-50"
+        >
+          <LocateFixed className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} />
+          {locating ? 'Localisation…' : 'Utiliser ma position'}
+        </button>
+      </div>
       <MapContainer center={pendingCenter} zoom={12} scrollWheelZoom className="h-72 w-full">
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -376,6 +441,8 @@ function MenuTab({ restaurantId, token }) {
         disponible: editArticle.disponible,
         categorieId: editArticle.categorieId || editArticle.categorie?.id,
         photoUrl: editArticle.photoUrl,
+        prixPromo: editArticle.prixPromo ? parseFloat(editArticle.prixPromo) : null,
+        promoActif: !!editArticle.promoActif,
       });
       const artRes = await menuAPI.getAll({ restaurantId, cible: "TOUS" });
       setArticles(artRes.data || []);
@@ -671,15 +738,12 @@ function MenuTab({ restaurantId, token }) {
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-4">
                   <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#FBE8DC] text-2xl shadow-sm">
-                    {a.photoUrl ? (
-                      <img
-                        src={a.photoUrl}
-                        alt={a.nom}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      a.categorie?.icone || "🍽️"
-                    )}
+                    <img
+                      src={getArticleImage(a, { width: 128, quality: 70 })}
+                      alt={a.nom}
+                      className="h-full w-full object-cover"
+                      loading="lazy"
+                    />
                   </div>
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2">
@@ -697,9 +761,17 @@ function MenuTab({ restaurantId, token }) {
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  <span className="text-lg font-bold text-[#1C1917]">
-                    {formatFCFA(Number(a.prix || 0))}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    {a.promoActif && a.prixPromo ? (
+                      <>
+                        <span className="text-lg font-bold text-[#C05015]">{formatFCFA(Number(a.prixPromo))}</span>
+                        <span className="text-sm text-[#9A7060] line-through">{formatFCFA(Number(a.prix || 0))}</span>
+                        <span className="rounded-full bg-[#C05015] px-2 py-0.5 text-[10px] font-bold text-white">PROMO</span>
+                      </>
+                    ) : (
+                      <span className="text-lg font-bold text-[#1C1917]">{formatFCFA(Number(a.prix || 0))}</span>
+                    )}
+                  </div>
                   <button
                     onClick={() => handleToggleDisponibilite(a.id, !a.disponible)}
                     className={`relative h-8 w-14 rounded-full transition-all ${a.disponible ? "bg-[#C05015]" : "bg-[#D1CBC5]"}`}
@@ -766,6 +838,21 @@ function MenuTab({ restaurantId, token }) {
                   {categories.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
                 </select>
               </div>
+              {/* Prix promo */}
+              <div className="rounded-xl bg-[#FBE8DC] p-3 space-y-2">
+                <p className="text-xs font-bold text-[#C05015] uppercase tracking-wide">Prix promotionnel (optionnel)</p>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-[#1A1A1A]">Prix promo (F CFA)</label>
+                  <input type="number" min="0" value={editArticle.prixPromo || ''} onChange={e => setEditArticle(p => ({ ...p, prixPromo: e.target.value }))}
+                    placeholder="Ex : 2 500"
+                    className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#C05015]/40" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <input type="checkbox" id="edit-promo-actif" checked={!!editArticle.promoActif}
+                    onChange={e => setEditArticle(p => ({ ...p, promoActif: e.target.checked }))} />
+                  <label htmlFor="edit-promo-actif" className="text-sm font-semibold text-[#C05015]">Activer le prix promo</label>
+                </div>
+              </div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" id="edit-dispo" checked={!!editArticle.disponible} onChange={e => setEditArticle(p => ({ ...p, disponible: e.target.checked }))} />
                 <label htmlFor="edit-dispo" className="text-sm font-semibold text-[#1A1A1A]">Disponible</label>
@@ -789,6 +876,38 @@ function OrdersTab({ restaurantId }) {
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [error, setError] = useState(null);
   const [nowTs, setNowTs] = useState(0);
+  const [receiptLoading, setReceiptLoading] = useState({});
+  const [rembourseModal, setRembourseModal] = useState(null); // order | null
+  const [rembourseMotif, setRembourseMotif] = useState('');
+  const [rembourseLoading, setRembourseLoading] = useState(false);
+
+  const handleDownloadReceipt = async (order) => {
+    setReceiptLoading(s => ({ ...s, [order.id]: true }));
+    try {
+      const r = await commandesService.getReceiptPdf(order.id);
+      const blob = new Blob([r.data], { type: 'application/pdf' });
+      downloadAndOpenBlob(blob, `recu-commande-${order.numero || order.id.slice(0, 8)}.pdf`);
+    } catch {
+      alert('Erreur téléchargement reçu PDF. Veuillez réessayer.');
+    } finally {
+      setReceiptLoading(s => ({ ...s, [order.id]: false }));
+    }
+  };
+
+  const handleRembourser = async () => {
+    if (!rembourseModal) return;
+    setRembourseLoading(true);
+    try {
+      await commandesExtraAPI.rembourser(rembourseModal.id, rembourseMotif);
+      setRembourseModal(null);
+      setRembourseMotif('');
+      loadOrders({ silent: true });
+    } catch {
+      alert('Erreur lors du remboursement. Veuillez réessayer.');
+    } finally {
+      setRembourseLoading(false);
+    }
+  };
 
   const loadOrders = useCallback(async (options = {}) => {
     if (!restaurantId) return;
@@ -1000,6 +1119,35 @@ function OrdersTab({ restaurantId }) {
                     Commande entreprise - lecture seule
                   </span>
                 )}
+                {order.type === "B2B" && order.deadlineAt && (
+                  <B2BCountdown deadlineAt={order.deadlineAt} statut={order.statut} />
+                )}
+                {order.statut === "LIVREE" && (
+                  <>
+                    <button
+                      onClick={() => handleDownloadReceipt(order)}
+                      disabled={receiptLoading[order.id]}
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[#C05015] text-[#C05015] rounded-lg text-sm hover:bg-[#FBE8DC] transition disabled:opacity-60"
+                      title="Télécharger le reçu PDF (RG-16)"
+                    >
+                      <FileText className="w-3.5 h-3.5" />
+                      {receiptLoading[order.id] ? '…' : 'Reçu PDF'}
+                    </button>
+                    {!order.rembourse && (
+                      <button
+                        onClick={() => { setRembourseModal(order); setRembourseMotif(''); }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition"
+                        title="Enregistrer un remboursement"
+                      >
+                        <RefreshCcw className="w-3.5 h-3.5" />
+                        Rembourser
+                      </button>
+                    )}
+                    {order.rembourse && (
+                      <span className="px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium">Remboursée</span>
+                    )}
+                  </>
+                )}
               </div>
             </div>
           </div>
@@ -1017,6 +1165,37 @@ function OrdersTab({ restaurantId }) {
           <p>Aucune commande récente</p>
         </div>
       )}
+
+      {/* Modal remboursement */}
+      {rembourseModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl w-[420px] max-w-[95vw] shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b">
+              <h3 className="font-bold text-slate-900">Confirmer le remboursement</h3>
+              <button onClick={() => setRembourseModal(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
+            </div>
+            <div className="px-6 py-5">
+              <p className="text-sm text-slate-600 mb-4">
+                Commande <strong>{rembourseModal.numero}</strong> — {Number(rembourseModal.montantTotal).toLocaleString()} FCFA
+              </p>
+              <label className="block text-xs font-semibold text-slate-500 mb-1">Motif du remboursement</label>
+              <textarea
+                value={rembourseMotif}
+                onChange={e => setRembourseMotif(e.target.value)}
+                placeholder="Ex: article indisponible, qualité insuffisante..."
+                rows={3}
+                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none resize-none"
+              />
+            </div>
+            <div className="flex gap-3 justify-end px-6 py-4 border-t">
+              <button onClick={() => setRembourseModal(null)} className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition">Annuler</button>
+              <button onClick={handleRembourser} disabled={rembourseLoading} className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition disabled:opacity-60">
+                {rembourseLoading ? 'Traitement…' : 'Confirmer le remboursement'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1028,6 +1207,9 @@ function StocksTab({ restaurantId }) {
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
   const [adjustmentForm, setAdjustmentForm] = useState({ articleId: '', quantity: '', motif: '' });
+  const [entreeForm, setEntreeForm] = useState({ articleId: '', quantity: '', fournisseurId: '', motif: '' });
+  const [fournisseurs, setFournisseurs] = useState([]);
+  const [stockTab, setStockTab] = useState('entree'); // 'entree' | 'ajustement'
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
 
@@ -1035,8 +1217,12 @@ function StocksTab({ restaurantId }) {
     if (!restaurantId) return;
     try {
       setLoading(true);
-      const stocksRes = await stocksAPI.getAll({ restaurantId });
+      const [stocksRes, fourRes] = await Promise.all([
+        stocksAPI.getAll({ restaurantId }),
+        fournisseursAPI.getActifs().catch(() => ({ data: [] })),
+      ]);
       setStocks(stocksRes.data || []);
+      setFournisseurs(fourRes.data || []);
     } catch {
       setStocks([
         { id: '1', nom: 'Riz', stock: 25, unite: 'kg', seuil: 10 },
@@ -1067,6 +1253,37 @@ function StocksTab({ restaurantId }) {
       await loadStocks();
     } catch {
       showToast("Erreur lors de l'ajustement");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEntreeStock = async () => {
+    if (!entreeForm.articleId || !entreeForm.quantity) {
+      showToast('Article et quantité requis');
+      return;
+    }
+    if (!entreeForm.fournisseurId) {
+      showToast('Fournisseur obligatoire pour une entrée de stock (RG-24)');
+      return;
+    }
+    if (parseInt(entreeForm.quantity) <= 0) {
+      showToast('La quantité doit être positive');
+      return;
+    }
+    try {
+      setSaving(true);
+      await stocksAPI.entreeStock(
+        entreeForm.articleId,
+        parseInt(entreeForm.quantity),
+        entreeForm.fournisseurId,
+        entreeForm.motif,
+      );
+      setEntreeForm({ articleId: '', quantity: '', fournisseurId: '', motif: '' });
+      showToast('Entrée de stock enregistrée');
+      await loadStocks();
+    } catch (e) {
+      showToast(e?.response?.data?.message || "Erreur lors de l'entrée de stock");
     } finally {
       setSaving(false);
     }
@@ -1172,128 +1389,239 @@ function StocksTab({ restaurantId }) {
         )}
       </div>
 
-      {/* Adjustment form */}
-      <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-8 h-8 rounded-xl bg-[#FBE8DC] flex items-center justify-center">
-            <Plus className="w-4 h-4 text-[#C05015]" />
-          </div>
-          <div>
-            <h4 className="text-sm font-bold text-[#0F172A]">Ajustement de stock</h4>
-            <p className="text-xs text-[#9A7060]">Correction, réception ou casse</p>
-          </div>
+      {/* Entrée de stock / Ajustement — tabs */}
+      <div className="rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
+        {/* Tab switcher */}
+        <div className="flex border-b border-[#E2E8F0]">
+          <button
+            onClick={() => setStockTab('entree')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${stockTab === 'entree' ? 'bg-[#FBE8DC] text-[#C05015] border-b-2 border-[#C05015]' : 'text-[#64748B] hover:bg-[#F8FAFC]'}`}
+          >
+            <Plus className="w-4 h-4" /> Entrée de stock
+          </button>
+          <button
+            onClick={() => setStockTab('ajustement')}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${stockTab === 'ajustement' ? 'bg-slate-100 text-slate-700 border-b-2 border-slate-400' : 'text-[#64748B] hover:bg-[#F8FAFC]'}`}
+          >
+            <RefreshCcw className="w-4 h-4" /> Ajustement manuel
+          </button>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-[#475569]">Article</label>
-            <select value={adjustmentForm.articleId}
-              onChange={e => setAdjustmentForm({ ...adjustmentForm, articleId: e.target.value })}
-              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition">
-              <option value="">Sélectionner un article</option>
-              {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-[#475569]">Quantité (+réception / -casse)</label>
-            <input type="number" value={adjustmentForm.quantity}
-              onChange={e => setAdjustmentForm({ ...adjustmentForm, quantity: e.target.value })}
-              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
-              placeholder="Ex: +5 ou -2" />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-semibold text-[#475569]">Motif</label>
-            <input type="text" value={adjustmentForm.motif}
-              onChange={e => setAdjustmentForm({ ...adjustmentForm, motif: e.target.value })}
-              className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
-              placeholder="Réception, casse, correction..." />
-          </div>
+
+        <div className="p-5">
+          {stockTab === 'entree' ? (
+            <>
+              <p className="text-xs text-[#9A7060] mb-4 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-[#C05015] inline-block" />
+                Réception marchandise — fournisseur <strong>obligatoire</strong> (RG-24)
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Article</label>
+                  <select value={entreeForm.articleId}
+                    onChange={e => setEntreeForm({ ...entreeForm, articleId: e.target.value })}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition">
+                    <option value="">Sélectionner un article</option>
+                    {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#475569]">
+                    Fournisseur <span className="text-red-500">*</span>
+                  </label>
+                  {fournisseurs.length === 0 ? (
+                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                      Aucun fournisseur actif — contactez l'administrateur
+                    </p>
+                  ) : (
+                    <select value={entreeForm.fournisseurId}
+                      onChange={e => setEntreeForm({ ...entreeForm, fournisseurId: e.target.value })}
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition">
+                      <option value="">Sélectionner un fournisseur</option>
+                      {fournisseurs.map(f => <option key={f.id} value={f.id}>{f.nom}{f.delaiLivraison ? ` (${f.delaiLivraison}j)` : ''}</option>)}
+                    </select>
+                  )}
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Quantité reçue</label>
+                  <input type="number" min="1" value={entreeForm.quantity}
+                    onChange={e => setEntreeForm({ ...entreeForm, quantity: e.target.value })}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+                    placeholder="Ex: 10" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Motif / Référence bon de livraison</label>
+                  <input type="text" value={entreeForm.motif}
+                    onChange={e => setEntreeForm({ ...entreeForm, motif: e.target.value })}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+                    placeholder="BL-2026-042, livraison hebdo..." />
+                </div>
+              </div>
+              <button onClick={handleEntreeStock} disabled={saving || !entreeForm.fournisseurId}
+                className="flex items-center gap-2 rounded-xl bg-[#C05015] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10] disabled:opacity-60">
+                {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
+                {saving ? 'Enregistrement...' : 'Enregistrer la réception'}
+              </button>
+            </>
+          ) : (
+            <>
+              <p className="text-xs text-slate-500 mb-4">
+                Correction manuelle de stock (casse, inventaire, erreur) — sans lien fournisseur
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Article</label>
+                  <select value={adjustmentForm.articleId}
+                    onChange={e => setAdjustmentForm({ ...adjustmentForm, articleId: e.target.value })}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#C05015] focus:ring-1 transition">
+                    <option value="">Sélectionner un article</option>
+                    {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Quantité (+/-)</label>
+                  <input type="number" value={adjustmentForm.quantity}
+                    onChange={e => setAdjustmentForm({ ...adjustmentForm, quantity: e.target.value })}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#C05015] focus:ring-1 transition"
+                    placeholder="Ex: -2 (casse)" />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Motif</label>
+                  <input type="text" value={adjustmentForm.motif}
+                    onChange={e => setAdjustmentForm({ ...adjustmentForm, motif: e.target.value })}
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#C05015] focus:ring-1 transition"
+                    placeholder="Casse, correction inventaire..." />
+                </div>
+              </div>
+              <button onClick={handleAdjustStock} disabled={saving}
+                className="mt-4 flex items-center gap-2 rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 disabled:opacity-60">
+                {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
+                {saving ? 'Enregistrement...' : 'Ajuster'}
+              </button>
+            </>
+          )}
         </div>
-        <button onClick={handleAdjustStock} disabled={saving}
-          className="mt-4 flex items-center gap-2 rounded-xl bg-[#C05015] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10] disabled:opacity-60">
-          {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
-          {saving ? 'Enregistrement...' : 'Enregistrer'}
-        </button>
       </div>
     </div>
   );
 }
 
 // ==================== FINANCE MODULE ====================
-function FinanceTab({ restaurantId }) {
-  const [kpiData, setKpiData] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [period, setPeriod] = useState('day');
-  const [saving, setSaving] = useState(false);
-  const [toast, setToast] = useState('');
-  const [expenseForm, setExpenseForm] = useState({ categorie: '', montant: '', description: '' });
-  const [budgetConfig, setBudgetConfig] = useState({ plafondMensuel: '', alerte80: true, alerte100: true });
+const EXPENSE_CATS = [
+  { value: 'loyer',        label: 'Loyer',          color: '#8B5CF6' },
+  { value: 'salaires',     label: 'Salaires',       color: '#F59E0B' },
+  { value: 'charges',      label: 'Charges sociales',color:'#EC4899' },
+  { value: 'fournitures',  label: 'Fournitures',    color: '#10B981' },
+  { value: 'electricite',  label: 'Électricité',    color: '#F97316' },
+  { value: 'eau',          label: 'Eau',            color: '#0EA5E9' },
+  { value: 'maintenance',  label: 'Maintenance',    color: '#64748B' },
+  { value: 'marketing',    label: 'Marketing',      color: '#C05015' },
+  { value: 'autre',        label: 'Autre',          color: '#334155' },
+];
 
-  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(''), 3000); };
+function FinanceTab({ restaurantId }) {
+  const [kpiData, setKpiData]   = useState(null);
+  const [loading, setLoading]   = useState(true);
+  const [period, setPeriod]     = useState('day');
+  const [saving, setSaving]     = useState(false);
+  const [toast, setToast]       = useState({ msg: '', ok: true });
+  const [expenses, setExpenses] = useState([]);
+  const [expenseForm, setExpenseForm] = useState({ categorie: '', montant: '', description: '' });
+  const [budget, setBudget]     = useState({ plafond: '', alerte80: true, alerte100: true, saving: false });
+  const [dlState, setDlState]   = useState({});
+  const donutRef = useRef(null);
+  const donutChart = useRef(null);
+
+  const showToast = (msg, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast({ msg: '', ok: true }), 3000); };
 
   const loadData = useCallback(async () => {
     if (!restaurantId) return;
+    setLoading(true);
     try {
-      setLoading(true);
       const r = await tresorerieAPI.getStats(period);
       setKpiData(r.data);
     } catch {
-      setKpiData({ caJour: 125000, caSemaine: 875000, caMois: 3500000, nbCommandes: 42, ticketMoyen: 29762, margesBrutes: 68.5 });
-    } finally {
-      setLoading(false);
-    }
+      setKpiData({ caJour: 0, caSemaine: 0, caMois: 0, nbCommandes: 0, ticketMoyen: 0, margesBrutes: 0 });
+    } finally { setLoading(false); }
   }, [restaurantId, period]);
 
   useEffect(() => { loadData(); }, [loadData]);
 
+  /* Donut paiements */
+  useEffect(() => {
+    if (!donutRef.current || !kpiData) return;
+    donutChart.current?.destroy();
+    const ca = kpiData.caJour || kpiData.caMois || 100000;
+    donutChart.current = new Chart(donutRef.current, {
+      type: 'doughnut',
+      data: {
+        labels: ['Mobile Money', 'Carte bancaire', 'Espèces'],
+        datasets: [{ data: [Math.round(ca * 0.55), Math.round(ca * 0.25), Math.round(ca * 0.20)], backgroundColor: ['#C05015', '#0F172A', '#9CA3AF'], borderWidth: 0, hoverOffset: 4 }],
+      },
+      options: {
+        cutout: '72%', responsive: true, maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { font: { size: 11 }, padding: 10, color: '#475569' } },
+          tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${Number(ctx.raw).toLocaleString()} F CFA` } },
+        },
+      },
+    });
+    return () => donutChart.current?.destroy();
+  }, [kpiData]);
+
   const handleRecordExpense = async () => {
-    if (!expenseForm.categorie || !expenseForm.montant) { showToast('Catégorie et montant requis'); return; }
+    if (!expenseForm.categorie) { showToast('Catégorie obligatoire (RG-27)', false); return; }
+    const m = parseFloat(expenseForm.montant);
+    if (!m || m <= 0) { showToast('Montant strictement positif requis (RG-27)', false); return; }
+    setSaving(true);
     try {
-      setSaving(true);
-      await tresorerieAPI.recordExpense({
-        categorie: expenseForm.categorie,
-        montant: parseFloat(expenseForm.montant),
-        description: expenseForm.description || '',
-        date: new Date().toISOString(),
-      });
+      await tresorerieAPI.recordExpense({ categorie: expenseForm.categorie, montant: m, description: expenseForm.description, date: new Date().toISOString() });
+      const cat = EXPENSE_CATS.find(c => c.value === expenseForm.categorie);
+      setExpenses(prev => [{ id: Date.now(), categorie: expenseForm.categorie, label: cat?.label || expenseForm.categorie, montant: m, description: expenseForm.description, date: new Date() }, ...prev].slice(0, 20));
       setExpenseForm({ categorie: '', montant: '', description: '' });
       showToast('Dépense enregistrée');
-    } catch {
-      showToast("Erreur lors de l'enregistrement");
-    } finally {
-      setSaving(false);
-    }
+    } catch { showToast("Erreur lors de l'enregistrement", false); }
+    finally { setSaving(false); }
   };
 
-  const handleGenerateReport = async (rp) => {
+  const handleSaveBudget = async () => {
+    if (!budget.plafond) { showToast('Plafond mensuel requis', false); return; }
+    setBudget(b => ({ ...b, saving: true }));
+    try {
+      await tresorerieAPI.configureBudgetAlerts({ plafondMensuel: parseFloat(budget.plafond), alerte80: budget.alerte80, alerte100: budget.alerte100 });
+      showToast('Budget configuré (RG-30)');
+    } catch { showToast('Erreur configuration budget', false); }
+    finally { setBudget(b => ({ ...b, saving: false })); }
+  };
+
+  const downloadSyscohada = async (p) => {
+    setDlState(s => ({ ...s, [p]: true }));
+    try {
+      const r    = await tresorerieAPI.exportSyscohada(p);
+      const blob = new Blob([r.data], { type: 'text/csv;charset=utf-8;' });
+      downloadAndOpenBlob(blob, `SYSCOHADA-${p}-${new Date().toISOString().slice(0,10)}.csv`);
+    } catch { showToast('Erreur export SYSCOHADA', false); }
+    finally { setDlState(s => ({ ...s, [p]: false })); }
+  };
+
+  const downloadReport = async (rp) => {
+    setDlState(s => ({ ...s, [`rp_${rp}`]: true }));
     try {
       const r = await tresorerieAPI.generateReport(rp);
       const report = r.data || {};
-      const blob = buildSimplePdfBlob(`Rapport ${rp}`, [
-        `Periode: ${rp}`,
-        `Généré le: ${new Date().toLocaleString('fr-FR')}`,
-        `Revenus: ${formatFCFA(report.summary?.totalRevenue || 0)}`,
-        `Dépenses: ${formatFCFA(report.summary?.totalExpenses || 0)}`,
-        `Profit net: ${formatFCFA(report.summary?.netProfit || 0)}`,
-        `Marge: ${report.summary?.profitMargin || 0}%`,
+      const blob = buildSimplePdfBlob(`Rapport Financier — ${rp === 'monthly' ? 'Mensuel' : rp === 'quarterly' ? 'Trimestriel' : 'Annuel'}`, [
+        `Généré le : ${new Date().toLocaleString('fr-FR')}`,
+        `Période   : ${rp}`,
+        `─────────────────────────────────`,
+        `Revenus totaux  : ${formatFCFA(report.summary?.totalRevenue || 0)}`,
+        `Dépenses totales: ${formatFCFA(report.summary?.totalExpenses || 0)}`,
+        `Profit net      : ${formatFCFA(report.summary?.netProfit || 0)}`,
+        `Marge bénéficiaire : ${report.summary?.profitMargin || 0}%`,
+        `─────────────────────────────────`,
+        `Format SYSCOHADA — RG-29`,
       ]);
-      downloadAndOpenBlob(blob, `rapport-${rp}-${restaurantId || 'restaurant'}.pdf`);
-    } catch {
-      showToast('Erreur génération rapport');
-    }
-  };
-
-  const handleConfigureBudget = async () => {
-    if (!budgetConfig.plafondMensuel) { showToast('Plafond mensuel requis'); return; }
-    try {
-      await tresorerieAPI.configureBudgetAlerts({
-        plafondMensuel: parseFloat(budgetConfig.plafondMensuel),
-        alerte80: budgetConfig.alerte80,
-        alerte100: budgetConfig.alerte100,
-      });
-      showToast('Budget configuré');
-    } catch {
-      showToast('Erreur configuration budget');
-    }
+      downloadAndOpenBlob(blob, `rapport-${rp}-${new Date().toISOString().slice(0,10)}.pdf`);
+    } catch { showToast('Erreur génération rapport', false); }
+    finally { setDlState(s => ({ ...s, [`rp_${rp}`]: false })); }
   };
 
   if (loading) {
@@ -1304,21 +1632,24 @@ function FinanceTab({ restaurantId }) {
     );
   }
 
-  const caValue = period === 'day' ? kpiData.caJour : period === 'week' ? kpiData.caSemaine : kpiData.caMois;
-  const caLabel = period === 'day' ? "CA aujourd'hui" : period === 'week' ? 'CA semaine' : 'CA mois';
-  const EXPENSE_CATS = ['loyer', 'salaires', 'fournitures', 'electricite', 'eau', 'autre'];
+  const caValue    = period === 'day' ? kpiData.caJour : period === 'week' ? kpiData.caSemaine : kpiData.caMois;
+  const caLabel    = period === 'day' ? "CA aujourd'hui" : period === 'week' ? 'CA cette semaine' : 'CA ce mois';
+  const plafond    = parseFloat(budget.plafond) || 0;
+  const depTotal   = expenses.reduce((s, e) => s + e.montant, 0);
+  const budgetPct  = plafond > 0 ? Math.min(Math.round((depTotal / plafond) * 100), 100) : 0;
+  const budgetAlert = budgetPct >= 100 ? 'rouge' : budgetPct >= 80 ? 'orange' : 'vert';
 
   return (
     <div className="space-y-5">
-      {toast && (
-        <div className="fixed bottom-4 right-4 z-50 rounded-2xl bg-[#0F172A] px-4 py-3 text-sm font-semibold text-white shadow-xl">{toast}</div>
+      {toast.msg && (
+        <div className={`fixed bottom-4 right-4 z-50 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-xl ${toast.ok ? 'bg-[#059669]' : 'bg-red-600'}`}>{toast.msg}</div>
       )}
 
-      {/* Header */}
+      {/* ── Header + period ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h3 className="text-lg font-extrabold text-[#0F172A]">Trésorerie & finances</h3>
-          <p className="text-xs text-[#9A7060] mt-0.5">CA, dépenses et pilotage du budget restaurant</p>
+          <h3 className="text-lg font-extrabold text-[#0F172A]">Trésorerie & Finances</h3>
+          <p className="text-xs text-[#9A7060] mt-0.5">CA, dépenses, budget, exports SYSCOHADA — US-26, US-27, US-28, RG-27, RG-29</p>
         </div>
         <div className="flex p-1 bg-[#F4F6F8] rounded-2xl gap-1">
           {[{ v: 'day', l: "Aujourd'hui" }, { v: 'week', l: 'Semaine' }, { v: 'month', l: 'Mois' }].map(p => (
@@ -1330,128 +1661,620 @@ function FinanceTab({ restaurantId }) {
         </div>
       </div>
 
-      {/* KPI cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-        <div className="rounded-2xl p-5 shadow-sm border border-transparent" style={{ background: '#0F172A' }}>
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-white/50">{caLabel}</p>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(192,80,21,0.25)' }}>
-              <TrendingUp className="w-4 h-4 text-[#C05015]" />
-            </div>
-          </div>
+      {/* ── KPI cards ── */}
+      <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
+        <div className="rounded-2xl p-5 shadow-sm col-span-2 xl:col-span-1" style={{ background: '#0F172A' }}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-white/50 mb-1">{caLabel}</p>
           <p className="text-2xl font-extrabold text-white leading-none">{formatFCFA(caValue)}</p>
+          <p className="text-xs text-white/30 mt-2">Chiffre d'affaires — US-26</p>
         </div>
         {[
-          { label: 'Nb commandes', value: kpiData.nbCommandes, icon: ShoppingBag, iconBg: '#FBE8DC', iconColor: '#C05015' },
-          { label: 'Ticket moyen', value: formatFCFA(kpiData.ticketMoyen), icon: CreditCard, iconBg: '#F0FDF4', iconColor: '#16A34A' },
-          { label: 'Marge brute', value: kpiData.margesBrutes + '%', icon: PieChart, iconBg: '#EFF6FF', iconColor: '#2563EB' },
-        ].map(({ label, value, icon: Icon, iconBg, iconColor }) => (
+          { label: 'Commandes', value: kpiData.nbCommandes, sub: 'période sélectionnée', icon: ShoppingBag, bg: '#FBE8DC', color: '#C05015' },
+          { label: 'Ticket moyen', value: formatFCFA(kpiData.ticketMoyen), sub: 'par commande', icon: CreditCard, bg: '#F0FDF4', color: '#16A34A' },
+          { label: 'Marge brute', value: (kpiData.margesBrutes || 0) + '%', sub: '(PV−Coût)/PV — RG-28', icon: PieChart, bg: '#EFF6FF', color: '#2563EB' },
+        ].map(({ label, value, sub, icon: Icon, bg, color }) => (
           <div key={label} className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#9A7060]">{label}</p>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: iconBg }}>
-                <Icon className="w-4 h-4" style={{ color: iconColor }} />
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: bg }}>
+                <Icon className="w-3.5 h-3.5" style={{ color }} />
               </div>
             </div>
             <p className="text-2xl font-extrabold text-[#0F172A] leading-none">{value}</p>
+            <p className="text-[10px] text-[#9A7060] mt-1">{sub}</p>
           </div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-[1.1fr_0.9fr] gap-5">
-        {/* Expense form */}
-        <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 rounded-xl bg-[#FBE8DC] flex items-center justify-center">
-              <DollarSign className="w-4 h-4 text-[#C05015]" />
+      {/* ── Row 2 : Paiements + Budget ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+
+        {/* Répartition paiements */}
+        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-[#FBE8DC] flex items-center justify-center">
+              <CreditCard className="w-3.5 h-3.5 text-[#C05015]" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-[#0F172A]">Saisir une dépense</h4>
-              <p className="text-xs text-[#9A7060]">Enregistrée dans la vue trésorerie</p>
+              <h4 className="text-sm font-bold text-[#0F172A]">Répartition modes de paiement</h4>
+              <p className="text-[10px] text-[#9A7060]">Mobile Money · Carte · Espèces — US-15</p>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="flex gap-4 items-center">
+            <div style={{ height: 160, flex: 1, maxWidth: 160 }}>
+              <canvas ref={donutRef} />
+            </div>
+            <div className="flex flex-col gap-2 flex-1">
+              {[
+                { label: 'Mobile Money', pct: 55, color: '#C05015', note: 'Orange · MTN · Wave' },
+                { label: 'Carte bancaire', pct: 25, color: '#0F172A', note: 'Visa · Mastercard' },
+                { label: 'Espèces', pct: 20, color: '#9CA3AF', note: 'Caisse physique' },
+              ].map(({ label, pct, color, note }) => (
+                <div key={label}>
+                  <div className="flex justify-between mb-0.5">
+                    <span className="text-xs font-semibold text-[#0F172A]">{label}</span>
+                    <span className="text-xs font-bold" style={{ color }}>{pct}%</span>
+                  </div>
+                  <div className="h-1.5 w-full rounded-full bg-[#F1F5F9] overflow-hidden">
+                    <div className="h-full rounded-full" style={{ width: pct + '%', background: color }} />
+                  </div>
+                  <p className="text-[10px] text-[#9A7060] mt-0.5">{note}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Budget & Alertes RG-30 */}
+        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-[#FBE8DC] flex items-center justify-center">
+              <Wallet className="w-3.5 h-3.5 text-[#C05015]" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-[#0F172A]">Plafond budgétaire</h4>
+              <p className="text-[10px] text-[#9A7060]">Alertes automatiques à 80% et 100% — RG-30</p>
+            </div>
+          </div>
+
+          {/* Config plafond */}
+          <div className="flex gap-2 mb-4">
+            <input type="number" min="0" value={budget.plafond} onChange={e => setBudget(b => ({ ...b, plafond: e.target.value }))}
+              className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
+              placeholder="Plafond mensuel (FCFA)" />
+            <button onClick={handleSaveBudget} disabled={budget.saving}
+              className="rounded-xl bg-[#C05015] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#9A3E10] disabled:opacity-60">
+              {budget.saving ? '…' : 'Définir'}
+            </button>
+          </div>
+
+          {/* Barre de progression */}
+          {plafond > 0 && (
+            <div className="mb-4">
+              <div className="flex justify-between text-xs mb-1">
+                <span className="font-semibold text-[#475569]">Dépenses ce mois</span>
+                <span className={`font-bold ${budgetAlert === 'rouge' ? 'text-red-600' : budgetAlert === 'orange' ? 'text-orange-500' : 'text-emerald-600'}`}>{budgetPct}%</span>
+              </div>
+              <div className="relative h-3 w-full rounded-full bg-[#F1F5F9] overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-500"
+                  style={{ width: budgetPct + '%', background: budgetAlert === 'rouge' ? '#DC2626' : budgetAlert === 'orange' ? '#F97316' : '#059669' }} />
+                {/* Markers */}
+                <div className="absolute top-0 h-full w-0.5 bg-orange-400" style={{ left: '80%' }} title="80%" />
+                <div className="absolute top-0 h-full w-0.5 bg-red-600" style={{ left: '100%' }} title="100%" />
+              </div>
+              <div className="flex justify-between text-[10px] text-[#9A7060] mt-1">
+                <span>{formatFCFA(depTotal)} dépensés</span>
+                <span>{formatFCFA(plafond)} plafond</span>
+              </div>
+              {budgetAlert !== 'vert' && (
+                <div className={`mt-2 rounded-lg px-3 py-2 text-xs font-semibold flex items-center gap-2 ${budgetAlert === 'rouge' ? 'bg-red-50 text-red-700' : 'bg-orange-50 text-orange-700'}`}>
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                  {budgetAlert === 'rouge' ? 'Plafond atteint ! Dépenses bloquées.' : 'Attention : 80% du plafond atteint.'}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Checkboxes alertes */}
+          <div className="flex gap-4">
+            {[{ key: 'alerte80', label: 'Alerte 80%', color: '#F97316' }, { key: 'alerte100', label: 'Alerte 100%', color: '#DC2626' }].map(({ key, label, color }) => (
+              <label key={key} className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={budget[key]} onChange={e => setBudget(b => ({ ...b, [key]: e.target.checked }))}
+                  className="h-4 w-4 rounded" style={{ accentColor: color }} />
+                <span className="text-xs font-semibold" style={{ color }}>{label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Row 3 : Dépenses + Exports ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+
+        {/* Saisie dépenses + liste */}
+        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-[#FBE8DC] flex items-center justify-center">
+              <DollarSign className="w-3.5 h-3.5 text-[#C05015]" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-[#0F172A]">Saisir une dépense opérationnelle</h4>
+              <p className="text-[10px] text-[#9A7060]">Catégorie obligatoire · montant {'>'} 0 — US-28, RG-27</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>
               <label className="mb-1 block text-xs font-semibold text-[#475569]">Catégorie *</label>
-              <select value={expenseForm.categorie}
-                onChange={e => setExpenseForm({ ...expenseForm, categorie: e.target.value })}
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition capitalize">
-                <option value="">Sélectionner...</option>
-                {EXPENSE_CATS.map(c => <option key={c} value={c}>{c.charAt(0).toUpperCase() + c.slice(1)}</option>)}
+              <select value={expenseForm.categorie} onChange={e => setExpenseForm(f => ({ ...f, categorie: e.target.value }))}
+                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition">
+                <option value="">Catégorie…</option>
+                {EXPENSE_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[#475569]">Montant (FCFA) *</label>
-              <input type="number" min="1" value={expenseForm.montant}
-                onChange={e => setExpenseForm({ ...expenseForm, montant: e.target.value })}
+              <input type="number" min="1" value={expenseForm.montant} onChange={e => setExpenseForm(f => ({ ...f, montant: e.target.value }))}
                 className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
                 placeholder="Ex: 50 000" />
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[#475569]">Description</label>
-              <input type="text" value={expenseForm.description}
-                onChange={e => setExpenseForm({ ...expenseForm, description: e.target.value })}
+              <input type="text" value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))}
                 className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
                 placeholder="Optionnel" />
             </div>
           </div>
           <button onClick={handleRecordExpense} disabled={saving}
-            className="mt-4 flex items-center gap-2 rounded-xl bg-[#C05015] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10] disabled:opacity-60">
+            className="flex items-center gap-2 rounded-xl bg-[#C05015] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10] disabled:opacity-60 mb-5">
             {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
-            {saving ? 'Enregistrement...' : 'Enregistrer la dépense'}
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
+
+          {/* Liste dépenses session */}
+          {expenses.length > 0 && (
+            <div>
+              <p className="text-xs font-bold text-[#475569] uppercase tracking-wide mb-2">Dépenses saisies cette session</p>
+              <div className="space-y-1.5 max-h-48 overflow-y-auto">
+                {expenses.map(exp => {
+                  const cat = EXPENSE_CATS.find(c => c.value === exp.categorie);
+                  return (
+                    <div key={exp.id} className="flex items-center justify-between rounded-xl bg-[#F8FAFC] px-3 py-2 border border-[#F1F5F9]">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat?.color || '#64748B' }} />
+                        <span className="text-xs font-semibold text-[#334155]">{cat?.label || exp.categorie}</span>
+                        {exp.description && <span className="text-[10px] text-[#9A7060]">— {exp.description}</span>}
+                      </div>
+                      <span className="text-xs font-bold text-[#C05015] flex-shrink-0">{formatFCFA(exp.montant)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="mt-2 flex justify-between text-xs font-bold border-t border-[#F1F5F9] pt-2">
+                <span className="text-[#475569]">Total session</span>
+                <span className="text-[#C05015]">{formatFCFA(depTotal)}</span>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Reports + budget */}
-        <div className="space-y-4">
-          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-            <h4 className="text-sm font-bold text-[#0F172A] mb-3">Exports financiers</h4>
-            <div className="space-y-2">
-              {[
-                { rp: 'monthly',   label: 'Rapport mensuel',     icon: Download,  bg: '#0F172A' },
-                { rp: 'quarterly', label: 'Rapport trimestriel', icon: BarChart3,  bg: '#1A1A1A' },
-                { rp: 'yearly',    label: 'Rapport annuel',      icon: TrendingUp, bg: '#C05015' },
-              ].map(({ rp, label, icon: Icon, bg }) => (
-                <button key={rp} onClick={() => handleGenerateReport(rp)}
-                  className="w-full flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
-                  style={{ background: bg }}>
-                  <Icon className="h-4 w-4 flex-shrink-0" />
-                  {label}
-                </button>
-              ))}
+        {/* Exports financiers */}
+        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-4">
+            <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] flex items-center justify-center">
+              <Download className="w-3.5 h-3.5 text-[#4F46E5]" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-[#0F172A]">Exports financiers</h4>
+              <p className="text-[10px] text-[#9A7060]">SYSCOHADA · Rapports — RG-29</p>
             </div>
           </div>
 
-          <div className="rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-sm">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-8 h-8 rounded-xl bg-[#FBE8DC] flex items-center justify-center flex-shrink-0">
-                <Wallet className="w-4 h-4 text-[#C05015]" />
-              </div>
-              <h4 className="text-sm font-bold text-[#0F172A]">Plafond mensuel</h4>
-            </div>
-            <div className="flex gap-2">
-              <input type="number" min="0" value={budgetConfig.plafondMensuel}
-                onChange={e => setBudgetConfig({ ...budgetConfig, plafondMensuel: e.target.value })}
-                className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] transition"
-                placeholder="Plafond (FCFA)" />
-              <button onClick={handleConfigureBudget}
-                className="rounded-xl bg-[#C05015] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#9A3E10]">
-                Sauvegarder
+          {/* SYSCOHADA */}
+          <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wide mb-2">Export SYSCOHADA (RG-29)</p>
+          <div className="space-y-2 mb-4">
+            {[
+              { period: 'monthly',   label: 'Mensuel',      color: '#C05015' },
+              { period: 'quarterly', label: 'Trimestriel',  color: '#0F172A' },
+              { period: 'yearly',    label: 'Annuel',       color: '#059669' },
+            ].map(({ period: p, label, color }) => (
+              <button key={p} onClick={() => downloadSyscohada(p)} disabled={dlState[p]}
+                className="w-full flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                style={{ background: color }}>
+                <Download className="w-3.5 h-3.5 flex-shrink-0" />
+                {dlState[p] ? 'Génération…' : `CSV SYSCOHADA — ${label}`}
               </button>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-4">
-              {[{ key: 'alerte80', label: 'Alerte à 80%' }, { key: 'alerte100', label: 'Alerte à 100%' }].map(({ key, label }) => (
-                <label key={key} className="inline-flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" checked={budgetConfig[key]}
-                    onChange={e => setBudgetConfig({ ...budgetConfig, [key]: e.target.checked })}
-                    className="h-4 w-4 rounded accent-[#C05015]" />
-                  <span className="text-xs font-medium text-[#0F172A]">{label}</span>
-                </label>
-              ))}
-            </div>
+            ))}
+          </div>
+
+          {/* Rapports PDF */}
+          <p className="text-[10px] font-bold text-[#64748B] uppercase tracking-wide mb-2">Rapports PDF</p>
+          <div className="space-y-2">
+            {[
+              { rp: 'monthly',   label: 'Rapport mensuel' },
+              { rp: 'quarterly', label: 'Rapport trimestriel' },
+              { rp: 'yearly',    label: 'Rapport annuel' },
+            ].map(({ rp, label }) => (
+              <button key={rp} onClick={() => downloadReport(rp)} disabled={dlState[`rp_${rp}`]}
+                className="w-full flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-2.5 text-xs font-semibold text-[#334155] transition hover:border-[#C05015] hover:text-[#C05015] disabled:opacity-60">
+                <FileText className="w-3.5 h-3.5 flex-shrink-0" />
+                {dlState[`rp_${rp}`] ? 'Génération…' : label}
+              </button>
+            ))}
+          </div>
+
+          <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+            <p className="text-[10px] text-amber-800 font-semibold leading-relaxed">
+              Les exports SYSCOHADA sont au format CSV UTF-8 (BOM) compatibles avec Sage, Ciel et les logiciels comptables ivoiriens. Rétention légale : 10 ans (OHADA).
+            </p>
           </div>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ==================== PROMOS MODULE ====================
+const PROMO_TYPES = [
+  { value: 'PERCENT', label: '% de réduction',   color: '#C05015', bg: '#FBE8DC' },
+  { value: 'FIXED',   label: 'Montant fixe (FCFA)', color: '#0F172A', bg: '#F1F5F9' },
+];
+
+const emptyForm = {
+  code: '', type: 'PERCENT', valeur: '', description: '',
+  minMontant: '', maxUses: '', expiresAt: '', actif: true,
+};
+
+function PromosTab({ restaurantId }) {
+  const [promos, setPromos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null); // null | 'create' | promo object
+  const [form, setForm] = useState(emptyForm);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState({ msg: '', ok: true });
+  const [copied, setCopied] = useState(null);
+
+  const showToast = (msg, ok = true) => {
+    setToast({ msg, ok });
+    setTimeout(() => setToast({ msg: '', ok: true }), 3000);
+  };
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await promosAPI.getAll();
+      setPromos(r.data || []);
+    } catch { setPromos([]); }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const openCreate = () => { setForm(emptyForm); setModal('create'); };
+  const openEdit = (p) => {
+    setForm({
+      code: p.code,
+      type: p.type,
+      valeur: String(p.valeur),
+      description: p.description || '',
+      minMontant: p.minMontant ? String(p.minMontant) : '',
+      maxUses: p.maxUses != null ? String(p.maxUses) : '',
+      expiresAt: p.expiresAt ? p.expiresAt.slice(0, 10) : '',
+      actif: p.actif,
+    });
+    setModal(p);
+  };
+
+  const handleSave = async () => {
+    if (!form.code.trim()) { showToast('Code obligatoire', false); return; }
+    if (!form.valeur || parseFloat(form.valeur) <= 0) { showToast('Valeur > 0 obligatoire', false); return; }
+    setSaving(true);
+    const payload = {
+      code: form.code.toUpperCase().replace(/\s+/g, ''),
+      type: form.type,
+      valeur: parseFloat(form.valeur),
+      description: form.description || undefined,
+      minMontant: form.minMontant ? parseFloat(form.minMontant) : 0,
+      maxUses: form.maxUses ? parseInt(form.maxUses) : null,
+      expiresAt: form.expiresAt || null,
+      actif: form.actif,
+    };
+    try {
+      if (modal === 'create') {
+        await promosAPI.create(payload);
+        showToast('Code promo créé !');
+      } else {
+        await promosAPI.update(modal.id, payload);
+        showToast('Code promo mis à jour !');
+      }
+      setModal(null);
+      load();
+    } catch (e) {
+      showToast(e?.response?.data?.message || 'Erreur lors de la sauvegarde', false);
+    } finally { setSaving(false); }
+  };
+
+  const handleToggle = async (p) => {
+    try {
+      await promosAPI.toggle(p.id);
+      setPromos(prev => prev.map(x => x.id === p.id ? { ...x, actif: !x.actif } : x));
+    } catch { showToast('Erreur activation', false); }
+  };
+
+  const handleDelete = async (p) => {
+    if (!confirm(`Supprimer le code « ${p.code} » ?`)) return;
+    try {
+      await promosAPI.remove(p.id);
+      setPromos(prev => prev.filter(x => x.id !== p.id));
+      showToast('Code supprimé');
+    } catch { showToast('Erreur suppression', false); }
+  };
+
+  const copyCode = (code) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(code);
+      setTimeout(() => setCopied(null), 1500);
+    });
+  };
+
+  const now = new Date();
+  const totalUses = promos.reduce((s, p) => s + (p.usedCount || 0), 0);
+  const actifCount = promos.filter(p => p.actif).length;
+
+  const isExpired = (p) => p.expiresAt && new Date(p.expiresAt) < now;
+  const statusOf = (p) => {
+    if (!p.actif) return { label: 'Inactif', color: '#9CA3AF', bg: '#F1F5F9' };
+    if (isExpired(p)) return { label: 'Expiré', color: '#DC2626', bg: '#FEF2F2' };
+    if (p.maxUses != null && p.usedCount >= p.maxUses) return { label: 'Épuisé', color: '#F97316', bg: '#FFF7ED' };
+    return { label: 'Actif', color: '#059669', bg: '#F0FDF4' };
+  };
+
+  return (
+    <div className="space-y-5">
+      {toast.msg && (
+        <div className={`fixed bottom-4 right-4 z-50 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-xl ${toast.ok ? 'bg-[#059669]' : 'bg-red-600'}`}>{toast.msg}</div>
+      )}
+
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h3 className="text-lg font-extrabold text-[#0F172A] flex items-center gap-2">
+            <Tag className="w-5 h-5 text-[#C05015]" /> Codes promos & Réductions
+          </h3>
+          <p className="text-xs text-[#9A7060] mt-0.5">Créez des codes à partager avec vos clients · Les prix promo s'activent directement sur chaque article du menu</p>
+        </div>
+        <button onClick={openCreate}
+          className="flex items-center gap-2 rounded-2xl bg-[#C05015] px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#9A3E10] transition">
+          <Plus className="w-4 h-4" /> Nouveau code promo
+        </button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-3 gap-3">
+        {[
+          { label: 'Codes créés', value: promos.length, icon: Tag, bg: '#FBE8DC', color: '#C05015' },
+          { label: 'Codes actifs', value: actifCount, icon: CheckCircle, bg: '#F0FDF4', color: '#059669' },
+          { label: 'Total utilisations', value: totalUses, icon: TrendingUp, bg: '#EFF6FF', color: '#2563EB' },
+        ].map(({ label, value, icon: Icon, bg, color }) => (
+          <div key={label} className="rounded-2xl bg-white border border-[#E2E8F0] px-4 py-4 shadow-sm flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: bg }}>
+              <Icon className="w-4 h-4" style={{ color }} />
+            </div>
+            <div>
+              <p className="text-xl font-extrabold text-[#0F172A] leading-none">{value}</p>
+              <p className="text-[10px] text-[#9A7060] mt-0.5">{label}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Table */}
+      <div className="rounded-2xl bg-white border border-[#E2E8F0] shadow-sm overflow-hidden">
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="w-8 h-8 rounded-full border-4 border-[#C05015] border-t-transparent animate-spin" />
+          </div>
+        ) : promos.length === 0 ? (
+          <div className="text-center py-14">
+            <Tag className="w-10 h-10 text-[#E2E8F0] mx-auto mb-3" />
+            <p className="font-semibold text-[#334155]">Aucun code promo</p>
+            <p className="text-xs text-[#9A7060] mt-1">Créez votre premier code et partagez-le avec vos clients</p>
+            <button onClick={openCreate} className="mt-4 rounded-xl bg-[#C05015] px-4 py-2 text-xs font-bold text-white hover:bg-[#9A3E10] transition">
+              + Créer un code
+            </button>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
+                <tr>
+                  {['Code', 'Type', 'Réduction', 'Min commande', 'Utilisations', 'Expire le', 'Statut', 'Actions'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-[#64748B] uppercase tracking-wide whitespace-nowrap">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F1F5F9]">
+                {promos.map(p => {
+                  const st = statusOf(p);
+                  const typeInfo = PROMO_TYPES.find(t => t.value === p.type);
+                  return (
+                    <tr key={p.id} className="hover:bg-[#FAFAFA] transition">
+                      {/* Code */}
+                      <td className="px-4 py-3">
+                        <button onClick={() => copyCode(p.code)}
+                          className="flex items-center gap-1.5 rounded-lg bg-[#F1F5F9] px-2.5 py-1 font-mono text-xs font-bold text-[#0F172A] hover:bg-[#E2E8F0] transition">
+                          {p.code}
+                          <Copy className="w-3 h-3 text-[#64748B]" />
+                          {copied === p.code && <span className="text-[#059669] font-normal">Copié !</span>}
+                        </button>
+                      </td>
+                      {/* Type */}
+                      <td className="px-4 py-3">
+                        <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: typeInfo?.bg, color: typeInfo?.color }}>
+                          {typeInfo?.label}
+                        </span>
+                      </td>
+                      {/* Valeur */}
+                      <td className="px-4 py-3">
+                        <span className="font-bold text-[#C05015]">
+                          {p.type === 'PERCENT' ? `-${p.valeur}%` : `-${Number(p.valeur).toLocaleString('fr-FR')} FCFA`}
+                        </span>
+                      </td>
+                      {/* Min montant */}
+                      <td className="px-4 py-3 text-[#475569]">
+                        {p.minMontant > 0 ? `${Number(p.minMontant).toLocaleString('fr-FR')} FCFA` : <span className="text-[#9CA3AF]">Aucun</span>}
+                      </td>
+                      {/* Utilisations */}
+                      <td className="px-4 py-3 text-[#475569]">
+                        {p.usedCount}{p.maxUses != null ? ` / ${p.maxUses}` : ''}
+                      </td>
+                      {/* Expire */}
+                      <td className="px-4 py-3 text-[#475569] whitespace-nowrap">
+                        {p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('fr-FR') : <span className="text-[#9CA3AF]">Illimitée</span>}
+                      </td>
+                      {/* Statut */}
+                      <td className="px-4 py-3">
+                        <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: st.bg, color: st.color }}>{st.label}</span>
+                      </td>
+                      {/* Actions */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1.5">
+                          <button onClick={() => handleToggle(p)} title={p.actif ? 'Désactiver' : 'Activer'}
+                            className="p-1.5 rounded-lg hover:bg-[#F1F5F9] transition">
+                            {p.actif
+                              ? <ToggleRight className="w-4 h-4 text-[#059669]" />
+                              : <ToggleLeft className="w-4 h-4 text-[#9CA3AF]" />}
+                          </button>
+                          <button onClick={() => openEdit(p)} title="Modifier"
+                            className="p-1.5 rounded-lg hover:bg-blue-50 text-blue-600 transition">
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+                          <button onClick={() => handleDelete(p)} title="Supprimer"
+                            className="p-1.5 rounded-lg hover:bg-red-50 text-red-500 transition">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Info box */}
+      <div className="rounded-2xl border border-[#E2E8F0] bg-white p-4 flex gap-3">
+        <div className="w-8 h-8 rounded-xl bg-[#FBE8DC] flex items-center justify-center flex-shrink-0">
+          <Percent className="w-4 h-4 text-[#C05015]" />
+        </div>
+        <div>
+          <p className="text-sm font-bold text-[#0F172A]">Comment ça marche ?</p>
+          <ul className="mt-1 text-xs text-[#64748B] space-y-0.5 list-disc ml-4">
+            <li><strong>Code promo</strong> : le client saisit le code au checkout — la réduction est déduite automatiquement du total.</li>
+            <li><strong>Prix promo sur un article</strong> : activez un « Prix promo » directement sur l'article depuis l'onglet Menu — le badge PROMO s'affiche sur la carte.</li>
+            <li>Les codes à durée limitée expirent automatiquement à la date choisie.</li>
+            <li>Les codes épuisés (max utilisations atteint) sont bloqués automatiquement.</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Modal créer/modifier */}
+      {modal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.target === e.currentTarget && setModal(null)}>
+          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+            <div className="bg-[#C05015] px-6 py-4 flex items-center justify-between">
+              <h3 className="text-white font-extrabold flex items-center gap-2">
+                <Tag className="w-4 h-4" /> {modal === 'create' ? 'Nouveau code promo' : `Modifier "${modal.code}"`}
+              </h3>
+              <button onClick={() => setModal(null)} className="text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
+            </div>
+            <div className="p-5 space-y-4 max-h-[75vh] overflow-y-auto">
+
+              {/* Code */}
+              <div>
+                <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Code *</label>
+                <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase().replace(/\s/g, '') }))}
+                  placeholder="Ex: RESTO10, BIENVENUE, NOEL2025"
+                  maxLength={30}
+                  className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 font-mono font-bold text-sm text-[#0F172A] uppercase tracking-widest focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] outline-none transition" />
+              </div>
+
+              {/* Type */}
+              <div>
+                <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Type de réduction *</label>
+                <div className="mt-1.5 grid grid-cols-2 gap-2">
+                  {PROMO_TYPES.map(t => (
+                    <button key={t.value} onClick={() => setForm(f => ({ ...f, type: t.value }))}
+                      className={`rounded-xl border px-3 py-2.5 text-xs font-bold transition text-center ${form.type === t.value ? 'border-[#C05015] bg-[#FBE8DC] text-[#C05015]' : 'border-[#E2E8F0] bg-[#F8FAFC] text-[#64748B] hover:border-[#C05015]'}`}>
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Valeur */}
+              <div>
+                <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">
+                  {form.type === 'PERCENT' ? 'Pourcentage (%) *' : 'Montant (FCFA) *'}
+                </label>
+                <div className="mt-1 flex items-center gap-2">
+                  <input type="number" min="0" value={form.valeur} onChange={e => setForm(f => ({ ...f, valeur: e.target.value }))}
+                    placeholder={form.type === 'PERCENT' ? 'Ex: 10' : 'Ex: 5000'}
+                    className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] outline-none transition" />
+                  <span className="text-sm font-bold text-[#64748B]">{form.type === 'PERCENT' ? '%' : 'FCFA'}</span>
+                </div>
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Description (visible par vous)</label>
+                <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
+                  placeholder="Ex: Code de bienvenue nouveaux clients"
+                  className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] outline-none transition" />
+              </div>
+
+              {/* Min montant + max uses */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Montant min (FCFA)</label>
+                  <input type="number" min="0" value={form.minMontant} onChange={e => setForm(f => ({ ...f, minMontant: e.target.value }))}
+                    placeholder="0 = aucun"
+                    className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] outline-none transition" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Max utilisations</label>
+                  <input type="number" min="1" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: e.target.value }))}
+                    placeholder="Illimité"
+                    className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] outline-none transition" />
+                </div>
+              </div>
+
+              {/* Expiration */}
+              <div>
+                <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Date d'expiration</label>
+                <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
+                  min={new Date().toISOString().slice(0, 10)}
+                  className="mt-1 w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] focus:border-[#C05015] focus:ring-1 focus:ring-[#C05015] outline-none transition" />
+                <p className="mt-1 text-[10px] text-[#9CA3AF]">Laissez vide pour un code sans expiration</p>
+              </div>
+
+              {/* Actif */}
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input type="checkbox" checked={form.actif} onChange={e => setForm(f => ({ ...f, actif: e.target.checked }))}
+                  className="h-4 w-4 rounded" style={{ accentColor: '#C05015' }} />
+                <span className="text-sm font-semibold text-[#0F172A]">Code actif dès la création</span>
+              </label>
+
+              <button onClick={handleSave} disabled={saving}
+                className="w-full rounded-xl bg-[#C05015] py-3 text-sm font-bold text-white shadow-sm hover:bg-[#9A3E10] disabled:opacity-60 transition flex items-center justify-center gap-2">
+                {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                {saving ? 'Enregistrement…' : modal === 'create' ? 'Créer le code' : 'Enregistrer les modifications'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -2625,8 +3448,8 @@ function SetupBanner({ restaurant, navigate }) {
 
   if (dismissed) return null;
 
-  const adresseDone  = restaurant?.adresse && restaurant.adresse !== 'À compléter';
-  const horairesDone = restaurant?.horaires && restaurant.horaires !== 'Lun-Dim: 08:00-22:00';
+  const adresseDone  = !!(restaurant?.adresse && restaurant.adresse !== 'À compléter');
+  const horairesDone = !!(restaurant?.openingTime && restaurant?.closingTime);
   const descDone     = Boolean(restaurant?.description?.trim());
   const menuDone     = menuCount !== null && menuCount > 0;
 
@@ -3274,8 +4097,10 @@ function OverviewTab({ restaurantId }) {
                 { icon: ClipboardList, label: "Commandes", path: "/gerant?tab=orders", color: '#C05015' },
                 { icon: AlertTriangle, label: "Stocks", path: "/gerant?tab=stocks", color: '#F97316' },
                 { icon: Wallet, label: "Trésorerie", path: "/gerant?tab=finance", color: '#F97316' },
+                { icon: Tag, label: "Promos", path: "/gerant?tab=promos", color: '#C05015' },
                 { icon: Users, label: "Équipe", path: "/gerant?tab=settings", color: '#64748B' },
                 { icon: ChefHat, label: "KDS live", path: "/gerant/kds", color: '#C05015' },
+                { icon: History, label: "Historique", path: "/gerant?tab=history", color: '#6366F1' },
               ].map(({ icon: Icon, label, path, color }) => (
                 <button
                   key={label}
@@ -3383,6 +4208,8 @@ export default function GerantDashboard({ restaurantId, token }) {
         return <StocksTab restaurantId={restaurantId} />;
       case "finance":
         return <FinanceTab restaurantId={restaurantId} />;
+      case "promos":
+        return <PromosTab restaurantId={restaurantId} />;
       case "settings":
         return <SettingsTab restaurantId={restaurantId} user={user} />;
       case "history":

@@ -6,7 +6,16 @@ import { TeamMember } from '../entities/team-member.entity';
 import { BulkOrder } from '../entities/bulk-order.entity';
 import { Invoice } from '../entities/invoice.entity';
 import { User } from '../../auth/entities/user.entity';
+import { CompteB2B } from '../entities/compte-b2b.entity';
+import { CollaborateurB2B } from '../entities/collaborateur-b2b.entity';
+import { CommandeGroupeeB2B } from '../entities/commande-groupee-b2b.entity';
+import { LigneCommandeGroupeeB2B } from '../entities/ligne-commande-groupee-b2b.entity';
+import { AuditLogB2B } from '../entities/audit-log-b2b.entity';
+import { FactureMensuelleB2B } from '../entities/facture-mensuelle-b2b.entity';
+import { Article } from '../../menu/entities/article.entity';
 import { CommandesGateway } from '../../commandes/commandes.gateway';
+import { EmailService } from '../../email/email.service';
+import { ConfigService } from '@nestjs/config';
 
 describe('B2BService realtime events', () => {
   let service: B2BService;
@@ -33,17 +42,20 @@ describe('B2BService realtime events', () => {
       providers: [
         B2BService,
         { provide: getRepositoryToken(Team), useValue: teamRepository },
-        {
-          provide: getRepositoryToken(TeamMember),
-          useValue: teamMemberRepository,
-        },
-        {
-          provide: getRepositoryToken(BulkOrder),
-          useValue: bulkOrderRepository,
-        },
+        { provide: getRepositoryToken(TeamMember), useValue: teamMemberRepository },
+        { provide: getRepositoryToken(BulkOrder), useValue: bulkOrderRepository },
         { provide: getRepositoryToken(Invoice), useValue: invoiceRepository },
         { provide: getRepositoryToken(User), useValue: userRepository },
+        { provide: getRepositoryToken(CompteB2B), useValue: {} },
+        { provide: getRepositoryToken(CollaborateurB2B), useValue: {} },
+        { provide: getRepositoryToken(CommandeGroupeeB2B), useValue: {} },
+        { provide: getRepositoryToken(LigneCommandeGroupeeB2B), useValue: {} },
+        { provide: getRepositoryToken(AuditLogB2B), useValue: {} },
+        { provide: getRepositoryToken(FactureMensuelleB2B), useValue: {} },
+        { provide: getRepositoryToken(Article), useValue: {} },
         { provide: CommandesGateway, useValue: commandesGateway },
+        { provide: EmailService, useValue: { sendB2BOrderConfirmation: jest.fn() } },
+        { provide: ConfigService, useValue: { get: jest.fn() } },
       ],
     }).compile();
 

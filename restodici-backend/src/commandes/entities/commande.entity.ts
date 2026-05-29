@@ -64,6 +64,12 @@ export class Commande {
   modePaiement?: ModePaiementCommande;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
+  montantRemise?: number;
+
+  @Column({ nullable: true })
+  codePromoId?: string;
+
+  @Column('decimal', { precision: 10, scale: 2, nullable: true })
   montantRemis?: number;
 
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
@@ -71,6 +77,15 @@ export class Commande {
 
   @Column({ type: 'timestamp', nullable: true })
   payeAt?: Date;
+
+  @Column({ default: false })
+  rembourse!: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  rembourseLe?: Date;
+
+  @Column({ type: 'text', nullable: true })
+  motifRemboursement?: string;
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'clientId' })

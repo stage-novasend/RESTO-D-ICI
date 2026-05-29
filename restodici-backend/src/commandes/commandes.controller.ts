@@ -21,6 +21,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { TresorerieService } from '../tresorerie/tresorerie.service';
+import { HorairesGuard } from './guards/horaires.guard';
 
 @Controller('commandes')
 export class CommandesController {
@@ -30,7 +31,7 @@ export class CommandesController {
   ) {}
 
   @Post()
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @UseGuards(AuthGuard('jwt'), RolesGuard, HorairesGuard)
   @Roles('CLIENT', 'B2B')
   async create(
     @Body() dto: CreateCommandeDto,
@@ -282,5 +283,18 @@ export class CommandesController {
       { montantRemis, modePaiement },
       restaurantId,
     );
+  }
+
+  @Patch(':id/rembourser')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  async rembourser(
+    @Param('id') id: string,
+    @Body('motif') motif: string,
+    @Req() req: any,
+  ) {
+    const restaurantId =
+      req.user.role === 'GERANT' ? req.user.restaurant?.id : undefined;
+    return this.commandesService.rembourser(id, motif, restaurantId);
   }
 }
