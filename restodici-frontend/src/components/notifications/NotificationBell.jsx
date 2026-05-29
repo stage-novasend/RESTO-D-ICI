@@ -12,23 +12,27 @@ const ROLE_EVENTS = {
 };
 
 const EVENT_META = {
-  'commande.nouvelle':     { icon: ChefHat,       color: '#C05015', label: 'Nouvelle commande' },
-  'commande.creee':        { icon: ChefHat,       color: '#C05015', label: 'Commande créée'    },
-  'commande.statut':       { icon: Truck,         color: '#2563EB', label: 'Statut mis à jour' },
-  'commande.paiement':     { icon: CreditCard,    color: '#16A34A', label: 'Paiement confirmé' },
-  'commande.b2b.nouvelle': { icon: Package,       color: '#7C3AED', label: 'Commande B2B'      },
-  'commande.b2b.statut':   { icon: AlertTriangle, color: '#D97706', label: 'Statut B2B'        },
+  'commande.nouvelle':     { icon: ChefHat,       color: '#C05015', label: 'Nouvelle commande',  body: (p) => p?.numero ? `Commande #${p.numero} reçue` : 'Nouvelle commande reçue' },
+  'commande.creee':        { icon: ChefHat,       color: '#C05015', label: 'Commande créée',      body: (p) => p?.numero ? `Votre commande #${p.numero} a été placée` : 'Commande enregistrée' },
+  'commande.statut':       { icon: Truck,         color: '#2563EB', label: 'Statut mis à jour',   body: (p) => p?.numero && p?.statut ? `#${p.numero} → ${STATUS_FR[p.statut] || p.statut}` : 'Statut de commande mis à jour' },
+  'commande.paiement':     { icon: CreditCard,    color: '#16A34A', label: 'Paiement confirmé',   body: (p) => p?.numero ? `Paiement reçu pour #${p.numero}` : 'Paiement confirmé' },
+  'commande.b2b.nouvelle': { icon: Package,       color: '#7C3AED', label: 'Commande B2B',        body: (p) => p?.entreprise ? `${p.entreprise} — nouvelle commande groupée` : 'Nouvelle commande entreprise' },
+  'commande.b2b.statut':   { icon: AlertTriangle, color: '#D97706', label: 'Statut B2B',          body: (p) => p?.statut ? `Commande B2B → ${STATUS_FR[p.statut] || p.statut}` : 'Statut B2B mis à jour' },
+};
+
+const STATUS_FR = {
+  RECUE: 'Reçue', CONFIRMEE: 'Confirmée', EN_PREP: 'En préparation',
+  PRETE: 'Prête', EN_LIVRAISON: 'En livraison', LIVREE: 'Livrée', ANNULEE: 'Annulée',
+  EN_ATTENTE: 'En attente', EN_PREPARATION: 'En préparation',
 };
 
 function buildNotif(event, payload) {
-  const meta  = EVENT_META[event] || { icon: Bell, color: '#64748B', label: event };
-  const num   = payload?.numero ? `#${payload.numero}` : '';
-  const extra = payload?.statut ? ` → ${payload.statut}` : payload?.entreprise ? ` (${payload.entreprise})` : '';
+  const meta = EVENT_META[event] || { icon: Bell, color: '#64748B', label: event, body: () => 'Mise à jour' };
   return {
     id:        `${Date.now()}-${Math.random().toString(16).slice(2)}`,
     event,
     title:     meta.label,
-    body:      `${num}${extra}`.trim() || 'Mise à jour en temps réel',
+    body:      meta.body(payload),
     color:     meta.color,
     Icon:      meta.icon,
     read:      false,
@@ -44,24 +48,26 @@ function timeAgo(iso) {
   return new Date(iso).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
 }
 
-export default function NotificationBell({ accentColor = '#C05015', size = 'md' }) {
+// light=true → fond blanc (top bar staff/client)
+// light=false (défaut) → fond sombre (sidebar B2B/gérant)
+export default function NotificationBell({ accentColor = '#C05015', size = 'md', light = false }) {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState(() => {
     try { return JSON.parse(localStorage.getItem(`notifs:${user?.id}`) || '[]'); } catch { return []; }
   });
-  const [open, setOpen]   = useState(false);
-  const panelRef          = useRef(null);
-  const btnRef            = useRef(null);
-  const unread            = notifications.filter(n => !n.read).length;
+  const [open, setOpen] = useState(false);
+  const panelRef        = useRef(null);
+  const btnRef          = useRef(null);
+  const unread          = notifications.filter(n => !n.read).length;
 
   /* Persist */
   useEffect(() => {
     if (user?.id) {
-      try { localStorage.setItem(`notifs:${user.id}`, JSON.stringify(notifications.slice(0, 30))); } catch {}
+      try { localStorage.setItem(`notifs:${user.id}`, JSON.stringify(notifications.slice(0, 40))); } catch {}
     }
   }, [notifications, user?.id]);
 
-  /* Socket */
+  /* Socket — une seule connexion */
   useEffect(() => {
     if (!user?.id) return;
     const socket = createCommandesSocket(user);
@@ -69,7 +75,8 @@ export default function NotificationBell({ accentColor = '#C05015', size = 'md' 
 
     const handleEvent = (event) => (payload) => {
       const notif = buildNotif(event, payload);
-      setNotifications(prev => [notif, ...prev].slice(0, 30));
+      setNotifications(prev => [notif, ...prev].slice(0, 40));
+      // Notif navigateur native
       if (Notification.permission === 'granted') {
         try { new Notification(notif.title, { body: notif.body, icon: '/favicon.ico', tag: notif.id }); } catch {}
       }
@@ -77,13 +84,13 @@ export default function NotificationBell({ accentColor = '#C05015', size = 'md' 
 
     events.forEach(ev => socket.on(ev, handleEvent(ev)));
     return () => { events.forEach(ev => socket.off(ev)); socket.disconnect(); };
-  }, [user]);
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* Close on outside click */
+  /* Fermer au clic extérieur */
   useEffect(() => {
     if (!open) return;
     const handler = (e) => {
-      if (panelRef.current && !panelRef.current.contains(e.target) && !btnRef.current.contains(e.target)) {
+      if (panelRef.current && !panelRef.current.contains(e.target) && btnRef.current && !btnRef.current.contains(e.target)) {
         setOpen(false);
       }
     };
@@ -96,91 +103,120 @@ export default function NotificationBell({ accentColor = '#C05015', size = 'md' 
   const markRead    = (id) => setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
 
   const requestPermission = async () => {
-    if (Notification.permission === 'default') {
-      await Notification.requestPermission();
-    }
+    if (Notification.permission === 'default') await Notification.requestPermission();
   };
 
-  const iconSize = size === 'sm' ? 'w-4 h-4' : 'w-5 h-5';
-  const btnSize  = size === 'sm' ? 'w-8 h-8'  : 'w-9 h-9';
+  const w = size === 'sm' ? 32 : 36;
+
+  // Styles du bouton selon le thème
+  const btnStyle = {
+    width: w, height: w, borderRadius: 10, flexShrink: 0,
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    cursor: 'pointer', position: 'relative', transition: 'all 0.18s',
+    ...(light ? {
+      background: open ? `${accentColor}18` : '#F3F4F6',
+      border:     `1px solid ${open ? accentColor + '55' : '#E2E8F0'}`,
+    } : {
+      background: open ? `${accentColor}22` : 'rgba(255,255,255,0.08)',
+      border:     `1px solid ${open ? accentColor + '44' : 'rgba(255,255,255,0.12)'}`,
+    }),
+  };
+
+  const iconColor = light
+    ? (open ? accentColor : '#6B7280')
+    : (open ? accentColor : 'rgba(255,255,255,0.75)');
+
+  const badgeBorder = light ? '#fff' : '#0F172A';
 
   return (
     <div style={{ position: 'relative', display: 'inline-flex' }}>
-      {/* Bell button */}
+      {/* Bouton cloche */}
       <button
         ref={btnRef}
         onClick={() => { setOpen(o => !o); if (!open) requestPermission(); }}
-        style={{
-          width: size === 'sm' ? 32 : 38, height: size === 'sm' ? 32 : 38,
-          borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          background: open ? `${accentColor}22` : 'rgba(255,255,255,0.08)',
-          border: `1px solid ${open ? accentColor + '44' : 'rgba(255,255,255,0.12)'}`,
-          cursor: 'pointer', position: 'relative', transition: 'all 0.18s', flexShrink: 0,
-        }}
+        style={btnStyle}
         title="Notifications"
       >
-        <Bell style={{ width: size === 'sm' ? 15 : 17, height: size === 'sm' ? 15 : 17, color: open ? accentColor : 'rgba(255,255,255,0.75)' }} />
+        <Bell style={{ width: size === 'sm' ? 15 : 16, height: size === 'sm' ? 15 : 16, color: iconColor }} />
         {unread > 0 && (
           <span style={{
             position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 10,
-            background: accentColor, color: '#fff', fontSize: 9, fontWeight: 700, fontFamily: 'sans-serif',
+            background: accentColor, color: '#fff', fontSize: 9, fontWeight: 700,
             display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px',
-            border: '2px solid #0F172A', lineHeight: 1,
+            border: `2px solid ${badgeBorder}`, lineHeight: 1,
           }}>
             {unread > 9 ? '9+' : unread}
           </span>
         )}
       </button>
 
-      {/* Dropdown panel */}
+      {/* Panneau dropdown */}
       {open && (
         <div
           ref={panelRef}
           style={{
-            position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 320,
-            background: '#fff', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.18)',
+            position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 340,
+            background: '#fff', borderRadius: 16,
+            boxShadow: '0 8px 40px rgba(0,0,0,0.14), 0 2px 8px rgba(0,0,0,0.08)',
             border: '1px solid rgba(0,0,0,0.07)', zIndex: 200, overflow: 'hidden',
           }}
         >
-          {/* Header */}
+          {/* En-tête */}
           <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FAFAFA' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <Bell style={{ width: 14, height: 14, color: accentColor }} />
-              <span style={{ fontFamily: 'sans-serif', fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Notifications</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: '#0F172A' }}>Notifications</span>
               {unread > 0 && (
-                <span style={{ background: accentColor, color: '#fff', borderRadius: 10, padding: '2px 7px', fontSize: 10, fontWeight: 700, fontFamily: 'sans-serif' }}>{unread}</span>
+                <span style={{ background: accentColor, color: '#fff', borderRadius: 10, padding: '2px 7px', fontSize: 10, fontWeight: 700 }}>
+                  {unread}
+                </span>
               )}
             </div>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 4 }}>
               {unread > 0 && (
-                <button onClick={markAllRead} title="Tout marquer comme lu" style={{ background: 'none', border: 'none', cursor: 'pointer', color: accentColor, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, fontFamily: 'sans-serif', padding: '3px 6px', borderRadius: 6 }}>
+                <button
+                  onClick={markAllRead}
+                  title="Tout marquer comme lu"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: accentColor, display: 'flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 600, padding: '3px 8px', borderRadius: 6 }}
+                >
                   <CheckCheck style={{ width: 12, height: 12 }} /> Tout lire
                 </button>
               )}
               {notifications.length > 0 && (
-                <button onClick={clearAll} title="Effacer tout" style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', alignItems: 'center', padding: '3px 4px', borderRadius: 6 }}>
+                <button
+                  onClick={clearAll}
+                  title="Effacer tout"
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8', display: 'flex', alignItems: 'center', padding: '3px 5px', borderRadius: 6 }}
+                >
                   <X style={{ width: 13, height: 13 }} />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Browser push notification permission */}
+          {/* Bandeau permission navigateur */}
           {Notification.permission === 'default' && (
-            <div style={{ padding: '8px 14px', background: `${accentColor}12`, borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
-              <Bell style={{ width: 13, height: 13, color: accentColor, flexShrink: 0 }} />
-              <span style={{ fontFamily: 'sans-serif', fontSize: 11, color: '#64748B', flex: 1 }}>Activer les alertes navigateur</span>
-              <button onClick={requestPermission} style={{ background: accentColor, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'sans-serif' }}>Activer</button>
+            <div style={{ padding: '8px 14px', background: `${accentColor}10`, borderBottom: '1px solid rgba(0,0,0,0.05)', display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Bell style={{ width: 12, height: 12, color: accentColor, flexShrink: 0 }} />
+              <span style={{ fontSize: 11, color: '#64748B', flex: 1 }}>Activer les alertes navigateur</span>
+              <button
+                onClick={requestPermission}
+                style={{ background: accentColor, color: '#fff', border: 'none', borderRadius: 6, padding: '4px 10px', fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Activer
+              </button>
             </div>
           )}
 
-          {/* List */}
-          <div style={{ maxHeight: 340, overflowY: 'auto' }}>
+          {/* Liste */}
+          <div style={{ maxHeight: 380, overflowY: 'auto' }}>
             {notifications.length === 0 ? (
-              <div style={{ padding: '32px 16px', textAlign: 'center' }}>
-                <Bell style={{ width: 28, height: 28, color: '#E2E8F0', margin: '0 auto 8px' }} />
-                <p style={{ fontFamily: 'sans-serif', fontSize: 13, color: '#94A3B8', margin: 0 }}>Aucune notification</p>
-                <p style={{ fontFamily: 'sans-serif', fontSize: 11, color: '#CBD5E1', margin: '4px 0 0' }}>Les alertes temps réel apparaîtront ici</p>
+              <div style={{ padding: '36px 20px', textAlign: 'center' }}>
+                <div style={{ width: 48, height: 48, borderRadius: 14, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 10px' }}>
+                  <Bell style={{ width: 22, height: 22, color: '#CBD5E1' }} />
+                </div>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#475569', margin: 0 }}>Aucune notification</p>
+                <p style={{ fontSize: 11, color: '#94A3B8', margin: '4px 0 0' }}>Les alertes temps réel apparaîtront ici</p>
               </div>
             ) : (
               notifications.map(n => {
@@ -190,29 +226,50 @@ export default function NotificationBell({ accentColor = '#C05015', size = 'md' 
                     key={n.id}
                     onClick={() => markRead(n.id)}
                     style={{
-                      padding: '10px 14px', display: 'flex', alignItems: 'flex-start', gap: 10,
-                      borderBottom: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer', transition: 'background 0.15s',
-                      background: n.read ? '#fff' : `${n.color || accentColor}08`,
+                      padding: '11px 14px', display: 'flex', alignItems: 'flex-start', gap: 10,
+                      borderBottom: '1px solid rgba(0,0,0,0.04)', cursor: 'pointer',
+                      background: n.read ? '#fff' : `${n.color || accentColor}09`,
+                      transition: 'background 0.15s',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#F8FAFC'}
-                    onMouseLeave={e => e.currentTarget.style.background = n.read ? '#fff' : `${n.color || accentColor}08`}
+                    onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = n.read ? '#fff' : `${n.color || accentColor}09`; }}
                   >
-                    <div style={{ width: 30, height: 30, borderRadius: 8, background: `${n.color || accentColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Icon style={{ width: 13, height: 13, color: n.color || accentColor }} />
+                    {/* Icône colorée */}
+                    <div style={{ width: 32, height: 32, borderRadius: 9, background: `${n.color || accentColor}18`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: 1 }}>
+                      <Icon style={{ width: 14, height: 14, color: n.color || accentColor }} />
                     </div>
+
+                    {/* Contenu */}
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 6 }}>
-                        <p style={{ fontFamily: 'sans-serif', fontSize: 12, fontWeight: n.read ? 500 : 700, color: '#0F172A', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.title}</p>
-                        {!n.read && <span style={{ width: 7, height: 7, borderRadius: '50%', background: n.color || accentColor, flexShrink: 0 }} />}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 1 }}>
+                        <p style={{ fontSize: 12, fontWeight: n.read ? 500 : 700, color: '#0F172A', margin: 0, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {n.title}
+                        </p>
+                        {!n.read && (
+                          <span style={{ width: 7, height: 7, borderRadius: '50%', background: n.color || accentColor, flexShrink: 0 }} />
+                        )}
                       </div>
-                      <p style={{ fontFamily: 'sans-serif', fontSize: 11, color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{n.body}</p>
-                      <p style={{ fontFamily: 'sans-serif', fontSize: 10, color: '#94A3B8', margin: '3px 0 0' }}>{timeAgo(n.createdAt)}</p>
+                      <p style={{ fontSize: 11, color: '#64748B', margin: 0, lineHeight: 1.4 }}>
+                        {n.body}
+                      </p>
+                      <p style={{ fontSize: 10, color: '#94A3B8', margin: '3px 0 0' }}>
+                        {timeAgo(n.createdAt)}
+                      </p>
                     </div>
                   </div>
                 );
               })
             )}
           </div>
+
+          {/* Pied — compteur */}
+          {notifications.length > 0 && (
+            <div style={{ padding: '8px 14px', borderTop: '1px solid rgba(0,0,0,0.05)', background: '#FAFAFA', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: 10, color: '#94A3B8' }}>
+                {notifications.length} notification{notifications.length > 1 ? 's' : ''} · {unread} non lue{unread > 1 ? 's' : ''}
+              </span>
+            </div>
+          )}
         </div>
       )}
     </div>

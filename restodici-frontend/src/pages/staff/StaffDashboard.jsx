@@ -773,7 +773,7 @@ export default function StaffDashboard() {
               <span className="hidden sm:inline">KDS</span>
               <ArrowRight style={{ width: 12, height: 12 }} />
             </Link>
-            <NotificationBell accentColor={ACCENT} />
+            <NotificationBell accentColor={ACCENT} light />
             <button
               onClick={() => void refresh()}
               className="w-9 h-9 flex items-center justify-center rounded-xl border border-[#E8E2D9] bg-white hover:bg-[#F9F7F5] transition-colors"
