@@ -17,7 +17,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { AdminService } from './admin.service';
 import { Role } from '../auth/entities/user.entity';
-import { Response } from 'express';
+import type { Response } from 'express';
 
 @Controller('admin')
 @UseGuards(AuthGuard('jwt'), RolesGuard)

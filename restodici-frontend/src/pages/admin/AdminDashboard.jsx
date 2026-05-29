@@ -585,7 +585,7 @@ function ConfigTab() {
     { label: 'Hachage mots de passe', value: 'bcrypt · coût 12 (RG-06)',            icon: Shield,       color: '#059669' },
     { label: 'Rate limiting auth',    value: '10 req/min par IP (§6.6)',             icon: AlertTriangle, color: '#D97706' },
     { label: 'Rate limiting global',  value: '100 req/min par IP (§6.6)',            icon: Activity,     color: '#7C3AED' },
-    { label: 'Isolation multi-tenant','restaurantId obligatoire (RG-31)',            icon: Building2,    color: '#0369A1' },
+    { label: 'Isolation multi-tenant', value: 'restaurantId obligatoire (RG-31)',     icon: Building2,    color: '#0369A1' },
     { label: 'Isolation B2B',         value: '1:N compte ↔ collaborateurs (RG-33)', icon: Users,        color: '#6B21A8' },
   ];
 
