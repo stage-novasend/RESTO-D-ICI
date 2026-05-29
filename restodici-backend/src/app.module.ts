@@ -14,6 +14,7 @@ import { RestaurantsModule } from './restaurants/restaurants.module';
 import { TresorerieModule } from './tresorerie/tresorerie.module';
 import { B2BModule } from './b2b/b2b.module';
 import { AdminModule } from './admin/admin.module';
+import { UploadsModule } from './uploads/uploads.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { AdminModule } from './admin/admin.module';
     AuthModule,
     B2BModule,
     AdminModule,
+    UploadsModule,
     RestaurantsModule,
     MenuModule,
     CommandesModule,

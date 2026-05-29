@@ -58,6 +58,7 @@ import {
   b2bAPI,
   restaurantAPI,
   authAPI,
+  uploadsAPI,
 } from "../../services/api";
 import { createCommandesSocket } from "../../services/commandes.service";
 import { mergeManagerOrdersResults } from "../../services/orders-merge.js";
@@ -288,27 +289,25 @@ function MenuTab({ restaurantId, token }) {
   const handleFileUpload = async (file) => {
     if (!file) return;
 
-    // Simple file validation
     if (!file.type.startsWith("image/")) {
-      alert("Veuillez sélectionner une image (jpg, png, gif)");
+      alert("Veuillez sélectionner une image (jpg, png, webp)");
       return;
     }
-
     if (file.size > 5 * 1024 * 1024) {
-      // 5MB limit
-      alert("La taille de l'image ne doit pas dépasser 5MB");
+      alert("La taille de l'image ne doit pas dépasser 5 MB");
       return;
     }
 
     setUploading(true);
     try {
-      // In a real implementation, this would upload to your backend
-      // For now, we'll create a local URL
-      const imageUrl = URL.createObjectURL(file);
-      setNewArticle((prev) => ({ ...prev, photoUrl: imageUrl }));
-    } catch (error) {
-      console.error("Erreur upload image:", error);
-      alert("Erreur lors du chargement de l'image");
+      const res = await uploadsAPI.uploadImage(file);
+      setNewArticle((prev) => ({ ...prev, photoUrl: res.data.url }));
+    } catch (err) {
+      const msg = err?.response?.data?.message || "Erreur lors de l'upload. Vérifiez la configuration S3.";
+      alert(msg);
+      // Fallback : prévisualisation locale sans persistance
+      const localUrl = URL.createObjectURL(file);
+      setNewArticle((prev) => ({ ...prev, photoUrl: localUrl }));
     } finally {
       setUploading(false);
     }

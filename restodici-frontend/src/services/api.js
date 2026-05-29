@@ -292,7 +292,8 @@ export const adminAPI = {
   updateRestaurant:   (id, data)   => api.patch(`/admin/restaurants/${id}`, data),
   toggleRestaurant:   (id)         => api.patch(`/admin/restaurants/${id}/toggle`),
   getAuditLogs:       (params)     => api.get('/admin/audit-logs', { params }),
-  exportSyscohada:    ()           => api.get('/admin/exports/syscohada', { responseType: 'blob' }),
+  exportSyscohada:    (period)     => api.get('/admin/exports/syscohada', { params: { period }, responseType: 'blob' }),
+  exportAudit:        (params)     => api.get('/admin/exports/audit', { params, responseType: 'blob' }),
   getPendingB2B:      ()           => api.get('/admin/b2b/pending'),
   validateB2B:        (id, approved) => api.patch(`/admin/b2b/${id}/valider`, { approved }),
 
@@ -301,6 +302,25 @@ export const adminAPI = {
   setConfig:          (key, value) => api.patch(`/admin/config/${key}`, { value }),
   changePassword:     (currentPassword, newPassword) =>
     api.patch('/admin/change-password', { currentPassword, newPassword }),
+
+  // Intégrations tierces (CRUD générique)
+  getIntegrations:    ()           => api.get('/admin/integrations'),
+  createIntegration:  (data)       => api.post('/admin/integrations', data),
+  updateIntegration:  (id, data)   => api.patch(`/admin/integrations/${id}`, data),
+  deleteIntegration:  (id)         => api.delete(`/admin/integrations/${id}`),
+  testIntegration:    (id)         => api.post(`/admin/integrations/${id}/test`),
+};
+
+export const uploadsAPI = {
+  // POST /uploads/image — multipart/form-data, retourne { url, key }
+  uploadImage: (file) => {
+    const form = new FormData();
+    form.append('file', file);
+    return api.post('/uploads/image', form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+  getStatus: () => api.get('/uploads/status'),
 };
 
 export const staffAPI = {

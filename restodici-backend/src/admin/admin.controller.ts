@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   Query,
@@ -17,6 +18,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { AdminService } from './admin.service';
 import { Role } from '../auth/entities/user.entity';
+import { IntegrationType } from '../common/entities/integration.entity';
 import type { Response } from 'express';
 
 @Controller('admin')
@@ -141,7 +143,7 @@ export class AdminController {
     });
   }
 
-  /* ── Exports SYSCOHADA ── */
+  /* ── Exports ── */
   @Get('exports/syscohada')
   async exportSyscohada(@Res() res: Response) {
     const csv = await this.adminService.exportSyscohadaCsv();
@@ -149,7 +151,22 @@ export class AdminController {
     res
       .set('Content-Type', 'text/csv; charset=utf-8')
       .set('Content-Disposition', `attachment; filename="syscohada-${date}.csv"`)
-      .send('﻿' + csv); // BOM for Excel UTF-8
+      .send('﻿' + csv);
+  }
+
+  @Get('exports/audit')
+  async exportAudit(
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('action') action?: string,
+    @Res() res?: Response,
+  ) {
+    const csv  = await this.adminService.exportAuditCsv({ from, to, action });
+    const date = new Date().toISOString().slice(0, 10);
+    res!
+      .set('Content-Type', 'text/csv; charset=utf-8')
+      .set('Content-Disposition', `attachment; filename="audit-${date}.csv"`)
+      .send('﻿' + csv);
   }
 
   /* ── Comptes B2B en attente ── */
@@ -196,5 +213,60 @@ export class AdminController {
       body.currentPassword,
       body.newPassword,
     );
+  }
+
+  /* ── Intégrations tierces génériques ── */
+
+  @Get('integrations')
+  getIntegrations() {
+    return this.adminService.getIntegrations();
+  }
+
+  @Post('integrations')
+  @HttpCode(HttpStatus.CREATED)
+  createIntegration(
+    @Body() dto: {
+      name: string;
+      description?: string;
+      type: IntegrationType;
+      baseUrl?: string;
+      apiKey?: string;
+      webhookSecret?: string;
+      customHeaders?: Record<string, string>;
+      enabled?: boolean;
+    },
+    @Req() req: { user: { id: string } },
+  ) {
+    return this.adminService.createIntegration(dto, req.user.id);
+  }
+
+  @Patch('integrations/:id')
+  @HttpCode(HttpStatus.OK)
+  updateIntegration(
+    @Param('id') id: string,
+    @Body() dto: Partial<{
+      name: string;
+      description: string;
+      type: IntegrationType;
+      baseUrl: string;
+      apiKey: string;
+      webhookSecret: string;
+      customHeaders: Record<string, string>;
+      enabled: boolean;
+    }>,
+  ) {
+    return this.adminService.updateIntegration(id, dto);
+  }
+
+  @Delete('integrations/:id')
+  @HttpCode(HttpStatus.OK)
+  deleteIntegration(@Param('id') id: string) {
+    return this.adminService.deleteIntegration(id);
+  }
+
+  @Post('integrations/:id/test')
+  @HttpCode(HttpStatus.OK)
+  testIntegration(@Param('id') id: string) {
+    return this.adminService.testIntegration(id);
   }
 }

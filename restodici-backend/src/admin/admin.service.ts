@@ -12,6 +12,7 @@ import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
 import { SystemConfig } from '../common/entities/system-config.entity';
+import { Integration, IntegrationType } from '../common/entities/integration.entity';
 
 /* ── Clés de config avec leurs métadonnées ── */
 const CONFIG_DEFAULTS: Array<{
@@ -50,6 +51,7 @@ export class AdminService {
     @InjectRepository(AuditLog) private auditRepo: Repository<AuditLog>,
     @InjectRepository(CompteB2B) private b2bRepo: Repository<CompteB2B>,
     @InjectRepository(SystemConfig) private configRepo: Repository<SystemConfig>,
+    @InjectRepository(Integration) private integrationRepo: Repository<Integration>,
   ) {}
 
   async getStats() {
@@ -336,6 +338,25 @@ export class AdminService {
     };
   }
 
+  async exportAuditCsv(query: { from?: string; to?: string; action?: string }): Promise<string> {
+    const qb = this.auditRepo
+      .createQueryBuilder('al')
+      .orderBy('al.createdAt', 'DESC')
+      .take(5000);
+    if (query.action) qb.andWhere('al.action ILIKE :act', { act: `%${query.action}%` });
+    if (query.from)   qb.andWhere('al.createdAt >= :from', { from: new Date(query.from) });
+    if (query.to)     qb.andWhere('al.createdAt <= :to',   { to: new Date(query.to) });
+
+    const logs = await qb.getMany();
+    const rows = ['Date,Heure,Utilisateur,Action,Restaurant,Payload'];
+    for (const log of logs) {
+      const d   = log.createdAt.toISOString();
+      const pay = log.payload ? JSON.stringify(log.payload).replace(/"/g, '""') : '';
+      rows.push(`${d.slice(0, 10)},${d.slice(11, 19)},${log.userId},${log.action},${log.restaurantId ?? ''},"${pay}"`);
+    }
+    return rows.join('\n');
+  }
+
   async exportSyscohadaCsv(): Promise<string> {
     const rows = [
       'Date,Libellé,Débit,Crédit,N° Compte,Pièce',
@@ -413,5 +434,121 @@ export class AdminService {
     user.password = await bcrypt.hash(newPassword, 12);
     await this.userRepo.save(user);
     return { success: true };
+  }
+
+  /* ── Intégrations tierces génériques ── */
+
+  private maskIntegration(i: Integration) {
+    return {
+      ...i,
+      apiKey:        i.apiKey        ? '••••••••' : null,
+      webhookSecret: i.webhookSecret ? '••••••••' : null,
+    };
+  }
+
+  private readonly CDC_INTEGRATIONS = [
+    {
+      name: 'Novasend',
+      description: 'Paiement Mobile Money — Orange Money, MTN Mobile Money, Wave (US-11, US-12, RG-16)',
+      type: IntegrationType.PAYMENT,
+      baseUrl: 'https://api.novasend.ci',
+      enabled: false,
+    },
+    {
+      name: 'Firebase FCM',
+      description: 'Notifications push temps réel vers les apps clientes et staff (US-07, RG-02)',
+      type: IntegrationType.PUSH_NOTIFICATION,
+      baseUrl: 'https://fcm.googleapis.com',
+      enabled: false,
+    },
+    {
+      name: 'Twilio SMS',
+      description: 'Envoi SMS — reçus de paiement, alertes statut commande (US-13, RG-16)',
+      type: IntegrationType.SMS,
+      baseUrl: 'https://api.twilio.com',
+      enabled: false,
+    },
+    {
+      name: 'Resend (Email)',
+      description: 'Emails transactionnels — vérification, reset MDP, reçus (RG-16)',
+      type: IntegrationType.EMAIL,
+      baseUrl: 'https://api.resend.com',
+      enabled: false,
+    },
+  ];
+
+  async getIntegrations() {
+    const existing = await this.integrationRepo.find({ order: { createdAt: 'ASC' } });
+    const existingNames = new Set(existing.map(i => i.name));
+
+    // Seed CDC integrations if missing
+    const toSeed = this.CDC_INTEGRATIONS.filter(c => !existingNames.has(c.name));
+    if (toSeed.length > 0) {
+      const seeded = await this.integrationRepo.save(toSeed.map(d => this.integrationRepo.create(d)));
+      existing.push(...seeded);
+    }
+
+    return existing.map(i => this.maskIntegration(i));
+  }
+
+  async createIntegration(dto: {
+    name: string;
+    description?: string;
+    type: IntegrationType;
+    baseUrl?: string;
+    apiKey?: string;
+    webhookSecret?: string;
+    customHeaders?: Record<string, string>;
+    enabled?: boolean;
+  }, adminId: string) {
+    const entity = this.integrationRepo.create({ ...dto, enabled: dto.enabled ?? false, createdBy: adminId });
+    const saved = await this.integrationRepo.save(entity);
+    return this.maskIntegration(saved);
+  }
+
+  async updateIntegration(id: string, dto: Partial<{
+    name: string;
+    description: string;
+    type: IntegrationType;
+    baseUrl: string;
+    apiKey: string;
+    webhookSecret: string;
+    customHeaders: Record<string, string>;
+    enabled: boolean;
+  }>) {
+    const entity = await this.integrationRepo.findOne({ where: { id } });
+    if (!entity) throw new NotFoundException('Intégration introuvable');
+
+    // Don't overwrite actual key if placeholder was sent back
+    if (dto.apiKey === '••••••••') delete dto.apiKey;
+    if (dto.webhookSecret === '••••••••') delete dto.webhookSecret;
+
+    Object.assign(entity, dto);
+    const saved = await this.integrationRepo.save(entity);
+    return this.maskIntegration(saved);
+  }
+
+  async deleteIntegration(id: string) {
+    const entity = await this.integrationRepo.findOne({ where: { id } });
+    if (!entity) throw new NotFoundException('Intégration introuvable');
+    await this.integrationRepo.remove(entity);
+    return { deleted: id };
+  }
+
+  async testIntegration(id: string): Promise<{ ok: boolean; statusCode?: number; message: string }> {
+    const entity = await this.integrationRepo.findOne({ where: { id } });
+    if (!entity) throw new NotFoundException('Intégration introuvable');
+    if (!entity.baseUrl) return { ok: false, message: 'Aucune URL de base configurée.' };
+
+    try {
+      const headers: Record<string, string> = { 'User-Agent': 'RESTODICI-Admin/1.0', ...entity.customHeaders };
+      if (entity.apiKey) headers['Authorization'] = `Bearer ${entity.apiKey}`;
+
+      const response = await fetch(entity.baseUrl, { method: 'HEAD', headers, signal: AbortSignal.timeout(5000) });
+      const ok = response.status < 500;
+      return { ok, statusCode: response.status, message: ok ? `Connexion réussie (HTTP ${response.status})` : `Erreur HTTP ${response.status}` };
+    } catch (err: any) {
+      return { ok: false, message: `Connexion échouée : ${err.message}` };
+    }
   }
 }

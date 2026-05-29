@@ -7,11 +7,12 @@ import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
 import { SystemConfig } from '../common/entities/system-config.entity';
+import { Integration } from '../common/entities/integration.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Restaurant, AuditLog, CompteB2B, SystemConfig]),
+    TypeOrmModule.forFeature([User, Restaurant, AuditLog, CompteB2B, SystemConfig, Integration]),
     AuthModule,
   ],
   controllers: [AdminController],
