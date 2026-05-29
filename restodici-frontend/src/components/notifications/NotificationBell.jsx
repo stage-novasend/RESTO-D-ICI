@@ -220,7 +220,7 @@ export default function NotificationBell({ accentColor = '#C05015', size = 'md',
               </div>
             ) : (
               notifications.map(n => {
-                const Icon = n.Icon || Bell;
+                const Icon = EVENT_META[n.event]?.icon || Bell;
                 return (
                   <div
                     key={n.id}
