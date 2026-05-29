@@ -523,7 +523,7 @@ export default function BulkOrder() {
                           </div>
                         ) : filteredProducts.length === 0 ? (
                           <div className="rounded-[28px] border bg-white py-16 text-center shadow-sm" style={{ borderColor: '#F3E4DA' }}>
-                            <UtensilsCrossed className="mx-auto mb-4 h-16 w-16 text-gray-300" />
+                            <span className="mx-auto mb-4 block text-6xl">🍽️</span>
                             <h3 className="text-lg font-medium text-gray-700">Aucun plat trouvé</h3>
                             <p className="mt-1 text-sm text-[#9A7060]">Essayez de modifier votre recherche ou catégorie.</p>
                           </div>
