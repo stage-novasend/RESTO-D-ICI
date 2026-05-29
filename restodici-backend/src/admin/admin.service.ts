@@ -229,6 +229,81 @@ export class AdminService {
     return this.b2bRepo.save(compte);
   }
 
+  async getChartData() {
+    const now   = new Date();
+    const ago30 = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const ago7  = new Date(now.getTime() -  7 * 24 * 60 * 60 * 1000);
+
+    // Inscriptions par jour — 7 derniers jours
+    const usersByDayRaw = await this.userRepo
+      .createQueryBuilder('u')
+      .select("TO_CHAR(u.\"createdAt\", 'YYYY-MM-DD')", 'day')
+      .addSelect('COUNT(*)', 'count')
+      .where('u."createdAt" >= :ago7', { ago7 })
+      .groupBy('day')
+      .orderBy('day', 'ASC')
+      .getRawMany();
+
+    // Activité audit par jour — 7 derniers jours
+    const auditByDayRaw = await this.auditRepo
+      .createQueryBuilder('al')
+      .select("TO_CHAR(al.\"createdAt\", 'YYYY-MM-DD')", 'day')
+      .addSelect('COUNT(*)', 'count')
+      .where('al."createdAt" >= :ago7', { ago7 })
+      .groupBy('day')
+      .orderBy('day', 'ASC')
+      .getRawMany();
+
+    // Heatmap activité — 30 derniers jours (heure × jour semaine)
+    const heatmapRaw = await this.auditRepo
+      .createQueryBuilder('al')
+      .select("EXTRACT(DOW FROM al.\"createdAt\")", 'dow')
+      .addSelect("EXTRACT(HOUR FROM al.\"createdAt\")", 'hour')
+      .addSelect('COUNT(*)', 'count')
+      .where('al."createdAt" >= :ago30', { ago30 })
+      .groupBy('dow, hour')
+      .getRawMany();
+
+    // Répartition rôles utilisateurs
+    const roleDistRaw = await this.userRepo
+      .createQueryBuilder('u')
+      .select('u.role', 'role')
+      .addSelect('COUNT(*)', 'count')
+      .groupBy('u.role')
+      .getRawMany();
+
+    // 10 dernières actions d'audit
+    const recentLogs = await this.auditRepo
+      .createQueryBuilder('al')
+      .orderBy('al."createdAt"', 'DESC')
+      .take(10)
+      .getMany();
+
+    // Normalise jours manquants sur 7 jours
+    const days7 = Array.from({ length: 7 }, (_, i) => {
+      const d = new Date(ago7.getTime() + (i + 1) * 24 * 60 * 60 * 1000);
+      return d.toISOString().slice(0, 10);
+    });
+
+    const toMap = (raw: any[]) =>
+      Object.fromEntries(raw.map(r => [r.day, parseInt(r.count, 10)]));
+
+    const usersMap = toMap(usersByDayRaw);
+    const auditMap = toMap(auditByDayRaw);
+
+    return {
+      usersByDay:  days7.map(d => ({ day: d, count: usersMap[d] || 0 })),
+      auditByDay:  days7.map(d => ({ day: d, count: auditMap[d] || 0 })),
+      heatmap:     heatmapRaw.map(r => ({
+        dow:   parseInt(r.dow,   10),
+        hour:  parseInt(r.hour,  10),
+        count: parseInt(r.count, 10),
+      })),
+      roleDist:    roleDistRaw.map(r => ({ role: r.role, count: parseInt(r.count, 10) })),
+      recentLogs,
+    };
+  }
+
   async exportSyscohadaCsv(): Promise<string> {
     const rows = [
       'Date,Libellé,Débit,Crédit,N° Compte,Pièce',

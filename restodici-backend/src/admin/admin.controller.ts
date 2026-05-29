@@ -31,6 +31,12 @@ export class AdminController {
     return this.adminService.getStats();
   }
 
+  /* ── Données graphiques ── */
+  @Get('stats/charts')
+  getChartData() {
+    return this.adminService.getChartData();
+  }
+
   /* ── Gestion utilisateurs ── */
   @Get('users')
   getUsers(
