@@ -295,6 +295,12 @@ export const adminAPI = {
   exportSyscohada:    ()           => api.get('/admin/exports/syscohada', { responseType: 'blob' }),
   getPendingB2B:      ()           => api.get('/admin/b2b/pending'),
   validateB2B:        (id, approved) => api.patch(`/admin/b2b/${id}/valider`, { approved }),
+
+  // Configuration système
+  getConfig:          ()           => api.get('/admin/config'),
+  setConfig:          (key, value) => api.patch(`/admin/config/${key}`, { value }),
+  changePassword:     (currentPassword, newPassword) =>
+    api.patch('/admin/change-password', { currentPassword, newPassword }),
 };
 
 export const staffAPI = {

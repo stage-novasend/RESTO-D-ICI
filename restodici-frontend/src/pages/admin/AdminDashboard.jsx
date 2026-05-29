@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Chart from 'chart.js/auto';
-import { adminAPI } from '../../services/api';
+import { adminAPI, authAPI } from '../../services/api';
 import {
   Users, UtensilsCrossed, ScrollText, Download, Settings,
   RefreshCw, ToggleLeft, ToggleRight, Plus, X, Check,
   Shield, Activity, CheckCircle, XCircle, Clock, Search,
   Filter, ChevronDown, AlertTriangle, Building2, LayoutDashboard,
-  TrendingUp, TrendingDown, MoreVertical,
+  TrendingUp, TrendingDown, MoreVertical, Eye, EyeOff, Save,
+  Zap, MessageSquare, Bell, Lock, Globe, Database,
 } from 'lucide-react';
 
 /* ── Design tokens ─────────────────────────────────── */
@@ -818,46 +819,340 @@ function ExportsTab() {
 }
 
 /* ══════════════════ TAB: CONFIGURATION ══════════════════ */
-function ConfigTab() {
-  const items = [
-    { label: 'Algorithme JWT',        value: 'HS256 · 24h (RG-35)',                    icon: Shield,        color: ACCENT },
-    { label: 'Hachage mots de passe', value: 'bcrypt · coût 12 (RG-06)',                icon: Shield,        color: '#059669' },
-    { label: 'Rate limiting auth',    value: '10 req/min par IP (§6.6)',                 icon: AlertTriangle, color: '#D97706' },
-    { label: 'Rate limiting global',  value: '100 req/min par IP (§6.6)',                icon: Activity,      color: '#7C3AED' },
-    { label: 'Isolation multi-tenant', value: 'restaurantId obligatoire (RG-31)',        icon: Building2,     color: '#0369A1' },
-    { label: 'Isolation B2B',          value: '1:N compte ↔ collaborateurs (RG-33)',    icon: Users,         color: '#6B21A8' },
-    { label: 'Fuseau horaire',          value: 'Africa/Abidjan (UTC+0)',                 icon: Clock,         color: '#0F172A' },
-    { label: 'Devise',                  value: 'FCFA (Franc CFA)',                       icon: TrendingUp,    color: '#059669' },
-  ];
+/* ── Intégration card ── */
+function IntegrationCard({ icon: Icon, title, color, enabled, onToggle, fields, onSave, saving, testResult, onTest }) {
+  const [showValues, setShowValues] = useState({});
+  const [localFields, setLocalFields] = useState(() =>
+    Object.fromEntries(fields.map(f => [f.key, '']))
+  );
 
   return (
-    <div>
-      <SectionHeader title="Configuration système" />
-      <div style={{ ...card, overflow: 'hidden', marginBottom: 20 }}>
-        <div style={{ padding: '14px 20px', background: '#F8FAFC', borderBottom: '1px solid #E8EDF5' }}>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#334155', margin: 0 }}>Paramètres actifs (lecture seule)</p>
+    <div style={{ ...card, marginBottom: 16 }}>
+      <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 36, height: 36, borderRadius: 10, background: `${color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <Icon style={{ width: 18, height: 18, color }} />
+          </div>
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>{title}</p>
+            <p style={{ fontSize: 11, color: enabled ? '#059669' : '#94A3B8', margin: '2px 0 0' }}>{enabled ? 'Activé' : 'Désactivé'}</p>
+          </div>
         </div>
-        {items.map((item, i) => {
-          const Icon = item.icon;
-          return (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 20px', borderBottom: i < items.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: `${item.color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <Icon style={{ width: 16, height: 16, color: item.color }} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#334155', margin: 0 }}>{item.label}</p>
-                <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0' }}>{item.value}</p>
-              </div>
-              <span style={{ background: '#DCFCE7', color: '#166534', borderRadius: 6, padding: '2px 8px', fontSize: 10, fontWeight: 700 }}>Actif</span>
-            </div>
-          );
-        })}
+        <button onClick={onToggle} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
+          {enabled
+            ? <ToggleRight style={{ width: 30, height: 30, color: '#059669' }} />
+            : <ToggleLeft style={{ width: 30, height: 30, color: '#CBD5E1' }} />}
+        </button>
       </div>
-      <div style={{ background: '#EEF2FF', borderRadius: 12, padding: '14px 18px', border: '1px solid #C7D2FE', display: 'flex', gap: 10 }}>
-        <Settings style={{ width: 16, height: 16, color: '#4338CA', flexShrink: 0, marginTop: 1 }} />
-        <p style={{ fontSize: 12, color: '#3730A3', margin: 0, lineHeight: 1.5 }}>
-          Modifier ces paramètres requiert un accès direct au <code style={{ background: '#E0E7FF', padding: '1px 4px', borderRadius: 4 }}>.env</code>. Contactez l'équipe Sankofa-Lab.
-        </p>
+      <div style={{ padding: '14px 20px' }}>
+        {fields.map(f => (
+          <div key={f.key} style={{ marginBottom: 12 }}>
+            <label style={labelStyle}>{f.label}</label>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                type={f.sensitive && !showValues[f.key] ? 'password' : 'text'}
+                placeholder={f.placeholder}
+                value={localFields[f.key]}
+                onChange={e => setLocalFields(v => ({ ...v, [f.key]: e.target.value }))}
+                style={{ ...inputStyle, flex: 1, fontFamily: f.sensitive && !showValues[f.key] ? 'monospace' : 'inherit' }}
+              />
+              {f.sensitive && (
+                <button onClick={() => setShowValues(v => ({ ...v, [f.key]: !v[f.key] }))}
+                  style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, padding: '0 10px', cursor: 'pointer', color: '#64748B' }}>
+                  {showValues[f.key] ? <EyeOff style={{ width: 14, height: 14 }} /> : <Eye style={{ width: 14, height: 14 }} />}
+                </button>
+              )}
+            </div>
+          </div>
+        ))}
+        <div style={{ display: 'flex', gap: 8, marginTop: 4 }}>
+          <button
+            onClick={() => onSave(localFields)}
+            disabled={saving}
+            style={{ flex: 1, background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: saving ? 0.7 : 1 }}>
+            <Save style={{ width: 13, height: 13 }} />
+            {saving ? 'Enregistrement…' : 'Enregistrer'}
+          </button>
+          {onTest && (
+            <button onClick={onTest} style={{ padding: '8px 16px', background: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Activity style={{ width: 13, height: 13 }} /> Tester
+            </button>
+          )}
+        </div>
+        {testResult && (
+          <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 8, background: testResult.ok ? '#DCFCE7' : '#FEE2E2', color: testResult.ok ? '#166534' : '#991B1B', fontSize: 12, fontWeight: 600 }}>
+            {testResult.ok ? <CheckCircle style={{ width: 12, height: 12, marginRight: 6, display: 'inline' }} /> : <XCircle style={{ width: 12, height: 12, marginRight: 6, display: 'inline' }} />}
+            {testResult.message}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ConfigTab() {
+  const [configs, setConfigs]       = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [saving, setSaving]         = useState({});
+  const [testResults, setTestResults] = useState({});
+  const [pwForm, setPwForm]         = useState({ current: '', next: '', confirm: '' });
+  const [pwMsg, setPwMsg]           = useState(null);
+  const [pwSaving, setPwSaving]     = useState(false);
+
+  /* Security fields state — keyed by config key */
+  const [secEdits, setSecEdits]     = useState({});
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const r = await adminAPI.getConfig();
+      setConfigs(r.data);
+      const initial = {};
+      r.data.filter(c => c.category === 'security').forEach(c => { initial[c.key] = c.value ?? ''; });
+      setSecEdits(initial);
+    } catch { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const getVal = (key) => configs.find(c => c.key === key)?.value ?? null;
+
+  const saveKey = async (key, value) => {
+    setSaving(s => ({ ...s, [key]: true }));
+    try {
+      await adminAPI.setConfig(key, String(value));
+      setConfigs(prev => prev.map(c => c.key === key ? { ...c, value: String(value) } : c));
+    } catch { /* ignore */ }
+    finally { setSaving(s => ({ ...s, [key]: false })); }
+  };
+
+  const saveIntegration = async (fields) => {
+    const keys = Object.keys(fields);
+    for (const key of keys) {
+      if (fields[key]) await saveKey(key, fields[key]);
+    }
+  };
+
+  const toggleIntegration = async (enabledKey) => {
+    const current = getVal(enabledKey);
+    await saveKey(enabledKey, current === 'true' ? 'false' : 'true');
+  };
+
+  const saveSecurityFields = async () => {
+    setSaving(s => ({ ...s, security: true }));
+    try {
+      await Promise.all(Object.entries(secEdits).map(([k, v]) => adminAPI.setConfig(k, v)));
+      await load();
+    } catch { /* ignore */ }
+    finally { setSaving(s => ({ ...s, security: false })); }
+  };
+
+  const handleChangePassword = async () => {
+    if (pwForm.next !== pwForm.confirm) { setPwMsg({ ok: false, text: 'Les nouveaux mots de passe ne correspondent pas.' }); return; }
+    if (pwForm.next.length < 8) { setPwMsg({ ok: false, text: 'Minimum 8 caractères.' }); return; }
+    setPwSaving(true); setPwMsg(null);
+    try {
+      await adminAPI.changePassword(pwForm.current, pwForm.next);
+      setPwMsg({ ok: true, text: 'Mot de passe modifié avec succès.' });
+      setPwForm({ current: '', next: '', confirm: '' });
+    } catch (e) {
+      setPwMsg({ ok: false, text: e?.response?.data?.message || 'Échec de la modification.' });
+    } finally { setPwSaving(false); }
+  };
+
+  const simulateTest = (service) => {
+    setTestResults(t => ({ ...t, [service]: { ok: false, message: 'Test en cours…' } }));
+    setTimeout(() => {
+      setTestResults(t => ({
+        ...t,
+        [service]: getVal(`${service}_api_key`) || getVal(`${service}_account_sid`)
+          ? { ok: true, message: 'Connexion simulée réussie (environnement dev).' }
+          : { ok: false, message: 'Clé API manquante — renseignez la clé avant de tester.' },
+      }));
+    }, 1200);
+  };
+
+  if (loading) return <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>Chargement…</div>;
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, alignItems: 'start' }}>
+
+      {/* ── Colonne gauche : Sécurité + MDP ── */}
+      <div>
+        {/* Politiques de sécurité */}
+        <div style={{ ...card, marginBottom: 20 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Lock style={{ width: 16, height: 16, color: ACCENT }} />
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Politiques de sécurité</p>
+          </div>
+          <div style={{ padding: '14px 20px' }}>
+            {[
+              { key: 'jwt_ttl_hours',     label: 'JWT TTL (heures)',              suffix: 'h',   note: 'RG-35' },
+              { key: 'rate_limit_auth',   label: 'Rate limit /auth (req/min/IP)',  suffix: 'req', note: '§6.6' },
+              { key: 'rate_limit_global', label: 'Rate limit global (req/min/IP)', suffix: 'req', note: '§6.6' },
+              { key: 'bcrypt_cost',       label: 'Coût bcrypt',                    suffix: '',    note: 'RG-06' },
+            ].map(f => (
+              <div key={f.key} style={{ marginBottom: 12 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>{f.label}</label>
+                  <span style={{ fontSize: 10, background: '#EEF2FF', color: '#4338CA', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>{f.note}</span>
+                </div>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="number"
+                    min="1"
+                    value={secEdits[f.key] ?? ''}
+                    onChange={e => setSecEdits(s => ({ ...s, [f.key]: e.target.value }))}
+                    style={{ ...inputStyle, flex: 1 }}
+                  />
+                  {f.suffix && <span style={{ display: 'flex', alignItems: 'center', color: '#64748B', fontSize: 12, fontWeight: 600, paddingRight: 4 }}>{f.suffix}</span>}
+                </div>
+              </div>
+            ))}
+            <div style={{ marginTop: 4 }}>
+              {[
+                { key: 'timezone', label: 'Fuseau horaire' },
+                { key: 'currency', label: 'Devise' },
+              ].map(f => (
+                <div key={f.key} style={{ marginBottom: 12 }}>
+                  <label style={labelStyle}>{f.label}</label>
+                  <input
+                    value={secEdits[f.key] ?? getVal(f.key) ?? ''}
+                    onChange={e => setSecEdits(s => ({ ...s, [f.key]: e.target.value }))}
+                    style={inputStyle}
+                  />
+                </div>
+              ))}
+            </div>
+            <button
+              onClick={saveSecurityFields}
+              disabled={saving.security}
+              style={{ width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', cursor: saving.security ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: saving.security ? 0.7 : 1 }}>
+              <Save style={{ width: 13, height: 13 }} />
+              {saving.security ? 'Enregistrement…' : 'Enregistrer les politiques'}
+            </button>
+          </div>
+        </div>
+
+        {/* Changement de mot de passe */}
+        <div style={{ ...card }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Shield style={{ width: 16, height: 16, color: '#059669' }} />
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Changer le mot de passe admin</p>
+          </div>
+          <div style={{ padding: '14px 20px' }}>
+            {[
+              { field: 'current',  label: 'Mot de passe actuel',        placeholder: '••••••••' },
+              { field: 'next',     label: 'Nouveau mot de passe',        placeholder: 'Minimum 8 caractères' },
+              { field: 'confirm',  label: 'Confirmer le nouveau MDP',   placeholder: '••••••••' },
+            ].map(f => (
+              <div key={f.field} style={{ marginBottom: 12 }}>
+                <label style={labelStyle}>{f.label}</label>
+                <input
+                  type="password"
+                  placeholder={f.placeholder}
+                  value={pwForm[f.field]}
+                  onChange={e => setPwForm(p => ({ ...p, [f.field]: e.target.value }))}
+                  style={inputStyle}
+                />
+              </div>
+            ))}
+            {pwMsg && (
+              <div style={{ padding: '8px 12px', borderRadius: 8, background: pwMsg.ok ? '#DCFCE7' : '#FEE2E2', color: pwMsg.ok ? '#166534' : '#991B1B', fontSize: 12, fontWeight: 600, marginBottom: 10 }}>
+                {pwMsg.ok ? <CheckCircle style={{ width: 12, height: 12, marginRight: 6, display: 'inline' }} /> : <XCircle style={{ width: 12, height: 12, marginRight: 6, display: 'inline' }} />}
+                {pwMsg.text}
+              </div>
+            )}
+            <button
+              onClick={handleChangePassword}
+              disabled={pwSaving}
+              style={{ width: '100%', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', cursor: pwSaving ? 'not-allowed' : 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, opacity: pwSaving ? 0.7 : 1 }}>
+              <Shield style={{ width: 13, height: 13 }} />
+              {pwSaving ? 'Modification…' : 'Changer le mot de passe'}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Colonne droite : Intégrations tierces ── */}
+      <div>
+        <div style={{ marginBottom: 12 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Intégrations tierces</h3>
+          <p style={{ fontSize: 11, color: '#64748B', margin: 0 }}>Configurez les APIs externes (Novasend, FCM, Twilio) conformément aux RG.</p>
+        </div>
+
+        {/* Novasend */}
+        <IntegrationCard
+          icon={Zap}
+          title="Novasend — Mobile Money (Orange, MTN, Wave)"
+          color="#F59E0B"
+          enabled={getVal('novasend_enabled') === 'true'}
+          onToggle={() => toggleIntegration('novasend_enabled')}
+          fields={[{ key: 'novasend_api_key', label: 'Clé API Novasend', placeholder: 'nv_live_…', sensitive: true }]}
+          onSave={(f) => saveIntegration(f)}
+          saving={saving.novasend}
+          testResult={testResults.novasend}
+          onTest={() => simulateTest('novasend')}
+        />
+
+        {/* Firebase FCM */}
+        <IntegrationCard
+          icon={Bell}
+          title="Firebase FCM — Notifications push"
+          color="#F97316"
+          enabled={getVal('firebase_enabled') === 'true'}
+          onToggle={() => toggleIntegration('firebase_enabled')}
+          fields={[{ key: 'firebase_fcm_key', label: 'Server Key FCM', placeholder: 'AAAA…', sensitive: true }]}
+          onSave={(f) => saveIntegration(f)}
+          saving={saving.firebase}
+          testResult={testResults.firebase}
+          onTest={() => simulateTest('firebase')}
+        />
+
+        {/* Twilio SMS */}
+        <IntegrationCard
+          icon={MessageSquare}
+          title="Twilio — SMS (reçus, alertes)"
+          color="#F43F5E"
+          enabled={getVal('twilio_enabled') === 'true'}
+          onToggle={() => toggleIntegration('twilio_enabled')}
+          fields={[
+            { key: 'twilio_account_sid', label: 'Account SID', placeholder: 'AC…', sensitive: false },
+            { key: 'twilio_auth_token',  label: 'Auth Token',   placeholder: '••••••••', sensitive: true },
+          ]}
+          onSave={(f) => saveIntegration(f)}
+          saving={saving.twilio}
+          testResult={testResults.twilio}
+          onTest={() => simulateTest('twilio')}
+        />
+
+        {/* Paramètres système */}
+        <div style={{ ...card, marginTop: 4 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 10 }}>
+            <Database style={{ width: 16, height: 16, color: '#6366F1' }} />
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Sauvegarde & rétention</p>
+          </div>
+          <div style={{ padding: '14px 20px' }}>
+            <label style={labelStyle}>Rétention des sauvegardes (jours)</label>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+              <input
+                type="number"
+                min="1"
+                value={secEdits['backup_retention_days'] ?? getVal('backup_retention_days') ?? '90'}
+                onChange={e => setSecEdits(s => ({ ...s, backup_retention_days: e.target.value }))}
+                style={{ ...inputStyle, flex: 1 }}
+              />
+              <span style={{ display: 'flex', alignItems: 'center', color: '#64748B', fontSize: 12, fontWeight: 600 }}>jours</span>
+            </div>
+            <button
+              onClick={() => saveKey('backup_retention_days', secEdits['backup_retention_days'] ?? '90')}
+              disabled={saving['backup_retention_days']}
+              style={{ width: '100%', background: '#6366F1', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 0', cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Save style={{ width: 13, height: 13 }} /> Enregistrer
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );

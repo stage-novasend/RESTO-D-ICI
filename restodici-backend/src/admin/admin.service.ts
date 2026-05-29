@@ -2,6 +2,7 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -10,6 +11,36 @@ import { User, Role } from '../auth/entities/user.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
+import { SystemConfig } from '../common/entities/system-config.entity';
+
+/* ── Clés de config avec leurs métadonnées ── */
+const CONFIG_DEFAULTS: Array<{
+  key: string;
+  value: string | null;
+  description: string;
+  category: string;
+}> = [
+  // Sécurité
+  { key: 'jwt_ttl_hours',       value: '24',  description: 'Durée de vie du token JWT (heures)', category: 'security' },
+  { key: 'rate_limit_auth',     value: '10',  description: 'Requêtes max /auth par minute par IP', category: 'security' },
+  { key: 'rate_limit_global',   value: '100', description: 'Requêtes max globales par minute par IP', category: 'security' },
+  { key: 'bcrypt_cost',         value: '12',  description: 'Coût bcrypt pour le hachage des mots de passe', category: 'security' },
+  // Intégrations
+  { key: 'novasend_api_key',    value: null,  description: 'Clé API Novasend (paiement Mobile Money)', category: 'integration' },
+  { key: 'novasend_enabled',    value: 'false', description: 'Activer l\'intégration Novasend', category: 'integration' },
+  { key: 'firebase_fcm_key',    value: null,  description: 'Server Key Firebase FCM (notifications push)', category: 'integration' },
+  { key: 'firebase_enabled',    value: 'true', description: 'Activer les notifications Firebase FCM', category: 'integration' },
+  { key: 'twilio_account_sid',  value: null,  description: 'Account SID Twilio (SMS)', category: 'integration' },
+  { key: 'twilio_auth_token',   value: null,  description: 'Auth Token Twilio (SMS)', category: 'integration' },
+  { key: 'twilio_enabled',      value: 'false', description: 'Activer l\'intégration Twilio SMS', category: 'integration' },
+  // Système
+  { key: 'timezone',            value: 'Africa/Abidjan', description: 'Fuseau horaire de la plateforme', category: 'system' },
+  { key: 'currency',            value: 'FCFA', description: 'Devise utilisée', category: 'system' },
+  { key: 'backup_retention_days', value: '90', description: 'Rétention des sauvegardes en jours', category: 'system' },
+];
+
+/* Clés masquées dans les réponses API (remplacées par ****) */
+const SENSITIVE_KEYS = new Set(['novasend_api_key', 'firebase_fcm_key', 'twilio_auth_token']);
 
 @Injectable()
 export class AdminService {
@@ -18,6 +49,7 @@ export class AdminService {
     @InjectRepository(Restaurant) private restaurantRepo: Repository<Restaurant>,
     @InjectRepository(AuditLog) private auditRepo: Repository<AuditLog>,
     @InjectRepository(CompteB2B) private b2bRepo: Repository<CompteB2B>,
+    @InjectRepository(SystemConfig) private configRepo: Repository<SystemConfig>,
   ) {}
 
   async getStats() {
@@ -324,5 +356,62 @@ export class AdminService {
     }
 
     return rows.join('\n');
+  }
+
+  /* ── Configuration système ── */
+
+  async getConfig(): Promise<Array<{
+    key: string; value: string | null; description: string; category: string; updatedAt: Date; updatedBy?: string;
+  }>> {
+    // Seed defaults for any missing keys
+    const existing = await this.configRepo.find();
+    const existingKeys = new Set(existing.map(c => c.key));
+
+    const toInsert = CONFIG_DEFAULTS.filter(d => !existingKeys.has(d.key));
+    if (toInsert.length > 0) {
+      await this.configRepo.save(toInsert.map(d => this.configRepo.create(d)));
+    }
+
+    const all = await this.configRepo.find({ order: { category: 'ASC', key: 'ASC' } });
+
+    return all.map(c => ({
+      key: c.key,
+      value: SENSITIVE_KEYS.has(c.key) && c.value ? '••••••••' : c.value,
+      description: c.description ?? '',
+      category: c.category,
+      updatedAt: c.updatedAt,
+      updatedBy: c.updatedBy,
+    }));
+  }
+
+  async setConfig(key: string, value: string | null, adminId: string): Promise<{ key: string; updatedAt: Date }> {
+    let entry = await this.configRepo.findOne({ where: { key } });
+
+    if (!entry) {
+      const def = CONFIG_DEFAULTS.find(d => d.key === key);
+      if (!def) throw new BadRequestException(`Clé de configuration inconnue : ${key}`);
+      entry = this.configRepo.create({ ...def });
+    }
+
+    entry.value = value;
+    entry.updatedBy = adminId;
+    const saved = await this.configRepo.save(entry);
+    return { key: saved.key, updatedAt: saved.updatedAt };
+  }
+
+  async changeAdminPassword(
+    adminId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<{ success: boolean }> {
+    const user = await this.userRepo.findOne({ where: { id: adminId } });
+    if (!user) throw new NotFoundException('Utilisateur introuvable');
+
+    const ok = await bcrypt.compare(currentPassword, user.password);
+    if (!ok) throw new BadRequestException('Mot de passe actuel incorrect');
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await this.userRepo.save(user);
+    return { success: true };
   }
 }

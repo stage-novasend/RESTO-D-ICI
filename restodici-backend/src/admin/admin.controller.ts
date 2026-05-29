@@ -167,4 +167,34 @@ export class AdminController {
   ) {
     return this.adminService.validateB2B(id, req.user.id, approved);
   }
+
+  /* ── Configuration système ── */
+
+  @Get('config')
+  getConfig() {
+    return this.adminService.getConfig();
+  }
+
+  @Patch('config/:key')
+  @HttpCode(HttpStatus.OK)
+  setConfig(
+    @Param('key') key: string,
+    @Body('value') value: string | null,
+    @Req() req: { user: { id: string } },
+  ) {
+    return this.adminService.setConfig(key, value, req.user.id);
+  }
+
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  changePassword(
+    @Body() body: { currentPassword: string; newPassword: string },
+    @Req() req: { user: { id: string } },
+  ) {
+    return this.adminService.changeAdminPassword(
+      req.user.id,
+      body.currentPassword,
+      body.newPassword,
+    );
+  }
 }

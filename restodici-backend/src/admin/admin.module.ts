@@ -6,11 +6,12 @@ import { User } from '../auth/entities/user.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { AuditLog } from '../common/entities/audit-log.entity';
 import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
+import { SystemConfig } from '../common/entities/system-config.entity';
 import { AuthModule } from '../auth/auth.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([User, Restaurant, AuditLog, CompteB2B]),
+    TypeOrmModule.forFeature([User, Restaurant, AuditLog, CompteB2B, SystemConfig]),
     AuthModule,
   ],
   controllers: [AdminController],
