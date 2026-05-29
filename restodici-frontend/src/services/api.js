@@ -280,6 +280,22 @@ export const restaurantAPI = {
   update: (restaurantId, data) => api.patch(`/restaurants/${restaurantId}`, data),
 };
 
+export const adminAPI = {
+  getStats:           ()           => api.get('/admin/stats'),
+  getUsers:           (params)     => api.get('/admin/users', { params }),
+  createUser:         (data)       => api.post('/admin/users', data),
+  updateUser:         (id, data)   => api.patch(`/admin/users/${id}`, data),
+  toggleUser:         (id)         => api.patch(`/admin/users/${id}/toggle`),
+  getRestaurants:     ()           => api.get('/admin/restaurants'),
+  createRestaurant:   (data)       => api.post('/admin/restaurants', data),
+  updateRestaurant:   (id, data)   => api.patch(`/admin/restaurants/${id}`, data),
+  toggleRestaurant:   (id)         => api.patch(`/admin/restaurants/${id}/toggle`),
+  getAuditLogs:       (params)     => api.get('/admin/audit-logs', { params }),
+  exportSyscohada:    ()           => api.get('/admin/exports/syscohada', { responseType: 'blob' }),
+  getPendingB2B:      ()           => api.get('/admin/b2b/pending'),
+  validateB2B:        (id, approved) => api.patch(`/admin/b2b/${id}/valider`, { approved }),
+};
+
 export const staffAPI = {
   // POST /restaurants/:restaurantId/staff
   createStaffAccount: (restaurantId, staffData) =>

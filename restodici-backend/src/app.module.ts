@@ -13,6 +13,7 @@ import { StocksModule } from './stocks/stocks.module';
 import { RestaurantsModule } from './restaurants/restaurants.module';
 import { TresorerieModule } from './tresorerie/tresorerie.module';
 import { B2BModule } from './b2b/b2b.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { B2BModule } from './b2b/b2b.module';
     ScheduleModule.forRoot(),
     AuthModule,
     B2BModule,
+    AdminModule,
     RestaurantsModule,
     MenuModule,
     CommandesModule,

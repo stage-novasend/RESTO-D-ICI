@@ -9,6 +9,7 @@ import GerantLayout from './layouts/GerantLayout';
 import ClientLayout from './layouts/ClientLayout';
 import B2BLayout from './layouts/B2BLayout';
 import StaffLayout from './layouts/StaffLayout';
+import AdminLayout from './layouts/AdminLayout';
 
 // ===== PAGES PUBLIQUES — Imports directs sans extension .jsx =====
 import Home from './pages/Home';
@@ -38,9 +39,18 @@ import B2BInvoices from './pages/b2b/B2BInvoices';
 import B2BReports from './pages/b2b/B2BReports';
 import AcceptInvitation from './pages/b2b/AcceptInvitation';
 import B2BOrderTracking from './pages/b2b/B2BOrderTracking';
+import AdminDashboard from './pages/admin/AdminDashboard';
 
 // ===== UTILITAIRES — Imports directs sans extension .jsx =====
 const queryClient = new QueryClient();
+
+// ─── Composant de protection des routes admin ───────────────────────────────
+function ProtectedAdminRoute({ children }) {
+  const { user, loading } = useAuth();
+  if (loading) return <div className="min-h-screen flex items-center justify-center">Chargement...</div>;
+  if (!user || user.role !== 'ADMIN') return <Navigate to="/login" replace />;
+  return children;
+}
 
 // ─── Composant de protection des routes gérant ──────────────────────────────
 function ProtectedGerantRoute({ children }) {
@@ -65,6 +75,7 @@ function ProtectedCheckoutRoute({ children }) {
   if (!user) return <Navigate to="/login" state={{ redirect: 'checkout' }} replace />;
   if (user.role === 'STAFF')  return <Navigate to="/staff" replace />;
   if (user.role === 'GERANT') return <Navigate to="/gerant" replace />;
+  if (user.role === 'ADMIN')  return <Navigate to="/admin" replace />;
   // CLIENT and B2B can both use the cart/checkout/suivi flow
   return children;
 }
@@ -76,6 +87,7 @@ function ProtectedClientRoute({ children }) {
   if (!user) return <Navigate to="/login" replace />;
   if (user.role === 'STAFF')  return <Navigate to="/staff" replace />;
   if (user.role === 'GERANT') return <Navigate to="/gerant" replace />;
+  if (user.role === 'ADMIN')  return <Navigate to="/admin" replace />;
   if (user.role === 'B2B')    return <Navigate to="/b2b" replace />;
   return children;
 }
@@ -203,6 +215,18 @@ export default function App() {
               <Route path="reports" element={<B2BReports />} />
               <Route path="deliveries" element={<B2BOrders />} />
               <Route path="suivi/:id" element={<B2BOrderTracking />} />
+            </Route>
+
+            {/* === DASHBOARD ADMIN SYSTÈME === */}
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminLayout />
+                </ProtectedAdminRoute>
+              }
+            >
+              <Route index element={<AdminDashboard />} />
             </Route>
 
             {/* === REDIRECTION PAR DÉFAUT === */}

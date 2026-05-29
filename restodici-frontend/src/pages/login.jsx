@@ -38,9 +38,10 @@ export default function Login() {
   const redirectAfterLogin = (userData) => {
     const userRole = userData.role?.toUpperCase();
     if (redirectParam === 'checkout') navigate('/checkout');
+    else if (userRole === 'ADMIN')  navigate('/admin');
     else if (userRole === 'GERANT') navigate('/gerant');
-    else if (userRole === 'B2B') navigate('/b2b/dashboard');
-    else if (userRole === 'STAFF') navigate('/staff');
+    else if (userRole === 'B2B')    navigate('/b2b/dashboard');
+    else if (userRole === 'STAFF')  navigate('/staff');
     else navigate('/menu');
   };
 
