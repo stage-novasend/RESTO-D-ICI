@@ -7,7 +7,7 @@ import { Commande } from '../commandes/entities/commande.entity';
 import { CommandesGateway } from '../commandes/commandes.gateway';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
-import { RECEIPT_QUEUE } from '../receipt-queue/receipt-queue.module';
+import { RECEIPT_QUEUE } from '../receipt-queue/receipt-queue.constants';
 
 @Injectable()
 export class PaiementsService {

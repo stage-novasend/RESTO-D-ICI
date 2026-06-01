@@ -7,7 +7,7 @@ import { Commande } from '../commandes/entities/commande.entity';
 import { TresorerieService } from '../tresorerie/tresorerie.service';
 import { EmailService } from '../email/email.service';
 import { StorageService } from '../storage/storage.service';
-import { RECEIPT_QUEUE } from './receipt-queue.module';
+import { RECEIPT_QUEUE } from './receipt-queue.constants';
 
 export interface ReceiptJobData {
   commandeId: string;
