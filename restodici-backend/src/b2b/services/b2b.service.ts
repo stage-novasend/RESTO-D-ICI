@@ -923,6 +923,24 @@ export class B2BService {
       annee,
     });
 
+    // Notifie le responsable B2B par email (RG-20)
+    const emailDest = compte.emailProfessionnel;
+    if (emailDest) {
+      void this.emailService
+        .sendFactureMensuelleEmail({
+          to: emailDest,
+          raisonSociale: compte.raisonSociale,
+          numeroFacture,
+          mois,
+          annee,
+          montantHT,
+          tva,
+          montantTTC,
+          echeance: echeanceDate.toISOString().slice(0, 10),
+        })
+        .catch((err) => console.error(`[B2BService] Erreur email facture ${numeroFacture}: ${(err as Error).message}`));
+    }
+
     return saved;
   }
 
