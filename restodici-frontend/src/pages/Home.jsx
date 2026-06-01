@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef } from "react";
-import { UtensilsCrossed, ArrowRight, ChevronRight, Check, Star, Search, ShoppingBag, Truck, Clock } from "lucide-react";
+import { UtensilsCrossed, ArrowRight, Check, Star, Search, ShoppingBag, Truck, Clock } from "lucide-react";
+import { menuAPI } from "../services/api";
 
-/* ─── Palette (screenshot: crème chaud + orange vif + blanc) ─── */
+/* ─── Palette ─── */
 const T = {
   bg:      "#FFFAF3",
   bgAlt:   "#FFF5E8",
@@ -32,14 +33,36 @@ const CSS = `
 @keyframes kfspin      { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
 @keyframes kfzoomin    { from{transform:scale(1)} to{transform:scale(1.07)} }
 @keyframes kfbounce    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
+@keyframes kfskeleton  { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 .rd-nav-link:hover     { color:${T.accent} !important; }
 .rd-btn-cta:hover      { transform:translateY(-2px) !important; box-shadow:0 16px 40px rgba(255,140,0,0.5) !important; }
 .rd-btn-outline:hover  { background:${T.accent} !important; color:#fff !important; }
 .rd-card:hover         { transform:translateY(-6px) !important; box-shadow:0 18px 48px rgba(255,140,0,0.2) !important; }
 .rd-feat-card:hover    { transform:translateY(-5px) !important; box-shadow:0 14px 36px rgba(0,0,0,0.1) !important; }
-.rd-food-card:hover img { transform:scale(1.08) !important; }
 .rd-foot-link:hover    { color:${T.accent} !important; }
 `;
+
+/* ─── Image fallback pool ─── */
+const FOOD_IMGS = [
+  "photo-1565299585323-38d6b0865b47",
+  "photo-1567620905732-2d1ec7ab7445",
+  "photo-1555939594-58d7cb561ad1",
+  "photo-1512058564366-18510be2db19",
+  "photo-1540189549336-e6e99c3679fe",
+  "photo-1565958011703-44f9829ba187",
+  "photo-1568901346375-23c9450c58cd",
+  "photo-1504674900247-0877df9cc836",
+];
+
+function getItemImg(item, idx) {
+  if (item?.imageUrl) return item.imageUrl;
+  return `https://images.unsplash.com/${FOOD_IMGS[idx % FOOD_IMGS.length]}?q=80&w=500&auto=format&fit=crop`;
+}
+
+function formatPrix(prix) {
+  if (prix === null || prix === undefined) return "—";
+  return new Intl.NumberFormat("fr-FR").format(prix) + " FCFA";
+}
 
 /* ─── Utilities ─── */
 function FontLoader() {
@@ -94,7 +117,6 @@ function KS({ h=4 }) {
   return <div style={{display:"flex",height:h}}>{KENTE.map((c,i)=><div key={i} style={{flex:1,background:c}}/>)}</div>;
 }
 
-/* ─── Brush stroke SVG ─── */
 function Brush({ color=T.accent, opacity=0.18, style={} }) {
   return (
     <svg viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position:"absolute", pointerEvents:"none", ...style }}>
@@ -103,7 +125,6 @@ function Brush({ color=T.accent, opacity=0.18, style={} }) {
   );
 }
 
-/* ─── Chip ─── */
 function Chip({ children, color=T.accent, bg }) {
   return (
     <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:bg||`${color}15`, border:`1px solid ${color}28`, borderRadius:100, padding:"7px 18px", marginBottom:20 }}>
@@ -113,9 +134,27 @@ function Chip({ children, color=T.accent, bg }) {
   );
 }
 
-/* ─── Stars ─── */
 function Stars({ n=5 }) {
   return <span>{Array.from({length:5},(_,i)=><Star key={i} size={13} fill={i<n?T.yellow:"#E0D0B8"} color={i<n?T.yellow:"#E0D0B8"} />)}</span>;
+}
+
+/* ─── Skeleton card ─── */
+function SkeletonCard() {
+  const shimmer = {
+    background: `linear-gradient(90deg, ${T.bgAlt} 25%, ${T.surface} 50%, ${T.bgAlt} 75%)`,
+    backgroundSize: "200% 100%",
+    animation: "kfskeleton 1.6s ease-in-out infinite",
+  };
+  return (
+    <div style={{ background:T.card,borderRadius:20,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}` }}>
+      <div style={{ height:200, ...shimmer }} />
+      <div style={{ padding:"20px 22px 24px" }}>
+        <div style={{ height:18,width:"65%",borderRadius:6,marginBottom:10, ...shimmer }} />
+        <div style={{ height:13,width:"45%",borderRadius:6,marginBottom:20, ...shimmer }} />
+        <div style={{ height:44,borderRadius:50, ...shimmer }} />
+      </div>
+    </div>
+  );
 }
 
 /* ─── Nav ─── */
@@ -152,22 +191,21 @@ function Nav() {
 }
 
 /* ─── Hero ─── */
-function Hero() {
+function Hero({ search, onSearch, menuRef }) {
+  const handleSubmit = () => {
+    if (menuRef?.current) {
+      menuRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
   return (
     <section style={{ background:T.bg,minHeight:"100vh",position:"relative",overflow:"hidden",display:"flex",flexDirection:"column" }}>
       <KS h={3} />
-
-      {/* Brush strokes background */}
       <Brush color={T.accent} opacity={0.13} style={{ width:700,top:-60,right:-80 }} />
       <Brush color={T.yellow} opacity={0.12} style={{ width:500,bottom:80,left:-100,transform:"rotate(15deg)" }} />
-
-      {/* Big blob */}
       <div style={{ position:"absolute",right:-120,top:"5%",width:680,height:680,borderRadius:"50%",background:`radial-gradient(circle,${T.accent}22 0%,transparent 68%)`,pointerEvents:"none" }} />
       <div style={{ position:"absolute",left:-80,bottom:"10%",width:420,height:420,borderRadius:"50%",background:`radial-gradient(circle,${T.yellow}18 0%,transparent 70%)`,pointerEvents:"none" }} />
 
       <div style={{ position:"relative",zIndex:2,flex:1,maxWidth:1280,margin:"0 auto",padding:"148px 48px 80px",width:"100%",display:"grid",gridTemplateColumns:"1fr 0.9fr",gap:60,alignItems:"center" }}>
-
-        {/* Left */}
         <div>
           <Reveal>
             <Chip>Abidjan · Côte d'Ivoire · 2026</Chip>
@@ -185,14 +223,23 @@ function Hero() {
             </p>
           </Reveal>
 
-          {/* Search bar */}
+          {/* Search bar — contrôlé */}
           <Reveal delay={180}>
             <div style={{ display:"flex",gap:0,marginBottom:44,maxWidth:480,borderRadius:14,overflow:"hidden",boxShadow:`0 6px 30px rgba(0,0,0,0.1)`,border:`1px solid ${T.line}` }}>
               <div style={{ display:"flex",alignItems:"center",gap:10,background:T.card,padding:"0 20px",flex:1 }}>
                 <Search size={18} color={T.mutedL} />
-                <input placeholder="Rechercher un plat…" style={{ border:"none",outline:"none",fontFamily:sans,fontSize:15,color:T.text,background:"transparent",width:"100%",padding:"17px 0" }} />
+                <input
+                  value={search}
+                  onChange={e => onSearch(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSubmit()}
+                  placeholder="Rechercher un plat…"
+                  style={{ border:"none",outline:"none",fontFamily:sans,fontSize:15,color:T.text,background:"transparent",width:"100%",padding:"17px 0" }}
+                />
+                {search && (
+                  <button onClick={() => onSearch("")} style={{ background:"none",border:"none",cursor:"pointer",color:T.mutedL,fontSize:18,lineHeight:1,padding:"0 4px" }}>×</button>
+                )}
               </div>
-              <button style={{ background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:14,fontWeight:700,border:"none",cursor:"pointer",padding:"0 28px",whiteSpace:"nowrap" }}>Rechercher</button>
+              <button onClick={handleSubmit} style={{ background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:14,fontWeight:700,border:"none",cursor:"pointer",padding:"0 28px",whiteSpace:"nowrap" }}>Rechercher</button>
             </div>
           </Reveal>
 
@@ -207,7 +254,6 @@ function Hero() {
             </div>
           </Reveal>
 
-          {/* Stats */}
           <Reveal delay={270}>
             <div style={{ display:"flex",gap:0,paddingTop:28,borderTop:`1px solid ${T.line}` }}>
               {[
@@ -224,14 +270,10 @@ function Hero() {
           </Reveal>
         </div>
 
-        {/* Right: food composition */}
+        {/* Right: food photo */}
         <Reveal dir="right" delay={100}>
           <div style={{ position:"relative",height:560 }}>
-
-            {/* Orange brush behind photo */}
             <div style={{ position:"absolute",inset:"10% -5%",borderRadius:180,background:`linear-gradient(135deg,${T.yellow}28,${T.accent}22)`,transform:"rotate(-6deg)",zIndex:0 }} />
-
-            {/* Main photo */}
             <div style={{ position:"absolute",top:30,right:0,width:"92%",zIndex:2,borderRadius:24,overflow:"hidden",boxShadow:"0 32px 80px rgba(0,0,0,0.16)" }}>
               <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=900&auto=format&fit=crop" alt="Plat africain" style={{ width:"100%",height:420,objectFit:"cover",display:"block" }} />
               <div style={{ position:"absolute",inset:0,background:"linear-gradient(to bottom, transparent 50%, rgba(26,12,0,0.6))" }} />
@@ -240,14 +282,10 @@ function Hero() {
                 <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.65)",margin:0 }}>Attiéké · Kedjenou · Garba · Aloko</p>
               </div>
             </div>
-
-            {/* Discount badge */}
             <div style={{ position:"absolute",top:16,right:"4%",zIndex:10,width:80,height:80,borderRadius:"50%",background:`linear-gradient(135deg,${T.red},#FF6020)`,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center",boxShadow:"0 8px 28px rgba(255,59,48,0.4)",animation:"kfbadge 4s ease-in-out infinite" }}>
               <span style={{ fontFamily:sans,fontSize:20,fontWeight:900,color:"#fff",lineHeight:1 }}>50%</span>
               <span style={{ fontFamily:sans,fontSize:10,color:"rgba(255,255,255,0.85)",fontWeight:600 }}>OFF</span>
             </div>
-
-            {/* Order card */}
             <div style={{ position:"absolute",bottom:10,left:0,zIndex:10,background:T.card,borderRadius:16,padding:"16px 20px",boxShadow:"0 12px 40px rgba(0,0,0,0.14)",display:"flex",alignItems:"center",gap:14,animation:"kfbadge 5s ease-in-out infinite 1.5s",minWidth:200 }}>
               <div style={{ width:50,height:50,borderRadius:12,overflow:"hidden",flexShrink:0 }}>
                 <img src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?q=80&w=100&auto=format&fit=crop" alt="" style={{ width:"100%",height:"100%",objectFit:"cover" }} />
@@ -258,8 +296,6 @@ function Hero() {
                 <Stars n={5} />
               </div>
             </div>
-
-            {/* Rating badge */}
             <div style={{ position:"absolute",top:80,left:"-8%",zIndex:10,background:T.card,borderRadius:14,padding:"14px 18px",boxShadow:"0 8px 28px rgba(0,0,0,0.12)",animation:"kfbadge 6s ease-in-out infinite 0.8s" }}>
               <div style={{ display:"flex",gap:3,marginBottom:5 }}><Stars n={5} /></div>
               <p style={{ fontFamily:sans,fontSize:15,fontWeight:800,color:T.dark,margin:"0 0 1px" }}>4.9 / 5</p>
@@ -300,7 +336,6 @@ function HowItWorks() {
     <section id="processus" style={{ background:T.bgAlt,padding:"120px 0",position:"relative",overflow:"hidden" }}>
       <Brush color={T.yellow} opacity={0.1} style={{ width:400,top:-20,right:100 }} />
       <Brush color={T.accent} opacity={0.08} style={{ width:350,bottom:-30,left:50,transform:"scaleX(-1)" }} />
-
       <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 48px" }}>
         <Reveal>
           <div style={{ textAlign:"center",marginBottom:80 }}>
@@ -310,10 +345,8 @@ function HowItWorks() {
             </h2>
           </div>
         </Reveal>
-
         <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:40,position:"relative" }}>
           <div style={{ position:"absolute",top:68,left:"17%",right:"17%",height:2,background:`linear-gradient(to right,${T.accent}40,${T.yellow}40,${T.accent}40)`,zIndex:0,borderTop:"2px dashed" }} />
-
           {steps.map((s,i)=>(
             <Reveal key={i} delay={i*100}>
               <div style={{ textAlign:"center",position:"relative",zIndex:1,background:T.card,borderRadius:20,padding:"48px 32px",boxShadow:T.shadowS,border:`1px solid ${T.line}`,transition:"all .3s" }}>
@@ -331,48 +364,109 @@ function HowItWorks() {
   );
 }
 
-/* ─── Menu showcase ─── */
-function MenuItem({ photo, name, price, reviews, tag }) {
+/* ─── Menu card (real item) ─── */
+function MenuItem({ item, idx }) {
   const [hov, setHov] = useState(false);
   return (
     <div className="rd-card" onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ background:T.card,borderRadius:20,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}`,transition:"all .35s",cursor:"pointer" }}>
+      style={{ background:T.card,borderRadius:20,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}`,transition:"all .35s",cursor:"pointer",height:"100%" }}>
       <div style={{ height:200,overflow:"hidden",position:"relative" }}>
-        <img src={`https://images.unsplash.com/${photo}?q=80&w=500&auto=format&fit=crop`} alt={name} style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform .5s",transform:hov?"scale(1.07)":"scale(1)" }} />
-        {tag && <span style={{ position:"absolute",top:14,left:14,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:10,fontWeight:700,letterSpacing:"0.1em",padding:"5px 12px",borderRadius:20 }}>{tag}</span>}
+        <img
+          src={getItemImg(item, idx)}
+          alt={item.nom}
+          onError={e => { e.target.src=`https://images.unsplash.com/${FOOD_IMGS[idx%FOOD_IMGS.length]}?q=80&w=500&auto=format&fit=crop`; }}
+          style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform .5s",transform:hov?"scale(1.07)":"scale(1)" }}
+        />
+        {item.categorie?.nom && (
+          <span style={{ position:"absolute",top:14,left:14,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:10,fontWeight:700,letterSpacing:"0.1em",padding:"5px 12px",borderRadius:20 }}>
+            {item.categorie.nom}
+          </span>
+        )}
       </div>
       <div style={{ padding:"20px 22px 24px" }}>
-        <h3 style={{ fontFamily:serif,fontSize:18,color:T.dark,fontWeight:700,margin:"0 0 8px" }}>{name}</h3>
+        <h3 style={{ fontFamily:serif,fontSize:18,color:T.dark,fontWeight:700,margin:"0 0 6px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{item.nom}</h3>
+        {item.description && (
+          <p style={{ fontFamily:sans,fontSize:13,color:T.muted,lineHeight:1.5,margin:"0 0 12px",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden" }}>{item.description}</p>
+        )}
         <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
-          <div>
-            <p style={{ fontFamily:sans,fontSize:11,color:T.mutedL,margin:"0 0 2px",textTransform:"uppercase",letterSpacing:"0.07em" }}>Prix</p>
-            <p style={{ fontFamily:sans,fontSize:16,fontWeight:800,color:T.accent,margin:0 }}>{price}</p>
-          </div>
-          <div style={{ textAlign:"right" }}>
-            <p style={{ fontFamily:sans,fontSize:11,color:T.mutedL,margin:"0 0 2px",textTransform:"uppercase",letterSpacing:"0.07em" }}>Avis</p>
-            <div style={{ display:"flex",alignItems:"center",gap:4 }}><Star size={13} fill={T.yellow} color={T.yellow} /><span style={{ fontFamily:sans,fontSize:14,fontWeight:700,color:T.dark }}>{reviews}</span></div>
+          <p style={{ fontFamily:sans,fontSize:16,fontWeight:800,color:T.accent,margin:0 }}>{formatPrix(item.prix)}</p>
+          <div style={{ display:"flex",alignItems:"center",gap:4 }}>
+            <Star size={13} fill={T.yellow} color={T.yellow} />
+            <span style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:T.dark }}>4.8</span>
           </div>
         </div>
         <a href="/menu" style={{ display:"block",textAlign:"center",padding:"12px 0",background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:14,fontWeight:700,textDecoration:"none",borderRadius:50,boxShadow:`0 6px 20px ${T.accent}38`,transition:"opacity .2s" }}
-        onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>Commander</a>
+          onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+          Commander
+        </a>
       </div>
     </div>
   );
 }
 
-function MenuSection() {
-  const tabs=["Tout","Grillades","Riz & Sauces","Poisson","Desserts"];
-  const [active,setActive]=useState(0);
-  const items=[
-    { photo:"photo-1565299585323-38d6b0865b47", name:"Attiéké Barracuda",  price:"4 200 FCFA", reviews:"124", tag:"Populaire" },
-    { photo:"photo-1567620905732-2d1ec7ab7445", name:"Kedjenou Poulet",    price:"3 800 FCFA", reviews:"98"  },
-    { photo:"photo-1555939594-58d7cb561ad1", name:"Brochettes Grillées", price:"5 500 FCFA", reviews:"76", tag:"Nouveau" },
-    { photo:"photo-1512058564366-18510be2db19", name:"Riz Gras Sauté",    price:"2 500 FCFA", reviews:"210" },
-    { photo:"photo-1540189549336-e6e99c3679fe", name:"Foutou Sauce Graine",price:"3 200 FCFA", reviews:"88"  },
-    { photo:"photo-1565958011703-44f9829ba187", name:"Alloco Poulet",      price:"3 000 FCFA", reviews:"152" },
-  ];
+/* ─── Menu Section — entièrement dynamique ─── */
+function MenuSection({ search, onSearch, sectionRef }) {
+  const [categories, setCategories] = useState([]);
+  const [items, setItems]           = useState([]);
+  const [loading, setLoading]       = useState(true);
+  const [activeTab, setActiveTab]   = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      try {
+        const { data: rests } = await menuAPI.getRestaurants();
+        if (cancelled || !Array.isArray(rests) || !rests.length) {
+          setLoading(false);
+          return;
+        }
+        const restaurant = rests[0];
+        const [catRes, itemsRes] = await Promise.all([
+          menuAPI.getCategories({ restaurantId: restaurant.id }),
+          menuAPI.getByRestaurant(restaurant.id, { cible: "CLIENT" }),
+        ]);
+        if (cancelled) return;
+        const cats  = Array.isArray(catRes.data)   ? catRes.data   : [];
+        const raw   = itemsRes.data;
+        const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
+        setCategories(cats);
+        setItems(plats);
+      } catch {
+        /* backend hors-ligne — état vide silencieux */
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  /* Scroll vers la section quand une recherche est lancée depuis le Hero */
+  useEffect(() => {
+    if (search && sectionRef?.current) {
+      sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [search, sectionRef]);
+
+  const allTabs = [{ id: null, nom: "Tout" }, ...categories];
+
+  const filtered = items.filter(item => {
+    if (item.disponible === false) return false;
+    const activeCat = allTabs[activeTab];
+    if (activeCat?.id && item.categorie?.id !== activeCat.id) return false;
+    if (search) {
+      const q = search.toLowerCase();
+      return (
+        item.nom?.toLowerCase().includes(q) ||
+        item.description?.toLowerCase().includes(q) ||
+        item.categorie?.nom?.toLowerCase().includes(q)
+      );
+    }
+    return true;
+  });
+
   return (
-    <section id="fonctionnalites" style={{ background:T.bg,padding:"120px 0" }}>
+    <section id="fonctionnalites" ref={sectionRef} style={{ background:T.bg,padding:"120px 0" }}>
       <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 48px" }}>
         <Reveal>
           <div style={{ textAlign:"center",marginBottom:56 }}>
@@ -380,32 +474,82 @@ function MenuSection() {
             <h2 style={{ fontFamily:serif,fontSize:"clamp(34px,4vw,56px)",color:T.dark,fontWeight:900,lineHeight:1.06,margin:"0 0 28px",letterSpacing:"-0.025em" }}>
               Notre <em style={{ color:T.accent }}>Menu</em>
             </h2>
-            {/* Filter tabs */}
-            <div style={{ display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap" }}>
-              {tabs.map((t,i)=>(
-                <button key={t} onClick={()=>setActive(i)} style={{ fontFamily:sans,fontSize:14,fontWeight:600,padding:"9px 22px",borderRadius:50,border:`1.5px solid ${active===i?T.accent:T.line}`,background:active===i?`linear-gradient(135deg,${T.accent},${T.accentD})`:"transparent",color:active===i?"#fff":T.muted,cursor:"pointer",transition:"all .2s" }}>{t}</button>
-              ))}
+
+            {/* Onglets catégories — dynamiques */}
+            {!loading && (
+              <div style={{ display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap" }}>
+                {allTabs.map((tab, i) => (
+                  <button key={tab.id ?? "all"} onClick={() => setActiveTab(i)}
+                    style={{ fontFamily:sans,fontSize:14,fontWeight:600,padding:"9px 22px",borderRadius:50,border:`1.5px solid ${activeTab===i?T.accent:T.line}`,background:activeTab===i?`linear-gradient(135deg,${T.accent},${T.accentD})`:"transparent",color:activeTab===i?"#fff":T.muted,cursor:"pointer",transition:"all .2s" }}>
+                    {tab.nom}
+                  </button>
+                ))}
+                {search && (
+                  <button onClick={() => onSearch("")}
+                    style={{ fontFamily:sans,fontSize:13,fontWeight:600,padding:"9px 18px",borderRadius:50,border:`1.5px solid ${T.line}`,background:"transparent",color:T.muted,cursor:"pointer",transition:"all .2s",display:"flex",alignItems:"center",gap:6 }}>
+                    <span>"{search}"</span>
+                    <span style={{ color:T.accent,fontWeight:800 }}>×</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </Reveal>
+
+        {/* Loading: squelettes */}
+        {loading && (
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24 }}>
+            {Array.from({length:6}).map((_,i) => <SkeletonCard key={i} />)}
+          </div>
+        )}
+
+        {/* Résultats */}
+        {!loading && filtered.length > 0 && (
+          <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24 }}>
+            {filtered.slice(0, 6).map((item, i) => (
+              <Reveal key={item.id ?? i} delay={i * 60}>
+                <MenuItem item={item} idx={i} />
+              </Reveal>
+            ))}
+          </div>
+        )}
+
+        {/* État vide */}
+        {!loading && filtered.length === 0 && (
+          <div style={{ textAlign:"center",padding:"80px 0" }}>
+            {search ? (
+              <>
+                <p style={{ fontFamily:serif,fontSize:24,color:T.muted,fontStyle:"italic",margin:"0 0 16px" }}>
+                  Aucun résultat pour «&nbsp;{search}&nbsp;»
+                </p>
+                <button onClick={() => onSearch("")}
+                  style={{ fontFamily:sans,fontSize:14,color:T.accent,background:"none",border:`1.5px solid ${T.accent}`,borderRadius:50,padding:"10px 24px",cursor:"pointer",fontWeight:600 }}>
+                  Voir tout le menu
+                </button>
+              </>
+            ) : items.length === 0 ? (
+              <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic" }}>
+                Menu en cours de préparation…
+              </p>
+            ) : (
+              <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic" }}>
+                Aucun plat dans cette catégorie.
+              </p>
+            )}
+          </div>
+        )}
+
+        {!loading && filtered.length > 0 && (
+          <Reveal delay={100}>
+            <div style={{ textAlign:"center",marginTop:52 }}>
+              <a href="/menu" style={{ display:"inline-flex",alignItems:"center",gap:9,fontFamily:sans,fontSize:15,fontWeight:700,color:T.accent,textDecoration:"none",border:`2px solid ${T.accent}`,borderRadius:50,padding:"14px 38px",transition:"all .22s" }}
+                onMouseEnter={e=>{e.currentTarget.style.background=T.accent;e.currentTarget.style.color="#fff";}}
+                onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.accent;}}>
+                Voir tout le menu <ArrowRight size={16} />
+              </a>
             </div>
-          </div>
-        </Reveal>
-
-        <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24 }}>
-          {items.map((item,i)=>(
-            <Reveal key={item.name} delay={i*60}>
-              <MenuItem {...item} />
-            </Reveal>
-          ))}
-        </div>
-
-        <Reveal delay={100}>
-          <div style={{ textAlign:"center",marginTop:52 }}>
-            <a href="/menu" style={{ display:"inline-flex",alignItems:"center",gap:9,fontFamily:sans,fontSize:15,fontWeight:700,color:T.accent,textDecoration:"none",border:`2px solid ${T.accent}`,borderRadius:50,padding:"14px 38px",transition:"all .22s" }}
-            onMouseEnter={e=>{e.currentTarget.style.background=T.accent;e.currentTarget.style.color="#fff";}}
-            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.accent;}}>
-              Voir tout le menu <ArrowRight size={16} />
-            </a>
-          </div>
-        </Reveal>
+          </Reveal>
+        )}
       </div>
     </section>
   );
@@ -507,7 +651,6 @@ function Testimonials() {
             </div>
           </div>
         </Reveal>
-
         <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:22 }}>
           {items.map((t,i)=>(
             <Reveal key={t.name} delay={i*90}>
@@ -574,7 +717,7 @@ function DualOffer() {
                     </div>
                   ))}
                   <a href={c.href} style={{ display:"block",marginTop:24,padding:"14px 0",textAlign:"center",background:c.ctaBg,color:c.ctaCol,fontFamily:sans,fontSize:14,fontWeight:700,textDecoration:"none",borderRadius:50,boxShadow:i===0?`0 8px 24px ${T.accent}40`:`0 8px 24px ${T.yellow}40`,transition:"opacity .2s" }}
-                  onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>{c.cta}</a>
+                    onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>{c.cta}</a>
                 </div>
               </div>
             </Reveal>
@@ -592,7 +735,6 @@ function CTA() {
       <KS h={4} />
       <Brush color={T.accent} opacity={0.12} style={{ width:700,top:"0%",right:-100 }} />
       <Brush color={T.yellow} opacity={0.1} style={{ width:500,bottom:"0%",left:-80,transform:"scaleX(-1) rotate(10deg)" }} />
-
       <div style={{ position:"relative",zIndex:1,maxWidth:800,margin:"0 auto",textAlign:"center" }}>
         <Reveal>
           <Chip color={T.yellow}>Rejoindre la plateforme</Chip>
@@ -607,8 +749,8 @@ function CTA() {
               Explorer le Menu <ArrowRight size={16} />
             </a>
             <a href="/register" className="rd-btn-outline" style={{ padding:"17px 52px",border:"2px solid rgba(255,255,255,0.25)",color:"rgba(255,255,255,0.8)",background:"transparent",fontFamily:sans,fontSize:15,fontWeight:700,textDecoration:"none",borderRadius:50,transition:"all .24s" }}
-            onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.1)";e.currentTarget.style.color="#fff";}}
-            onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,0.8)";}}>
+              onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.1)";e.currentTarget.style.color="#fff";}}
+              onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,0.8)";}}>
               Devenir Partenaire
             </a>
           </div>
@@ -668,14 +810,16 @@ function Footer() {
 
 /* ─── Page ─── */
 export default function Home() {
+  const [search, setSearch] = useState("");
+  const menuRef = useRef(null);
   return (
     <div style={{ background:T.bg,minHeight:"100vh",overflowX:"hidden" }}>
       <FontLoader />
       <Nav />
-      <Hero />
+      <Hero search={search} onSearch={setSearch} menuRef={menuRef} />
       <Marquee />
       <HowItWorks />
-      <MenuSection />
+      <MenuSection search={search} onSearch={setSearch} sectionRef={menuRef} />
       <Banners />
       <Stats />
       <Testimonials />
