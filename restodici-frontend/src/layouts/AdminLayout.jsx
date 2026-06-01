@@ -6,7 +6,7 @@ import {
   Download, Settings, LogOut, ChevronRight, Shield, X, Menu,
 } from 'lucide-react';
 
-const ACCENT  = '#4F46E5';
+const ACCENT  = '#FF8C00';
 const SIDEBAR = '#0F172A';
 
 const MENU_ITEMS = [
@@ -139,7 +139,7 @@ export default function AdminLayout() {
   const sidebarProps = { user, activeTab, navigate, onLogout: () => setShowLogoutModal(true) };
 
   return (
-    <div className="flex min-h-screen" style={{ background: '#F1F5F9' }}>
+    <div className="flex min-h-screen" style={{ background: '#FFFAF3' }}>
 
       {/* Desktop sidebar */}
       <aside

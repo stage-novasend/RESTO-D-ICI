@@ -13,7 +13,7 @@ const MENU_ITEMS = [
 ];
 
 const SIDEBAR_BG = '#181A20';
-const ACCENT     = '#E04E1A';
+const ACCENT     = '#FF8C00';
 
 function Avatar({ name = '', size = 34 }) {
   const ini = name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || 'S';

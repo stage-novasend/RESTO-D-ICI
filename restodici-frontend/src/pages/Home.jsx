@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { UtensilsCrossed, ArrowRight, Check, Star, Search, ShoppingBag, Truck, Clock } from "lucide-react";
+import { UtensilsCrossed, ArrowRight, Check, Star, Search, ShoppingBag, Truck, Clock, Heart } from "lucide-react";
 import { menuAPI } from "../services/api";
 
 /* ─── Palette ─── */
@@ -207,9 +207,6 @@ function Hero({ search, onSearch, menuRef }) {
 
       <div style={{ position:"relative",zIndex:2,flex:1,maxWidth:1280,margin:"0 auto",padding:"148px 48px 80px",width:"100%",display:"grid",gridTemplateColumns:"1fr 0.9fr",gap:60,alignItems:"center" }}>
         <div>
-          <Reveal>
-            <Chip>Abidjan · Côte d'Ivoire · 2026</Chip>
-          </Reveal>
           <Reveal delay={60}>
             <h1 style={{ fontFamily:serif,fontWeight:900,fontSize:"clamp(52px,8vw,104px)",color:T.dark,lineHeight:0.93,letterSpacing:"-0.03em",margin:"0 0 30px" }}>
               Mangez<br/>
@@ -378,75 +375,119 @@ function HowItWorks() {
   );
 }
 
-/* ─── Menu card (real item) ─── */
-function MenuItem({ item, idx }) {
+/* ─── Menu card — style screenshot ─── */
+function MenuItem({ item, restaurant, idx }) {
+  const [fav, setFav] = useState(false);
   const [hov, setHov] = useState(false);
+  const tags = [item.categorie?.nom, restaurant?.typeRestaurant || restaurant?.type].filter(Boolean);
   return (
-    <div className="rd-card" onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ background:T.card,borderRadius:20,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}`,transition:"all .35s",cursor:"pointer",height:"100%" }}>
-      <div style={{ height:200,overflow:"hidden",position:"relative" }}>
+    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ background:T.card,borderRadius:18,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}`,transition:"all .35s cubic-bezier(.22,1,.36,1)",cursor:"pointer",transform:hov?"translateY(-4px)":"none" }}>
+
+      {/* Photo */}
+      <div style={{ position:"relative",height:200,overflow:"hidden" }}>
         <img
           src={getItemImg(item, idx)}
           alt={item.nom}
-          onError={e => { e.target.src=`https://images.unsplash.com/${FOOD_IMGS[idx%FOOD_IMGS.length]}?q=80&w=500&auto=format&fit=crop`; }}
-          style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform .5s",transform:hov?"scale(1.07)":"scale(1)" }}
+          onError={e=>{e.target.src=`https://images.unsplash.com/${FOOD_IMGS[idx%FOOD_IMGS.length]}?q=80&w=500&auto=format&fit=crop`;}}
+          style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform .55s",transform:hov?"scale(1.07)":"scale(1)" }}
         />
-        {item.categorie?.nom && (
-          <span style={{ position:"absolute",top:14,left:14,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:10,fontWeight:700,letterSpacing:"0.1em",padding:"5px 12px",borderRadius:20 }}>
-            {item.categorie.nom}
-          </span>
-        )}
+        {/* Bouton favori */}
+        <button
+          onClick={e=>{e.stopPropagation();setFav(!fav);}}
+          style={{ position:"absolute",top:12,right:12,width:34,height:34,borderRadius:"50%",background:"rgba(255,255,255,0.92)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(0,0,0,0.15)",transition:"transform .18s" }}
+          onMouseEnter={e=>e.currentTarget.style.transform="scale(1.12)"}
+          onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
+        >
+          <Heart size={15} fill={fav?T.red:"none"} color={fav?T.red:T.muted} strokeWidth={2.5} />
+        </button>
+        {/* Badge note */}
+        <div style={{ position:"absolute",top:12,left:12,background:"rgba(255,255,255,0.95)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:5,boxShadow:"0 2px 10px rgba(0,0,0,0.12)" }}>
+          <Star size={12} fill={T.yellow} color={T.yellow} />
+          <span style={{ fontFamily:sans,fontSize:12,fontWeight:700,color:T.dark }}>4.8</span>
+        </div>
       </div>
-      <div style={{ padding:"20px 22px 24px" }}>
-        <h3 style={{ fontFamily:serif,fontSize:18,color:T.dark,fontWeight:700,margin:"0 0 6px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{item.nom}</h3>
-        {item.description && (
-          <p style={{ fontFamily:sans,fontSize:13,color:T.muted,lineHeight:1.5,margin:"0 0 12px",display:"-webkit-box",WebkitLineClamp:2,WebkitBoxOrient:"vertical",overflow:"hidden" }}>{item.description}</p>
+
+      {/* Info */}
+      <div style={{ padding:"16px 18px 20px" }}>
+        <h3 style={{ fontFamily:serif,fontSize:17,color:T.dark,fontWeight:700,margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{item.nom}</h3>
+
+        {/* Nom du restaurant */}
+        {restaurant && (
+          <p style={{ fontFamily:sans,fontSize:12,color:T.muted,margin:"0 0 9px",fontWeight:500,display:"flex",alignItems:"center",gap:5 }}>
+            <UtensilsCrossed size={11} /> {restaurant.nom}
+          </p>
         )}
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:16 }}>
-          <p style={{ fontFamily:sans,fontSize:16,fontWeight:800,color:T.accent,margin:0 }}>{formatPrix(item.prix)}</p>
-          <div style={{ display:"flex",alignItems:"center",gap:4 }}>
-            <Star size={13} fill={T.yellow} color={T.yellow} />
-            <span style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:T.dark }}>4.8</span>
+
+        {/* Tags catégorie */}
+        {tags.length > 0 && (
+          <div style={{ display:"flex",gap:6,marginBottom:12,flexWrap:"wrap" }}>
+            {tags.slice(0,2).map((t,i)=>(
+              <span key={i} style={{ background:i===0?`${T.accent}18`:`${T.yellow}22`,color:i===0?T.accent:"#8A6000",fontFamily:sans,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:6 }}>{t}</span>
+            ))}
+          </div>
+        )}
+
+        {/* Prix + infos livraison */}
+        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${T.line}`,paddingTop:10,marginTop:6 }}>
+          <span style={{ fontFamily:sans,fontSize:15,fontWeight:800,color:T.accent }}>{formatPrix(item.prix)}</span>
+          <div style={{ display:"flex",gap:12,alignItems:"center" }}>
+            <div style={{ display:"flex",alignItems:"center",gap:4,color:T.muted }}>
+              <Clock size={12} />
+              <span style={{ fontFamily:sans,fontSize:11,fontWeight:500 }}>20-35 min</span>
+            </div>
+            <div style={{ display:"flex",alignItems:"center",gap:4 }}>
+              <Truck size={12} color="#22C55E" />
+              <span style={{ fontFamily:sans,fontSize:11,fontWeight:600,color:"#16A34A" }}>Gratuit</span>
+            </div>
           </div>
         </div>
-        <a href="/menu" style={{ display:"block",textAlign:"center",padding:"12px 0",background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:14,fontWeight:700,textDecoration:"none",borderRadius:50,boxShadow:`0 6px 20px ${T.accent}38`,transition:"opacity .2s" }}
-          onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-          Commander
-        </a>
       </div>
     </div>
   );
 }
 
-/* ─── Menu Section — entièrement dynamique ─── */
+/* ─── Menu Section — style screenshot ─── */
 function MenuSection({ search, onSearch, sectionRef }) {
   const [categories, setCategories] = useState([]);
   const [items, setItems]           = useState([]);
+  const [restaurantMap, setRestaurantMap] = useState({});
   const [loading, setLoading]       = useState(true);
-  const [activeTab, setActiveTab]   = useState(0);
+  const [activeCatId, setActiveCatId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
       try {
         const { data: rests } = await menuAPI.getRestaurants();
-        if (cancelled || !Array.isArray(rests) || !rests.length) {
-          setLoading(false);
-          return;
-        }
-        const restaurant = rests[0];
-        const [catRes, itemsRes] = await Promise.all([
-          menuAPI.getCategories({ restaurantId: restaurant.id }),
-          menuAPI.getByRestaurant(restaurant.id, { cible: "CLIENT" }),
-        ]);
+        if (cancelled || !Array.isArray(rests) || !rests.length) { setLoading(false); return; }
+
+        /* Map id → restaurant */
+        const rmap = {};
+        rests.forEach(r => { rmap[r.id] = r; });
+
+        /* Catégories du 1er restaurant */
+        const catRes = await menuAPI.getCategories({ restaurantId: rests[0].id });
+        if (!cancelled) setCategories(Array.isArray(catRes.data) ? catRes.data : []);
+
+        /* Plats des 3 premiers restaurants en parallèle */
+        const toFetch = rests.slice(0, 3);
+        const allRaw = await Promise.all(
+          toFetch.map(r =>
+            menuAPI.getByRestaurant(r.id, { cible: "CLIENT" })
+              .then(res => {
+                const raw = res.data;
+                const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
+                return plats.map(p => ({ ...p, _restaurantId: r.id }));
+              })
+              .catch(() => [])
+          )
+        );
         if (cancelled) return;
-        const cats  = Array.isArray(catRes.data)   ? catRes.data   : [];
-        const raw   = itemsRes.data;
-        const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
-        setCategories(cats);
-        setItems(plats);
+        setRestaurantMap(rmap);
+        setItems(allRaw.flat());
       } catch {
-        /* backend hors-ligne — état vide silencieux */
+        /* backend hors-ligne */
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -455,74 +496,114 @@ function MenuSection({ search, onSearch, sectionRef }) {
     return () => { cancelled = true; };
   }, []);
 
-  /* Scroll vers la section quand une recherche est lancée depuis le Hero */
   useEffect(() => {
     if (search && sectionRef?.current) {
       sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [search, sectionRef]);
 
-  const allTabs = [{ id: null, nom: "Tout" }, ...categories];
-
   const filtered = items.filter(item => {
     if (item.disponible === false) return false;
-    const activeCat = allTabs[activeTab];
-    if (activeCat?.id && item.categorie?.id !== activeCat.id) return false;
+    if (activeCatId && item.categorie?.id !== activeCatId) return false;
     if (search) {
       const q = search.toLowerCase();
+      const resto = restaurantMap[item._restaurantId];
       return (
         item.nom?.toLowerCase().includes(q) ||
         item.description?.toLowerCase().includes(q) ||
-        item.categorie?.nom?.toLowerCase().includes(q)
+        item.categorie?.nom?.toLowerCase().includes(q) ||
+        resto?.nom?.toLowerCase().includes(q)
       );
     }
     return true;
   });
 
   return (
-    <section id="fonctionnalites" ref={sectionRef} style={{ background:T.bg,padding:"120px 0" }}>
+    <section id="fonctionnalites" ref={sectionRef} style={{ background:T.bg,padding:"80px 0 120px" }}>
       <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 48px" }}>
-        <Reveal>
-          <div style={{ textAlign:"center",marginBottom:56 }}>
-            <Chip color={T.accent}>Ce qu'on vous prépare</Chip>
-            <h2 style={{ fontFamily:serif,fontSize:"clamp(34px,4vw,56px)",color:T.dark,fontWeight:900,lineHeight:1.06,margin:"0 0 28px",letterSpacing:"-0.025em" }}>
-              Notre <em style={{ color:T.accent }}>Menu</em>
-            </h2>
 
-            {/* Onglets catégories — dynamiques */}
-            {!loading && (
-              <div style={{ display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap" }}>
-                {allTabs.map((tab, i) => (
-                  <button key={tab.id ?? "all"} onClick={() => setActiveTab(i)}
-                    style={{ fontFamily:sans,fontSize:14,fontWeight:600,padding:"9px 22px",borderRadius:50,border:`1.5px solid ${activeTab===i?T.accent:T.line}`,background:activeTab===i?`linear-gradient(135deg,${T.accent},${T.accentD})`:"transparent",color:activeTab===i?"#fff":T.muted,cursor:"pointer",transition:"all .2s" }}>
-                    {tab.nom}
-                  </button>
-                ))}
-                {search && (
-                  <button onClick={() => onSearch("")}
-                    style={{ fontFamily:sans,fontSize:13,fontWeight:600,padding:"9px 18px",borderRadius:50,border:`1.5px solid ${T.line}`,background:"transparent",color:T.muted,cursor:"pointer",transition:"all .2s",display:"flex",alignItems:"center",gap:6 }}>
-                    <span>"{search}"</span>
-                    <span style={{ color:T.accent,fontWeight:800 }}>×</span>
-                  </button>
-                )}
-              </div>
-            )}
+        {/* ── Bannière promo ── */}
+        <Reveal>
+          <div style={{ borderRadius:22,overflow:"hidden",position:"relative",height:220,marginBottom:60,cursor:"pointer" }}>
+            <img
+              src="https://images.unsplash.com/photo-1565299585323-38d6b0865b47?q=80&w=1200&auto=format&fit=crop"
+              alt="Offre"
+              style={{ width:"100%",height:"100%",objectFit:"cover",display:"block" }}
+            />
+            <div style={{ position:"absolute",inset:0,background:"linear-gradient(to right,rgba(26,12,0,0.88) 0%,rgba(26,12,0,0.5) 50%,transparent 75%)" }} />
+            <div style={{ position:"absolute",top:0,bottom:0,left:28,display:"flex",flexDirection:"column",justifyContent:"center" }}>
+              <span style={{ display:"inline-block",background:T.red,color:"#fff",fontFamily:sans,fontSize:10,fontWeight:700,letterSpacing:"0.14em",padding:"4px 12px",borderRadius:6,marginBottom:10,alignSelf:"flex-start" }}>OFFRE LIMITÉE</span>
+              <h3 style={{ fontFamily:serif,fontSize:"clamp(24px,3.5vw,38px)",color:"#fff",fontWeight:900,margin:"0 0 8px",lineHeight:1.1 }}>Livraison Offerte ce Weekend</h3>
+              <p style={{ fontFamily:sans,fontSize:14,color:"rgba(255,255,255,0.72)",margin:"0 0 18px",maxWidth:360 }}>Sur toutes les commandes supérieures à 3 000 FCFA.</p>
+              <a href="/menu" style={{ display:"inline-flex",alignItems:"center",gap:7,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",borderRadius:50,padding:"10px 22px",alignSelf:"flex-start",boxShadow:`0 6px 20px ${T.accent}55` }}>
+                Commander <ArrowRight size={13} />
+              </a>
+            </div>
           </div>
         </Reveal>
 
-        {/* Loading: squelettes */}
+        {/* ── Cuisines & Catégories ── */}
+        {!loading && categories.length > 0 && (
+          <Reveal>
+            <div style={{ marginBottom:52 }}>
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22 }}>
+                <h2 style={{ fontFamily:serif,fontSize:24,color:T.dark,fontWeight:900,margin:0 }}>Cuisines &amp; Catégories</h2>
+                {search && (
+                  <button onClick={()=>onSearch("")}
+                    style={{ fontFamily:sans,fontSize:13,color:T.accent,background:"none",border:`1px solid ${T.accent}`,borderRadius:50,padding:"6px 16px",cursor:"pointer",fontWeight:600,display:"flex",alignItems:"center",gap:6 }}>
+                    «{search}» <span style={{ fontWeight:900 }}>×</span>
+                  </button>
+                )}
+              </div>
+              <div style={{ display:"flex",gap:20,overflowX:"auto",paddingBottom:8 }}>
+                {/* Tout */}
+                <div onClick={()=>setActiveCatId(null)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
+                  <div style={{ width:72,height:72,borderRadius:"50%",overflow:"hidden",border:`2.5px solid ${!activeCatId?T.accent:T.line}`,marginBottom:7,display:"flex",alignItems:"center",justifyContent:"center",background:!activeCatId?`${T.accent}14`:T.bgAlt,transition:"border-color .2s" }}>
+                    <UtensilsCrossed size={26} color={!activeCatId?T.accent:T.muted} />
+                  </div>
+                  <p style={{ fontFamily:sans,fontSize:11,color:!activeCatId?T.accent:T.muted,fontWeight:700,margin:0,textAlign:"center" }}>Tout</p>
+                </div>
+                {categories.map((cat,i)=>(
+                  <div key={cat.id} onClick={()=>setActiveCatId(activeCatId===cat.id?null:cat.id)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
+                    <div style={{ width:72,height:72,borderRadius:"50%",overflow:"hidden",border:`2.5px solid ${activeCatId===cat.id?T.accent:T.line}`,marginBottom:7,transition:"border-color .2s" }}>
+                      <img
+                        src={`https://images.unsplash.com/${FOOD_IMGS[i%FOOD_IMGS.length]}?q=70&w=140&auto=format&fit=crop`}
+                        alt={cat.nom}
+                        style={{ width:"100%",height:"100%",objectFit:"cover",display:"block" }}
+                      />
+                    </div>
+                    <p style={{ fontFamily:sans,fontSize:11,color:activeCatId===cat.id?T.accent:T.muted,fontWeight:700,margin:0,textAlign:"center",maxWidth:72,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{cat.nom}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </Reveal>
+        )}
+
+        {/* ── Titre section plats ── */}
+        <Reveal>
+          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28 }}>
+            <h2 style={{ fontFamily:serif,fontSize:24,color:T.dark,fontWeight:900,margin:0 }}>Populaires près de vous</h2>
+            <a href="/menu" style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:T.accent,textDecoration:"none",display:"flex",alignItems:"center",gap:5 }}
+              onMouseEnter={e=>e.currentTarget.style.opacity="0.75"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
+              Voir tout <ArrowRight size={14} />
+            </a>
+          </div>
+        </Reveal>
+
+        {/* Loading */}
         {loading && (
           <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24 }}>
-            {Array.from({length:9}).map((_,i) => <SkeletonCard key={i} />)}
+            {Array.from({length:9}).map((_,i)=><SkeletonCard key={i} />)}
           </div>
         )}
 
         {/* Résultats */}
         {!loading && filtered.length > 0 && (
           <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24 }}>
-            {filtered.slice(0, 9).map((item, i) => (
-              <Reveal key={item.id ?? i} delay={i * 50}>
-                <MenuItem item={item} idx={i} />
+            {filtered.slice(0,9).map((item,i)=>(
+              <Reveal key={item.id??i} delay={i*45}>
+                <MenuItem item={item} restaurant={restaurantMap[item._restaurantId]} idx={i} />
               </Reveal>
             ))}
           </div>
@@ -530,36 +611,25 @@ function MenuSection({ search, onSearch, sectionRef }) {
 
         {/* État vide */}
         {!loading && filtered.length === 0 && (
-          <div style={{ textAlign:"center",padding:"80px 0" }}>
+          <div style={{ textAlign:"center",padding:"70px 0" }}>
             {search ? (
               <>
-                <p style={{ fontFamily:serif,fontSize:24,color:T.muted,fontStyle:"italic",margin:"0 0 16px" }}>
-                  Aucun résultat pour «&nbsp;{search}&nbsp;»
-                </p>
-                <button onClick={() => onSearch("")}
-                  style={{ fontFamily:sans,fontSize:14,color:T.accent,background:"none",border:`1.5px solid ${T.accent}`,borderRadius:50,padding:"10px 24px",cursor:"pointer",fontWeight:600 }}>
-                  Voir tout le menu
-                </button>
+                <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic",margin:"0 0 16px" }}>Aucun résultat pour «&nbsp;{search}&nbsp;»</p>
+                <button onClick={()=>onSearch("")} style={{ fontFamily:sans,fontSize:14,color:T.accent,background:"none",border:`1.5px solid ${T.accent}`,borderRadius:50,padding:"10px 24px",cursor:"pointer",fontWeight:600 }}>Voir tout le menu</button>
               </>
-            ) : items.length === 0 ? (
-              <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic" }}>
-                Menu en cours de préparation…
-              </p>
             ) : (
-              <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic" }}>
-                Aucun plat dans cette catégorie.
-              </p>
+              <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic" }}>{items.length===0?"Menu en cours de préparation…":"Aucun plat dans cette catégorie."}</p>
             )}
           </div>
         )}
 
         {!loading && filtered.length > 0 && (
-          <Reveal delay={100}>
-            <div style={{ textAlign:"center",marginTop:52 }}>
+          <Reveal delay={80}>
+            <div style={{ textAlign:"center",marginTop:48 }}>
               <a href="/menu" style={{ display:"inline-flex",alignItems:"center",gap:9,fontFamily:sans,fontSize:15,fontWeight:700,color:T.accent,textDecoration:"none",border:`2px solid ${T.accent}`,borderRadius:50,padding:"14px 38px",transition:"all .22s" }}
                 onMouseEnter={e=>{e.currentTarget.style.background=T.accent;e.currentTarget.style.color="#fff";}}
                 onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.accent;}}>
-                Voir tout le menu <ArrowRight size={16} />
+                Explorer tout le menu <ArrowRight size={16} />
               </a>
             </div>
           </Reveal>

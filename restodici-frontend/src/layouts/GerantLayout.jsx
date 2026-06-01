@@ -84,7 +84,7 @@ export default function GerantLayout() {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute -right-3 top-6 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md transition"
-          style={{ background: '#C05015' }}
+          style={{ background: '#FF8C00' }}
           aria-label={collapsed ? 'Développer' : 'Réduire'}
         >
           <ChevronRight className={`h-4 w-4 transition-transform ${collapsed ? '' : 'rotate-180'}`} />
@@ -95,11 +95,11 @@ export default function GerantLayout() {
           {!collapsed ? (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#C05015', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FF8C00', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
                 </div>
                 <div>
-                  <p style={{ fontSize: 9, fontWeight: 700, color: '#C05015', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
+                  <p style={{ fontSize: 9, fontWeight: 700, color: '#FF8C00', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
                   <p style={{ fontSize: 15, fontWeight: 800, color: '#FDF5EF', margin: 0, lineHeight: 1.2 }}>Resto d'ici</p>
                 </div>
               </div>
@@ -112,7 +112,7 @@ export default function GerantLayout() {
             </div>
           ) : (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#C05015', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#FF8C00', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
               </div>
             </div>
@@ -134,8 +134,8 @@ export default function GerantLayout() {
                   justifyContent: collapsed ? 'center' : 'flex-start',
                   width: '100%', padding: collapsed ? '12px' : '10px 12px',
                   border: 'none', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                  background: isActive ? '#C05015' : 'transparent',
-                  boxShadow: isActive ? '0 4px 14px rgba(224,78,26,0.35)' : 'none',
+                  background: isActive ? '#FF8C00' : 'transparent',
+                  boxShadow: isActive ? '0 4px 14px rgba(255,140,0,0.35)' : 'none',
                   transition: 'all 0.18s',
                 }}
                 className={isActive ? '' : 'nav-item-hover'}
