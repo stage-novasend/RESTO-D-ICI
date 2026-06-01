@@ -12,15 +12,15 @@ function normalizeUserType(type) {
 }
 
 const inputBase =
-  "block w-full pl-10 pr-3 py-3.5 bg-[#FDDDD4] border-0 rounded-2xl text-[#1A1A1A] placeholder-[#9A7060]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#C05015]/40 transition-all";
-const labelBase = "text-sm font-semibold text-[#1A1A1A]";
+  "block w-full pl-10 pr-3 py-3.5 bg-[#FFF5E8] border-0 rounded-2xl text-[#1A0C00] placeholder-[#B09070]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF8C00]/40 transition-all";
+const labelBase = "text-sm font-semibold text-[#1A0C00]";
 
 function Field({ label, icon: Icon, error, children }) {
   return (
     <div className="space-y-1.5">
       <label className={labelBase}>{label}</label>
       <div className="relative">
-        {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#C05015]/60" />}
+        {Icon && <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'rgba(255,140,0,0.6)' }} />}
         {children}
       </div>
       {error && <p className="text-red-500 text-xs mt-0.5">{error}</p>}
@@ -115,34 +115,42 @@ export default function Register() {
     : "Rejoignez la table digitale";
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#C05015] p-4 lg:p-8">
+    <div className="min-h-screen flex items-center justify-center p-4 lg:p-8"
+      style={{ background: 'linear-gradient(135deg, #FF8C00 0%, #E07A00 60%, #FFB800 100%)' }}>
+
       {/* Card */}
       <div className="w-full max-w-5xl bg-white rounded-3xl overflow-hidden shadow-2xl flex h-[700px]">
 
         {/* ── Left: form panel ── */}
-        <div className="flex-1 flex flex-col justify-start px-10 py-10 lg:px-12 overflow-y-auto">
+        <div className="flex-1 flex flex-col justify-start px-10 py-10 lg:px-12 overflow-y-auto"
+          style={{ background: '#FFFAF3' }}>
+
           {/* Logo */}
           <div className="flex items-center gap-2.5 mb-7">
-            <div className="w-10 h-10 bg-[#C05015] rounded-xl flex items-center justify-center shadow-sm">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-sm"
+              style={{ background: 'linear-gradient(135deg, #FF8C00, #FFB800)' }}>
               <UtensilsCrossed className="w-5 h-5 text-white" />
             </div>
             <div>
-              <span className="text-[#C05015] font-extrabold text-xl tracking-tight">Resto d'ici</span>
-              <p className="text-[#9A7060] text-[11px] leading-none mt-0.5">La table digitale de vos repas</p>
+              <span className="font-extrabold text-xl tracking-tight" style={{ color: '#FF8C00', fontFamily: "'Playfair Display', serif" }}>Resto d'ici</span>
+              <p className="text-[11px] leading-none mt-0.5" style={{ color: '#B09070' }}>La table digitale de vos repas</p>
             </div>
           </div>
 
-          <h1 className="text-2xl font-extrabold text-[#1A1A1A] mb-1">{heading}</h1>
-          <p className="text-[#9A7060] text-sm mb-6">{sub}</p>
+          <h1 className="text-2xl font-extrabold mb-1" style={{ color: '#1A0C00', fontFamily: "'Playfair Display', serif" }}>{heading}</h1>
+          <p className="text-sm mb-6" style={{ color: '#B09070' }}>{sub}</p>
 
           {/* Type tabs */}
-          <div className="flex gap-1.5 mb-6 p-1 bg-[#FDDDD4] rounded-2xl">
+          <div className="flex gap-1.5 mb-6 p-1 rounded-2xl" style={{ background: '#FFF5E8' }}>
             {tabs.map(({ key, label, icon: Icon }) => (
               <button key={key} type="button"
                 onClick={() => navigate(`/register?type=${key}`)}
                 className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all ${
-                  userType === key ? "bg-white text-[#C05015] shadow-sm" : "text-[#9A7060] hover:text-[#C05015]"
-                }`}>
+                  userType === key
+                    ? "bg-white shadow-sm"
+                    : "hover:opacity-70"
+                }`}
+                style={{ color: userType === key ? '#FF8C00' : '#B09070' }}>
                 <Icon className="w-3.5 h-3.5" />
                 <span className="hidden sm:inline">{label}</span>
               </button>
@@ -176,10 +184,10 @@ export default function Register() {
                     <input value={form.restaurantNom} onChange={set("restaurantNom")} placeholder="Nom de votre établissement" className={inputBase} />
                   </Field>
                 </div>
-                <div className="rounded-2xl bg-[#FBE8DC] px-4 py-3">
-                  <p className="text-xs font-semibold text-[#7A3010] mb-2">À compléter dans votre dashboard :</p>
+                <div className="rounded-2xl px-4 py-3" style={{ background: '#FFF5E8', border: '1px solid rgba(255,140,0,0.2)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: '#C06800' }}>À compléter dans votre dashboard :</p>
                   {["Adresse & carte", "Horaires d'ouverture", "Menu & articles"].map(s => (
-                    <div key={s} className="flex items-center gap-2 text-xs text-[#7A3010]/80 mb-1">
+                    <div key={s} className="flex items-center gap-2 text-xs mb-1" style={{ color: '#C06800', opacity: 0.8 }}>
                       <ArrowRight className="w-3 h-3 shrink-0" />{s}
                     </div>
                   ))}
@@ -207,10 +215,10 @@ export default function Register() {
                 <Field label="Mot de passe *" icon={Lock} error={errors.password}>
                   <input type="password" value={form.password} onChange={set("password")} placeholder="••••••••" className={inputBase} />
                 </Field>
-                <div className="rounded-2xl bg-[#FBE8DC] px-4 py-3">
-                  <p className="text-xs font-semibold text-[#7A3010] mb-2">À compléter dans votre dashboard :</p>
+                <div className="rounded-2xl px-4 py-3" style={{ background: '#FFF5E8', border: '1px solid rgba(255,140,0,0.2)' }}>
+                  <p className="text-xs font-semibold mb-2" style={{ color: '#C06800' }}>À compléter dans votre dashboard :</p>
                   {["Compte entreprise (RCCM, NIF)", "Adresse du siège", "Collaborateurs & budgets"].map(s => (
-                    <div key={s} className="flex items-center gap-2 text-xs text-[#7A3010]/80 mb-1">
+                    <div key={s} className="flex items-center gap-2 text-xs mb-1" style={{ color: '#C06800', opacity: 0.8 }}>
                       <ArrowRight className="w-3 h-3 shrink-0" />{s}
                     </div>
                   ))}
@@ -239,7 +247,8 @@ export default function Register() {
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full flex items-center justify-center py-3.5 px-4 font-bold rounded-2xl bg-[#C05015] hover:bg-[#9A3E10] active:scale-[0.98] text-white disabled:opacity-50 text-sm mt-2 transition-all shadow-sm">
+              className="w-full flex items-center justify-center py-3.5 px-4 font-bold rounded-2xl text-white disabled:opacity-60 text-sm mt-2 transition-all shadow-sm active:scale-[0.98]"
+              style={{ background: 'linear-gradient(135deg, #FF8C00, #E07A00)' }}>
               {loading ? (
                 <span className="flex items-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -254,23 +263,28 @@ export default function Register() {
             </button>
           </form>
 
-          <p className="mt-5 text-center text-sm text-[#9A7060]">
+          <p className="mt-5 text-center text-sm" style={{ color: '#B09070' }}>
             Déjà un compte ?{" "}
-            <Link to={`/login${location.search}`} className="text-[#C05015] font-semibold hover:text-[#9A3E10]">Se connecter</Link>
+            <Link to={`/login${location.search}`} className="font-semibold hover:opacity-80" style={{ color: '#FF8C00' }}>
+              Se connecter
+            </Link>
           </p>
         </div>
 
-        {/* ── Right: burger image panel ── */}
-        <div className="hidden lg:flex lg:w-[48%] xl:w-[50%] flex-shrink-0 relative overflow-hidden bg-[#FBE8DC] items-center justify-center">
+        {/* ── Right: food image panel ── */}
+        <div className="hidden lg:flex lg:w-[48%] xl:w-[50%] flex-shrink-0 relative overflow-hidden items-center justify-center"
+          style={{ background: '#FFF5E8' }}>
           <img
-            src="/burger-hero.jpg"
-            alt="Burger Resto d'ici"
+            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=900&auto=format&fit=crop"
+            alt="Plats d'Abidjan"
             className="w-full h-full object-cover"
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#C05015]/40 via-transparent to-transparent pointer-events-none" />
-          <div className="absolute bottom-6 left-6 bg-white/90 backdrop-blur-sm rounded-2xl px-4 py-3 shadow-lg">
-            <p className="text-[#C05015] font-extrabold text-sm">Resto d'ici</p>
-            <p className="text-[#9A7060] text-xs mt-0.5">La table digitale de vos repas</p>
+          <div className="absolute inset-0 pointer-events-none"
+            style={{ background: 'linear-gradient(to top, rgba(255,140,0,0.45) 0%, transparent 55%)' }} />
+          <div className="absolute bottom-6 left-6 rounded-2xl px-4 py-3 shadow-lg"
+            style={{ background: 'rgba(255,250,243,0.92)', backdropFilter: 'blur(12px)' }}>
+            <p className="font-extrabold text-sm" style={{ color: '#FF8C00', fontFamily: "'Playfair Display', serif" }}>Resto d'ici</p>
+            <p className="text-xs mt-0.5" style={{ color: '#B09070' }}>La table digitale de vos repas</p>
           </div>
         </div>
 

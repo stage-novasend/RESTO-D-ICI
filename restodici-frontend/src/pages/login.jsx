@@ -255,8 +255,8 @@ export default function Login() {
         <div className="hidden lg:flex lg:w-[48%] xl:w-[50%] flex-shrink-0 relative overflow-hidden items-center justify-center"
           style={{ background: '#FFF5E8' }}>
           <img
-            src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=900&auto=format&fit=crop"
-            alt="Plats d'Abidjan"
+            src="/burger-hero.jpg"
+            alt="Burger Resto d'ici"
             className="w-full h-full object-cover"
           />
           <div className="absolute inset-0 pointer-events-none"
