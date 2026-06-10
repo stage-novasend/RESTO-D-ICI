@@ -62,6 +62,10 @@ export class CommandeGroupeeB2B {
   @Column({ nullable: true, type: 'timestamptz' })
   avisAt?: Date;
 
+  // Paiement encaissé à la caisse avant préparation
+  @Column({ default: false })
+  estPaye!: boolean;
+
   // Délai de traitement automatique : 4h après la création (US-35)
   @Column({ nullable: true, type: 'timestamptz' })
   deadlineAt?: Date;

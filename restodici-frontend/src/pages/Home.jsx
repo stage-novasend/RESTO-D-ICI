@@ -188,7 +188,7 @@ function Nav() {
           ))}
         </div>
         <div style={{ display:"flex",gap:10,alignItems:"center" }}>
-          <a href="/login" className="rd-nav-link" style={{ fontFamily:sans,fontSize:14,fontWeight:600,color:T.muted,textDecoration:"none",padding:"8px 16px",transition:"color .2s" }}>Connexion</a>
+          <a href="/login" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:"#fff",textDecoration:"none",padding:"10px 24px",borderRadius:50,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,boxShadow:`0 6px 22px ${T.accent}44`,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6 }}>Connexion</a>
           <a href="/menu" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:"#fff",textDecoration:"none",padding:"10px 24px",borderRadius:50,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,boxShadow:`0 6px 22px ${T.accent}44`,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6 }}>Commander <ArrowRight size={13} /></a>
         </div>
       </div>
@@ -285,34 +285,82 @@ function Hero({ search, onSearch, menuRef, restaurantCount = 0 }) {
 }
 
 /* ─── Envie de quoi ? ─── */
-function CategoryStrip({ onSearch }) {
-  const cats = [
-    { label:"Pizza",     icon:"🍕", q:"pizza"    },
-    { label:"Grillades", icon:"🥩", q:"grillade" },
-    { label:"Local",     icon:"🍛", q:"attiéké"  },
-    { label:"Salades",   icon:"🥗", q:"salade"   },
-    { label:"Desserts",  icon:"🍰", q:"dessert"  },
-    { label:"Boissons",  icon:"🥤", q:"boisson"  },
-    { label:"Garba",     icon:"🐟", q:"garba"    },
-    { label:"Poulet",    icon:"🍗", q:"poulet"   },
-  ];
+const EMOJI_MAP = [
+  { keys:["pizza"],                             emoji:"🍕" },
+  { keys:["grillade","grillé","bœuf","viande","braisé","steak"], emoji:"🥩" },
+  { keys:["local","ivoirien","attiéké","alloco","foutou","placali","garba"], emoji:"🍛" },
+  { keys:["salade","crudité"],                  emoji:"🥗" },
+  { keys:["dessert","pâtisserie","gâteau","sucré"], emoji:"🍰" },
+  { keys:["boisson","jus","soda","eau","drink","cocktail"], emoji:"🥤" },
+  { keys:["poisson","thon","capitaine","tilapia","sardine"], emoji:"🐟" },
+  { keys:["poulet","volaille","dinde"],          emoji:"🍗" },
+  { keys:["riz"],                               emoji:"🍚" },
+  { keys:["burger","sandwich","wrap"],          emoji:"🍔" },
+  { keys:["soupe","sauce","bouillon"],          emoji:"🍲" },
+  { keys:["pâtes","pasta","spaghetti"],         emoji:"🍝" },
+];
+
+function getCatEmoji(nom) {
+  const lower = (nom || "").toLowerCase();
+  for (const { keys, emoji } of EMOJI_MAP) {
+    if (keys.some(k => lower.includes(k))) return emoji;
+  }
+  return "🍽️";
+}
+
+function CategoryStrip({ activeCatId, onCategorySelect, menuRef }) {
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading]       = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    menuAPI.getRestaurants()
+      .then(({ data: rests }) => {
+        if (cancelled || !Array.isArray(rests) || !rests.length) return null;
+        return menuAPI.getCategories({ restaurantId: rests[0].id });
+      })
+      .then(res => { if (res && !cancelled) setCategories(Array.isArray(res.data) ? res.data : []); })
+      .catch(() => {})
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleClick = (catId) => {
+    onCategorySelect(catId === activeCatId ? null : catId);
+    if (menuRef?.current) menuRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
+  };
+
   return (
     <section style={{ background:"#fff", padding:"32px 0 28px", borderBottom:`1px solid ${T.line}` }}>
       <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 24px" }}>
         <p style={{ fontFamily:serif, fontSize:20, fontWeight:900, color:T.dark, margin:"0 0 20px" }}>Envie de quoi ?</p>
-        <div style={{ display:"flex", gap:22, overflowX:"auto", paddingBottom:4 }}>
-          {cats.map(c => (
-            <button key={c.label} onClick={() => onSearch(c.q)}
-              style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, background:"none", border:"none", cursor:"pointer", flexShrink:0, padding:0 }}>
-              <div style={{ width:68, height:68, borderRadius:"50%", background:T.bgAlt, border:`2px solid ${T.line}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, transition:"all .18s" }}
-                onMouseEnter={e=>{e.currentTarget.style.borderColor=T.accent;e.currentTarget.style.background=`${T.accent}10`;}}
-                onMouseLeave={e=>{e.currentTarget.style.borderColor=T.line;e.currentTarget.style.background=T.bgAlt;}}>
-                {c.icon}
+        {loading ? (
+          <div style={{ display:"flex", gap:22, paddingBottom:4 }}>
+            {Array.from({ length:6 }).map((_,i) => (
+              <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0 }}>
+                <div style={{ width:68, height:68, borderRadius:"50%", background:T.bgAlt }} />
+                <div style={{ width:44, height:10, borderRadius:4, background:T.bgAlt, marginTop:2 }} />
               </div>
-              <span style={{ fontFamily:sans, fontSize:12, fontWeight:600, color:T.muted }}>{c.label}</span>
-            </button>
-          ))}
-        </div>
+            ))}
+          </div>
+        ) : categories.length === 0 ? null : (
+          <div style={{ display:"flex", gap:22, overflowX:"auto", paddingBottom:4 }}>
+            {categories.map(cat => {
+              const active = cat.id === activeCatId;
+              return (
+                <button key={cat.id} onClick={() => handleClick(cat.id)}
+                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, background:"none", border:"none", cursor:"pointer", flexShrink:0, padding:0 }}>
+                  <div style={{ width:68, height:68, borderRadius:"50%", background:active?`${T.accent}18`:T.bgAlt, border:`2px solid ${active?T.accent:T.line}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, transition:"all .18s" }}
+                    onMouseEnter={e=>{ if (!active){ e.currentTarget.style.borderColor=T.accent; e.currentTarget.style.background=`${T.accent}10`; }}}
+                    onMouseLeave={e=>{ if (!active){ e.currentTarget.style.borderColor=T.line; e.currentTarget.style.background=T.bgAlt; }}}>
+                    {getCatEmoji(cat.nom)}
+                  </div>
+                  <span style={{ fontFamily:sans, fontSize:12, fontWeight:600, color:active?T.accent:T.muted }}>{cat.nom}</span>
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -373,7 +421,7 @@ function HowItWorks() {
     },
   ];
   return (
-    <section style={{ background:T.bgAlt, padding:"64px 0" }}>
+    <section id="processus" style={{ background:T.bgAlt, padding:"64px 0" }}>
       <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 24px", display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
         {cards.map((c,i) => (
           <Reveal key={i} delay={i*80}>
@@ -471,12 +519,11 @@ function MenuItem({ item, restaurant, idx }) {
 }
 
 /* ─── Section menu — plats populaires ─── */
-function MenuSection({ search, onSearch, sectionRef }) {
+function MenuSection({ search, onSearch, sectionRef, activeCatId, onCategorySelect }) {
   const [categories, setCategories] = useState([]);
   const [items, setItems]           = useState([]);
   const [restaurantMap, setRestaurantMap] = useState({});
   const [loading, setLoading]       = useState(true);
-  const [activeCatId, setActiveCatId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -560,14 +607,14 @@ function MenuSection({ search, onSearch, sectionRef }) {
               </div>
               <div style={{ display:"flex",gap:20,overflowX:"auto",paddingBottom:8 }}>
                 {/* Tout */}
-                <div onClick={()=>setActiveCatId(null)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
+                <div onClick={()=>onCategorySelect(null)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
                   <div style={{ width:72,height:72,borderRadius:"50%",overflow:"hidden",border:`2.5px solid ${!activeCatId?T.accent:T.line}`,marginBottom:7,display:"flex",alignItems:"center",justifyContent:"center",background:!activeCatId?`${T.accent}14`:T.bgAlt,transition:"border-color .2s" }}>
                     <UtensilsCrossed size={26} color={!activeCatId?T.accent:T.muted} />
                   </div>
                   <p style={{ fontFamily:sans,fontSize:11,color:!activeCatId?T.accent:T.muted,fontWeight:700,margin:0,textAlign:"center" }}>Tout</p>
                 </div>
                 {categories.map((cat,i)=>(
-                  <div key={cat.id} onClick={()=>setActiveCatId(activeCatId===cat.id?null:cat.id)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
+                  <div key={cat.id} onClick={()=>onCategorySelect(activeCatId===cat.id?null:cat.id)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
                     <div style={{ width:72,height:72,borderRadius:"50%",overflow:"hidden",border:`2.5px solid ${activeCatId===cat.id?T.accent:T.line}`,marginBottom:7,transition:"border-color .2s" }}>
                       <img
                         src={`https://images.unsplash.com/${FOOD_IMGS[i%FOOD_IMGS.length]}?q=70&w=140&auto=format&fit=crop`}
@@ -767,7 +814,7 @@ function Testimonials() {
 function DualOffer() {
   const cards=[
     { tag:"GRAND PUBLIC", tagBg:T.accent, tagCol:"#fff", topCol:T.accent, title:"Pour toute la famille", sub:"Commandez, payez, profitez.", img:"photo-1567620905732-2d1ec7ab7445", perks:["Menu dynamique & QR Code table","Orange Money · MTN · Wave · Espèces","Suivi commande en temps réel","Reçu SYSCOHADA par email"], perkCol:T.accent, cta:"Commander maintenant", ctaBg:`linear-gradient(135deg,${T.accent},${T.accentD})`, ctaCol:"#fff", href:"/menu" },
-    { tag:"ENTREPRISE",   tagBg:T.yellow, tagCol:T.dark,  topCol:T.yellow, title:"Pour vos équipes",     sub:"Gérez, facturez, conformez.",  img:"photo-1600880292203-757bb62b4baf", perks:["Commandes groupées 50+ repas","Facturation mensuelle consolidée","Budgets par collaborateur","Conformité TVA 18% & SYSCOHADA"], perkCol:T.yellow, cta:"Créer un compte Entreprise →", ctaBg:`linear-gradient(135deg,${T.yellow},#F8A020)`, ctaCol:T.dark, href:"/register?type=b2b" },
+    { tag:"ENTREPRISE",   tagBg:T.yellow, tagCol:T.dark,  topCol:T.yellow, title:"Pour vos équipes",     sub:"Gérez, facturez, conformez.",  img:"photo-1573164574511-73c773193279", perks:["Commandes groupées 50+ repas","Facturation mensuelle consolidée","Budgets par collaborateur","Conformité TVA 18% & SYSCOHADA"], perkCol:T.yellow, cta:"Créer un compte Entreprise →", ctaBg:`linear-gradient(135deg,${T.yellow},#F8A020)`, ctaCol:T.dark, href:"/register?type=b2b" },
   ];
   return (
     <section id="offres" style={{ background:T.bgAlt,padding:"120px 0",position:"relative",overflow:"hidden" }}>
@@ -873,21 +920,21 @@ function Footer() {
     {
       title: "Restaurateurs",
       links: [
-        ["Interface Gérant",      "#"],
-        ["Gestion des stocks",    "#"],
-        ["KDS Cuisine",           "#"],
-        ["Trésorerie & rapports", "#"],
-        ["Devenir partenaire",    "#"],
+        ["Interface Gérant",      "/gerant"],
+        ["Gestion des stocks",    "/gerant"],
+        ["KDS Cuisine",           "/gerant"],
+        ["Trésorerie & rapports", "/gerant"],
+        ["Devenir partenaire",    "/register"],
       ],
     },
     {
       title: "Support",
       links: [
-        ["Centre d'aide",         "#"],
-        ["Nous contacter",        "#"],
+        ["Centre d'aide",         "/aide"],
+        ["Nous contacter",        "/contact"],
         ["Statut des services",   "#"],
-        ["Mentions légales",      "#"],
-        ["Confidentialité",       "#"],
+        ["Mentions légales",      "/legal"],
+        ["Confidentialité",       "/privacy"],
       ],
     },
   ];
@@ -1010,8 +1057,8 @@ function Footer() {
 
           {/* Liens légaux */}
           <div style={{ display:"flex",gap:20,flexWrap:"wrap" }}>
-            {["CGU","Confidentialité","Cookies","Accessibilité"].map(l => (
-              <a key={l} href="#" style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.25)",textDecoration:"none",transition:"color .18s" }}
+            {[["CGU","/legal"],["Confidentialité","/privacy"],["Cookies","#"],["Accessibilité","#"]].map(([l, href]) => (
+              <a key={l} href={href} style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.25)",textDecoration:"none",transition:"color .18s" }}
                 onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
                 onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>
                 {l}
@@ -1037,7 +1084,8 @@ function Footer() {
 
 /* ─── Composant principal — Page d'accueil ─── */
 export default function Home() {
-  const [search, setSearch] = useState("");
+  const [search, setSearch]           = useState("");
+  const [activeCatId, setActiveCatId] = useState(null);
   const [restaurantCount, setRestaurantCount] = useState(0);
   const menuRef = useRef(null);
   useEffect(() => {
@@ -1048,10 +1096,10 @@ export default function Home() {
       <FontLoader />
       <Nav />
       <Hero search={search} onSearch={setSearch} menuRef={menuRef} restaurantCount={restaurantCount} />
-      <CategoryStrip onSearch={setSearch} />
+      <CategoryStrip activeCatId={activeCatId} onCategorySelect={setActiveCatId} menuRef={menuRef} />
       <HowItWorks />
       <Marquee />
-      <MenuSection search={search} onSearch={setSearch} sectionRef={menuRef} />
+      <MenuSection search={search} onSearch={setSearch} sectionRef={menuRef} activeCatId={activeCatId} onCategorySelect={setActiveCatId} />
       <Banners />
       <Stats />
       <Testimonials />

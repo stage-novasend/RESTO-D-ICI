@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════════ */
 import { useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, CheckCircle, UtensilsCrossed } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle, UtensilsCrossed, ArrowLeft } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 
 export default function Login() {
@@ -145,6 +145,16 @@ export default function Login() {
       {/* ── Colonne gauche : formulaire ── */}
       <div className="flex-1 flex flex-col justify-center px-5 py-10 sm:px-10 lg:px-16 xl:px-24">
         <div className="w-full max-w-sm mx-auto">
+
+          {/* Retour à l'accueil */}
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+            style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' }}
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Retour à l'accueil
+          </Link>
 
           {/* Logo Restodici */}
           <div className="flex items-center gap-2.5 mb-10">

@@ -107,6 +107,7 @@ export const commandesService = {
     API.patch(`/commandes/${id}/statut`, { statut }),
   updateStatut: (id: string, statut: string) =>
     API.patch(`/commandes/${id}/statut`, { statut }),
+  annuler: (id: string) => API.patch(`/commandes/${id}/annuler`),
   registerPayment: (
     id: string,
     payload: { montantRemis: number; modePaiement: string },

@@ -339,7 +339,7 @@ export default function B2BReports() {
   const handleExport = async () => {
     if (factures.length > 0) {
       try {
-        const res = await b2bAPI.exportSyscohadaCsv(factures[0].id ?? factures[0].numeroFacture);
+        const res = await b2bAPI.exportSyscohadaCsv(factures[0].id);
         const { csv, filename } = res.data;
         const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);

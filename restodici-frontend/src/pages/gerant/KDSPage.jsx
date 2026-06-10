@@ -1,13 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Clock,
-  CheckCircle,
-  AlertTriangle,
-  ChefHat,
-  Truck,
-  RefreshCw,
-  Wallet,
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import {
   commandesService,
   createCommandesSocket,
@@ -203,13 +195,8 @@ export default function KDSPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-[#1C1917]">KDS Staff & Salle</h2>
-          <p className="text-sm text-[#78716C] mt-0.5">Suivi opérationnel en temps réel</p>
-        </div>
-        <div className="flex flex-col gap-4">
-        <div className="rounded-2xl border border-[#F5DEB3] bg-[#FFFBEB] p-4">
-          <p className="text-xs uppercase tracking-[0.2em] font-semibold text-[#B45309]">Processus essentiel</p>
-          <p className="mt-2 text-sm text-[#92400E] font-semibold">Le KDS est le point central de réception et de préparation — chaque commande doit être traitée ici avant d’être finalisée.</p>
+          <h2 className="text-2xl font-bold text-[#111827]">KDS Staff & Salle</h2>
+          <p className="text-sm text-[#6B7280] mt-0.5">Suivi opérationnel en temps réel</p>
         </div>
         <div className="flex items-center gap-3">
           {lastRealtimeEvent && (
@@ -219,13 +206,12 @@ export default function KDSPage() {
           )}
           <button
             onClick={() => void fetchOrders()}
-            className="px-4 py-2.5 bg-[#1C1917] text-white rounded-xl hover:bg-black flex items-center gap-2 text-sm font-medium"
+            className="px-4 py-2.5 bg-[#FF8C00] text-white rounded-xl hover:bg-[#E07A00] flex items-center gap-2 text-sm font-medium"
           >
             <RefreshCw className="w-4 h-4" />
             Actualiser
           </button>
         </div>
-      </div>
       </div>
 
       {error && (
@@ -236,10 +222,9 @@ export default function KDSPage() {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-sm">
-          <h3 className="font-bold text-base text-[#1C1917] mb-4 flex items-center gap-2">
-            <ChefHat className="w-5 h-5 text-[#FF8C00]" />
+          <h3 className="font-bold text-base text-[#111827] mb-4 flex items-center gap-2">
             Flux opérationnel
-            <span className="ml-auto text-sm font-medium text-[#78716C] bg-[#FFF0DF] px-2.5 py-1 rounded-full">{activeOrders.length}</span>
+            <span className="ml-auto text-sm font-medium text-[#6B7280] bg-[#FFF0DF] px-2.5 py-1 rounded-full">{activeOrders.length}</span>
           </h3>
           <div className="space-y-4">
             {activeOrders.map((order) => (
@@ -263,10 +248,9 @@ export default function KDSPage() {
         </div>
 
         <div className="bg-white rounded-2xl border border-[#E2E8F0] p-6 shadow-sm">
-          <h3 className="font-bold text-base text-[#1C1917] mb-4 flex items-center gap-2">
-            <CheckCircle className="w-5 h-5 text-[#57534E]" />
+          <h3 className="font-bold text-base text-[#111827] mb-4 flex items-center gap-2">
             Prêtes / En livraison
-            <span className="ml-auto text-sm font-medium text-[#78716C] bg-[#FFF0DF] px-2.5 py-1 rounded-full">{readyOrders.length}</span>
+            <span className="ml-auto text-sm font-medium text-[#6B7280] bg-[#FFF0DF] px-2.5 py-1 rounded-full">{readyOrders.length}</span>
           </h3>
           <div className="space-y-4">
             {readyOrders.map((order) => (
@@ -301,8 +285,7 @@ function OrderCard({
     <div className="border rounded-2xl p-4 border-[#E2E8F0] bg-white shadow-sm">
       <div className="flex items-center justify-between mb-3 gap-2">
         <div className="flex items-center gap-2">
-          <StatusIcon status={order.statut} />
-          <span className="font-bold text-lg text-[#1C1917]">#{order.numero}</span>
+          <span className="font-bold text-lg text-[#111827]">#{order.numero}</span>
         </div>
         <span className={`px-2 py-1 text-xs rounded-full ${STATUS_COLORS[order.statut]}`}>
           {STATUS_LABELS[order.statut] || order.statut}
@@ -338,7 +321,7 @@ function OrderCard({
       {allowPayment && (
         <div className="rounded-lg border border-[#E2E8F0] bg-white p-3 mb-3">
           <div className="flex items-center gap-2 text-sm font-semibold mb-2">
-            <Wallet className="w-4 h-4" /> Encaissement
+            Encaissement
           </div>
 
           {order.estPaye ? (
@@ -384,7 +367,7 @@ function OrderCard({
               <button
                 onClick={() => void onRegisterPayment(order)}
                 disabled={paymentSavingId === order.id}
-                className="bg-[#0F172A] text-white py-2 rounded-lg hover:bg-black disabled:opacity-50"
+                className="bg-[#FF8C00] text-white py-2 rounded-lg hover:bg-[#E07A00] disabled:opacity-50"
               >
                 {paymentSavingId === order.id ? 'Enregistrement...' : 'Valider paiement'}
               </button>
@@ -422,18 +405,10 @@ function OrderCompact({ order }) {
           {STATUS_LABELS[order.statut] || order.statut}
         </span>
       </div>
-      <div className="text-sm mt-2 text-[#4A4137]">
+      <div className="text-sm mt-2 text-[#6B7280]">
         {formatDeliveryMode(order.modeLivraison)} · {formatDate(order.createdAt)}
       </div>
     </div>
   );
 }
 
-function StatusIcon({ status }) {
-  if (status === 'RECUE') return <Clock className="w-5 h-5 text-blue-500" />;
-  if (status === 'CONFIRMEE') return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-  if (status === 'EN_PREP') return <ChefHat className="w-5 h-5 text-indigo-500" />;
-  if (status === 'PRETE') return <CheckCircle className="w-5 h-5 text-green-600" />;
-  if (status === 'EN_LIVRAISON') return <Truck className="w-5 h-5 text-purple-600" />;
-  return <Clock className="w-5 h-5 text-[#6B7280]" />;
-}

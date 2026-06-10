@@ -13,6 +13,10 @@ import AdminLayout from './layouts/AdminLayout';
 
 // ===== PAGES PUBLIQUES — Imports directs sans extension .jsx =====
 import Home from './pages/Home';
+import Contact from './pages/Contact';
+import Legal from './pages/Legal';
+import Privacy from './pages/Privacy';
+import Aide from './pages/Aide';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import VerifyEmail from './pages/VerifyEmail';
@@ -123,6 +127,12 @@ export default function App() {
           <Routes>
             {/* === PAGE D'ACCUEIL sans layout (hero auto-suffisant) === */}
             <Route path="/" element={<Home />} />
+
+            {/* === PAGES PUBLIQUES INFORMATIVES === */}
+            <Route path="/contact" element={<Contact />} />
+            <Route path="/legal" element={<Legal />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/aide" element={<Aide />} />
 
             {/* === ROUTES PUBLIQUES avec ClientLayout et CartProvider === */}
             <Route element={

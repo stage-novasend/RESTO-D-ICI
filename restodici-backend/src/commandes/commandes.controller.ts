@@ -209,6 +209,14 @@ export class CommandesController {
     return this.commandesService.findOne(id, clientId, restaurantId);
   }
 
+  // Client/B2B: cancel own order before preparation (no time limit)
+  @Patch(':id/annuler')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('CLIENT', 'B2B')
+  async annulerByClient(@Param('id') id: string, @Req() req: any) {
+    return this.commandesService.annulerByClient(id, req.user.id);
+  }
+
   @Patch(':id/statut')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'STAFF', 'ADMIN')

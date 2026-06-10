@@ -854,6 +854,7 @@ export class B2BService {
       heureLivraison: cmd.heureLivraison,
       lieuLivraison: cmd.lieuLivraison,
       statut: cmd.statut,
+      estPaye: cmd.estPaye,
       totalEstime: Number(cmd.totalEstime),
       createdAt: cmd.createdAt,
       deadlineAt: cmd.deadlineAt,
@@ -865,6 +866,87 @@ export class B2BService {
         prixUnitaire: Number(l.prixUnitaire),
       })),
     }));
+  }
+
+  async confirmerPaiementB2B(
+    id: string,
+    restaurantId: string,
+  ): Promise<Record<string, any>> {
+    const commande = await this.commandeGroupeeRepository.findOne({
+      where: { id },
+      relations: ['compteB2B'],
+    });
+    if (!commande) throw new NotFoundException('Commande B2B introuvable');
+    if (commande.restaurantId && commande.restaurantId !== restaurantId) {
+      throw new ForbiddenException('Accès refusé à cette commande');
+    }
+
+    commande.estPaye = true;
+    const saved = await this.commandeGroupeeRepository.save(commande);
+
+    const payload = { id: saved.id, numero: saved.numero, statut: saved.statut, estPaye: true };
+    if (commande.restaurantId) {
+      this.commandesGateway.emitToKitchen(commande.restaurantId, 'commande.b2b.statut', payload);
+    }
+    this.commandesGateway.emitToManagers('commande.b2b.statut', payload);
+    return payload;
+  }
+
+  async annulerCommandeGroupeeByClient(
+    id: string,
+    userId: string,
+  ): Promise<Record<string, any>> {
+    const compte = await this.getCompteB2B(userId);
+    if (!compte) throw new NotFoundException('Compte entreprise introuvable');
+
+    const commande = await this.commandeGroupeeRepository.findOne({
+      where: { id, compteB2B: { id: compte.id } },
+    });
+    if (!commande) throw new NotFoundException('Commande introuvable');
+    if (['EN_PREPARATION', 'LIVREE', 'ANNULEE'].includes(commande.statut)) {
+      throw new BadRequestException(
+        'Annulation impossible : la commande est déjà en préparation ou terminée',
+      );
+    }
+
+    commande.statut = 'ANNULEE';
+    const saved = await this.commandeGroupeeRepository.save(commande);
+
+    const payload = { id: saved.id, numero: saved.numero, statut: 'ANNULEE' };
+    if (commande.restaurantId) {
+      this.commandesGateway.emitToKitchen(commande.restaurantId, 'commande.b2b.statut', payload);
+    }
+    this.commandesGateway.emitToManagers('commande.b2b.statut', payload);
+    return payload;
+  }
+
+  @Cron('*/5 * * * *')
+  async checkDeliveryReminders(): Promise<void> {
+    const now = new Date();
+    const windows = [
+      { label: '30min', from: new Date(now.getTime() + 25 * 60_000), to: new Date(now.getTime() + 35 * 60_000) },
+      { label: '2h',    from: new Date(now.getTime() + 115 * 60_000), to: new Date(now.getTime() + 125 * 60_000) },
+    ];
+    for (const { label, from, to } of windows) {
+      const commandes = await this.commandeGroupeeRepository.find({
+        where: { dateLivraison: Between(from, to), statut: In(['EN_ATTENTE', 'CONFIRMEE', 'EN_PREPARATION']) },
+        relations: ['compteB2B'],
+      });
+      for (const cmd of commandes) {
+        const payload = {
+          id: cmd.id, numero: cmd.numero, statut: cmd.statut, estPaye: cmd.estPaye,
+          entreprise: cmd.compteB2B?.raisonSociale ?? 'Entreprise',
+          dateLivraison: cmd.dateLivraison,
+          heureLivraison: cmd.heureLivraison,
+          lieuLivraison: cmd.lieuLivraison,
+          urgence: label,
+        };
+        if (cmd.restaurantId) {
+          this.commandesGateway.emitToKitchen(cmd.restaurantId, 'commande.b2b.rappel', payload);
+        }
+        this.commandesGateway.emitToManagers('commande.b2b.rappel', payload);
+      }
+    }
   }
 
   async updateB2BOrderStatus(
@@ -980,6 +1062,97 @@ export class B2BService {
     });
 
     return this.formatFacture(saved, compte);
+  }
+
+  async contestFacture(
+    factureId: string,
+    userId: string,
+    motif: string,
+  ): Promise<Record<string, any>> {
+    const compte = await this.getCompteB2B(userId);
+    if (!compte) throw new NotFoundException('Compte entreprise introuvable');
+
+    const facture = await this.factureRepository.findOne({
+      where: { id: factureId, compteB2B: { id: compte.id } },
+    });
+    if (!facture) throw new NotFoundException('Facture introuvable');
+    if (facture.statut === 'PAYEE') throw new BadRequestException('Impossible de contester une facture déjà payée');
+    if (facture.statut === 'EN_CONTESTATION') throw new BadRequestException('Facture déjà en contestation');
+
+    facture.statut = 'EN_CONTESTATION';
+    const saved = await this.factureRepository.save(facture);
+
+    await this.logAudit('PAIEMENT_FACTURE', compte.id, userId, {
+      action: 'CONTESTATION',
+      factureId,
+      motif,
+      numeroFacture: facture.numeroFacture,
+    });
+
+    const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || 'admin@restodici.ci';
+    void this.emailService.sendMail({
+      to: adminEmail,
+      subject: `RESTODICI — Contestation facture ${facture.numeroFacture} — ${compte.raisonSociale}`,
+      html: `<p>La facture <strong>${facture.numeroFacture}</strong> (${compte.raisonSociale}) est contestée.</p><p><strong>Motif :</strong> ${motif}</p><p>Montant TTC : ${Math.round(Number(facture.montantTTC)).toLocaleString('fr-FR')} FCFA</p>`,
+    }).catch(() => undefined);
+
+    return this.formatFacture(saved, compte);
+  }
+
+  async exportSyscohadaCsv(
+    factureId: string,
+    userId: string,
+  ): Promise<Record<string, any>> {
+    const compte = await this.getCompteB2B(userId);
+    if (!compte) throw new NotFoundException('Compte entreprise introuvable');
+
+    const facture = await this.factureRepository.findOne({
+      where: { id: factureId, compteB2B: { id: compte.id } },
+    });
+    if (!facture) throw new NotFoundException('Facture introuvable');
+
+    const montantHT = Number(facture.montantHT);
+    const tva = Number(facture.tva);
+    const montantTTC = Number(facture.montantTTC);
+    const ref = facture.numeroFacture || factureId.slice(0, 8);
+    const nif = facture.nifClient || compte.numeroContribuable || '';
+    const periode = `${facture.mois} ${facture.annee}`;
+
+    // SYSCOHADA format: Date;Libellé;Compte_Débit;Montant_Débit;Compte_Crédit;Montant_Crédit;NIF;Référence
+    const rows = [
+      {
+        Date: facture.echeance || new Date().toISOString().slice(0, 10),
+        Libelle: `Ventes repas - ${compte.raisonSociale} - ${periode}`,
+        Compte_Debit: '411100',
+        Montant_Debit: Math.round(montantTTC),
+        Compte_Credit: '701100',
+        Montant_Credit: Math.round(montantHT),
+        NIF: nif,
+        Reference: ref,
+      },
+      {
+        Date: facture.echeance || new Date().toISOString().slice(0, 10),
+        Libelle: `TVA collectée 18% - ${compte.raisonSociale} - ${periode}`,
+        Compte_Debit: '411100',
+        Montant_Debit: 0,
+        Compte_Credit: '443100',
+        Montant_Credit: Math.round(tva),
+        NIF: nif,
+        Reference: ref,
+      },
+    ];
+
+    const headers = Object.keys(rows[0]).join(';');
+    const csvRows = rows.map(r => Object.values(r).join(';'));
+    const csv = [headers, ...csvRows].join('\n');
+
+    await this.logAudit('GENERATION_FACTURE', compte.id, userId, {
+      action: 'EXPORT_SYSCOHADA',
+      factureId,
+      numeroFacture: facture.numeroFacture,
+    });
+
+    return { csv, filename: `syscohada-${ref}-${periode.replace(' ', '-')}.csv` };
   }
 
   // CRON: Last day of every month at 23:00 — generate invoices for all B2B accounts
@@ -1099,16 +1272,92 @@ export class B2BService {
   // CRON: Check overdue invoices daily at 8:00
   @Cron(CronExpression.EVERY_DAY_AT_8AM)
   async checkOverdueInvoices(): Promise<void> {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = new Date();
+    const todayStr = today.toISOString().slice(0, 10);
+
+    // Step 1: Mark expired invoices as RETARDEE
     const overdue = await this.factureRepository
       .createQueryBuilder('f')
       .where('f.statut = :statut', { statut: 'EN_ATTENTE' })
-      .andWhere('f.echeance < :today', { today })
+      .andWhere('f.echeance < :today', { today: todayStr })
       .getMany();
 
     for (const facture of overdue) {
       facture.statut = 'RETARDEE';
       await this.factureRepository.save(facture);
+    }
+
+    // Step 2: Relance J-7 (7 days before due)
+    const in7Days = new Date(today);
+    in7Days.setDate(in7Days.getDate() + 7);
+    const in7DaysStr = in7Days.toISOString().slice(0, 10);
+
+    const dueSoon = await this.factureRepository
+      .createQueryBuilder('f')
+      .leftJoinAndSelect('f.compteB2B', 'compte')
+      .where('f.statut = :statut', { statut: 'EN_ATTENTE' })
+      .andWhere('f.echeance = :echeance', { echeance: in7DaysStr })
+      .getMany();
+
+    for (const facture of dueSoon) {
+      const compte = facture.compteB2B;
+      if (!compte?.emailProfessionnel) continue;
+      void this.emailService.sendMail({
+        to: compte.emailProfessionnel,
+        subject: `RESTODICI — Rappel : facture ${facture.numeroFacture} échéance dans 7 jours`,
+        html: `<p>Bonjour,</p><p>La facture <strong>${facture.numeroFacture}</strong> (${Math.round(Number(facture.montantTTC)).toLocaleString('fr-FR')} FCFA TTC) est due le <strong>${facture.echeance}</strong>, dans 7 jours.</p><p>Connectez-vous à votre espace B2B pour régler cette facture.</p>`,
+      }).catch(() => undefined);
+    }
+
+    // Step 3: Block account at J+3 after due date (range: exactly 3 days overdue today)
+    const dueJ3 = new Date(today);
+    dueJ3.setDate(dueJ3.getDate() - 3);
+    const dueJ3Str = dueJ3.toISOString().slice(0, 10);
+    const dueJ3PrevStr = new Date(dueJ3.getTime() - 86_400_000).toISOString().slice(0, 10);
+
+    const overdueJ3 = await this.factureRepository
+      .createQueryBuilder('f')
+      .leftJoinAndSelect('f.compteB2B', 'compte')
+      .where('f.statut = :statut', { statut: 'RETARDEE' })
+      .andWhere('f.echeance <= :echeance', { echeance: dueJ3Str })
+      .andWhere('f.echeance > :prev', { prev: dueJ3PrevStr })
+      .getMany();
+
+    for (const facture of overdueJ3) {
+      const compte = facture.compteB2B;
+      if (!compte) continue;
+      if (compte.emailProfessionnel) {
+        void this.emailService.sendMail({
+          to: compte.emailProfessionnel,
+          subject: `RESTODICI — URGENT : facture impayée ${facture.numeroFacture} — compte suspendu`,
+          html: `<p>Bonjour,</p><p>Votre facture <strong>${facture.numeroFacture}</strong> (${Math.round(Number(facture.montantTTC)).toLocaleString('fr-FR')} FCFA TTC) est impayée depuis 3 jours.</p><p><strong>Vos nouvelles commandes sont désactivées jusqu'au règlement.</strong></p><p>Réglez cette facture immédiatement via votre espace B2B.</p>`,
+        }).catch(() => undefined);
+      }
+    }
+
+    // Step 4: Escalate to admin at J+15 (range: exactly 15 days overdue today)
+    const dueJ15 = new Date(today);
+    dueJ15.setDate(dueJ15.getDate() - 15);
+    const dueJ15Str = dueJ15.toISOString().slice(0, 10);
+    const dueJ15PrevStr = new Date(dueJ15.getTime() - 86_400_000).toISOString().slice(0, 10);
+
+    const overdueJ15 = await this.factureRepository
+      .createQueryBuilder('f')
+      .leftJoinAndSelect('f.compteB2B', 'compte')
+      .where('f.statut = :statut', { statut: 'RETARDEE' })
+      .andWhere('f.echeance <= :echeance', { echeance: dueJ15Str })
+      .andWhere('f.echeance > :prev', { prev: dueJ15PrevStr })
+      .getMany();
+
+    for (const facture of overdueJ15) {
+      const compte = facture.compteB2B;
+      if (!compte) continue;
+      const adminEmail = this.configService.get<string>('ADMIN_EMAIL') || 'admin@restodici.ci';
+      void this.emailService.sendMail({
+        to: adminEmail,
+        subject: `RESTODICI ADMIN — Impayé J+15 : ${compte.raisonSociale} — ${facture.numeroFacture}`,
+        html: `<p>La facture <strong>${facture.numeroFacture}</strong> de l'entreprise <strong>${compte.raisonSociale}</strong> est impayée depuis 15 jours (${Math.round(Number(facture.montantTTC)).toLocaleString('fr-FR')} FCFA TTC). Intervention manuelle requise.</p>`,
+      }).catch(() => undefined);
     }
   }
 

@@ -451,13 +451,6 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
       {/* ── Hero Banner ─────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl"
         style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, #FF6B00 40%, #FF4D00 100%)`, boxShadow: `0 8px 40px ${ACCENT}55` }}>
-        {/* Decorative circles */}
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10"
-          style={{ background: '#fff', transform: 'translate(30%, -30%)' }} />
-        <div className="absolute bottom-0 left-1/3 w-48 h-48 rounded-full opacity-10"
-          style={{ background: '#fff', transform: 'translate(-50%, 40%)' }} />
-        <div className="absolute top-1/2 right-1/4 w-24 h-24 rounded-full opacity-10"
-          style={{ background: '#fff', transform: 'translateY(-50%)' }} />
 
         <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           {/* Avatar */}
@@ -941,9 +934,7 @@ function PaymentTab({ savedPM, setSavedPM, pmForm, setPmForm, pmMsg, setPmMsg, a
       {/* ── Header ───────────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8"
         style={{ background: `linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%)` }}>
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-5"
-          style={{ background: '#fff', transform: 'translate(30%, -30%)' }} />
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
             style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
             <CreditCard className="w-7 h-7 text-white" />
@@ -1155,10 +1146,7 @@ function SecurityTab({ user }) {
       {/* ── Score sécurité ───────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8"
         style={{ background: `linear-gradient(135deg, #0F172A 0%, #1E293B 100%)` }}>
-        <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-5"
-          style={{ background: '#fff', transform: 'translate(30%, -30%)' }} />
-
-        <div className="relative flex flex-col sm:flex-row items-start sm:items-center gap-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6">
           {/* Score ring */}
           <div className="relative w-24 h-24 shrink-0">
             <svg className="w-24 h-24 -rotate-90" viewBox="0 0 96 96">

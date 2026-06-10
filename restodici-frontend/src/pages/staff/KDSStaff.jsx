@@ -7,9 +7,10 @@ import { useCallback, useEffect, useState } from 'react';
 import {
   Clock, ChefHat, CheckCircle2, RefreshCw, AlertCircle,
   History, X, ChevronDown, ChevronUp,
-  CheckCheck, Ban, UtensilsCrossed,
+  CheckCheck, Ban, UtensilsCrossed, Building2, Bell, CreditCard, CalendarClock,
 } from 'lucide-react';
 import { commandesService, createCommandesSocket } from '../../services/commandes.service';
+import { b2bAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 
 /* ── Palette ── */
@@ -48,6 +49,25 @@ const COLS = [
   { id: 'ready',    label: 'Prête',          accent: GREEN,  accentL: 'rgba(22,163,74,0.08)', grad: GREEN_G,   statuts: ['PRETE'] },
   { id: 'delivery', label: 'En livraison',   accent: PURPLE, accentL: 'rgba(124,58,237,0.08)',grad: PURPLE_G,  statuts: ['EN_LIVRAISON'] },
 ];
+
+/* B2B statut ↔ KDS statut mapping */
+const B2B_TO_KDS = { EN_ATTENTE: 'RECUE', CONFIRMEE: 'CONFIRMEE', EN_PREPARATION: 'EN_PREP', LIVREE: 'LIVREE', ANNULEE: 'ANNULEE' };
+/* KDS "next" → B2B actual next (B2B skips PRETE/EN_LIVRAISON) */
+const B2B_KDS_NEXT = { CONFIRMEE: 'CONFIRMEE', EN_PREP: 'EN_PREPARATION', PRETE: 'LIVREE', EN_LIVRAISON: 'LIVREE' };
+
+function fmtLivraison(dateIso, heure) {
+  if (!dateIso) return heure || '';
+  try {
+    const d = new Date(dateIso);
+    const label = d.toLocaleDateString('fr-FR', { weekday: 'short', day: 'numeric', month: 'short' });
+    return `${label} à ${heure || d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+  } catch { return heure || ''; }
+}
+
+function minutesUntil(dateIso) {
+  if (!dateIso) return null;
+  return Math.round((new Date(dateIso) - Date.now()) / 60_000);
+}
 
 /* ── Persistance historique localStorage ── */
 const HIST_KEY  = 'kds_history_v1';
@@ -109,6 +129,7 @@ function beep() {
 }
 
 function lieu(order) {
+  if (order.isB2B) return order._b2bLieu || order.entreprise || 'Entreprise';
   if (order.modeLivraison === 'SUR_PLACE') return `Table ${order.tableNumero ?? '?'}`;
   if (order.modeLivraison === 'EMPORTER')  return 'À emporter';
   if (order.modeLivraison === 'LIVRAISON') return 'Livraison';
@@ -118,13 +139,15 @@ function lieu(order) {
 /* ══════════════════════════════════════════════════════════════════
    OrderCard — Carte commande active
    ══════════════════════════════════════════════════════════════════ */
-function OrderCard({ order, onAction, saving, col }) {
+function OrderCard({ order, onAction, onPay, saving, col }) {
   useGlobalTick();
   const sec    = elapsed(order.createdAt);
   const urgent = sec >= 1200;
   const warn   = sec >= 600;
   const tColor = urgent ? RED : warn ? AMBER : MUTED;
   const next   = NEXT_STATUT[order.statut];
+  const needsPayment = order.isB2B && next === 'EN_PREP' && !order.estPaye;
+  const minsUntilDelivery = order._b2bDateLivraison ? minutesUntil(order._b2bDateLivraison) : null;
 
   return (
     <div style={{
@@ -160,6 +183,11 @@ function OrderCard({ order, onAction, saving, col }) {
               <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: NAVY, letterSpacing: '-0.02em' }}>
                 {order.numero ? `CMD-${order.numero}` : `#${order.id?.slice(0, 6)}`}
               </p>
+              {order.isB2B && (
+                <span style={{ fontSize: 9, fontWeight: 800, background: '#EDE9FE', color: PURPLE, padding: '2px 7px', borderRadius: 99, letterSpacing: '0.06em' }}>
+                  B2B
+                </span>
+              )}
               {urgent && (
                 <span style={{ fontSize: 9, fontWeight: 800, background: '#FEE2E2', color: RED, padding: '2px 7px', borderRadius: 99, letterSpacing: '0.08em' }}>
                   URGENT
@@ -167,7 +195,7 @@ function OrderCard({ order, onAction, saving, col }) {
               )}
             </div>
             <p style={{ margin: 0, fontSize: 11, color: MUTED, fontWeight: 500, display: 'flex', alignItems: 'center', gap: 4 }}>
-              <UtensilsCrossed size={10} /> {lieu(order)}
+              {order.isB2B ? <Building2 size={10} /> : <UtensilsCrossed size={10} />} {lieu(order)}
             </p>
           </div>
 
@@ -205,8 +233,59 @@ function OrderCard({ order, onAction, saving, col }) {
           ))}
         </div>
 
+        {/* Info livraison B2B */}
+        {order.isB2B && order._b2bDateLivraison && (
+          <div style={{
+            marginBottom: 10, padding: '8px 12px', borderRadius: 10,
+            background: minsUntilDelivery !== null && minsUntilDelivery <= 30
+              ? '#FEF3C7' : '#EFF6FF',
+            border: `1px solid ${minsUntilDelivery !== null && minsUntilDelivery <= 30 ? '#FCD34D' : '#BFDBFE'}`,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 11, fontWeight: 700,
+              color: minsUntilDelivery !== null && minsUntilDelivery <= 30 ? '#92400E' : '#1D4ED8' }}>
+              <CalendarClock size={11} />
+              {fmtLivraison(order._b2bDateLivraison, order._b2bHeureLivraison)}
+              {minsUntilDelivery !== null && minsUntilDelivery <= 120 && (
+                <span style={{ marginLeft: 4, fontWeight: 800, color: minsUntilDelivery <= 30 ? RED : AMBER }}>
+                  ({minsUntilDelivery <= 0 ? 'maintenant' : `dans ${minsUntilDelivery} min`})
+                </span>
+              )}
+            </div>
+            {order._b2bLieu && (
+              <div style={{ fontSize: 10, color: '#6B7280', marginTop: 2 }}>→ {order._b2bLieu}</div>
+            )}
+          </div>
+        )}
+
+        {/* Badge paiement B2B */}
+        {order.isB2B && order.estPaye && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
+            color: '#166534', background: '#DCFCE7', borderRadius: 8, padding: '4px 10px', marginBottom: 10 }}>
+            <CheckCircle2 size={10} /> Encaissé
+          </div>
+        )}
+
         {/* Bouton action */}
-        {next ? (
+        {needsPayment ? (
+          <button
+            onClick={() => onPay(order.id)}
+            disabled={saving === order.id}
+            style={{
+              width: '100%', padding: '11px 12px', borderRadius: 12, border: 'none',
+              background: 'linear-gradient(135deg,#059669,#10b981)',
+              color: '#fff', fontSize: 13, fontWeight: 700,
+              cursor: saving === order.id ? 'not-allowed' : 'pointer',
+              opacity: saving === order.id ? 0.65 : 1,
+              boxShadow: '0 3px 12px rgba(5,150,105,0.35)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+            }}
+          >
+            {saving === order.id
+              ? <><span style={{ width: 12, height: 12, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'kds-spin 0.7s linear infinite', flexShrink: 0 }} />Traitement…</>
+              : <><CreditCard size={13} /> Encaisser à la caisse</>
+            }
+          </button>
+        ) : next ? (
           <button
             onClick={() => onAction(order.id, next)}
             disabled={saving === order.id}
@@ -314,7 +393,7 @@ function HistoryRow({ order }) {
 /* ══════════════════════════════════════════════════════════════════
    KDSColumn — Colonne Kanban
    ══════════════════════════════════════════════════════════════════ */
-function KDSColumn({ col, orders, onAction, saving }) {
+function KDSColumn({ col, orders, onAction, onPay, saving }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 0, minWidth: 0 }}>
       {/* Header colonne */}
@@ -339,7 +418,7 @@ function KDSColumn({ col, orders, onAction, saving }) {
             <p style={{ margin: 0, fontSize: 12, color: FAINT, fontWeight: 500 }}>Aucune commande</p>
           </div>
         ) : orders.map(o => (
-          <OrderCard key={o.id} order={o} onAction={onAction} saving={saving} col={col} />
+          <OrderCard key={o.id} order={o} onAction={onAction} onPay={onPay} saving={saving} col={col} />
         ))}
       </div>
     </div>
@@ -358,6 +437,7 @@ export default function KDSStaff() {
   const [lastEvent,    setLastEvent]    = useState('');
   const [showHistory,  setShowHistory]  = useState(true);
   const [histFilter,   setHistFilter]   = useState('all');
+  const [reminders,    setReminders]    = useState([]);
 
   const upsert = useCallback(o => {
     if (!o?.id) return;
@@ -374,11 +454,32 @@ export default function KDSStaff() {
   const load = useCallback(async () => {
     try {
       setError('');
-      const r = await commandesService.getKDS();
+      const [r, b2bR] = await Promise.all([
+        commandesService.getKDS(),
+        b2bAPI.getRestaurantKDS().catch(() => ({ data: [] })),
+      ]);
       const fresh = r.data || [];
+      const b2bOrders = (b2bR.data || []).map(cmd => ({
+        id: cmd.id,
+        numero: cmd.numero,
+        isB2B: true,
+        statut: B2B_TO_KDS[cmd.statut] || cmd.statut,
+        estPaye: cmd.estPaye || false,
+        _b2bLieu: cmd.lieuLivraison,
+        _b2bDateLivraison: cmd.dateLivraison,
+        _b2bHeureLivraison: cmd.heureLivraison,
+        entreprise: cmd.entreprise,
+        createdAt: cmd.createdAt,
+        montantTotal: cmd.totalEstime,
+        lignes: (cmd.lignes || []).map(l => ({
+          id: l.id, quantite: l.quantite,
+          article: { nom: l.nomArticle }, nomArticle: l.nomArticle,
+        })),
+      }));
+      const allFresh = [...fresh, ...b2bOrders];
       const stored = loadPersistedHistory();
-      const freshIds = new Set(fresh.map(o => o.id));
-      const merged = [...fresh, ...stored.filter(o => !freshIds.has(o.id))];
+      const freshIds = new Set(allFresh.map(o => o.id));
+      const merged = [...allFresh, ...stored.filter(o => !freshIds.has(o.id))];
       setOrders(merged);
       persistHistory(merged);
     } catch {
@@ -400,6 +501,21 @@ export default function KDSStaff() {
     const s = createCommandesSocket(user);
     s.on('commande.nouvelle',     p => { beep(); setLastEvent(`Nouvelle · CMD-${p?.numero || ''}`); load(); });
     s.on('commande.b2b.nouvelle', p => { beep(); setLastEvent(`B2B · ${p?.entreprise || 'CMD-' + (p?.numero || '')}`); load(); });
+    s.on('commande.b2b.statut',   p => {
+      if (p?.estPaye !== undefined) {
+        setOrders(prev => prev.map(o => o.id === p.id ? { ...o, estPaye: p.estPaye, statut: B2B_TO_KDS[p.statut] || p.statut } : o));
+      } else {
+        load();
+      }
+    });
+    s.on('commande.b2b.rappel', p => {
+      beep(); beep();
+      setReminders(prev => {
+        if (prev.find(r => r.id === p?.id && r.urgence === p?.urgence)) return prev;
+        return [{ ...p, shownAt: Date.now() }, ...prev].slice(0, 6);
+      });
+      setLastEvent(`Rappel B2B · ${p?.entreprise || p?.numero} · dans ${p?.urgence}`);
+    });
     s.on('commande.statut',       p => { setLastEvent(`Statut · CMD-${p?.numero || ''}`); upsert(p); });
     s.on('commande.paiement',     p => upsert(p));
     s.on('reconnect',             () => load());
@@ -412,20 +528,53 @@ export default function KDSStaff() {
     return () => clearInterval(id);
   }, [load]);
 
-  const onAction = async (id, statut) => {
-    if (statut === 'EN_PREP') {
-      const order = orders.find(o => o.id === id);
-      if (order && !order.estPaye) {
-        setError('💳 Paiement requis — Validez le paiement à la caisse avant de démarrer la préparation.');
+  const onPay = async (id) => {
+    setSaving(id);
+    try {
+      await b2bAPI.confirmerPaiementB2B(id);
+      setOrders(prev => prev.map(o => o.id === id ? { ...o, estPaye: true } : o));
+    } catch {
+      setError('Impossible d\'enregistrer le paiement.');
+    } finally {
+      setSaving('');
+    }
+  };
+
+  const onAction = async (id, kdsNext) => {
+    const order = orders.find(o => o.id === id);
+
+    if (order?.isB2B) {
+      const b2bStatut = B2B_KDS_NEXT[kdsNext] ?? kdsNext;
+      setSaving(id);
+      try {
+        await b2bAPI.updateCommandeGroupeeStatut(id, b2bStatut);
+        const newKds = B2B_TO_KDS[b2bStatut] || b2bStatut;
+        setOrders(prev => {
+          const updated = prev.map(o => o.id === id ? { ...o, statut: newKds } : o);
+          if (['LIVREE','ANNULEE'].includes(newKds)) persistHistory(updated);
+          return updated;
+        });
+      } catch {
+        setError('Mise à jour impossible.');
+      } finally {
+        setSaving('');
+      }
+      return;
+    }
+
+    if (kdsNext === 'EN_PREP') {
+      const isDelivery = order?.modeLivraison === 'LIVRAISON';
+      if (order && !order.estPaye && !isDelivery) {
+        setError('Paiement requis — Validez le paiement à la caisse avant de démarrer la préparation.');
         return;
       }
     }
     setSaving(id);
     try {
-      await commandesService.updateStatut(id, statut);
+      await commandesService.updateStatut(id, kdsNext);
       setOrders(prev => {
-        const updated = prev.map(o => o.id === id ? { ...o, statut } : o);
-        if (['LIVREE','ANNULEE'].includes(statut)) persistHistory(updated);
+        const updated = prev.map(o => o.id === id ? { ...o, statut: kdsNext } : o);
+        if (['LIVREE','ANNULEE'].includes(kdsNext)) persistHistory(updated);
         return updated;
       });
     } catch {
@@ -505,6 +654,32 @@ export default function KDSStaff() {
         </div>
       </div>
 
+      {/* Rappels livraison B2B */}
+      {reminders.length > 0 && (
+        <div style={{ background: '#FFFBEB', border: '1px solid #FCD34D', borderRadius: 14, padding: '12px 16px', marginBottom: 18 }}>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
+            <Bell size={14} color="#D97706" style={{ flexShrink: 0, marginTop: 1 }} />
+            <div style={{ flex: 1 }}>
+              <p style={{ fontSize: 12, fontWeight: 800, color: '#92400E', margin: '0 0 8px' }}>Rappels de livraison B2B</p>
+              {reminders.map((r, i) => (
+                <div key={`${r.id}-${r.urgence}`} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#78350F', marginBottom: i < reminders.length - 1 ? 5 : 0 }}>
+                  <span style={{ fontWeight: 800, color: r.urgence === '30min' ? RED : AMBER, background: r.urgence === '30min' ? '#FEE2E2' : '#FEF3C7', padding: '1px 7px', borderRadius: 99, fontSize: 10 }}>
+                    {r.urgence === '30min' ? '⚠ 30 min' : '🔔 2h'}
+                  </span>
+                  <span style={{ fontWeight: 700 }}>{r.entreprise || r.numero}</span>
+                  <span>· {r.heureLivraison}</span>
+                  {r.lieuLivraison && <span style={{ color: '#9CA3AF' }}>→ {r.lieuLivraison}</span>}
+                  <button onClick={() => setReminders(prev => prev.filter((x, xi) => xi !== i))}
+                    style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', padding: 0, lineHeight: 0 }}>
+                    <X size={10} color="#92400E" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Erreur */}
       {error && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: RED_L, border: '1px solid #FECACA', borderRadius: 14, padding: '12px 16px', marginBottom: 18, fontSize: 13, color: RED, fontWeight: 600 }}>
@@ -526,7 +701,7 @@ export default function KDSStaff() {
           {/* ── 4 COLONNES ACTIVES ── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'start', marginBottom: 28 }}>
             {grouped.map(col => (
-              <KDSColumn key={col.id} col={col} orders={col.orders} onAction={onAction} saving={saving} />
+              <KDSColumn key={col.id} col={col} orders={col.orders} onAction={onAction} onPay={onPay} saving={saving} />
             ))}
           </div>
 

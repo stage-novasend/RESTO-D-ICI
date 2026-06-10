@@ -294,6 +294,43 @@ export class CommandesService {
     await this.commandeRepo.update(id, { recuPdfS3Key: s3Key } as any);
   }
 
+  async annulerByClient(id: string, clientId: string): Promise<Commande> {
+    const commande = await this.commandeRepo.findOne({
+      where: { id, client: { id: clientId } },
+      relations: ['restaurant', 'client'],
+    });
+    if (!commande) throw new NotFoundException('Commande introuvable');
+
+    if (!['RECUE', 'CONFIRMEE'].includes(commande.statut as string)) {
+      throw new BadRequestException(
+        'Annulation impossible : la commande est déjà en préparation ou terminée',
+      );
+    }
+
+    const prevStatut = commande.statut;
+    commande.statut = StatutCommande.ANNULEE;
+    const saved = await this.commandeRepo.save(commande);
+
+    if (this.historyRepo) {
+      await this.historyRepo.save(
+        this.historyRepo.create({
+          commandeId: saved.id,
+          actorId: clientId,
+          actorRole: 'CLIENT',
+          statutPrecedent: prevStatut,
+          statutNouvel: StatutCommande.ANNULEE,
+        }),
+      );
+    }
+
+    const payload = { id: saved.id, numero: saved.numero, statut: saved.statut };
+    this.commandesGateway.emitToKitchen(commande.restaurant.id, 'commande.statut', payload);
+    this.commandesGateway.emitToManagers('commande.statut', payload);
+    this.commandesGateway.emitToClient(clientId, 'commande.statut', { id: saved.id, statut: saved.statut });
+
+    return saved;
+  }
+
   async updateStatut(
     id: string,
     newStatut: StatutCommande,

@@ -8,6 +8,7 @@ import {
   HttpStatus,
   Req,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { ConfigService } from '@nestjs/config';
@@ -40,6 +41,9 @@ export class PaiementsController {
   async simulerConfirmation(
     @Body() body: { commandeId: string; provider: NovaSendProvider },
   ) {
+    if (this.config.get<string>('NODE_ENV') === 'production') {
+      throw new ForbiddenException('Simulation non disponible en production');
+    }
     await this.paiementsService.confirmSimulation(body.commandeId, body.provider);
     return { status: 'ok', simulated: true };
   }

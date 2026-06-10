@@ -57,6 +57,7 @@ export default function B2BOrderTracking() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [justUpdated, setJustUpdated] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Avis state
   const [receptionStatus, setReceptionStatus] = useState(null);
@@ -101,6 +102,19 @@ export default function B2BOrderTracking() {
 
     return () => { socket.disconnect(); clearInterval(poll); };
   }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleCancel = async () => {
+    if (!window.confirm('Annuler cette commande groupée ? Cette action est irréversible.')) return;
+    setCancelling(true);
+    try {
+      await b2bAPI.annulerCommandeGroupee(id);
+      setOrder(o => ({ ...o, statut: 'ANNULEE' }));
+    } catch (e) {
+      alert(e?.response?.data?.message || 'Impossible d\'annuler la commande.');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   const handleSubmitAvis = async () => {
     if (rating === 0) { setRatingError('Choisissez une note'); return; }
@@ -252,6 +266,20 @@ export default function B2BOrderTracking() {
                 );
               })}
             </div>
+          </div>
+        )}
+
+        {/* Cancel button — before preparation */}
+        {['EN_ATTENTE', 'CONFIRMEE'].includes(order.statut) && (
+          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-semibold text-red-700">Annuler la commande</p>
+              <p className="text-xs text-red-500 mt-0.5">Possible avant le début de la préparation</p>
+            </div>
+            <button onClick={handleCancel} disabled={cancelling}
+              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition disabled:opacity-60 shrink-0">
+              {cancelling ? 'Annulation…' : 'Annuler'}
+            </button>
           </div>
         )}
 

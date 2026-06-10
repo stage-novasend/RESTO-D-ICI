@@ -16,12 +16,14 @@ import { NovaSendService, NovaSendProvider, InitiatePaymentResult } from './nova
 import { InitierPaiementDto } from './dto/initier-paiement.dto';
 
 // Correspondance provider NovaSend → enum ModePaiementCommande
+// CARTE sera actif dès que NovaSend supportera les paiements carte
 const PROVIDER_TO_MODE: Record<NovaSendProvider, ModePaiementCommande> = {
   WAVE:     ModePaiementCommande.WAVE,
   NOVASEND: ModePaiementCommande.NOVASEND,
   ORANGE:   ModePaiementCommande.ORANGE_MONEY,
   MOMO:     ModePaiementCommande.MTN_MONEY,
   MOOV:     ModePaiementCommande.MOOV_MONEY,
+  CARTE:    ModePaiementCommande.CARTE_BANCAIRE,
 };
 
 @Injectable()
@@ -55,7 +57,6 @@ export class PaiementsService {
       amount:       dto.montant,
       customerName: dto.customerName || commande.client?.nom || 'Client',
       telephone:    dto.telephone,
-      otp:          dto.otp,
       provider:     dto.provider,
     });
   }

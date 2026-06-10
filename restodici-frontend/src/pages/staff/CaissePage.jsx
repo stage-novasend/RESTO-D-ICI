@@ -1,6 +1,7 @@
 // src/pages/staff/CaissePage.jsx — Caisse · B2B-aligned design
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { CheckCircle2, Receipt, X, AlertCircle, History, ChevronDown, ChevronUp, Smartphone, Link2, Clock, QrCode, Send } from 'lucide-react';
+import QRCode from 'qrcode';
+import { CheckCircle2, Receipt, X, AlertCircle, History, ChevronDown, ChevronUp, Link2, QrCode } from 'lucide-react';
 import { commandesService, createCommandesSocket } from '../../services/commandes.service';
 import { paiementsAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -34,15 +35,22 @@ const SH3 = '0 20px 40px rgba(15,23,42,0.15),0 4px 8px rgba(15,23,42,0.06)';
 function fmt(n)  { return Math.round(Number(n) || 0).toLocaleString('fr-FR'); }
 function fmtF(n) { return `${fmt(n)} FCFA`; }
 function timeHM(ts) { return ts ? new Date(ts).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''; }
+function fmtDay(ts) {
+  if (!ts) return '';
+  const d = new Date(ts);
+  const today = new Date();
+  if (d.toDateString() === today.toDateString()) return "Aujourd'hui";
+  const yest = new Date(today); yest.setDate(yest.getDate() - 1);
+  if (d.toDateString() === yest.toDateString()) return 'Hier';
+  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' });
+}
 
 /* ── Historique paiements localStorage ── */
 const PAY_HIST_KEY = 'caisse_hist_v1';
 
 function loadPayHistory() {
   try {
-    const today = new Date().toDateString();
-    const all = JSON.parse(localStorage.getItem(PAY_HIST_KEY) || '[]');
-    return all.filter(p => new Date(p.paidAt).toDateString() === today);
+    return JSON.parse(localStorage.getItem(PAY_HIST_KEY) || '[]');
   } catch { return []; }
 }
 
@@ -63,14 +71,19 @@ const PAY_MODE_LABEL = {
   CARTE_BANCAIRE: 'Carte', MOBILE_MONEY: 'Mobile Money',
 };
 
+// ── Activer à true dès que NovaSend supporte les paiements carte bancaire ──────
+const NOVASEND_CARD_ENABLED = false;
+
+// Tous les modes digitaux passent par NovaSend /v1/payin/sessions → paymentUrl + QR
+// Carte : TPE physique pour l'instant, NovaSend digital quand NOVASEND_CARD_ENABLED = true
 const PAY_MODES = [
-  { id: 'ESPECES',       label: 'Espèces',      logo: null,             isDigital: false, flow: 'cash' },
-  { id: 'WAVE',          label: 'Wave',          logo: null,             isDigital: true,  flow: 'link', provider: 'WAVE'   },
-  { id: 'NOVASEND',      label: 'NovaSend',      logo: null,             isDigital: true,  flow: 'link', provider: 'NOVASEND' },
-  { id: 'ORANGE_MONEY',  label: 'Orange Money',  logo: orangeMoneyLogo,  isDigital: true,  flow: 'otp',  provider: 'ORANGE' },
-  { id: 'MTN_MONEY',     label: 'MTN MoMo',      logo: mtnMomoLogo,      isDigital: true,  flow: 'otp',  provider: 'MOMO'   },
-  { id: 'MOOV_MONEY',    label: 'Moov Money',    logo: moovMoneyLogo,    isDigital: true,  flow: 'otp',  provider: 'MOOV'   },
-  { id: 'CARTE_BANCAIRE',label: 'Carte',         logo: carteBancaireLogo,isDigital: false, flow: 'cash' },
+  { id: 'ESPECES',       label: 'Espèces',      logo: null,             isDigital: false,                   provider: null    },
+  { id: 'WAVE',          label: 'Wave',          logo: null,             isDigital: true,                    provider: 'WAVE'  },
+  { id: 'NOVASEND',      label: 'NovaSend',      logo: null,             isDigital: true,                    provider: 'NOVASEND' },
+  { id: 'ORANGE_MONEY',  label: 'Orange Money',  logo: orangeMoneyLogo,  isDigital: true,                    provider: 'ORANGE'},
+  { id: 'MTN_MONEY',     label: 'MTN MoMo',      logo: mtnMomoLogo,      isDigital: true,                    provider: 'MOMO'  },
+  { id: 'MOOV_MONEY',    label: 'Moov Money',    logo: moovMoneyLogo,    isDigital: true,                    provider: 'MOOV'  },
+  { id: 'CARTE_BANCAIRE',label: 'Carte',         logo: carteBancaireLogo,isDigital: NOVASEND_CARD_ENABLED,   provider: NOVASEND_CARD_ENABLED ? 'CARTE' : null },
 ];
 
 const MODE_LABEL = { SUR_PLACE: 'Sur place', EMPORTER: 'À emporter', LIVRAISON: 'Livraison' };
@@ -143,24 +156,41 @@ function OrderItem({ order, selected, onClick }) {
 }
 
 // ── DigitalPaymentModal ───────────────────────────────────────────────────────
+// Tous les providers passent par /v1/payin/sessions → paymentUrl + QR
 function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirmed }) {
   const mode  = PAY_MODES.find(m => m.id === modeId);
   const total = Math.round(Number(commande?.montantTotal || 0));
 
-  const [step,       setStep]       = useState('form');   // form|sending|waiting|confirmed
+  const [step,       setStep]       = useState('form');  // form|sending|waiting|confirmed
   const [phone,      setPhone]      = useState('');
-  const [otp,        setOtp]        = useState('');
   const [sessionId,  setSessionId]  = useState(null);
   const [paymentUrl, setPaymentUrl] = useState(null);
+  const [qrDataUrl,  setQrDataUrl]  = useState(null);
   const [simulated,  setSimulated]  = useState(false);
   const [errMsg,     setErrMsg]     = useState('');
   const [simulating, setSimulating] = useState(false);
 
-  const isLink = mode?.flow === 'link';
-  const isOtp  = mode?.flow === 'otp';
+  // Préfixes CI par opérateur — aide visuelle pour le caissier
+  const PHONE_HINT = {
+    WAVE:          'Wave · 01/05/07 XXXXXXXX',
+    NOVASEND:      'Tous opérateurs · 07/05/01 XXXXXXXX',
+    ORANGE_MONEY:  'Orange · 07 XXXXXXXX',
+    MTN_MONEY:     'MTN · 05 XXXXXXXX',
+    MOOV_MONEY:    'Moov · 01 XXXXXXXX',
+    CARTE_BANCAIRE: null, // pas de numéro de téléphone pour une carte
+  };
+
+  const isCard = modeId === 'CARTE_BANCAIRE';
+
+  // Générer le QR localement depuis le paymentUrl retourné par NovaSend
+  useEffect(() => {
+    if (!paymentUrl) { setQrDataUrl(null); return; }
+    QRCode.toDataURL(paymentUrl, { width: 200, margin: 1 })
+      .then(setQrDataUrl)
+      .catch(() => setQrDataUrl(null));
+  }, [paymentUrl]);
 
   const handleSubmit = async () => {
-    if (isOtp && !phone.trim()) { setErrMsg('Numéro de téléphone requis'); return; }
     setErrMsg('');
     setStep('sending');
     try {
@@ -168,8 +198,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
         commandeId:   commande.id,
         provider:     mode.provider,
         montant:      total,
-        telephone:    phone.trim() || undefined,
-        otp:          isOtp && otp.trim() ? otp.trim() : undefined,
+        telephone:    phone.trim() ? `+225${phone.replace(/\s/g, '')}` : undefined,
         customerName: commande.client?.nom || 'Client',
       });
       setSessionId(r.data.sessionId);
@@ -193,10 +222,6 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
     } finally { setSimulating(false); }
   };
 
-  const qrUrl = paymentUrl
-    ? `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(paymentUrl)}`
-    : null;
-
   return (
     <div style={{
       position: 'fixed', inset: 0, zIndex: 500,
@@ -211,22 +236,19 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
       }}>
 
         {/* Header */}
-        <div style={{ background: TER_G, padding: '20px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {isLink
-              ? <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Link2 size={18} color="#fff" /></div>
-              : <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Smartphone size={18} color="#fff" /></div>
-            }
-            <div>
-              <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>Paiement {mode?.label}</p>
-              <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>CMD-{commande.numero}</p>
-            </div>
+        <div style={{ background: TER_G, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 38, height: 38, borderRadius: 12, background: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <QrCode size={18} color="#fff" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0, fontSize: 15, fontWeight: 800, color: '#fff' }}>Paiement {mode?.label}</p>
+            <p style={{ margin: 0, fontSize: 11, color: 'rgba(255,255,255,0.7)', fontWeight: 500 }}>CMD-{commande.numero}</p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ margin: 0, fontSize: 22, fontWeight: 900, color: '#fff', lineHeight: 1 }}>{fmt(total)}</p>
             <p style={{ margin: 0, fontSize: 10, color: 'rgba(255,255,255,0.65)', fontWeight: 600 }}>FCFA</p>
           </div>
-          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 10, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 14, flexShrink: 0 }}>
+          <button onClick={onClose} style={{ background: 'rgba(255,255,255,0.18)', border: 'none', borderRadius: 10, width: 32, height: 32, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', marginLeft: 6, flexShrink: 0 }}>
             <X size={14} color="#fff" />
           </button>
         </div>
@@ -237,53 +259,32 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
           {/* ── ÉTAPE : formulaire ── */}
           {step === 'form' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              {isLink && (
-                <div style={{ background: 'rgba(255,140,0,0.06)', border: '1px solid rgba(255,140,0,0.18)', borderRadius: 14, padding: '14px 16px', fontSize: 13, color: NAVY, lineHeight: 1.5 }}>
-                  Un lien de paiement sécurisé sera généré. Le client peut le scanner via QR code ou l'ouvrir directement si l'application {mode?.label} est installée.
-                </div>
-              )}
-
-              <div>
-                <label style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>
-                  Numéro de téléphone {!isOtp && '(optionnel)'}
-                </label>
-                <div style={{ display: 'flex', gap: 0, border: `1.5px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden', background: BG }}>
-                  <span style={{ padding: '12px 14px', background: '#F3F4F6', borderRight: `1px solid ${BORDER}`, fontSize: 13, fontWeight: 700, color: MUTED, whiteSpace: 'nowrap' }}>+225</span>
-                  <input
-                    type="tel"
-                    placeholder="07 00 00 00 00"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                    style={{ flex: 1, padding: '12px 14px', border: 'none', background: 'transparent', fontSize: 14, fontWeight: 600, color: NAVY, outline: 'none', fontFamily: 'inherit' }}
-                    maxLength={15}
-                  />
-                </div>
+              <div style={{ background: 'rgba(255,140,0,0.06)', border: '1px solid rgba(255,140,0,0.18)', borderRadius: 14, padding: '13px 16px', fontSize: 13, color: NAVY, lineHeight: 1.5 }}>
+                {isCard
+                  ? 'NovaSend génère un lien de paiement sécurisé par carte bancaire. Le client scanne le QR code ou ouvre le lien pour saisir ses informations carte.'
+                  : `NovaSend génère un lien de paiement sécurisé. Le client scanne le QR code avec son application ${mode?.label} pour valider.`
+                }
               </div>
 
-              {isOtp && (
+              {!isCard && (
                 <div>
-                  {modeId === 'ORANGE_MONEY' && (
-                    <div style={{ background: '#FFF7ED', border: '1px solid #FED7AA', borderRadius: 12, padding: '12px 14px', fontSize: 12, color: '#9A3412', marginBottom: 12, lineHeight: 1.5, fontWeight: 500 }}>
-                      Demandez au client de composer <strong>#144*82#</strong> sur son téléphone Orange pour obtenir le code OTP à 4 chiffres.
-                    </div>
-                  )}
-                  {(modeId === 'MTN_MONEY' || modeId === 'MOOV_MONEY') && (
-                    <div style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 12, padding: '12px 14px', fontSize: 12, color: '#14532D', marginBottom: 12, lineHeight: 1.5, fontWeight: 500 }}>
-                      Le client recevra une notification push pour valider. En cas d'échec, il compose <strong>{modeId === 'MTN_MONEY' ? '*133#' : '*155#'}</strong>.
-                    </div>
-                  )}
                   <label style={{ fontSize: 11, fontWeight: 700, color: MUTED, textTransform: 'uppercase', letterSpacing: '0.1em', display: 'block', marginBottom: 6 }}>
-                    Code OTP (4 chiffres)
-                    {simulated && <span style={{ marginLeft: 8, fontSize: 10, color: TER, fontStyle: 'italic', textTransform: 'none' }}>— En simulation: entrez 1234</span>}
+                    Numéro de téléphone du client <span style={{ color: FAINT, fontWeight: 400, textTransform: 'none', letterSpacing: 0 }}>(optionnel)</span>
                   </label>
-                  <input
-                    type="text"
-                    placeholder="0000"
-                    value={otp}
-                    onChange={e => setOtp(e.target.value.replace(/\D/g, '').slice(0, 4))}
-                    style={{ width: '100%', padding: '13px', borderRadius: 12, border: `1.5px solid ${BORDER}`, background: BG, fontSize: 24, fontWeight: 900, color: NAVY, outline: 'none', textAlign: 'center', letterSpacing: '0.5em', fontFamily: 'monospace' }}
-                    maxLength={4}
-                  />
+                  <div style={{ display: 'flex', gap: 0, border: `1.5px solid ${BORDER}`, borderRadius: 12, overflow: 'hidden', background: BG }}>
+                    <span style={{ padding: '12px 14px', background: '#F3F4F6', borderRight: `1px solid ${BORDER}`, fontSize: 13, fontWeight: 700, color: MUTED, whiteSpace: 'nowrap' }}>+225</span>
+                    <input
+                      type="tel"
+                      placeholder={PHONE_HINT[modeId] || '07 00 00 00 00'}
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      style={{ flex: 1, padding: '12px 14px', border: 'none', background: 'transparent', fontSize: 14, fontWeight: 600, color: NAVY, outline: 'none', fontFamily: 'inherit' }}
+                      maxLength={15}
+                    />
+                  </div>
+                  <p style={{ margin: '6px 0 0', fontSize: 11, color: FAINT }}>
+                    NovaSend détecte l'opérateur automatiquement depuis le numéro
+                  </p>
                 </div>
               )}
 
@@ -296,8 +297,8 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
               <button
                 onClick={handleSubmit}
                 style={{ width: '100%', padding: '15px', borderRadius: 99, border: 'none', background: TER_G, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 6px 20px rgba(255,140,0,0.25)', fontFamily: 'inherit' }}>
-                <Send size={15} />
-                {isLink ? 'Générer le lien de paiement' : 'Envoyer la demande OTP'}
+                <QrCode size={15} />
+                {isCard ? 'Générer le lien de paiement carte' : 'Générer le lien de paiement'}
               </button>
             </div>
           )}
@@ -306,23 +307,29 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
           {step === 'sending' && (
             <div style={{ textAlign: 'center', padding: '32px 0' }}>
               <div style={{ width: 52, height: 52, borderRadius: '50%', border: `4px solid ${TER}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite', margin: '0 auto 16px' }} />
-              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: NAVY }}>{isLink ? 'Génération du lien…' : 'Envoi de la demande OTP…'}</p>
+              <p style={{ margin: 0, fontSize: 15, fontWeight: 700, color: NAVY }}>Création de la session…</p>
               <p style={{ margin: '6px 0 0', fontSize: 12, color: MUTED }}>Connexion avec NovaSend en cours</p>
             </div>
           )}
 
-          {/* ── ÉTAPE : en attente ── */}
+          {/* ── ÉTAPE : en attente (QR + lien) ── */}
           {step === 'waiting' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-              {isLink && paymentUrl && (
+              {paymentUrl && (
                 <>
                   <div style={{ textAlign: 'center' }}>
-                    <p style={{ margin: '0 0 14px', fontSize: 13, fontWeight: 600, color: MUTED }}>Montrez ce QR code au client</p>
-                    {qrUrl && (
-                      <div style={{ display: 'inline-block', padding: 12, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 16 }}>
-                        <img src={qrUrl} alt="QR paiement" style={{ display: 'block', width: 180, height: 180 }} onError={e => { e.target.style.display = 'none'; }} />
-                      </div>
-                    )}
+                    <p style={{ margin: '0 0 12px', fontSize: 13, fontWeight: 600, color: MUTED }}>Montrez ce QR code au client</p>
+                    {qrDataUrl
+                      ? (
+                        <div style={{ display: 'inline-block', padding: 14, background: '#fff', border: `1px solid ${BORDER}`, borderRadius: 18, boxShadow: SH }}>
+                          <img src={qrDataUrl} alt="QR paiement" style={{ display: 'block', width: 200, height: 200 }} />
+                        </div>
+                      ) : (
+                        <div style={{ width: 200, height: 200, margin: '0 auto', borderRadius: 18, background: BG, border: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <div style={{ width: 28, height: 28, borderRadius: '50%', border: `3px solid ${TER}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
+                        </div>
+                      )
+                    }
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: BG, borderRadius: 12, padding: '10px 14px', border: `1px solid ${BORDER}` }}>
                     <Link2 size={13} color={MUTED} style={{ flexShrink: 0 }} />
@@ -334,23 +341,11 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
                 </>
               )}
 
-              {isOtp && (
-                <div style={{ textAlign: 'center', padding: '16px 0' }}>
-                  <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'rgba(255,140,0,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                    <Clock size={24} color={TER} />
-                  </div>
-                  <p style={{ margin: '0 0 6px', fontSize: 15, fontWeight: 700, color: NAVY }}>En attente de confirmation</p>
-                  <p style={{ margin: 0, fontSize: 12, color: MUTED }}>Le client valide le paiement sur son téléphone</p>
-                </div>
-              )}
-
-              {/* Indicateur attente WebSocket */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', background: '#FFF8F0', border: '1px solid rgba(255,140,0,0.25)', borderRadius: 12 }}>
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: TER, animation: 'pulse 1.4s ease-in-out infinite', flexShrink: 0 }} />
-                <span style={{ fontSize: 12, color: NAVY, fontWeight: 600 }}>En attente de validation NovaSend…</span>
+                <span style={{ fontSize: 12, color: NAVY, fontWeight: 600 }}>En attente de confirmation NovaSend…</span>
               </div>
 
-              {/* Bouton simulation */}
               {simulated && (
                 <button
                   onClick={handleSimulate}
@@ -369,7 +364,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
               <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#DCFCE7', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <CheckCircle2 size={30} color={GREEN} />
               </div>
-              <p style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: GREEN }}>Paiement confirmé</p>
+              <p style={{ margin: '0 0 6px', fontSize: 17, fontWeight: 800, color: GREEN }}>Paiement confirmé !</p>
               <p style={{ margin: 0, fontSize: 12, color: MUTED }}>{fmtF(total)} encaissés via {mode?.label}</p>
             </div>
           )}
@@ -391,6 +386,7 @@ export default function CaissePage() {
   const [saving,       setSaving]       = useState(false);
   const [toast,        setToast]        = useState(null);
   const [payHistory,   setPayHistory]   = useState(() => loadPayHistory());
+  const [histLoading,  setHistLoading]  = useState(false);
   const [showHist,     setShowHist]     = useState(true);
   const [digitalModal, setDigitalModal] = useState(null); // { payMode, commande }
 
@@ -401,6 +397,41 @@ export default function CaissePage() {
   useEffect(() => { selectedRef.current = selected; }, [selected]);
 
   const showToast = (type, msg) => { setToast({ type, msg }); setTimeout(() => setToast(null), 4000); };
+
+  const mergeHistory = useCallback((apiEntries) => {
+    const local = loadPayHistory();
+    const map = new Map();
+    // localStorage d'abord (contient rendu, etc.)
+    local.forEach(p => map.set(p.id, p));
+    // API enrichit / complète
+    apiEntries.forEach(p => { if (!map.has(p.id)) map.set(p.id, p); });
+    const merged = [...map.values()].sort((a, b) => new Date(b.paidAt) - new Date(a.paidAt));
+    setPayHistory(merged);
+  }, []);
+
+  const loadHistoryFromAPI = useCallback(async () => {
+    setHistLoading(true);
+    try {
+      const { data } = await commandesService.getAll({ limit: 200 });
+      const paid = (Array.isArray(data) ? data : [])
+        .filter(c => c.estPaye)
+        .map(c => ({
+          id: c.id,
+          numero: c.numero,
+          montant: Math.round(Number(c.montantTotal) || 0),
+          modePaiement: c.modePaiement || 'ESPECES',
+          rendu: 0,
+          lignes: (c.lignes || []).map(l => ({ nom: l.article?.nom || l.nomArticle || 'Art', qty: l.quantite })),
+          paidAt: c.payeAt || c.updatedAt || c.createdAt,
+        }));
+      mergeHistory(paid);
+    } catch {
+      // Si l'API échoue, on garde le localStorage
+      setPayHistory(loadPayHistory());
+    } finally {
+      setHistLoading(false);
+    }
+  }, [mergeHistory]);
 
   const upsert = useCallback(o => {
     if (!o?.id) return;
@@ -414,7 +445,7 @@ export default function CaissePage() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); loadHistoryFromAPI(); }, [load, loadHistoryFromAPI]);
 
   useEffect(() => {
     if (!user?.id) return;
@@ -435,7 +466,7 @@ export default function CaissePage() {
           lignes: (sel?.lignes || []).map(l => ({ nom: l.article?.nom || l.nomArticle, qty: l.quantite })),
           paidAt: new Date().toISOString(),
         });
-        setPayHistory(loadPayHistory());
+        loadHistoryFromAPI();
         showToast('ok', `Paiement ${modeLabel} confirmé — ${fmtF(amount)}`);
         setDigitalModal(null);
         setSelected(null);
@@ -477,7 +508,7 @@ export default function CaissePage() {
         paidAt: new Date().toISOString(),
       };
       savePayEntry(entry);
-      setPayHistory(loadPayHistory());
+      loadHistoryFromAPI();
       showToast('ok', `Paiement validé — ${fmtF(total)}`);
       setSelected(null); setMontant('');
     } catch (e) { showToast('err', e?.response?.data?.message || 'Erreur paiement.'); }
@@ -620,7 +651,7 @@ export default function CaissePage() {
                       {m.logo
                         ? <img src={m.logo} alt={m.label} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
                         : <div style={{ width: 30, height: 30, borderRadius: 9, background: sel ? TER_L : '#F3F4F6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 800, color: sel ? TER : MUTED }}>
-                            {m.isDigital ? (m.flow === 'link' ? <Link2 size={13} color={sel ? TER : MUTED} /> : <Smartphone size={13} color={sel ? TER : MUTED} />) : m.label.charAt(0)}
+                            {m.isDigital ? <QrCode size={13} color={sel ? TER : MUTED} /> : m.label.charAt(0)}
                           </div>
                       }
                       <span style={{ fontSize: 10, fontWeight: 700, color: sel ? TER : MUTED, textAlign: 'center', lineHeight: 1.2 }}>{m.label}</span>
@@ -631,16 +662,37 @@ export default function CaissePage() {
               </div>
               {isDigitalMode && (
                 <div style={{ marginTop: 12, padding: '10px 14px', background: 'rgba(255,140,0,0.06)', borderRadius: 10, border: '1px solid rgba(255,140,0,0.18)', fontSize: 12, color: NAVY, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {currentMode?.flow === 'link' ? <QrCode size={14} color={TER} /> : <Smartphone size={14} color={TER} />}
-                  {currentMode?.flow === 'link'
-                    ? `Lien de paiement sécurisé — le client scanne ou ouvre ${currentMode.label} directement`
-                    : `Code OTP envoyé sur le numéro du client — confirmation en temps réel`
-                  }
+                  <QrCode size={14} color={TER} />
+                  Lien NovaSend sécurisé — le client scanne le QR ou ouvre {currentMode?.label} pour valider
                 </div>
               )}
             </div>
 
-            {/* Montant reçu (espèces / carte uniquement) */}
+            {/* Instruction TPE — carte bancaire */}
+            {!isDigitalMode && payMode === 'CARTE_BANCAIRE' && (
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 20, padding: '20px 22px', boxShadow: SH2 }}>
+                <p style={{ margin: '0 0 14px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.14em' }}>Terminal bancaire (TPE)</p>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '16px', background: BG, borderRadius: 14, border: `1px solid ${BORDER}`, marginBottom: 14 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 12, background: '#EEF2FF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <img src={carteBancaireLogo} alt="Carte" style={{ height: 24, width: 'auto' }} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 700, color: NAVY }}>Présentez le terminal au client</p>
+                    <p style={{ margin: 0, fontSize: 12, color: MUTED }}>Insérez ou approchez la carte, attendez la confirmation du TPE</p>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: NAVY }}>{fmt(total)}</p>
+                    <p style={{ margin: 0, fontSize: 10, color: MUTED, fontWeight: 600 }}>FCFA</p>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', gap: 8, fontSize: 12, color: MUTED, alignItems: 'flex-start' }}>
+                  <span style={{ color: TER, fontWeight: 800, flexShrink: 0 }}>→</span>
+                  <span>Une fois la transaction approuvée sur le TPE, cliquez <strong style={{ color: NAVY }}>Confirmer le paiement carte</strong> ci-dessous.</span>
+                </div>
+              </div>
+            )}
+
+            {/* Montant reçu (espèces uniquement) */}
             {!isDigitalMode && payMode === 'ESPECES' && (
               <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 20, padding: '18px 20px', boxShadow: SH2 }}>
                 <p style={{ margin: '0 0 12px', fontSize: 10, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.14em' }}>Montant reçu</p>
@@ -707,14 +759,13 @@ export default function CaissePage() {
                   border: canPay ? 'none' : `1px solid ${BORDER}`,
                 }}
               >
-                {isDigitalMode
-                  ? (currentMode?.flow === 'link' ? <QrCode size={17} /> : <Smartphone size={17} />)
-                  : <Receipt size={17} />
-                }
+                {isDigitalMode ? <QrCode size={17} /> : <Receipt size={17} />}
                 {saving ? 'Traitement…'
                   : isDigitalMode
                     ? `Initier paiement ${currentMode?.label} · ${fmtF(total)}`
-                    : `Valider le paiement · ${fmtF(total)}`
+                    : payMode === 'CARTE_BANCAIRE'
+                      ? `Confirmer le paiement carte · ${fmtF(total)}`
+                      : `Valider le paiement · ${fmtF(total)}`
                 }
               </button>
             )}
@@ -734,7 +785,10 @@ export default function CaissePage() {
             <History size={16} color={TER} />
           </div>
           <div style={{ flex: 1 }}>
-            <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: NAVY }}>Paiements du jour</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <p style={{ margin: 0, fontSize: 14, fontWeight: 800, color: NAVY }}>Historique des paiements</p>
+              {histLoading && <div style={{ width: 12, height: 12, borderRadius: '50%', border: `2px solid ${TER}`, borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />}
+            </div>
             <p style={{ margin: '2px 0 0', fontSize: 12, color: MUTED }}>
               {payHistory.length} encaissement{payHistory.length !== 1 ? 's' : ''}
               {payHistory.length > 0 && ` · Total : ${fmtF(payHistory.reduce((s, p) => s + p.montant, 0))}`}
@@ -747,7 +801,7 @@ export default function CaissePage() {
           payHistory.length === 0 ? (
             <div style={{ padding: '36px 20px', textAlign: 'center' }}>
               <Receipt size={28} color={BORDER} style={{ display: 'block', margin: '0 auto 10px' }} />
-              <p style={{ margin: 0, fontSize: 13, color: FAINT, fontWeight: 500 }}>Aucun paiement enregistré aujourd'hui</p>
+              <p style={{ margin: 0, fontSize: 13, color: FAINT, fontWeight: 500 }}>Aucun paiement enregistré</p>
             </div>
           ) : (
             <>
@@ -765,7 +819,7 @@ export default function CaissePage() {
                       <span style={{ fontSize: 10, fontWeight: 700, background: TER_L, color: TER, padding: '2px 7px', borderRadius: 99 }}>
                         {PAY_MODE_LABEL[p.modePaiement] || p.modePaiement}
                       </span>
-                      <span style={{ fontSize: 10, color: FAINT, marginLeft: 'auto', fontWeight: 600 }}>{timeHM(p.paidAt)}</span>
+                      <span style={{ fontSize: 10, color: FAINT, marginLeft: 'auto', fontWeight: 600 }}>{fmtDay(p.paidAt)} {timeHM(p.paidAt)}</span>
                     </div>
                     {p.lignes?.length > 0 && (
                       <p style={{ margin: '2px 0 0', fontSize: 11, color: MUTED, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>

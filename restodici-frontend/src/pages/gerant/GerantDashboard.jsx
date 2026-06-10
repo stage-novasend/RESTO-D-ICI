@@ -4196,6 +4196,8 @@ function OverviewTab({ restaurantId }) {
     socket.on('commande.nouvelle', handleDashboardUpdate);
     socket.on('commande.statut', handleDashboardUpdate);
     socket.on('commande.paiement', handleDashboardUpdate);
+    socket.on('commande.b2b.nouvelle', handleDashboardUpdate);
+    socket.on('commande.b2b.statut', handleDashboardUpdate);
     socket.on('restaurant.profile.updated', handleDashboardUpdate);
 
     const handleRestaurantUpdate = (event) => {
@@ -4405,7 +4407,7 @@ function OverviewTab({ restaurantId }) {
           <p className="mt-0.5 text-sm text-[#64748B]">Pilotez votre restaurant en temps réel.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="rounded-xl border border-[#FFF0DF] bg-[#0F172A] p-1">
+          <div className="rounded-xl border border-[#FFF0DF] bg-white p-1">
             <NotificationBell accentColor="#FF8C00" />
           </div>
           <button

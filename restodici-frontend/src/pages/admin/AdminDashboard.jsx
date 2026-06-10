@@ -21,10 +21,10 @@ import {
 } from 'lucide-react';
 
 /* ── Palette de couleurs et constantes ── */
-const ACCENT = '#4F46E5';
+const ACCENT = '#2563EB';
 const ROLES  = ['ADMIN', 'GERANT', 'STAFF', 'CLIENT', 'B2B'];
 const ROLE_COLOR = {
-  ADMIN:  { bg: '#EEF2FF', text: '#4338CA', chart: '#4F46E5' },
+  ADMIN:  { bg: 'rgba(37,99,235,0.10)', text: '#2563EB', chart: '#2563EB' },
   GERANT: { bg: '#FEF3C7', text: '#92400E', chart: '#F59E0B' },
   STAFF:  { bg: '#DCFCE7', text: '#166534', chart: '#10B981' },
   CLIENT: { bg: '#F0F9FF', text: '#0369A1', chart: '#0EA5E9' },
@@ -38,7 +38,7 @@ const inputStyle = {
   borderRadius: 8, fontSize: 13, outline: 'none', boxSizing: 'border-box', background: '#fff',
 };
 const labelStyle = { fontSize: 11, fontWeight: 600, color: '#475569', display: 'block', marginBottom: 4 };
-const card = { background: '#fff', borderRadius: 16, border: '1px solid #E8EDF5', overflow: 'hidden' };
+const card = { background: '#fff', borderRadius: 16, border: '1px solid #D1D9E6', boxShadow: '0 1px 4px rgba(0,0,0,0.06), 0 4px 16px rgba(0,0,0,0.04)', overflow: 'hidden' };
 
 /* ── Composants utilitaires ── */
 function RoleBadge({ role }) {
@@ -85,9 +85,9 @@ function KpiCard({ label, value, sub, trend, trendUp, color = ACCENT, icon: Icon
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {trendUp
             ? <TrendingUp style={{ width: 14, height: 14, color: featured ? '#86EFAC' : '#16A34A' }} />
-            : <TrendingDown style={{ width: 14, height: 14, color: featured ? '#FCA5A5' : '#DC2626' }} />
+            : <TrendingDown style={{ width: 14, height: 14, color: featured ? '#FCA5A5' : '#2563EB' }} />
           }
-          <span style={{ fontSize: 12, fontWeight: 700, color: featured ? (trendUp ? '#86EFAC' : '#FCA5A5') : (trendUp ? '#16A34A' : '#DC2626') }}>
+          <span style={{ fontSize: 12, fontWeight: 700, color: featured ? (trendUp ? '#86EFAC' : '#FCA5A5') : (trendUp ? '#16A34A' : '#2563EB') }}>
             {trend}
           </span>
           <span style={{ fontSize: 11, color: featured ? 'rgba(255,255,255,0.55)' : '#94A3B8' }}>{sub}</span>
@@ -119,14 +119,14 @@ function BarComboChart({ usersByDay, auditByDay }) {
           {
             label: 'Inscriptions',
             data: usersByDay.map(d => d.count),
-            backgroundColor: 'rgba(167,139,250,0.7)',
+            backgroundColor: 'rgba(37,99,235,0.40)',
             borderRadius: 6,
             borderSkipped: false,
           },
           {
             label: 'Actions audit',
             data: auditByDay.map(d => d.count),
-            backgroundColor: 'rgba(79,70,229,0.85)',
+            backgroundColor: 'rgba(37,99,235,0.85)',
             borderRadius: 6,
             borderSkipped: false,
           },
@@ -225,12 +225,12 @@ function ActivityHeatmap({ heatmap }) {
   };
 
   const getColor = (count) => {
-    if (count === 0) return '#F1F5F9';
+    if (count === 0) return '#EFF6FF';
     const intensity = count / maxVal;
-    if (intensity < 0.25) return '#C7D2FE';
-    if (intensity < 0.5)  return '#818CF8';
-    if (intensity < 0.75) return '#4F46E5';
-    return '#3730A3';
+    if (intensity < 0.25) return '#BFDBFE';
+    if (intensity < 0.5)  return '#60A5FA';
+    if (intensity < 0.75) return '#3B82F6';
+    return '#2563EB';
   };
 
   return (
@@ -262,7 +262,7 @@ function ActivityHeatmap({ heatmap }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, justifyContent: 'flex-end' }}>
         <span style={{ fontSize: 10, color: '#94A3B8' }}>Peu</span>
-        {['#F1F5F9', '#C7D2FE', '#818CF8', '#4F46E5', '#3730A3'].map(c => (
+        {['#EFF6FF', '#BFDBFE', '#60A5FA', '#3B82F6', '#2563EB'].map(c => (
           <div key={c} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
         ))}
         <span style={{ fontSize: 10, color: '#94A3B8' }}>Beaucoup</span>
@@ -329,13 +329,13 @@ function OverviewTab() {
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         {/* Bar chart */}
         <div style={card}>
-          <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Inscriptions &amp; Activité</p>
               <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>7 derniers jours</p>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
-              {[{ color: 'rgba(167,139,250,0.7)', label: 'Inscriptions' }, { color: 'rgba(79,70,229,0.85)', label: 'Audit' }].map(l => (
+              {[{ color: 'rgba(37,99,235,0.40)', label: 'Inscriptions' }, { color: 'rgba(37,99,235,0.85)', label: 'Audit' }].map(l => (
                 <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <div style={{ width: 10, height: 10, borderRadius: 3, background: l.color }} />
                   <span style={{ fontSize: 11, color: '#64748B' }}>{l.label}</span>
@@ -354,7 +354,7 @@ function OverviewTab() {
 
         {/* Heatmap */}
         <div style={card}>
-          <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9' }}>
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0' }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Heatmap d'activité</p>
             <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>Actions plateforme — 30 jours</p>
           </div>
@@ -372,7 +372,7 @@ function OverviewTab() {
       <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16, marginBottom: 20 }}>
         {/* Donut */}
         <div style={card}>
-          <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9' }}>
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0' }}>
             <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Répartition des rôles</p>
             <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginTop: 4 }}>
               <span style={{ fontSize: 22, fontWeight: 800, color: '#0F172A' }}>{total}</span>
@@ -400,7 +400,7 @@ function OverviewTab() {
 
         {/* Recent logs */}
         <div style={card}>
-          <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Activité récente</p>
               <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>10 dernières actions — lecture seule (RG-34)</p>
@@ -409,7 +409,7 @@ function OverviewTab() {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#F8FAFC' }}>
+                <tr style={{ background: '#F1F5F9' }}>
                   {['ID', 'Action', 'Utilisateur', 'Date'].map(h => (
                     <th key={h} style={{ padding: '9px 14px', fontSize: 10, fontWeight: 700, color: '#64748B', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -422,13 +422,13 @@ function OverviewTab() {
                   <tr><td colSpan={4} style={{ padding: 24, textAlign: 'center', color: '#94A3B8', fontSize: 12 }}>Aucune activité</td></tr>
                 ) : charts.recentLogs.map((log, i) => (
                   <tr key={log.id}
-                    style={{ borderBottom: '1px solid #F8FAFC', background: i % 2 === 0 ? '#fff' : '#FAFAFA' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#F0F4FF'; }}
-                    onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#FAFAFA'; }}
+                    style={{ borderBottom: '1px solid #E2E8F0', background: i % 2 === 0 ? '#fff' : '#F8FAFC' }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,99,235,0.04)'; }}
+                    onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F8FAFC'; }}
                   >
                     <td style={{ padding: '9px 14px', fontFamily: 'monospace', fontSize: 11, color: '#94A3B8' }}>#{log.id?.slice(0, 6)}</td>
                     <td style={{ padding: '9px 14px' }}>
-                      <span style={{ background: '#EEF2FF', color: '#4338CA', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{log.action}</span>
+                      <span style={{ background: 'rgba(37,99,235,0.10)', color: '#2563EB', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{log.action}</span>
                     </td>
                     <td style={{ padding: '9px 14px', fontFamily: 'monospace', fontSize: 11, color: '#64748B' }}>{log.userId?.slice(0, 8)}…</td>
                     <td style={{ padding: '9px 14px', fontSize: 11, color: '#94A3B8', whiteSpace: 'nowrap' }}>
@@ -444,7 +444,7 @@ function OverviewTab() {
 
       {/* ── Santé système ── */}
       <div style={card}>
-        <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9' }}>
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0' }}>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Santé système</p>
         </div>
         <div style={{ padding: '12px 20px', display: 'flex', flexWrap: 'wrap', gap: 10 }}>
@@ -459,7 +459,7 @@ function OverviewTab() {
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, background: s.ok ? '#F0FDF4' : '#FEF2F2', borderRadius: 10, padding: '8px 14px', border: `1px solid ${s.ok ? '#BBF7D0' : '#FECACA'}` }}>
               {s.ok
                 ? <CheckCircle style={{ width: 14, height: 14, color: '#16A34A' }} />
-                : <XCircle    style={{ width: 14, height: 14, color: '#DC2626' }} />
+                : <XCircle    style={{ width: 14, height: 14, color: '#2563EB' }} />
               }
               <span style={{ fontSize: 12, fontWeight: 600, color: s.ok ? '#15803D' : '#B91C1C' }}>{s.label}</span>
             </div>
@@ -469,9 +469,9 @@ function OverviewTab() {
 
       {/* ── Alertes de sécurité (RG-34) ── */}
       <div style={{ ...card, marginTop: 16 }}>
-        <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield style={{ width: 16, height: 16, color: '#DC2626' }} />
+            <Shield style={{ width: 16, height: 16, color: '#2563EB' }} />
             <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Alertes de sécurité</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -496,7 +496,7 @@ function OverviewTab() {
               {secAlerts.map((alert, i) => (
                 <div key={alert.id ?? i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '8px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <AlertTriangle style={{ width: 14, height: 14, color: '#DC2626', flexShrink: 0 }} />
+                    <AlertTriangle style={{ width: 14, height: 14, color: '#2563EB', flexShrink: 0 }} />
                     <div>
                       <span style={{ fontSize: 12, fontWeight: 700, color: '#991B1B' }}>{alert.action}</span>
                       {alert.userId && (
@@ -607,7 +607,7 @@ function UsersTab() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E8EDF5' }}>
+              <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #D1D9E6' }}>
                 {['Nom', 'Email', 'Rôle', 'Restaurant', 'Statut', 'Créé le', 'Action'].map(h => (
                   <th key={h} style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
@@ -619,7 +619,7 @@ function UsersTab() {
               ) : users.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#94A3B8' }}>Aucun utilisateur</td></tr>
               ) : users.map(u => (
-                <tr key={u.id} style={{ borderBottom: '1px solid #F1F5F9' }}
+                <tr key={u.id} style={{ borderBottom: '1px solid #E2E8F0' }}
                   onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
@@ -637,10 +637,10 @@ function UsersTab() {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button onClick={() => openEdit(u)} title="Modifier" style={{ background: '#EEF2FF', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => openEdit(u)} title="Modifier" style={{ background: 'rgba(37,99,235,0.10)', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
                         <Pencil style={{ width: 14, height: 14 }} />
                       </button>
-                      <button onClick={() => toggle(u.id)} title={u.actif ? 'Désactiver' : 'Activer'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: u.actif ? '#DC2626' : '#16A34A' }}>
+                      <button onClick={() => toggle(u.id)} title={u.actif ? 'Désactiver' : 'Activer'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: u.actif ? '#2563EB' : '#16A34A' }}>
                         {u.actif ? <ToggleRight style={{ width: 20, height: 20 }} /> : <ToggleLeft style={{ width: 20, height: 20 }} />}
                       </button>
                     </div>
@@ -656,7 +656,7 @@ function UsersTab() {
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Créer un utilisateur</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
             </div>
@@ -674,7 +674,7 @@ function UsersTab() {
               {(form.role === 'GERANT' || form.role === 'STAFF') && (
                 <div><label style={labelStyle}>ID Restaurant</label><input value={form.restaurantId} onChange={e => setForm(f => ({ ...f, restaurantId: e.target.value }))} style={inputStyle} placeholder="UUID" /></div>
               )}
-              {formError && <p style={{ color: '#DC2626', fontSize: 12, margin: 0 }}>{formError}</p>}
+              {formError && <p style={{ color: '#2563EB', fontSize: 12, margin: 0 }}>{formError}</p>}
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
                 <button type="submit" disabled={saving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: saving ? 0.7 : 1 }}>{saving ? 'Création…' : 'Créer'}</button>
@@ -687,7 +687,7 @@ function UsersTab() {
       {editUser && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 480, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Modifier l'utilisateur</h3>
                 <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94A3B8' }}>{editUser.email}</p>
@@ -712,7 +712,7 @@ function UsersTab() {
               {(editForm.role === 'GERANT' || editForm.role === 'STAFF') && (
                 <div><label style={labelStyle}>ID Restaurant</label><input value={editForm.restaurantId} onChange={e => setEditForm(f => ({ ...f, restaurantId: e.target.value }))} style={inputStyle} placeholder="UUID du restaurant" /></div>
               )}
-              {editError && <p style={{ color: '#DC2626', fontSize: 12, margin: 0 }}>{editError}</p>}
+              {editError && <p style={{ color: '#2563EB', fontSize: 12, margin: 0 }}>{editError}</p>}
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button type="button" onClick={() => setEditUser(null)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
                 <button type="submit" disabled={editSaving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: editSaving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: editSaving ? 0.7 : 1 }}>
@@ -787,7 +787,7 @@ function RestaurantsTab() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E8EDF5' }}>
+              <tr style={{ background: '#F1F5F9', borderBottom: '1px solid #D1D9E6' }}>
                 {['Nom', 'Adresse', 'Téléphone', 'Membres', 'Note', 'Statut', 'Action'].map(h => (
                   <th key={h} style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
@@ -799,7 +799,7 @@ function RestaurantsTab() {
               ) : restaurants.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#94A3B8' }}>Aucun restaurant</td></tr>
               ) : restaurants.map(r => (
-                <tr key={r.id} style={{ borderBottom: '1px solid #F1F5F9' }}
+                <tr key={r.id} style={{ borderBottom: '1px solid #E2E8F0' }}
                   onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
@@ -810,7 +810,7 @@ function RestaurantsTab() {
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#475569' }}>
                     <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
                       <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                        <span style={{ fontWeight:700, color: Number(r.noteMoyenne||0) >= 4 ? '#16A34A' : Number(r.noteMoyenne||0) >= 3 ? '#D97706' : '#DC2626' }}>
+                        <span style={{ fontWeight:700, color: Number(r.noteMoyenne||0) >= 4 ? '#16A34A' : Number(r.noteMoyenne||0) >= 3 ? '#D97706' : '#2563EB' }}>
                           {Number(r.noteMoyenne || 0).toFixed(1)}
                         </span>
                         <span style={{ color:'#F59E0B', fontSize:13, letterSpacing:1 }}>
@@ -823,10 +823,10 @@ function RestaurantsTab() {
                   <td style={{ padding: '10px 14px' }}><span style={{ background: r.actif ? '#DCFCE7' : '#FEE2E2', color: r.actif ? '#166534' : '#991B1B', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{r.actif ? 'Actif' : 'Inactif'}</span></td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button onClick={() => openEdit(r)} title="Modifier" style={{ background: '#EEF2FF', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => openEdit(r)} title="Modifier" style={{ background: 'rgba(37,99,235,0.10)', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
                         <Pencil style={{ width: 14, height: 14 }} />
                       </button>
-                      <button onClick={() => toggle(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: r.actif ? '#DC2626' : '#16A34A' }}>
+                      <button onClick={() => toggle(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: r.actif ? '#2563EB' : '#16A34A' }}>
                         {r.actif ? <ToggleRight style={{ width: 20, height: 20 }} /> : <ToggleLeft style={{ width: 20, height: 20 }} />}
                       </button>
                     </div>
@@ -842,7 +842,7 @@ function RestaurantsTab() {
       {showModal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Nouveau restaurant</h3>
               <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
             </div>
@@ -866,7 +866,7 @@ function RestaurantsTab() {
       {editResto && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
           <div style={{ background: '#fff', borderRadius: 18, width: '100%', maxWidth: 440, boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #F1F5F9', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div>
                 <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Modifier le restaurant</h3>
                 <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94A3B8' }}>{editResto.nom}</p>
@@ -880,7 +880,7 @@ function RestaurantsTab() {
                 <div><label style={labelStyle}>Email</label><input type="email" value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
               </div>
               <div><label style={labelStyle}>Adresse *</label><input required value={editForm.adresse} onChange={e => setEditForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} /></div>
-              {editError && <p style={{ color: '#DC2626', fontSize: 12, margin: 0 }}>{editError}</p>}
+              {editError && <p style={{ color: '#2563EB', fontSize: 12, margin: 0 }}>{editError}</p>}
               <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                 <button type="button" onClick={() => setEditResto(null)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
                 <button type="submit" disabled={editSaving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: editSaving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: editSaving ? 0.7 : 1 }}>
@@ -901,7 +901,7 @@ const ACTION_STYLE = (action = '') => {
   const a = action.toUpperCase();
   if (a.includes('LOGIN') || a.includes('AUTH'))    return { bg: '#DCFCE7', text: '#166534' };
   if (a.includes('DELETE') || a.includes('REMOVE')) return { bg: '#FEE2E2', text: '#991B1B' };
-  if (a.includes('CREATE') || a.includes('ADD'))    return { bg: '#EEF2FF', text: '#3730A3' };
+  if (a.includes('CREATE') || a.includes('ADD'))    return { bg: 'rgba(37,99,235,0.10)', text: '#2563EB' };
   if (a.includes('UPDATE') || a.includes('PATCH') || a.includes('EDIT')) return { bg: '#FEF3C7', text: '#92400E' };
   if (a.includes('EXPORT') || a.includes('DOWNLOAD')) return { bg: '#F3E8FF', text: '#6B21A8' };
   if (a.includes('VALIDER') || a.includes('APPROVE')) return { bg: '#D1FAE5', text: '#065F46' };
@@ -969,7 +969,7 @@ function AuditTab() {
           <p style={{ fontSize: 11, color: '#64748B', margin: 0 }}>Traçabilité immuable de toutes les actions critiques · RG-34</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
-          <button onClick={exportCSV} disabled={exporting} style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, color: '#475569' }}>
+          <button onClick={exportCSV} disabled={exporting} style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, color: '#475569' }}>
             <Download style={{ width: 13, height: 13 }} />{exporting ? 'Export…' : 'Exporter CSV'}
           </button>
           <button onClick={load} disabled={loading} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1026,7 +1026,7 @@ function AuditTab() {
         <div style={{ overflowX: 'auto' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '2px solid #E8EDF5' }}>
+              <tr style={{ background: '#F1F5F9', borderBottom: '2px solid #E8EDF5' }}>
                 {['Date', 'Heure', 'Utilisateur', 'Action', 'Restaurant', 'Payload', ''].map(h => (
                   <th key={h} style={{ padding: '10px 14px', fontSize: 10, fontWeight: 700, color: '#94A3B8', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
@@ -1044,7 +1044,7 @@ function AuditTab() {
                 return [
                   <tr key={log.id} style={{ borderBottom: isOpen ? 'none' : '1px solid #F1F5F9', background: i % 2 === 0 ? '#fff' : '#FAFBFC', cursor: 'pointer' }}
                     onClick={() => setExpanded(e => ({ ...e, [log.id]: !e[log.id] }))}
-                    onMouseEnter={e => { e.currentTarget.style.background = '#F0F4FF'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(37,99,235,0.04)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#FAFBFC'; }}
                   >
                     <td style={{ padding: '10px 14px', fontSize: 11, color: '#334155', whiteSpace: 'nowrap', fontWeight: 600 }}>{date}</td>
@@ -1066,10 +1066,10 @@ function AuditTab() {
                     </td>
                   </tr>,
                   isOpen && (
-                    <tr key={`${log.id}-exp`} style={{ background: '#F0F4FF', borderBottom: '1px solid #E0E8FF' }}>
+                    <tr key={`${log.id}-exp`} style={{ background: 'rgba(37,99,235,0.04)', borderBottom: '1px solid rgba(37,99,235,0.12)' }}>
                       <td colSpan={7} style={{ padding: '10px 20px 14px' }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: '#6366F1', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>Payload complet · ID: {log.id}</p>
-                        <pre style={{ margin: 0, fontSize: 11, color: '#334155', background: '#fff', borderRadius: 8, padding: '10px 14px', border: '1px solid #E0E7FF', overflowX: 'auto', maxHeight: 200, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>Payload complet · ID: {log.id}</p>
+                        <pre style={{ margin: 0, fontSize: 11, color: '#334155', background: '#fff', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(37,99,235,0.20)', overflowX: 'auto', maxHeight: 200, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                           {log.payload ? JSON.stringify(log.payload, null, 2) : 'Aucun payload'}
                         </pre>
                       </td>
@@ -1091,179 +1091,253 @@ function AuditTab() {
 
 /* ══════════════════ TAB: EXPORTS ══════════════════ */
 function ExportsTab() {
-  const [dlState, setDlState]     = useState({});
-  const [sysHistory, setSysHistory] = useState([]);
-  const [auditHistory, setAuditHistory] = useState([]);
-  const [sysPeriod, setSysPeriod] = useState('monthly');
+  const today     = new Date().toISOString().slice(0, 10);
+  const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
+
+  const [dlState,      setDlState]      = useState({});
+  const [history,      setHistory]      = useState(() => {
+    try { return JSON.parse(localStorage.getItem('admin_export_history') || '[]'); } catch { return []; }
+  });
+  const [sysPeriod,    setSysPeriod]    = useState('monthly');
+  const [auditFrom,    setAuditFrom]    = useState(firstOfMonth);
+  const [auditTo,      setAuditTo]      = useState(today);
+
+  const pushHistory = (entry) => {
+    const next = [entry, ...history].slice(0, 20);
+    setHistory(next);
+    localStorage.setItem('admin_export_history', JSON.stringify(next));
+  };
 
   const triggerDownload = (blob, filename) => {
     const url = URL.createObjectURL(blob);
-    const a   = document.createElement('a'); a.href = url; a.download = filename; a.click();
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
     URL.revokeObjectURL(url);
   };
 
-  const downloadSyscohada = async () => {
-    setDlState(s => ({ ...s, syscohada: true }));
+  const download = async (key, apiFn, filename, label) => {
+    setDlState(s => ({ ...s, [key]: 'loading' }));
     try {
-      const r    = await adminAPI.exportSyscohada(sysPeriod);
+      const r    = await apiFn();
       const blob = new Blob([r.data], { type: 'text/csv;charset=utf-8;' });
-      const name = `SYSCOHADA-${sysPeriod}-${new Date().toISOString().slice(0, 10)}.csv`;
-      triggerDownload(blob, name);
-      setSysHistory(h => [{ name, ts: new Date().toISOString(), period: sysPeriod }, ...h].slice(0, 5));
-    } finally { setDlState(s => ({ ...s, syscohada: false })); }
-  };
-
-  const downloadAudit = async () => {
-    setDlState(s => ({ ...s, audit: true }));
-    try {
-      const r    = await adminAPI.exportAudit({});
-      const blob = new Blob([r.data], { type: 'text/csv;charset=utf-8;' });
-      const name = `Audit-RG34-${new Date().toISOString().slice(0, 10)}.csv`;
-      triggerDownload(blob, name);
-      setAuditHistory(h => [{ name, ts: new Date().toISOString() }, ...h].slice(0, 5));
-    } finally { setDlState(s => ({ ...s, audit: false })); }
+      triggerDownload(blob, filename);
+      pushHistory({ name: filename, ts: new Date().toISOString(), label });
+      setDlState(s => ({ ...s, [key]: 'done' }));
+      setTimeout(() => setDlState(s => ({ ...s, [key]: null })), 2500);
+    } catch {
+      setDlState(s => ({ ...s, [key]: 'error' }));
+      setTimeout(() => setDlState(s => ({ ...s, [key]: null })), 3000);
+    }
   };
 
   const fmtTs = (iso) => new Date(iso).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+  const periodLabel = sysPeriod === 'monthly' ? 'Mensuel' : sysPeriod === 'quarterly' ? 'Trimestriel' : 'Annuel';
 
-  const ExportCard = ({ icon: Icon, color, title, badge, desc, compliance, children, history }) => (
-    <div style={{ ...card, overflow: 'hidden' }}>
-      <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
-          <div style={{ width: 46, height: 46, borderRadius: 13, background: `${color}12`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            <Icon style={{ width: 22, height: 22, color }} />
-          </div>
-          <div style={{ flex: 1 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>{title}</p>
-              {badge && <span style={{ fontSize: 10, background: `${color}14`, color, borderRadius: 5, padding: '2px 7px', fontWeight: 700 }}>{badge}</span>}
-            </div>
-            <p style={{ fontSize: 11, color: '#94A3B8', margin: '3px 0 0' }}>{desc}</p>
-          </div>
-        </div>
-        {children}
-      </div>
-      {compliance && (
-        <div style={{ padding: '10px 20px', background: '#FFFBEB', borderBottom: '1px solid #FEF3C7', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-          <Info style={{ width: 13, height: 13, color: '#D97706', flexShrink: 0, marginTop: 1 }} />
-          <p style={{ fontSize: 11, color: '#92400E', margin: 0, lineHeight: 1.5 }}>{compliance}</p>
-        </div>
-      )}
-      {history && history.length > 0 && (
-        <div style={{ padding: '10px 20px' }}>
-          <p style={{ fontSize: 10, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 8px' }}>Historique de session</p>
-          {history.map((h, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '5px 0', borderBottom: i < history.length - 1 ? '1px solid #F8FAFC' : 'none' }}>
-              <span style={{ fontSize: 11, color: '#475569', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <FileText style={{ width: 11, height: 11, color: '#94A3B8' }} />{h.name}
-              </span>
-              <span style={{ fontSize: 10, color: '#94A3B8' }}>{fmtTs(h.ts)}</span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+  const BtnIcon = ({ state }) => {
+    if (state === 'loading') return <RefreshCw style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />;
+    if (state === 'done')    return <CheckCircle style={{ width: 14, height: 14 }} />;
+    if (state === 'error')   return <XCircle style={{ width: 14, height: 14 }} />;
+    return <Download style={{ width: 14, height: 14 }} />;
+  };
+
+  const btnBg = (key, base) => {
+    if (dlState[key] === 'done')  return '#059669';
+    if (dlState[key] === 'error') return '#DC2626';
+    return base;
+  };
 
   return (
     <div>
-      <div style={{ marginBottom: 20 }}>
-        <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: '0 0 2px' }}>Exports & Rapports</h2>
-        <p style={{ fontSize: 11, color: '#64748B', margin: 0 }}>Exports comptables OHADA, journaux d'audit, données plateforme</p>
+
+      {/* ── En-tête ── */}
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+        <div>
+          <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: '0 0 3px' }}>Exports & Rapports</h2>
+          <p style={{ fontSize: 12, color: '#64748B', margin: 0 }}>Exports comptables OHADA, journaux d'audit et données plateforme</p>
+        </div>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700, color: '#15803D' }}>
+            <CheckCircle style={{ width: 12, height: 12 }} /> Conforme OHADA
+          </span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(37,99,235,0.08)', border: '1px solid rgba(37,99,235,0.20)', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700, color: ACCENT }}>
+            <Shield style={{ width: 12, height: 12 }} /> Rétention 10 ans
+          </span>
+        </div>
       </div>
 
+      {/* ── Exports principaux ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
 
         {/* SYSCOHADA */}
-        <ExportCard
-          icon={FileText} color={ACCENT} title="Export SYSCOHADA" badge="RG-29"
-          desc="Format comptable OHADA — CSV avec BOM UTF-8 pour Excel"
-          compliance="Obligation légale OHADA : conservez ces exports 10 ans dans un système sécurisé hors production. Archivez avant toute migration de base de données."
-          history={sysHistory}
-        >
-          <div style={{ marginBottom: 12 }}>
-            <label style={labelStyle}>Période</label>
-            <div style={{ display: 'flex', gap: 8 }}>
-              {[
-                { value: 'monthly',   label: 'Mensuel' },
-                { value: 'quarterly', label: 'Trimestriel' },
-                { value: 'yearly',    label: 'Annuel' },
-              ].map(p => (
+        <div style={{ ...card, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(37,99,235,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <FileText style={{ width: 21, height: 21, color: ACCENT }} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Export SYSCOHADA</p>
+                  <span style={{ fontSize: 10, background: 'rgba(37,99,235,0.10)', color: ACCENT, borderRadius: 5, padding: '2px 7px', fontWeight: 700 }}>RG-29</span>
+                </div>
+                <p style={{ fontSize: 11, color: '#94A3B8', margin: '3px 0 0' }}>Format comptable OHADA — CSV BOM UTF-8 compatible Excel</p>
+              </div>
+            </div>
+
+            <label style={labelStyle}>Granularité de la période</label>
+            <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+              {[{ value: 'monthly', label: 'Mensuel' }, { value: 'quarterly', label: 'Trimestriel' }, { value: 'yearly', label: 'Annuel' }].map(p => (
                 <button key={p.value} onClick={() => setSysPeriod(p.value)}
-                  style={{ flex: 1, padding: '7px 0', border: `1.5px solid ${sysPeriod === p.value ? ACCENT : '#E2E8F0'}`, borderRadius: 8, cursor: 'pointer', fontWeight: sysPeriod === p.value ? 700 : 500, fontSize: 12, background: sysPeriod === p.value ? `${ACCENT}10` : '#fff', color: sysPeriod === p.value ? ACCENT : '#475569' }}>
+                  style={{ flex: 1, padding: '7px 0', border: `1.5px solid ${sysPeriod === p.value ? ACCENT : '#E2E8F0'}`, borderRadius: 8, cursor: 'pointer', fontWeight: sysPeriod === p.value ? 700 : 500, fontSize: 12, background: sysPeriod === p.value ? 'rgba(37,99,235,0.08)' : '#fff', color: sysPeriod === p.value ? ACCENT : '#475569', transition: 'all 0.15s' }}>
                   {p.label}
                 </button>
               ))}
             </div>
+
+            <div style={{ background: '#F1F5F9', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                { label: 'Format', value: 'CSV UTF-8 (BOM)' },
+                { label: 'Plan comptable', value: 'OHADA / SYSCOHADA' },
+                { label: 'Colonnes', value: 'Date · Libellé · Débit · Crédit · Compte · Pièce' },
+                { label: 'Compatibilité', value: 'Sage, Ciel, logiciels CI' },
+              ].map(f => (
+                <div key={f.label}>
+                  <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 1px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{f.label}</p>
+                  <p style={{ fontSize: 11, color: '#334155', margin: 0, fontWeight: 600 }}>{f.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => download('syscohada', () => adminAPI.exportSyscohada(sysPeriod), `SYSCOHADA-${sysPeriod}-${today}.csv`, `SYSCOHADA ${periodLabel}`)}
+              disabled={!!dlState.syscohada}
+              style={{ width: '100%', padding: '11px 0', background: btnBg('syscohada', ACCENT), color: '#fff', border: 'none', borderRadius: 10, cursor: dlState.syscohada ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: dlState.syscohada === 'loading' ? 0.8 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}>
+              <BtnIcon state={dlState.syscohada} />
+              {dlState.syscohada === 'loading' ? 'Génération en cours…' : dlState.syscohada === 'done' ? 'Téléchargé !' : dlState.syscohada === 'error' ? 'Erreur — réessayer' : `Télécharger SYSCOHADA (${periodLabel})`}
+            </button>
           </div>
-          <div style={{ background: '#F8FAFC', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            {[
-              { label: 'Format', value: 'CSV UTF-8 (BOM)' },
-              { label: 'Plan comptable', value: 'OHADA / SYSCOHADA' },
-              { label: 'Colonnes', value: 'Date, Libellé, Débit, Crédit, N°Cpte, Pièce' },
-              { label: 'Compatibilité', value: 'Sage, Ciel, logiciels CI' },
-            ].map(f => (
-              <div key={f.label}>
-                <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 1px', fontWeight: 600 }}>{f.label}</p>
-                <p style={{ fontSize: 11, color: '#334155', margin: 0, fontWeight: 600 }}>{f.value}</p>
-              </div>
-            ))}
+          <div style={{ padding: '10px 20px', background: '#FFFBEB', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <Info style={{ width: 13, height: 13, color: '#D97706', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: 11, color: '#92400E', margin: 0, lineHeight: 1.5 }}>Obligation légale OHADA : conservez ces exports 10 ans dans un système sécurisé hors production.</p>
           </div>
-          <button onClick={downloadSyscohada} disabled={dlState.syscohada}
-            style={{ width: '100%', padding: '10px 0', background: ACCENT, color: '#fff', border: 'none', borderRadius: 10, cursor: dlState.syscohada ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: dlState.syscohada ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Download style={{ width: 15, height: 15 }} />
-            {dlState.syscohada ? 'Génération en cours…' : `Télécharger SYSCOHADA (${sysPeriod === 'monthly' ? 'Mensuel' : sysPeriod === 'quarterly' ? 'Trimestriel' : 'Annuel'})`}
-          </button>
-        </ExportCard>
+        </div>
 
         {/* Audit RG-34 */}
-        <ExportCard
-          icon={ScrollText} color="#059669" title="Journal d'Audit" badge="RG-34"
-          desc="Traçabilité complète — toutes actions critiques horodatées"
-          compliance="Le journal d'audit est immuable. Cet export est une copie à des fins d'archivage et d'analyse. Le journal en base reste intègre."
-          history={auditHistory}
-        >
-          <div style={{ background: '#F0FDF4', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
-            {[
-              { label: 'Format', value: 'CSV UTF-8 (BOM)' },
-              { label: 'Colonnes', value: 'Date, Heure, User, Action, Restaurant, Payload' },
-              { label: 'Limite', value: '5 000 entrées par export' },
-              { label: 'Intégrité', value: 'Immuable (RG-34)' },
-            ].map(f => (
-              <div key={f.label}>
-                <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 1px', fontWeight: 600 }}>{f.label}</p>
-                <p style={{ fontSize: 11, color: '#334155', margin: 0, fontWeight: 600 }}>{f.value}</p>
+        <div style={{ ...card, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #E2E8F0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: '#F0FDF4', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <ScrollText style={{ width: 21, height: 21, color: '#059669' }} />
               </div>
-            ))}
+              <div style={{ flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Journal d'Audit</p>
+                  <span style={{ fontSize: 10, background: '#D1FAE5', color: '#065F46', borderRadius: 5, padding: '2px 7px', fontWeight: 700 }}>RG-34</span>
+                </div>
+                <p style={{ fontSize: 11, color: '#94A3B8', margin: '3px 0 0' }}>Traçabilité complète — toutes actions critiques horodatées</p>
+              </div>
+            </div>
+
+            <label style={labelStyle}>Plage de dates</label>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 14 }}>
+              <div>
+                <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 4px', fontWeight: 600 }}>Du</p>
+                <input type="date" value={auditFrom} max={auditTo} onChange={e => setAuditFrom(e.target.value)}
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: 12, outline: 'none', color: '#374151', background: '#fff', boxSizing: 'border-box' }} />
+              </div>
+              <div>
+                <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 4px', fontWeight: 600 }}>Au</p>
+                <input type="date" value={auditTo} min={auditFrom} max={today} onChange={e => setAuditTo(e.target.value)}
+                  style={{ width: '100%', padding: '7px 10px', border: '1.5px solid #E2E8F0', borderRadius: 8, fontSize: 12, outline: 'none', color: '#374151', background: '#fff', boxSizing: 'border-box' }} />
+              </div>
+            </div>
+
+            <div style={{ background: '#F0FDF4', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {[
+                { label: 'Format', value: 'CSV UTF-8 (BOM)' },
+                { label: 'Intégrité', value: 'Immuable (RG-34)' },
+                { label: 'Colonnes', value: 'Date · Heure · User · Action · Restaurant · Payload' },
+                { label: 'Limite', value: '5 000 entrées / export' },
+              ].map(f => (
+                <div key={f.label}>
+                  <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 1px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{f.label}</p>
+                  <p style={{ fontSize: 11, color: '#334155', margin: 0, fontWeight: 600 }}>{f.value}</p>
+                </div>
+              ))}
+            </div>
+
+            <button onClick={() => download('audit', () => adminAPI.exportAudit({ from: auditFrom, to: auditTo }), `Audit-RG34-${auditFrom}_${auditTo}.csv`, 'Journal Audit')}
+              disabled={!!dlState.audit}
+              style={{ width: '100%', padding: '11px 0', background: btnBg('audit', '#059669'), color: '#fff', border: 'none', borderRadius: 10, cursor: dlState.audit ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: dlState.audit === 'loading' ? 0.8 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'background 0.2s' }}>
+              <BtnIcon state={dlState.audit} />
+              {dlState.audit === 'loading' ? 'Génération en cours…' : dlState.audit === 'done' ? 'Téléchargé !' : dlState.audit === 'error' ? 'Erreur — réessayer' : `Télécharger Audit (${auditFrom} → ${auditTo})`}
+            </button>
           </div>
-          <button onClick={downloadAudit} disabled={dlState.audit}
-            style={{ width: '100%', padding: '10px 0', background: '#059669', color: '#fff', border: 'none', borderRadius: 10, cursor: dlState.audit ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: dlState.audit ? 0.7 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-            <Download style={{ width: 15, height: 15 }} />
-            {dlState.audit ? 'Génération en cours…' : 'Télécharger Journal Audit CSV'}
-          </button>
-        </ExportCard>
+          <div style={{ padding: '10px 20px', background: '#F0FDF4', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <Info style={{ width: 13, height: 13, color: '#059669', flexShrink: 0, marginTop: 1 }} />
+            <p style={{ fontSize: 11, color: '#065F46', margin: 0, lineHeight: 1.5 }}>Le journal en base est immuable. Cet export est une copie d'archivage — le journal source reste intact.</p>
+          </div>
+        </div>
       </div>
 
-      {/* Bloc conformité OHADA */}
-      <div style={{ ...card, padding: '20px 24px', display: 'flex', gap: 20, alignItems: 'flex-start' }}>
-        <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FEF3C714', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: '1.5px solid #FEF3C7' }}>
-          <Shield style={{ width: 18, height: 18, color: '#D97706' }} />
-        </div>
-        <div>
-          <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>Conformité OHADA & obligations d'archivage</p>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12 }}>
+      {/* ── Conformité OHADA + Historique ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+
+        <div style={{ ...card, padding: '18px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(37,99,235,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Shield style={{ width: 16, height: 16, color: ACCENT }} />
+            </div>
+            <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Conformité OHADA</p>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
             {[
               { label: 'Rétention minimale', value: '10 ans', note: 'Acte uniforme OHADA sur le droit comptable' },
               { label: 'Format légal', value: 'SYSCOHADA révisé', note: 'Plan comptable OHADA — comptes 7xxx produits' },
-              { label: 'Archivage sécurisé', value: 'Hors production', note: 'Isolé de la base de données opérationnelle' },
+              { label: 'Archivage', value: 'Hors production', note: 'Isolé de la base de données opérationnelle' },
             ].map(item => (
-              <div key={item.label} style={{ background: '#FFFBEB', borderRadius: 10, padding: '10px 14px', border: '1px solid #FEF3C7' }}>
-                <p style={{ fontSize: 10, color: '#D97706', fontWeight: 700, margin: '0 0 3px', textTransform: 'uppercase' }}>{item.label}</p>
-                <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 3px' }}>{item.value}</p>
-                <p style={{ fontSize: 10, color: '#92400E', margin: 0 }}>{item.note}</p>
+              <div key={item.label} style={{ background: '#F1F5F9', borderRadius: 9, padding: '9px 13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <p style={{ fontSize: 10, color: '#94A3B8', margin: '0 0 1px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{item.label}</p>
+                  <p style={{ fontSize: 11, color: '#475569', margin: 0 }}>{item.note}</p>
+                </div>
+                <span style={{ fontSize: 12, fontWeight: 800, color: ACCENT, whiteSpace: 'nowrap', marginLeft: 10 }}>{item.value}</span>
               </div>
             ))}
           </div>
+        </div>
+
+        <div style={{ ...card, padding: '18px 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 36, height: 36, borderRadius: 9, background: '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <Clock style={{ width: 16, height: 16, color: '#64748B' }} />
+              </div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Historique des exports</p>
+            </div>
+            {history.length > 0 && (
+              <button onClick={() => { setHistory([]); localStorage.removeItem('admin_export_history'); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#94A3B8', padding: '2px 6px' }}>
+                Effacer
+              </button>
+            )}
+          </div>
+          {history.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '20px 0', color: '#CBD5E1' }}>
+              <Download style={{ width: 28, height: 28, margin: '0 auto 8px', display: 'block' }} />
+              <p style={{ fontSize: 12, margin: 0 }}>Aucun export dans cette session</p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {history.slice(0, 8).map((h, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', borderRadius: 8, background: i === 0 ? 'rgba(37,99,235,0.04)' : 'transparent', border: i === 0 ? '1px solid rgba(37,99,235,0.10)' : '1px solid transparent' }}>
+                  <span style={{ fontSize: 11, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
+                    <FileText style={{ width: 11, height: 11, color: '#94A3B8', flexShrink: 0 }} />
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.label || h.name}</span>
+                  </span>
+                  <span style={{ fontSize: 10, color: '#94A3B8', flexShrink: 0, marginLeft: 8 }}>{fmtTs(h.ts)}</span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -1275,7 +1349,7 @@ const INTEGRATION_TYPES = [
   'REST_API', 'WEBHOOK', 'PAYMENT', 'SMS', 'PUSH_NOTIFICATION', 'EMAIL', 'STORAGE', 'ANALYTICS', 'CUSTOM',
 ];
 const TYPE_COLOR = {
-  PAYMENT: '#F59E0B', SMS: '#F43F5E', PUSH_NOTIFICATION: '#F97316',
+  PAYMENT: '#F59E0B', SMS: '#F43F5E', PUSH_NOTIFICATION: '#2563EB',
   EMAIL: '#6366F1', STORAGE: '#0EA5E9', REST_API: '#10B981',
   WEBHOOK: '#8B5CF6', ANALYTICS: '#EC4899', CUSTOM: '#64748B',
 };
@@ -1292,7 +1366,7 @@ function IntegrationDynamicCard({ integration, onToggle, onEdit, onDelete, onTes
   const isCdc  = CDC_NAMES.has(integration.name);
 
   return (
-    <div style={{ ...card, marginBottom: 10, border: isCdc ? `1.5px solid ${color}28` : '1px solid #E8EDF5', overflow: 'hidden' }}>
+    <div style={{ ...card, marginBottom: 10, border: isCdc ? `1.5px solid ${color}28` : '1px solid #D1D9E6', overflow: 'hidden' }}>
       <div style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12 }}>
         <div style={{ width: 38, height: 38, borderRadius: 10, background: `${color}14`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
           <Icon style={{ width: 17, height: 17, color }} />
@@ -1300,7 +1374,7 @@ function IntegrationDynamicCard({ integration, onToggle, onEdit, onDelete, onTes
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>{integration.name}</p>
-            {isCdc && <span style={{ fontSize: 9, background: '#EEF2FF', color: '#4338CA', borderRadius: 4, padding: '1px 6px', fontWeight: 800, letterSpacing: '0.04em' }}>CDC</span>}
+            {isCdc && <span style={{ fontSize: 9, background: 'rgba(37,99,235,0.10)', color: '#2563EB', borderRadius: 4, padding: '1px 6px', fontWeight: 800, letterSpacing: '0.04em' }}>CDC</span>}
             <span style={{ background: `${color}14`, color, borderRadius: 4, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>{integration.type.replace(/_/g, ' ')}</span>
           </div>
           <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1313,12 +1387,12 @@ function IntegrationDynamicCard({ integration, onToggle, onEdit, onDelete, onTes
             <Activity style={{ width: 12, height: 12 }} />
           </button>
           <button onClick={() => onEdit(integration)} title="Configurer"
-            style={{ background: '#EEF2FF', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
+            style={{ background: 'rgba(37,99,235,0.10)', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
             <Settings style={{ width: 12, height: 12 }} />
           </button>
           {!isCdc && (
             <button onClick={() => onDelete(integration.id)} title="Supprimer"
-              style={{ background: '#FEE2E2', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}>
+              style={{ background: '#FEE2E2', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: '#2563EB', display: 'flex', alignItems: 'center' }}>
               <X style={{ width: 12, height: 12 }} />
             </button>
           )}
@@ -1363,7 +1437,7 @@ function IntegrationModal({ initial, onClose, onSave }) {
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
       <div style={{ background: '#fff', borderRadius: 16, width: '100%', maxWidth: 500, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 48px rgba(0,0,0,0.2)' }}>
-        <div style={{ padding: '18px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, color: '#0F172A' }}>{initial?.id ? 'Modifier' : 'Nouvelle'} intégration</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X style={{ width: 18, height: 18, color: '#64748B' }} /></button>
         </div>
@@ -1560,7 +1634,7 @@ function ConfigTab() {
       <div>
         {/* Politiques de sécurité */}
         <div style={{ ...card, marginBottom: 20 }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 10 }}>
             <Lock style={{ width: 16, height: 16, color: ACCENT }} />
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Politiques de sécurité</p>
           </div>
@@ -1574,7 +1648,7 @@ function ConfigTab() {
               <div key={f.key} style={{ marginBottom: 12 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>{f.label}</label>
-                  <span style={{ fontSize: 10, background: '#EEF2FF', color: '#4338CA', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>{f.note}</span>
+                  <span style={{ fontSize: 10, background: 'rgba(37,99,235,0.10)', color: '#2563EB', borderRadius: 4, padding: '1px 6px', fontWeight: 700 }}>{f.note}</span>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
@@ -1615,7 +1689,7 @@ function ConfigTab() {
 
         {/* Changement de mot de passe */}
         <div style={{ ...card }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 10 }}>
             <Shield style={{ width: 16, height: 16, color: '#059669' }} />
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Changer le mot de passe admin</p>
           </div>
@@ -1654,7 +1728,7 @@ function ConfigTab() {
 
         {/* Double authentification (2FA) */}
         <div style={{ ...card, marginTop: 20 }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 10 }}>
             <Smartphone style={{ width: 16, height: 16, color: '#7C3AED' }} />
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Double authentification (2FA)</p>
             <span style={{ marginLeft: 'auto', background: twoFAEnabled ? '#DCFCE7' : '#F1F5F9', color: twoFAEnabled ? '#166534' : '#64748B', borderRadius: 20, padding: '2px 10px', fontSize: 10, fontWeight: 700 }}>
@@ -1691,11 +1765,11 @@ function ConfigTab() {
                   <img
                     src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(twoFAData.otpauthUrl)}`}
                     alt="QR 2FA"
-                    style={{ borderRadius: 8, border: '1px solid #E8EDF5' }}
+                    style={{ borderRadius: 8, border: '1px solid #D1D9E6' }}
                   />
                 </div>
                 <p style={{ fontSize: 11, color: '#94A3B8', margin: '0 0 4px' }}>Clé secrète (saisie manuelle) :</p>
-                <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#F8FAFC', border: '1px solid #E8EDF5', borderRadius: 6, padding: '6px 10px', marginBottom: 12, wordBreak: 'break-all', color: '#4338CA', letterSpacing: '0.1em' }}>
+                <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#EFF6FF', border: '1px solid rgba(37,99,235,0.20)', borderRadius: 6, padding: '6px 10px', marginBottom: 12, wordBreak: 'break-all', color: '#2563EB', letterSpacing: '0.1em' }}>
                   {twoFAData.secret}
                 </div>
                 <label style={labelStyle}>Code de vérification (6 chiffres)</label>
@@ -1751,7 +1825,7 @@ function ConfigTab() {
         {/* CDC — services requis par le CDC */}
         {integrations.filter(i => CDC_NAMES.has(i.name)).length > 0 && (
           <div style={{ marginBottom: 14 }}>
-            <p style={{ fontSize: 10, fontWeight: 800, color: '#4338CA', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
+            <p style={{ fontSize: 10, fontWeight: 800, color: '#2563EB', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 5 }}>
               <Shield style={{ width: 11, height: 11 }} /> Services requis · Cahier des charges
             </p>
             {integrations.filter(i => CDC_NAMES.has(i.name)).map(integration => (
@@ -1789,7 +1863,7 @@ function ConfigTab() {
 
         {/* Rétention sauvegardes */}
         <div style={{ ...card, marginTop: 16 }}>
-          <div style={{ padding: '14px 20px', borderBottom: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ padding: '14px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', gap: 10 }}>
             <Database style={{ width: 16, height: 16, color: '#6366F1' }} />
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Sauvegarde & rétention</p>
           </div>
@@ -1900,7 +1974,7 @@ function MetriquesTab() {
     finally { setBackupRunning(false); }
   };
 
-  const Stat = ({ label, value, sub, color = '#4F46E5' }) => (
+  const Stat = ({ label, value, sub, color = '#2563EB' }) => (
     <div style={{ ...card, padding: '18px 22px' }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{label}</p>
       <p style={{ fontSize: 28, fontWeight: 800, color, margin: 0 }}>{value ?? '—'}</p>
@@ -1920,7 +1994,7 @@ function MetriquesTab() {
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <h2 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>Métriques système</h2>
-        <button onClick={() => setRefreshAt(Date.now())} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #E8EDF5', borderRadius: 9, padding: '7px 14px', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#64748B' }}>
+        <button onClick={() => setRefreshAt(Date.now())} style={{ display: 'flex', alignItems: 'center', gap: 6, border: '1px solid #D1D9E6', borderRadius: 9, padding: '7px 14px', background: '#fff', cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#64748B' }}>
           <RefreshCw style={{ width: 13, height: 13 }} /> Actualiser
         </button>
       </div>
@@ -2002,7 +2076,7 @@ function MetriquesTab() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14, marginBottom: 24 }}>
             <Stat label="Utilisateurs" value={stats.users?.total} sub={`dont ${stats.users?.admins} admin(s)`} color="#F59E0B" />
             <Stat label="Gérants" value={stats.users?.gerants} sub="restaurants actifs" color="#C05015" />
-            <Stat label="Clients" value={stats.users?.clients} sub={`+ ${stats.users?.b2b ?? 0} B2B`} color="#4F46E5" />
+            <Stat label="Clients" value={stats.users?.clients} sub={`+ ${stats.users?.b2b ?? 0} B2B`} color="#2563EB" />
             <Stat label="Restaurants" value={stats.restaurants?.total} sub={`${stats.restaurants?.active} actifs`} color="#10B981" />
             <Stat label="B2B en attente" value={stats.b2b?.pending} sub="validations requises" color={stats.b2b?.pending > 0 ? '#EF4444' : '#10B981'} />
             <Stat label="Logs d'audit" value={stats.audit?.total?.toLocaleString('fr-FR')} sub="événements enregistrés" color="#64748B" />
@@ -2012,7 +2086,7 @@ function MetriquesTab() {
 
       {/* Backup section */}
       <div style={{ ...card, marginBottom: 20 }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #F1F5F9' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', borderBottom: '1px solid #E2E8F0' }}>
           <div>
             <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Sauvegarde Base de données</p>
             <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>pg_dump automatique chaque nuit à 2h — rétention 30 jours</p>
@@ -2030,7 +2104,7 @@ function MetriquesTab() {
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+              <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
                 {['Fichier', 'Taille', 'Date'].map(h => (
                   <th key={h} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 700, color: '#94A3B8', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
@@ -2038,7 +2112,7 @@ function MetriquesTab() {
             </thead>
             <tbody>
               {backups.slice(0, 10).map(b => (
-                <tr key={b.file} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                <tr key={b.file} style={{ borderBottom: '1px solid #E2E8F0' }}>
                   <td style={{ padding: '9px 16px', fontSize: 12, color: '#0F172A', fontFamily: 'monospace' }}>{b.file}</td>
                   <td style={{ padding: '9px 16px', fontSize: 12, color: '#64748B' }}>{b.sizeKb} Ko</td>
                   <td style={{ padding: '9px 16px', fontSize: 12, color: '#64748B' }}>{new Date(b.createdAt).toLocaleString('fr-FR')}</td>
@@ -2114,7 +2188,7 @@ function FournisseursTab() {
         type={type} value={form[field] ?? ''}
         onChange={e => setForm(p => ({ ...p, [field]: e.target.value }))}
         placeholder={placeholder}
-        style={{ width: '100%', border: '1px solid #E8EDF5', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
+        style={{ width: '100%', border: '1px solid #D1D9E6', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
       />
     </div>
   );
@@ -2133,7 +2207,7 @@ function FournisseursTab() {
             <input
               value={search} onChange={e => setSearch(e.target.value)}
               placeholder="Rechercher..."
-              style={{ border: '1px solid #E8EDF5', borderRadius: 9, padding: '8px 12px 8px 32px', fontSize: 13, outline: 'none', width: 200 }}
+              style={{ border: '1px solid #D1D9E6', borderRadius: 9, padding: '8px 12px 8px 32px', fontSize: 13, outline: 'none', width: 200 }}
             />
           </div>
           <button onClick={openCreate} style={{ display: 'flex', alignItems: 'center', gap: 7, background: ACCENT, color: '#fff', border: 'none', borderRadius: 9, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
@@ -2154,7 +2228,7 @@ function FournisseursTab() {
         ) : (
           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ borderBottom: '1px solid #F1F5F9' }}>
+              <tr style={{ borderBottom: '1px solid #E2E8F0' }}>
                 {['Fournisseur', 'Contact', 'Téléphone', 'Email', 'Délai (j)', 'Statut', 'Actions'].map(h => (
                   <th key={h} style={{ padding: '10px 16px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
@@ -2162,7 +2236,7 @@ function FournisseursTab() {
             </thead>
             <tbody>
               {filtered.map(f => (
-                <tr key={f.id} style={{ borderBottom: '1px solid #F8FAFC' }}>
+                <tr key={f.id} style={{ borderBottom: '1px solid #E2E8F0' }}>
                   <td style={{ padding: '12px 16px' }}>
                     <p style={{ fontSize: 13, fontWeight: 600, color: '#0F172A', margin: 0 }}>{f.nom}</p>
                     {f.adresse && <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>{f.adresse}</p>}
@@ -2178,13 +2252,13 @@ function FournisseursTab() {
                   </td>
                   <td style={{ padding: '12px 16px' }}>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      <button onClick={() => openEdit(f)} title="Modifier" style={{ border: '1px solid #E8EDF5', borderRadius: 7, padding: '5px 8px', background: '#fff', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => openEdit(f)} title="Modifier" style={{ border: '1px solid #D1D9E6', borderRadius: 7, padding: '5px 8px', background: '#fff', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}>
                         <Pencil style={{ width: 13, height: 13 }} />
                       </button>
-                      <button onClick={() => handleToggle(f)} title={f.actif ? 'Désactiver' : 'Activer'} style={{ border: '1px solid #E8EDF5', borderRadius: 7, padding: '5px 8px', background: f.actif ? '#FEF3C7' : '#D1FAE5', cursor: 'pointer', color: f.actif ? '#92400E' : '#065F46', display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => handleToggle(f)} title={f.actif ? 'Désactiver' : 'Activer'} style={{ border: '1px solid #D1D9E6', borderRadius: 7, padding: '5px 8px', background: f.actif ? '#FEF3C7' : '#D1FAE5', cursor: 'pointer', color: f.actif ? '#92400E' : '#065F46', display: 'flex', alignItems: 'center' }}>
                         {f.actif ? <ToggleRight style={{ width: 13, height: 13 }} /> : <ToggleLeft style={{ width: 13, height: 13 }} />}
                       </button>
-                      <button onClick={() => handleDelete(f)} title="Supprimer" style={{ border: '1px solid #FEE2E2', borderRadius: 7, padding: '5px 8px', background: '#FFF5F5', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => handleDelete(f)} title="Supprimer" style={{ border: '1px solid #FEE2E2', borderRadius: 7, padding: '5px 8px', background: '#FFF5F5', cursor: 'pointer', color: '#2563EB', display: 'flex', alignItems: 'center' }}>
                         <Trash2 style={{ width: 13, height: 13 }} />
                       </button>
                     </div>
@@ -2200,7 +2274,7 @@ function FournisseursTab() {
       {modal !== null && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
           <div style={{ background: '#fff', borderRadius: 16, width: 540, maxWidth: '95vw', maxHeight: '90vh', overflow: 'auto', boxShadow: '0 20px 60px rgba(0,0,0,0.15)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #F1F5F9' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>{modal === 'create' ? 'Nouveau fournisseur' : `Modifier — ${modal.nom}`}</h3>
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
             </div>
@@ -2220,12 +2294,12 @@ function FournisseursTab() {
                   value={form.notes ?? ''} onChange={e => setForm(p => ({ ...p, notes: e.target.value }))}
                   placeholder="Conditions particulières, historique..."
                   rows={3}
-                  style={{ width: '100%', border: '1px solid #E8EDF5', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
+                  style={{ width: '100%', border: '1px solid #D1D9E6', borderRadius: 8, padding: '8px 12px', fontSize: 13, outline: 'none', resize: 'vertical', boxSizing: 'border-box' }}
                 />
               </div>
             </div>
             <div style={{ padding: '16px 24px', borderTop: '1px solid #F1F5F9', display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-              <button onClick={() => setModal(null)} style={{ border: '1px solid #E8EDF5', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 600, background: '#fff', cursor: 'pointer', color: '#64748B' }}>Annuler</button>
+              <button onClick={() => setModal(null)} style={{ border: '1px solid #D1D9E6', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 600, background: '#fff', cursor: 'pointer', color: '#64748B' }}>Annuler</button>
               <button onClick={handleSave} disabled={saving || !form.nom} style={{ border: 'none', borderRadius: 8, padding: '9px 18px', fontSize: 13, fontWeight: 600, background: ACCENT, color: '#fff', cursor: 'pointer', opacity: saving || !form.nom ? 0.6 : 1 }}>
                 {saving ? 'Enregistrement…' : 'Enregistrer'}
               </button>
@@ -2272,8 +2346,8 @@ function CommissionsTab() {
 
   const kpis = [
     { label:'Total commissions perçues', value: `${(data?.totalCommissions ?? 0).toLocaleString('fr-FR')} FCFA`, icon: CreditCard, color:'#10B981', bg:'#ECFDF5' },
-    { label:'Commissions ce mois',       value: `${(data?.commissionsMois ?? 0).toLocaleString('fr-FR')} FCFA`, icon: TrendingUp, color:'#F97316', bg:'#FFF7ED' },
-    { label:'Commandes facturées',        value: data?.totalCommandes ?? 0,                                        icon: BarChart2,  color:'#4F46E5', bg:'#EEF2FF' },
+    { label:'Commissions ce mois',       value: `${(data?.commissionsMois ?? 0).toLocaleString('fr-FR')} FCFA`, icon: TrendingUp, color:'#2563EB', bg:'#FEF2F2' },
+    { label:'Commandes facturées',        value: data?.totalCommandes ?? 0,                                        icon: BarChart2,  color:'#2563EB', bg:'rgba(37,99,235,0.08)' },
   ];
 
   return (
@@ -2282,7 +2356,7 @@ function CommissionsTab() {
       {/* KPIs */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
         {kpis.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} style={{ background:'#fff', borderRadius:14, padding:'20px 22px', border:'1px solid #E8EDF5', display:'flex', alignItems:'center', gap:14 }}>
+          <div key={label} style={{ background:'#fff', borderRadius:14, padding:'20px 22px', border:'1px solid #D1D9E6', display:'flex', alignItems:'center', gap:14 }}>
             <div style={{ width:44, height:44, borderRadius:12, background:bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
               <Icon style={{ width:20, height:20, color }} />
             </div>
@@ -2295,8 +2369,8 @@ function CommissionsTab() {
       </div>
 
       {/* Tableau par restaurant */}
-      <div style={{ background:'#fff', borderRadius:14, border:'1px solid #E8EDF5', overflow:'hidden' }}>
-        <div style={{ padding:'16px 20px', borderBottom:'1px solid #E8EDF5', display:'flex', alignItems:'center', gap:8 }}>
+      <div style={{ background:'#fff', borderRadius:14, border:'1px solid #D1D9E6', overflow:'hidden' }}>
+        <div style={{ padding:'16px 20px', borderBottom:'1px solid #D1D9E6', display:'flex', alignItems:'center', gap:8 }}>
           <Percent style={{ width:16, height:16, color: ACCENT }} />
           <p style={{ fontSize:14, fontWeight:700, color:'#0F172A', margin:0 }}>Commissions par restaurant</p>
           <span style={{ fontSize:11, color:'#94A3B8', marginLeft:'auto' }}>Taux modifiable — s'applique aux prochaines commandes</span>
@@ -2323,7 +2397,7 @@ function CommissionsTab() {
                       style={{ width:70, padding:'4px 8px', border:`1px solid ${ACCENT}`, borderRadius:7, fontSize:13, outline:'none' }}
                     />
                   ) : (
-                    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:'#EEF2FF', color: ACCENT, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:700 }}>
+                    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:'rgba(37,99,235,0.10)', color: ACCENT, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:700 }}>
                       {r.tauxCommission}%
                     </span>
                   )}
@@ -2405,7 +2479,7 @@ export default function AdminDashboard() {
       {tab === 'overview' && <B2BPendingBanner />}
 
       {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#fff', borderRadius: 12, padding: 4, border: '1px solid #E8EDF5', overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#fff', borderRadius: 12, padding: 4, border: '1px solid #D1D9E6', overflowX: 'auto' }}>
         {TABS.map(t => {
           const Icon   = t.icon;
           const active = tab === t.id;

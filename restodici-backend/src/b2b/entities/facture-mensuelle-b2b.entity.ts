@@ -9,7 +9,7 @@ import {
 } from 'typeorm';
 import { CompteB2B } from './compte-b2b.entity';
 
-export type StatutFactureB2B = 'EN_ATTENTE' | 'PAYEE' | 'RETARDEE';
+export type StatutFactureB2B = 'EN_ATTENTE' | 'PAYEE' | 'RETARDEE' | 'EN_CONTESTATION';
 
 @Entity('factures_mensuelles_b2b')
 export class FactureMensuelleB2B {
@@ -28,7 +28,7 @@ export class FactureMensuelleB2B {
 
   @Column({
     type: 'enum',
-    enum: ['EN_ATTENTE', 'PAYEE', 'RETARDEE'],
+    enum: ['EN_ATTENTE', 'PAYEE', 'RETARDEE', 'EN_CONTESTATION'],
     default: 'EN_ATTENTE',
   })
   statut!: StatutFactureB2B;

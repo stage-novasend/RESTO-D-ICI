@@ -152,6 +152,23 @@ export class B2BController {
     return this.b2bService.initierPaiementFacture(id, req.user.id);
   }
 
+  @Post('factures-mensuelles/:id/contester')
+  async contesterFacture(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+    @Body() body: { motif: string },
+  ) {
+    return this.b2bService.contestFacture(id, req.user.id, body.motif || 'Motif non précisé');
+  }
+
+  @Get('factures-mensuelles/:id/export-syscohada')
+  async exportSyscohadaCsv(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ) {
+    return this.b2bService.exportSyscohadaCsv(id, req.user.id);
+  }
+
   @Post('factures-mensuelles/test-seed')
   async seedFactureTest(@Req() req: RequestWithUser) {
     return this.b2bService.createFactureTest(req.user.id);
@@ -306,6 +323,20 @@ export class B2BController {
       return [];
     }
     return this.b2bService.getB2BKDSForRestaurant(restaurantId);
+  }
+
+  // Staff/Gerant: confirm payment at caisse before preparation
+  @Patch('commandes-groupees/:id/paiement')
+  @Roles(Role.GERANT, Role.STAFF, Role.ADMIN)
+  async confirmerPaiement(@Req() req: any, @Param('id') id: string) {
+    const restaurantId = req.user.restaurant?.id ?? '';
+    return this.b2bService.confirmerPaiementB2B(id, restaurantId);
+  }
+
+  // B2B client: cancel order before preparation
+  @Patch('commandes-groupees/:id/annuler')
+  async annulerCommande(@Req() req: RequestWithUser, @Param('id') id: string) {
+    return this.b2bService.annulerCommandeGroupeeByClient(id, req.user.id);
   }
 
   // Staff/Gerant: update B2B order status

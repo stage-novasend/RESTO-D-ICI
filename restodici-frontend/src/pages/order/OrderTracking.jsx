@@ -162,7 +162,7 @@ export default function OrderTrackingPage() {
       const wasP = order.estPaye;
       const amount = order.montantTotal;
       const mode = order.modePaiement;
-      await commandesService.updateStatut(id, 'ANNULEE');
+      await commandesService.annuler(id);
       setOrder((prev) => ({ ...prev, statut: 'ANNULEE' }));
       if (wasP) setRefundInfo({ amount, mode });
     } catch (err) {
@@ -304,13 +304,12 @@ export default function OrderTrackingPage() {
           </div>
         )}
 
-        {/* Cancel button — visible within 5 min of placing order */}
-        {['RECUE', 'CONFIRMEE'].includes(order.statut) &&
-          (Date.now() - new Date(order.createdAt).getTime()) < 5 * 60 * 1000 && (
+        {/* Cancel button — before preparation */}
+        {['RECUE', 'CONFIRMEE'].includes(order.statut) && (
           <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-red-700">Annuler la commande</p>
-              <p className="text-xs text-red-500 mt-0.5">Possible uniquement dans les 5 premières minutes</p>
+              <p className="text-xs text-red-500 mt-0.5">Possible avant le début de la préparation</p>
             </div>
             <button
               onClick={handleCancel}

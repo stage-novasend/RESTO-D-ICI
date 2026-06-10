@@ -3,32 +3,30 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 
-export type NovaSendProvider = 'WAVE' | 'NOVASEND' | 'ORANGE' | 'MOMO' | 'MOOV';
+// Providers internes — utilisés pour tracker le mode de paiement côté webhook
+// CARTE : réservé pour l'intégration carte bancaire NovaSend (à venir)
+export type NovaSendProvider = 'WAVE' | 'NOVASEND' | 'ORANGE' | 'MOMO' | 'MOOV' | 'CARTE';
 
 export interface InitiatePaymentParams {
-  reference: string;
-  amount: number;
+  reference:    string;
+  amount:       number;
   customerName: string;
-  telephone?: string;
-  otp?: string;
-  provider: NovaSendProvider;
+  telephone?:   string;
+  provider:     NovaSendProvider; // tracking interne uniquement, non envoyé à l'API
 }
 
 export interface InitiatePaymentResult {
-  sessionId: string;
+  sessionId:   string;
   paymentUrl?: string;
-  simulated: boolean;
+  simulated:   boolean;
 }
-
-// Fournisseurs NovaSend qui utilisent un lien/QR de paiement
-const LINK_PROVIDERS: NovaSendProvider[] = ['WAVE', 'NOVASEND'];
 
 @Injectable()
 export class NovaSendService {
   private readonly logger = new Logger(NovaSendService.name);
-  private readonly BASE = 'https://business.novasend.app/v1';
+  private readonly BASE   = 'https://business.novasend.app/v1';
 
-  // Mapping en mémoire référence → provider pour enrichir le webhook
+  // Mapping référence → provider pour enrichir le webhook entrant
   private readonly pendingMap = new Map<string, NovaSendProvider>();
 
   constructor(private config: ConfigService) {}
@@ -54,37 +52,34 @@ export class NovaSendService {
   }
 
   private async callApi(params: InitiatePaymentParams): Promise<InitiatePaymentResult> {
-    const apiKey    = this.config.get<string>('NOVASEND_API_KEY')!;
-    const apiSecret = this.config.get<string>('NOVASEND_API_SECRET')!;
+    const apiKey      = this.config.get<string>('NOVASEND_API_KEY')!;
+    const apiSecret   = this.config.get<string>('NOVASEND_API_SECRET')!;
     const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
-    const appUrl = this.config.get<string>('APP_URL') || 'http://localhost:5173';
+    const appUrl      = this.config.get<string>('APP_URL') || 'http://localhost:5173';
 
-    // NOVASEND (propre à la plateforme) utilise le provider WAVE en back-end
-    const apiProvider = params.provider === 'NOVASEND' ? 'WAVE' : params.provider;
-    const isLink = LINK_PROVIDERS.includes(params.provider);
-
+    // Endpoint documenté : POST /v1/payin/sessions
+    // L'opérateur est déduit automatiquement par NovaSend depuis le préfixe msisdn
     const payload: Record<string, any> = {
-      reference: params.reference,
+      reference:    params.reference,
+      amount:       params.amount,
       customerName: params.customerName,
-      payin: {
-        amount:   params.amount,
-        provider: apiProvider,
-        country:  'CI',
-        ...(params.telephone ? { msisdn: params.telephone } : {}),
-        ...(!isLink && params.otp ? { otp: params.otp } : {}),
-      },
+      country:      'CI',
       action: {
         successUrl: `${appUrl}/paiement/success`,
         failureUrl: `${appUrl}/paiement/failure`,
       },
     };
 
+    if (params.telephone) {
+      payload.msisdn = params.telephone;
+    }
+
     try {
-      const { data } = await axios.post(`${this.BASE}/direct/payin`, payload, {
+      const { data } = await axios.post(`${this.BASE}/payin/sessions`, payload, {
         headers: {
-          Authorization:      `Basic ${credentials}`,
+          Authorization:       `Basic ${credentials}`,
           'X-Idempotency-Key': randomUUID(),
-          'Content-Type':     'application/json',
+          'Content-Type':      'application/json',
         },
         timeout: 15_000,
       });
@@ -97,15 +92,11 @@ export class NovaSendService {
 
   private simulateInitiation(params: InitiatePaymentParams): InitiatePaymentResult {
     const sessionId = `sim_${randomUUID().slice(0, 8)}`;
-    const isLink = LINK_PROVIDERS.includes(params.provider);
-    const appUrl = this.config.get<string>('APP_URL') || 'http://localhost:5173';
+    const appUrl    = this.config.get<string>('APP_URL') || 'http://localhost:5173';
 
     return {
       sessionId,
-      // Lien factice pour afficher le QR en simulation
-      paymentUrl: isLink
-        ? `${appUrl}/paiement/preview?ref=${params.reference}&session=${sessionId}&montant=${params.amount}`
-        : undefined,
+      paymentUrl: `${appUrl}/paiement/preview?ref=${params.reference}&session=${sessionId}&montant=${params.amount}`,
       simulated: true,
     };
   }

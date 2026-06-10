@@ -226,8 +226,11 @@ function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDr
               onChange={e => setPaymentDraft({ ...draft, modePaiement: e.target.value })}
               style={{ flex: 1, borderRadius: 10, border: `1px solid ${BORDER}`, padding: '8px 10px', fontSize: 12, outline: 'none', background: '#fff', color: TEXT }}>
               <option value="ESPECES">Espèces</option>
-              <option value="CARTE">Carte</option>
-              <option value="MOBILE_MONEY">Mobile Money</option>
+              <option value="CARTE_BANCAIRE">Carte bancaire</option>
+              <option value="WAVE">Wave</option>
+              <option value="ORANGE_MONEY">Orange Money</option>
+              <option value="MTN_MONEY">MTN Money</option>
+              <option value="MOOV_MONEY">Moov Money</option>
             </select>
             <input
               type="number" min="0"

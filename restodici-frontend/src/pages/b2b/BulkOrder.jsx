@@ -150,12 +150,16 @@ export default function BulkOrder() {
     return () => clearTimeout(t);
   }, [search]);
 
+  const [timeRefreshed, setTimeRefreshed] = useState(false);
+
   // ── Auto-refresh delivery time in instant mode (handles slow form fill) ──
   useEffect(() => {
     if (mode !== 'instant') return;
     const id = setInterval(() => {
       const { minDate, minTime } = getMinDatetime();
       setLivraison(prev => ({ ...prev, dateLivraison: minDate, heureLivraison: minTime }));
+      setTimeRefreshed(true);
+      setTimeout(() => setTimeRefreshed(false), 3000);
     }, 30_000);
     return () => clearInterval(id);
   }, [mode]);
@@ -817,6 +821,11 @@ export default function BulkOrder() {
                         className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
                     </div>
                   </div>
+                )}
+                {timeRefreshed && mode === 'instant' && (
+                  <p className="text-[11px] mt-1.5 font-medium" style={{ color: '#B45309' }}>
+                    Heure de livraison mise à jour automatiquement.
+                  </p>
                 )}
                 <p className="text-[11px] text-[#6B7280] mt-2">
                   {mode === 'instant'
