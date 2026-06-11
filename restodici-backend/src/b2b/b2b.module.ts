@@ -16,6 +16,7 @@ import { CommandeGroupeeB2B } from './entities/commande-groupee-b2b.entity';
 import { LigneCommandeGroupeeB2B } from './entities/ligne-commande-groupee-b2b.entity';
 import { AuditLogB2B } from './entities/audit-log-b2b.entity';
 import { FactureMensuelleB2B } from './entities/facture-mensuelle-b2b.entity';
+import { PlanRepasB2B } from './entities/plan-repas-b2b.entity';
 import { Article } from '../menu/entities/article.entity';
 import { CommandesModule } from '../commandes/commandes.module';
 
@@ -33,6 +34,7 @@ import { CommandesModule } from '../commandes/commandes.module';
       LigneCommandeGroupeeB2B,
       AuditLogB2B,
       FactureMensuelleB2B,
+      PlanRepasB2B,
       Article,
     ]),
     AuthModule,

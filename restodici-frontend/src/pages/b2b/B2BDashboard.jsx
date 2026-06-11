@@ -923,7 +923,8 @@ export default function B2BDashboard() {
   const [editBudgetVal, setEditBudgetVal]   = useState('');
   const [editBudgetSaving, setEditBudgetSaving] = useState(false);
   const [editBudgetError, setEditBudgetError]   = useState('');
-  const [subs, setSubs]                     = useState(() => loadSubs(null));
+  const [subs, setSubs]                     = useState([]);
+  const [subSaving, setSubSaving]           = useState(false);
   const [showSubForm, setShowSubForm]       = useState(false);
   const [subForm, setSubForm]               = useState({ nom: '', frequence: 'HEBDO', nbRepas: 1, budgetRepas: '', notes: '' });
   const [subFormErr, setSubFormErr]         = useState('');
@@ -933,12 +934,13 @@ export default function B2BDashboard() {
     if (!silent) setLoading(true); else setRefreshing(true);
     setError('');
     try {
-      const [dashR, collabR, ordersR, menuR, factR] = await Promise.allSettled([
+      const [dashR, collabR, ordersR, menuR, factR, plansR] = await Promise.allSettled([
         b2bAPI.getDashboard(),
         b2bAPI.getCollaborateurs(),
         b2bAPI.getOrders(),
         commandesService.getMyOrders(),
         b2bAPI.getFacturesMensuelles(),
+        b2bAPI.getPlansRepas(),
       ]);
       const newDash    = dashR.status    === 'fulfilled' ? dashR.value.data           : dashboard;
       const newCollabs = collabR.status  === 'fulfilled' ? (collabR.value.data || []) : collabs;
@@ -948,12 +950,14 @@ export default function B2BDashboard() {
       const merged     = [...b2bOrds, ...menuOrds].sort(
         (a, b) => new Date(b.createdAt ?? 0) - new Date(a.createdAt ?? 0),
       );
-      const newFact    = factR.status === 'fulfilled' ? (factR.value.data || []) : factures;
+      const newFact    = factR.status  === 'fulfilled' ? (factR.value.data  || []) : factures;
+      const newPlans   = plansR.status === 'fulfilled' ? (plansR.value.data || []) : subs;
 
       if (dashR.status    === 'fulfilled') setDashboard(newDash);
       if (collabR.status  === 'fulfilled') setCollabs(newCollabs);
       setOrders(merged);
       if (factR.status    === 'fulfilled') setFactures(newFact);
+      if (plansR.status   === 'fulfilled') setSubs(newPlans);
 
       let newCompte = compte;
       try { const r = await b2bAPI.getCompte(); newCompte = r.data; setCompte(newCompte); } catch { /* no compte */ }
@@ -1022,9 +1026,6 @@ export default function B2BDashboard() {
     }
   }, [loading, compte, uid]);
 
-  useEffect(() => {
-    if (compte?.id) setSubs(loadSubs(compte.id));
-  }, [compte?.id]);
 
   // Détection retour Novasend (?payment=success|cancelled&factureId=...)
   useEffect(() => {
@@ -1066,38 +1067,41 @@ export default function B2BDashboard() {
     }
   };
 
-  const handleAddSub = () => {
+  const handleAddSub = async () => {
     if (!subForm.nom.trim()) { setSubFormErr('Nom du plan requis'); return; }
     if (!subForm.budgetRepas || Number(subForm.budgetRepas) <= 0) { setSubFormErr('Budget par repas requis'); return; }
-    const newSub = {
-      id: Date.now().toString(),
-      nom: subForm.nom.trim(),
-      frequence: subForm.frequence,
-      nbRepas: Number(subForm.nbRepas) || 1,
-      budgetRepas: Number(subForm.budgetRepas),
-      notes: subForm.notes.trim(),
-      actif: true,
-      createdAt: new Date().toISOString(),
-      prochaineLivraison: nextDelivery(subForm.frequence),
-    };
-    const updated = [...subs, newSub];
-    setSubs(updated);
-    saveSubs(compte?.id, updated);
-    setSubForm({ nom: '', frequence: 'HEBDO', nbRepas: 1, budgetRepas: '', notes: '' });
-    setShowSubForm(false);
+    setSubSaving(true);
     setSubFormErr('');
+    try {
+      const res = await b2bAPI.createPlanRepas({
+        nom: subForm.nom.trim(),
+        frequence: subForm.frequence,
+        nbRepas: Number(subForm.nbRepas) || 1,
+        budgetRepas: Number(subForm.budgetRepas),
+        notes: subForm.notes.trim() || undefined,
+      });
+      setSubs(prev => [...prev, res.data]);
+      setSubForm({ nom: '', frequence: 'HEBDO', nbRepas: 1, budgetRepas: '', notes: '' });
+      setShowSubForm(false);
+    } catch (err) {
+      setSubFormErr(err?.response?.data?.message || 'Erreur lors de la création');
+    } finally {
+      setSubSaving(false);
+    }
   };
 
-  const handleToggleSub = (id) => {
-    const updated = subs.map(s => s.id === id ? { ...s, actif: !s.actif } : s);
-    setSubs(updated);
-    saveSubs(compte?.id, updated);
+  const handleToggleSub = async (id) => {
+    try {
+      const res = await b2bAPI.togglePlanRepas(id);
+      setSubs(prev => prev.map(s => s.id === id ? res.data : s));
+    } catch { /* silently fail — UI stays unchanged */ }
   };
 
-  const handleDeleteSub = (id) => {
-    const updated = subs.filter(s => s.id !== id);
-    setSubs(updated);
-    saveSubs(compte?.id, updated);
+  const handleDeleteSub = async (id) => {
+    try {
+      await b2bAPI.deletePlanRepas(id);
+      setSubs(prev => prev.filter(s => s.id !== id));
+    } catch { /* silently fail */ }
   };
 
   const handleEditBudget = async (id) => {
@@ -2200,10 +2204,11 @@ export default function B2BDashboard() {
                       <p className="text-xs font-medium" style={{ color: RED }}>{subFormErr}</p>
                     </div>
                   )}
-                  <button onClick={handleAddSub}
+                  <button onClick={handleAddSub} disabled={subSaving}
                     className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
-                    style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})` }}>
-                    <CheckCircle className="w-4 h-4" /> Créer le plan
+                    style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, opacity: subSaving ? 0.7 : 1 }}>
+                    {subSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+                    {subSaving ? 'Enregistrement…' : 'Créer le plan'}
                   </button>
                 </div>
               )}

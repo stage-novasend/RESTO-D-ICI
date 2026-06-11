@@ -21,6 +21,7 @@ import { CommandeGroupeeB2B } from '../entities/commande-groupee-b2b.entity';
 import { LigneCommandeGroupeeB2B } from '../entities/ligne-commande-groupee-b2b.entity';
 import { AuditLogB2B, TypeAuditB2B } from '../entities/audit-log-b2b.entity';
 import { FactureMensuelleB2B } from '../entities/facture-mensuelle-b2b.entity';
+import { PlanRepasB2B, FrequencePlan } from '../entities/plan-repas-b2b.entity';
 import { Article } from '../../menu/entities/article.entity';
 import { CreateTeamDto } from '../dto/create-team.dto';
 import { AddTeamMemberDto } from '../dto/add-team-member.dto';
@@ -73,6 +74,8 @@ export class B2BService {
     private auditRepository: Repository<AuditLogB2B>,
     @InjectRepository(FactureMensuelleB2B)
     private factureRepository: Repository<FactureMensuelleB2B>,
+    @InjectRepository(PlanRepasB2B)
+    private planRepasRepository: Repository<PlanRepasB2B>,
     @InjectRepository(Article)
     private articleRepository: Repository<Article>,
     private commandesGateway: CommandesGateway,
@@ -2236,5 +2239,102 @@ export class B2BService {
     });
 
     return this.factureRepository.save(facture);
+  }
+
+  // ============================================================
+  // === PLANS REPAS RÉCURRENTS =================================
+  // ============================================================
+
+  private computeNextDelivery(frequence: FrequencePlan): Date {
+    const now = new Date();
+    if (frequence === 'HEBDO') {
+      const daysUntilMonday = (8 - now.getDay()) % 7 || 7;
+      const next = new Date(now);
+      next.setDate(now.getDate() + daysUntilMonday);
+      next.setHours(12, 0, 0, 0);
+      return next;
+    } else {
+      const next = new Date(now);
+      next.setMonth(now.getMonth() + 1, 1);
+      next.setHours(12, 0, 0, 0);
+      return next;
+    }
+  }
+
+  async getPlansRepas(userId: string): Promise<PlanRepasB2B[]> {
+    const compte = await this.compteB2BRepository.findOne({
+      where: { responsable: { id: userId } },
+    });
+    if (!compte) return [];
+    return this.planRepasRepository.find({
+      where: { compteId: compte.id },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  async createPlanRepas(
+    userId: string,
+    dto: { nom: string; frequence: string; nbRepas: number; budgetRepas: number; notes?: string },
+  ): Promise<PlanRepasB2B> {
+    const compte = await this.compteB2BRepository.findOne({
+      where: { responsable: { id: userId } },
+    });
+    if (!compte) throw new BadRequestException('Compte entreprise introuvable');
+
+    const plan = this.planRepasRepository.create({
+      compteId: compte.id,
+      nom: dto.nom,
+      frequence: (dto.frequence as FrequencePlan) || 'HEBDO',
+      nbRepas: dto.nbRepas || 1,
+      budgetRepas: dto.budgetRepas,
+      notes: dto.notes,
+      actif: true,
+      prochaineLivraison: this.computeNextDelivery((dto.frequence as FrequencePlan) || 'HEBDO'),
+    });
+    return this.planRepasRepository.save(plan);
+  }
+
+  async togglePlanRepas(id: string, userId: string): Promise<PlanRepasB2B> {
+    const compte = await this.compteB2BRepository.findOne({
+      where: { responsable: { id: userId } },
+    });
+    if (!compte) throw new NotFoundException('Compte introuvable');
+
+    const plan = await this.planRepasRepository.findOne({
+      where: { id, compteId: compte.id },
+    });
+    if (!plan) throw new NotFoundException('Plan repas introuvable');
+
+    plan.actif = !plan.actif;
+    if (plan.actif) {
+      plan.prochaineLivraison = this.computeNextDelivery(plan.frequence);
+    }
+    return this.planRepasRepository.save(plan);
+  }
+
+  async deletePlanRepas(id: string, userId: string): Promise<void> {
+    const compte = await this.compteB2BRepository.findOne({
+      where: { responsable: { id: userId } },
+    });
+    if (!compte) throw new NotFoundException('Compte introuvable');
+
+    const plan = await this.planRepasRepository.findOne({
+      where: { id, compteId: compte.id },
+    });
+    if (!plan) throw new NotFoundException('Plan repas introuvable');
+
+    await this.planRepasRepository.delete(id);
+  }
+
+  @Cron('0 7 * * *')
+  async rollerPlansRepas(): Promise<void> {
+    const now = new Date();
+    const plans = await this.planRepasRepository.find({ where: { actif: true } });
+    for (const plan of plans) {
+      if (plan.prochaineLivraison && plan.prochaineLivraison <= now) {
+        plan.prochaineLivraison = this.computeNextDelivery(plan.frequence);
+        await this.planRepasRepository.save(plan);
+      }
+    }
   }
 }

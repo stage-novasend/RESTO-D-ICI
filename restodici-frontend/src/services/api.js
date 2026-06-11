@@ -201,6 +201,12 @@ export const b2bAPI = {
   getInvitation:   (token)        => api.get(`/b2b/invitations/${token}`),
   acceptInvitation:(token, data)  => api.post(`/b2b/invitations/${token}/accept`, data),
 
+  // Plans repas récurrents
+  getPlansRepas:    ()              => api.get("/b2b/plans-repas"),
+  createPlanRepas:  (data)          => api.post("/b2b/plans-repas", data),
+  togglePlanRepas:  (id)            => api.patch(`/b2b/plans-repas/${id}/toggle`),
+  deletePlanRepas:  (id)            => api.delete(`/b2b/plans-repas/${id}`),
+
   // Audit & rapports
   getAuditLogs: () => api.get("/b2b/audit-logs"),
   getReports:   () => api.get("/b2b/reports"),

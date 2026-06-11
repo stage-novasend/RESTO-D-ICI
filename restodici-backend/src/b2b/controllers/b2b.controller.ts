@@ -383,4 +383,31 @@ export class B2BController {
       body.commentaire,
     );
   }
+
+  // ============================================================
+  // === PLANS REPAS RÉCURRENTS =================================
+  // ============================================================
+
+  @Get('plans-repas')
+  async getPlansRepas(@Req() req: RequestWithUser) {
+    return this.b2bService.getPlansRepas(req.user.id);
+  }
+
+  @Post('plans-repas')
+  async createPlanRepas(
+    @Req() req: RequestWithUser,
+    @Body() body: { nom: string; frequence: string; nbRepas: number; budgetRepas: number; notes?: string },
+  ) {
+    return this.b2bService.createPlanRepas(req.user.id, body);
+  }
+
+  @Patch('plans-repas/:id/toggle')
+  async togglePlanRepas(@Req() req: RequestWithUser, @Param('id') id: string) {
+    return this.b2bService.togglePlanRepas(id, req.user.id);
+  }
+
+  @Delete('plans-repas/:id')
+  async deletePlanRepas(@Req() req: RequestWithUser, @Param('id') id: string) {
+    return this.b2bService.deletePlanRepas(id, req.user.id);
+  }
 }
