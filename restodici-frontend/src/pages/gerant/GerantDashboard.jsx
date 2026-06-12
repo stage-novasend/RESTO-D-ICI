@@ -2275,9 +2275,15 @@ const PROMO_TYPES = [
   { value: 'FIXED',   label: 'Montant fixe (FCFA)', color: '#0F172A', bg: '#F1F5F9' },
 ];
 
+const VISIBILITE_OPTIONS = [
+  { value: 'TOUS',      label: 'Tout le monde',      desc: 'Visible par tous les clients',            color: '#059669', bg: '#F0FDF4' },
+  { value: 'CONNECTES', label: 'Clients connectés',  desc: 'Uniquement les utilisateurs connectés',   color: '#2563EB', bg: '#EFF6FF' },
+  { value: 'NOUVEAUX',  label: 'Nouveaux clients',   desc: 'Clients sans commande passée',            color: '#7C3AED', bg: '#F5F3FF' },
+];
+
 const emptyForm = {
   code: '', type: 'PERCENT', valeur: '', description: '',
-  minMontant: '', maxUses: '', expiresAt: '', actif: true,
+  minMontant: '', maxUses: '', expiresAt: '', actif: true, visibilite: 'TOUS',
 };
 
 function PromosTab({ restaurantId }) {
@@ -2316,6 +2322,7 @@ function PromosTab({ restaurantId }) {
       maxUses: p.maxUses != null ? String(p.maxUses) : '',
       expiresAt: p.expiresAt ? p.expiresAt.slice(0, 10) : '',
       actif: p.actif,
+      visibilite: p.visibilite || 'TOUS',
     });
     setModal(p);
   };
@@ -2333,6 +2340,7 @@ function PromosTab({ restaurantId }) {
       maxUses: form.maxUses ? parseInt(form.maxUses) : null,
       expiresAt: form.expiresAt || null,
       actif: form.actif,
+      visibilite: form.visibilite || 'TOUS',
     };
     try {
       if (modal === 'create') {
@@ -2443,7 +2451,7 @@ function PromosTab({ restaurantId }) {
             <table className="w-full text-sm">
               <thead className="bg-[#F8FAFC] border-b border-[#E2E8F0]">
                 <tr>
-                  {['Code', 'Type', 'Réduction', 'Min commande', 'Utilisations', 'Expire le', 'Statut', 'Actions'].map(h => (
+                  {['Code', 'Type', 'Réduction', 'Min commande', 'Utilisations', 'Expire le', 'Visibilité', 'Statut', 'Actions'].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-[10px] font-bold text-[#64748B] uppercase tracking-wide whitespace-nowrap">{h}</th>
                   ))}
                 </tr>
@@ -2486,6 +2494,17 @@ function PromosTab({ restaurantId }) {
                       {/* Expire */}
                       <td className="px-4 py-3 text-[#475569] whitespace-nowrap">
                         {p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('fr-FR') : <span className="text-[#9CA3AF]">Illimitée</span>}
+                      </td>
+                      {/* Visibilité */}
+                      <td className="px-4 py-3">
+                        {(() => {
+                          const opt = VISIBILITE_OPTIONS.find(o => o.value === (p.visibilite || 'TOUS')) || VISIBILITE_OPTIONS[0];
+                          return (
+                            <span className="rounded-full px-2.5 py-1 text-[10px] font-bold whitespace-nowrap" style={{ background: opt.bg, color: opt.color }}>
+                              {opt.label}
+                            </span>
+                          );
+                        })()}
                       </td>
                       {/* Statut */}
                       <td className="px-4 py-3">
@@ -2652,6 +2671,24 @@ function PromosTab({ restaurantId }) {
                   className="h-4 w-4 rounded" style={{ accentColor: '#FF8C00' }} />
                 <span className="text-sm font-semibold text-[#0F172A]">Code actif dès la création</span>
               </label>
+
+              {/* Visibilité */}
+              <div>
+                <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Qui peut voir ce code ?</label>
+                <div className="mt-1.5 flex flex-col gap-2">
+                  {VISIBILITE_OPTIONS.map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setForm(f => ({ ...f, visibilite: opt.value }))}
+                      className={`rounded-xl border px-3 py-2.5 text-left transition flex items-start gap-3 ${form.visibilite === opt.value ? 'border-[#FF8C00] bg-[#FFF0DF]' : 'border-[#E2E8F0] bg-[#F8FAFC] hover:border-[#FF8C00]'}`}>
+                      <div className="w-3 h-3 rounded-full mt-0.5 flex-shrink-0" style={{ background: opt.color, boxShadow: form.visibilite === opt.value ? `0 0 0 3px ${opt.color}22` : 'none' }} />
+                      <div>
+                        <p className="text-xs font-bold" style={{ color: form.visibilite === opt.value ? '#FF8C00' : '#0F172A' }}>{opt.label}</p>
+                        <p className="text-[10px] text-[#64748B] mt-0.5">{opt.desc}</p>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
 
               <button onClick={handleSave} disabled={saving}
                 className="w-full rounded-xl bg-[#FF8C00] py-3 text-sm font-bold text-white shadow-sm hover:bg-[#E07A00] disabled:opacity-60 transition flex items-center justify-center gap-2">

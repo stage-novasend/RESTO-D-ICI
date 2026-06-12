@@ -375,6 +375,90 @@ function CategoryTabs({ cats, active, onChange }) {
   );
 }
 
+/* ── Bandeau codes promo avec bouton copier ── */
+function PromoStrip({ promos }) {
+  const [copied, setCopied] = useState(null);
+
+  const copy = (code) => {
+    navigator.clipboard.writeText(code).then(() => {
+      setCopied(code);
+      setTimeout(() => setCopied(null), 1800);
+    });
+  };
+
+  const fmtRemise = (p) =>
+    p.type === 'PERCENT' ? `-${p.valeur}%` : `-${Number(p.valeur).toLocaleString('fr-FR')} FCFA`;
+
+  return (
+    <div style={{ marginBottom: 24 }}>
+      <p style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, color: C.accent, textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 10px' }}>
+        🎉 Codes promo disponibles
+      </p>
+      <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4, scrollbarWidth: 'none' }}>
+        {promos.map((p) => (
+          <div key={p.id} style={{
+            flexShrink: 0,
+            background: '#fff',
+            border: `1.5px dashed ${C.accent}`,
+            borderRadius: 14,
+            padding: '12px 16px',
+            minWidth: 220,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+          }}>
+            {/* Réduction */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontFamily: sans, fontSize: 20, fontWeight: 900, color: C.accent, lineHeight: 1 }}>
+                {fmtRemise(p)}
+              </span>
+              {p.minMontant > 0 && (
+                <span style={{ fontFamily: sans, fontSize: 10, color: C.muted, fontWeight: 500 }}>
+                  dès {Number(p.minMontant).toLocaleString('fr-FR')} FCFA
+                </span>
+              )}
+            </div>
+
+            {/* Description */}
+            {p.description && (
+              <p style={{ margin: 0, fontFamily: sans, fontSize: 12, color: C.text, lineHeight: 1.4, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+                {p.description}
+              </p>
+            )}
+
+            {/* Code + bouton copier */}
+            <button
+              onClick={() => copy(p.code)}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: copied === p.code ? '#F0FDF4' : C.aL,
+                border: `1px solid ${copied === p.code ? '#86EFAC' : C.accent}22`,
+                borderRadius: 8, padding: '7px 12px', cursor: 'pointer',
+                fontFamily: 'monospace', fontSize: 13, fontWeight: 900,
+                color: copied === p.code ? '#16A34A' : C.aD,
+                gap: 8, width: '100%',
+                transition: 'all 0.15s',
+              }}
+            >
+              <span>{p.code}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, opacity: 0.8 }}>
+                {copied === p.code ? '✓ Copié !' : 'Copier'}
+              </span>
+            </button>
+
+            {/* Expiration */}
+            {p.expiresAt && (
+              <p style={{ margin: 0, fontFamily: sans, fontSize: 10, color: C.muted }}>
+                Expire le {new Date(p.expiresAt).toLocaleDateString('fr-FR')}
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 /* ═══════════════════════════════════════════════════════════════
    MenuPage — Composant principal de la page catalogue
    ═══════════════════════════════════════════════════════════════ */
@@ -407,12 +491,11 @@ export default function MenuPage() {
       .then(r => setRestaurants(r.data || []))
       .catch(() => setError('Impossible de charger les restaurants.'))
       .finally(() => setLoading(false));
-    promosAPI.getActives().then(r => setPromos(r.data || [])).catch(() => {});
   }, []);
 
-  /* ── Chargement du menu quand l'utilisateur sélectionne un restaurant ── */
+  /* ── Chargement du menu + promos quand l'utilisateur sélectionne un restaurant ── */
   useEffect(() => {
-    if (!selectedResto) return;
+    if (!selectedResto) { setPromos([]); return; }
     setMenuLoading(true);
     setSearch('');
     setActiveCat('__all__');
@@ -420,8 +503,13 @@ export default function MenuPage() {
     Promise.all([
       menuAPI.getByRestaurant(selectedResto.id),
       menuAPI.getCategories({ restaurantId: selectedResto.id }),
+      promosAPI.getActives(selectedResto.id).catch(() => ({ data: [] })),
     ])
-      .then(([mr, cr]) => { setMenuData(mr.data || []); setCategories(cr.data || []); })
+      .then(([mr, cr, pr]) => {
+        setMenuData(mr.data || []);
+        setCategories(cr.data || []);
+        setPromos(pr.data || []);
+      })
       .catch(() => setError('Impossible de charger le menu.'))
       .finally(() => setMenuLoading(false));
   }, [selectedResto]);
@@ -755,16 +843,9 @@ export default function MenuPage() {
           {/* ── Zone des plats — centré avec padding responsive ── */}
           <div style={{ maxWidth: 1200, margin: '0 auto', padding: `24px clamp(12px,4vw,20px)` }}>
 
-            {/* Promos strip */}
+            {/* Promos strip — codes copiables */}
             {promos.length > 0 && (
-              <div style={{ display: 'flex', gap: 10, overflowX: 'auto', marginBottom: 24, paddingBottom: 4, scrollbarWidth: 'none' }}>
-                {promos.slice(0, 4).map((p, i) => (
-                  <div key={i} style={{ flexShrink: 0, background: `linear-gradient(135deg,${C.accent}18,${C.aL})`, border: `1px solid ${C.accent}22`, borderRadius: 14, padding: '10px 16px', minWidth: 200 }}>
-                    <p style={{ margin: '0 0 2px', fontFamily: sans, fontSize: 12, fontWeight: 800, color: C.accent }}>🎉 {p.titre || 'Promo'}</p>
-                    <p style={{ margin: 0, fontFamily: sans, fontSize: 11, color: C.text }}>{p.description || `Réduction de ${p.valeur || 10}%`}</p>
-                  </div>
-                ))}
-              </div>
+              <PromoStrip promos={promos} />
             )}
 
             {menuLoading ? (

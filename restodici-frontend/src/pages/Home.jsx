@@ -971,6 +971,17 @@ function NewsletterSection() {
 
 /* ─── Pied de page ─── */
 function Footer() {
+  const [nlEmail, setNlEmail] = useState("");
+  const [nlDone,  setNlDone]  = useState(false);
+
+  const handleNl = async (e) => {
+    e.preventDefault();
+    if (!nlEmail.trim()) return;
+    try { await newsletterAPI.subscribe(nlEmail.trim()); } catch { /* déjà inscrit ou erreur — on affiche quand même le succès */ }
+    setNlDone(true);
+    setNlEmail("");
+  };
+
   const COLS = [
     {
       title: "Produit",
@@ -1104,17 +1115,26 @@ function Footer() {
             <p style={{ fontFamily:serif,fontSize:18,color:"#fff",fontWeight:700,margin:"0 0 4px" }}>Restez informé</p>
             <p style={{ fontFamily:sans,fontSize:13,color:"rgba(255,255,255,0.35)",margin:0 }}>Offres exclusives, nouveaux restaurants, actualités Resto d'ici.</p>
           </div>
-          <div style={{ display:"flex",gap:0,borderRadius:11,overflow:"hidden",border:"1px solid rgba(255,255,255,0.12)",flexShrink:0 }}>
-            <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.05)",padding:"0 16px" }}>
-              <Mail size={14} color="rgba(255,255,255,0.3)" />
-              <input placeholder="votre@email.ci"
-                style={{ border:"none",outline:"none",background:"transparent",fontFamily:sans,fontSize:13,color:"#fff",width:200,padding:"12px 0" }}
-              />
+          {nlDone ? (
+            <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.25)",borderRadius:11,padding:"12px 20px",flexShrink:0 }}>
+              <Check size={14} color="#10B981" />
+              <span style={{ fontFamily:sans,fontSize:13,fontWeight:600,color:"#10B981" }}>Vous êtes inscrit !</span>
             </div>
-            <button style={{ background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",padding:"0 22px",whiteSpace:"nowrap" }}>
-              S'inscrire
-            </button>
-          </div>
+          ) : (
+            <form onSubmit={handleNl} style={{ display:"flex",gap:0,borderRadius:11,overflow:"hidden",border:"1px solid rgba(255,255,255,0.12)",flexShrink:0 }}>
+              <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.05)",padding:"0 16px" }}>
+                <Mail size={14} color="rgba(255,255,255,0.3)" />
+                <input
+                  type="email" required value={nlEmail} onChange={e => setNlEmail(e.target.value)}
+                  placeholder="votre@email.ci"
+                  style={{ border:"none",outline:"none",background:"transparent",fontFamily:sans,fontSize:13,color:"#fff",width:200,padding:"12px 0" }}
+                />
+              </div>
+              <button type="submit" style={{ background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",padding:"0 22px",whiteSpace:"nowrap" }}>
+                S'inscrire
+              </button>
+            </form>
+          )}
         </div>
 
         {/* ── Barre de bas ── */}
@@ -1180,6 +1200,7 @@ export default function Home() {
       <Testimonials />
       <DualOffer />
       <CTA />
+      <NewsletterSection />
       <Footer />
     </div>
   );
