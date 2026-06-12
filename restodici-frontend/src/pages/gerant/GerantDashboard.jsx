@@ -4295,7 +4295,7 @@ function OverviewTab({ restaurantId }) {
       }
 
       const order = recentOrders[0];
-      const response = await tresorerieAPI.getReceiptPdf(order.id);
+      const response = await commandesService.getReceiptPdf(order.id);
       const blob = new Blob([response.data], { type: "application/pdf" });
       downloadAndOpenBlob(blob, `recu-commande-${order?.numero || "today"}.pdf`);
     } catch (error) {

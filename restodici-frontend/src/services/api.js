@@ -241,9 +241,6 @@ export const tresorerieAPI = {
   getStats: (period = "day") =>
     api.get("/tresorerie/stats", { params: { period } }),
 
-  getReceiptPdf: (commandeId) =>
-    api.get(`/tresorerie/receipt/${commandeId}/pdf`, { responseType: "blob" }),
-
   exportSyscohada: (period = "monthly") =>
     api.get("/tresorerie/export/syscohada", { params: { period }, responseType: "blob" }),
 
