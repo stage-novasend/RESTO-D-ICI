@@ -468,3 +468,252 @@ export function buildFactureBlob(facture, compte) {
 
   return doc.output('blob');
 }
+
+// ═════════════════════════════════════════════════════════════════════════════
+// RAPPORT FINANCIER GÉRANT (mensuel / trimestriel / annuel)
+// ═════════════════════════════════════════════════════════════════════════════
+// summary = { totalRevenue, totalExpenses, netProfit, profitMargin }
+// expenses = [{ label, montant, date }]  (optionnel)
+export function buildFinanceReportBlob(period, restaurantName, summary = {}, expenses = []) {
+  const doc  = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W    = doc.internal.pageSize.getWidth();
+  const AMBER = [255, 140, 0];
+
+  const periodLabel = period === 'monthly'    ? 'Mensuel'
+                    : period === 'quarterly'  ? 'Trimestriel'
+                    : 'Annuel';
+
+  let y = addPageHeader(
+    doc,
+    'RAPPORT FINANCIER',
+    `${periodLabel} — ${restaurantName || "Resto d'ici"} — ${today()}`
+  );
+
+  // ── Synthèse en 4 KPI ─────────────────────────────────────────────────────
+  y = addSectionTitle(doc, '1. Synthèse financière', y);
+
+  const rev  = Number(summary.totalRevenue   || 0);
+  const exp  = Number(summary.totalExpenses  || 0);
+  const net  = Number(summary.netProfit      || rev - exp);
+  const marg = Number(summary.profitMargin   || (rev > 0 ? Math.round((net / rev) * 100) : 0));
+  const tva  = Math.round(rev * TVA_RATE);
+  const revHT = Math.round(rev / (1 + TVA_RATE));
+
+  autoTable(doc, {
+    startY: y,
+    head: [['Indicateur', 'Montant', 'Observation']],
+    body: [
+      ['Chiffre d\'affaires TTC', fcfa(rev), `Base HT : ${fcfa(revHT)}`],
+      ['TVA collectée (18 %)', fcfa(tva), 'Reversement DGI-CI'],
+      ['Dépenses totales', fcfa(exp), 'Charges d\'exploitation'],
+      [{ content: 'Profit net', styles: { fontStyle: 'bold' } }, { content: fcfa(net), styles: { fontStyle: 'bold', textColor: net >= 0 ? GREEN : RED } }, `Marge : ${marg} %`],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3, textColor: NAVY },
+    headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: LIGHT },
+    columnStyles: {
+      0: { cellWidth: 70 },
+      1: { cellWidth: 52, halign: 'right' },
+      2: { cellWidth: 60 },
+    },
+    margin: { left: 14, right: 14 },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Barre visuelle marge ───────────────────────────────────────────────────
+  const barW = W - 28;
+  doc.setFillColor(240, 242, 245);
+  doc.roundedRect(14, y, barW, 8, 2, 2, 'F');
+  const fillW = Math.max(0, Math.min(marg, 100)) / 100 * barW;
+  const fillColor = marg >= 20 ? GREEN : marg >= 10 ? AMBER : RED;
+  doc.setFillColor(...fillColor);
+  doc.roundedRect(14, y, fillW, 8, 2, 2, 'F');
+  doc.setTextColor(...NAVY);
+  doc.setFontSize(7);
+  doc.setFont('helvetica', 'bold');
+  doc.text(`Marge bénéficiaire : ${marg} %`, 17, y + 5.5);
+  y += 14;
+
+  // ── Tableau récapitulatif TVA / SYSCOHADA ──────────────────────────────────
+  y = addSectionTitle(doc, '2. Récapitulatif fiscal SYSCOHADA (DGI-CI)', y);
+
+  autoTable(doc, {
+    startY: y,
+    head: [['Désignation', 'Base HT', 'Taux', 'TVA', 'TTC']],
+    body: [
+      ['Ventes restauration', fcfa(revHT), '18 %', fcfa(tva), fcfa(rev)],
+      ['Charges déductibles', fcfa(exp), '—', '—', fcfa(exp)],
+      [
+        { content: 'RÉSULTAT NET', styles: { fontStyle: 'bold' } },
+        { content: fcfa(revHT - exp), styles: { fontStyle: 'bold', halign: 'right' } },
+        '—', '—',
+        { content: fcfa(net), styles: { fontStyle: 'bold', halign: 'right', textColor: net >= 0 ? GREEN : RED } },
+      ],
+    ],
+    theme: 'grid',
+    styles: { fontSize: 7.5, cellPadding: 3, textColor: NAVY },
+    headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5 },
+    alternateRowStyles: { fillColor: LIGHT },
+    columnStyles: {
+      0: { cellWidth: 64 },
+      1: { cellWidth: 30, halign: 'right' },
+      2: { cellWidth: 16, halign: 'center' },
+      3: { cellWidth: 28, halign: 'right' },
+      4: { cellWidth: 30, halign: 'right' },
+    },
+    margin: { left: 14, right: 14 },
+  });
+  y = doc.lastAutoTable.finalY + 8;
+
+  // ── Détail des dépenses (si fourni) ───────────────────────────────────────
+  if (expenses.length > 0) {
+    if (y > 200) { doc.addPage(); y = 20; }
+    y = addSectionTitle(doc, '3. Détail des dépenses d\'exploitation', y);
+
+    autoTable(doc, {
+      startY: y,
+      head: [['N°', 'Catégorie', 'Description', 'Date', 'Montant']],
+      body: expenses.slice(0, 30).map((e, i) => [
+        i + 1,
+        e.label || e.categorie || '—',
+        e.description || '—',
+        e.date ? new Date(e.date).toLocaleDateString('fr-FR') : '—',
+        fcfa(e.montant),
+      ]),
+      theme: 'grid',
+      styles: { fontSize: 7.5, cellPadding: 2.5, textColor: NAVY },
+      headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 7.5 },
+      alternateRowStyles: { fillColor: LIGHT },
+      columnStyles: {
+        0: { cellWidth: 10, halign: 'center' },
+        1: { cellWidth: 36 },
+        2: { cellWidth: 70 },
+        3: { cellWidth: 24, halign: 'center' },
+        4: { cellWidth: 28, halign: 'right' },
+      },
+      margin: { left: 14, right: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 8;
+  }
+
+  // ── Mention légale ─────────────────────────────────────────────────────────
+  if (y > 240) { doc.addPage(); y = 20; }
+  doc.setFontSize(6.5);
+  doc.setFont('helvetica', 'italic');
+  doc.setTextColor(...GRAY);
+  doc.text('Document conforme au Système Comptable OHADA (SYSCOHADA Révisé) — TVA 18% — CGI-CI Article 339.', 14, y);
+  doc.text(`Rétention légale minimale : 10 ans (Article 17 AUDCG-OHADA) — Généré le ${today()}.`, 14, y + 5);
+
+  // ── Footer sur toutes les pages ────────────────────────────────────────────
+  const total = doc.internal.getNumberOfPages();
+  for (let i = 1; i <= total; i++) {
+    doc.setPage(i);
+    addFooter(doc, i, total);
+  }
+
+  return doc.output('blob');
+}
+
+// =============================================================================
+// BON DE COMMANDE FOURNISSEUR
+// =============================================================================
+// { num, restaurantNom, restaurantAdresse, fournisseur, lignes, dateLivraison }
+// lignes = [{ article, quantite, prixUnit }]
+export function buildBonCommandeBlob({ num, restaurantNom, restaurantAdresse, fournisseur, lignes, dateLivraison }) {
+  const doc  = new jsPDF({ unit: 'mm', format: 'a4' });
+  const W    = doc.internal.pageSize.getWidth();
+
+  const totalHT = lignes.reduce((s, l) => s + (Number(l.prixUnit) || 0) * Number(l.quantite || 0), 0);
+  const livraisonStr = dateLivraison
+    ? new Date(dateLivraison).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
+    : 'A definir';
+
+  let y = addPageHeader(doc, 'BON DE COMMANDE', `Reference ${num} - Emis le ${today()}`);
+
+  y = addInfoBlock(
+    doc,
+    [
+      `ACHETEUR : ${restaurantNom}`,
+      restaurantAdresse || 'Abidjan, Cote d Ivoire',
+      `Livraison souhaitee : ${livraisonStr}`,
+    ],
+    [
+      `FOURNISSEUR : ${fournisseur.nom}`,
+      fournisseur.contact   ? `Contact : ${fournisseur.contact}`   : '',
+      fournisseur.telephone ? `Tel : ${fournisseur.telephone}`     : '',
+      fournisseur.email     ? `Email : ${fournisseur.email}`       : '',
+    ].filter(Boolean),
+    y
+  );
+
+  y = addSectionTitle(doc, 'Detail de la commande', y);
+
+  const tableRows = lignes.map((l, i) => {
+    const pu = Number(l.prixUnit) || 0;
+    const qt = Number(l.quantite) || 0;
+    return [
+      i + 1,
+      l.article || '-',
+      qt,
+      pu > 0 ? `${Math.round(pu).toLocaleString('fr-FR')} FCFA` : '-',
+      pu > 0 ? `${Math.round(pu * qt).toLocaleString('fr-FR')} FCFA` : '-',
+    ];
+  });
+
+  autoTable(doc, {
+    startY: y,
+    head: [['N', 'Designation', 'Quantite', 'Prix unitaire', 'Total HT']],
+    body: tableRows,
+    theme: 'grid',
+    styles: { fontSize: 8, cellPadding: 3, textColor: NAVY },
+    headStyles: { fillColor: NAVY, textColor: WHITE, fontStyle: 'bold', fontSize: 8 },
+    alternateRowStyles: { fillColor: LIGHT },
+    columnStyles: {
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 80 },
+      2: { cellWidth: 22, halign: 'center' },
+      3: { cellWidth: 34, halign: 'right' },
+      4: { cellWidth: 34, halign: 'right' },
+    },
+    margin: { left: 14, right: 14 },
+  });
+
+  y = doc.lastAutoTable.finalY + 4;
+
+  if (totalHT > 0) {
+    autoTable(doc, {
+      startY: y,
+      body: [
+        ['', '', '',
+          { content: 'TOTAL ESTIME (HT)', styles: { fontStyle: 'bold', halign: 'right' } },
+          { content: `${Math.round(totalHT).toLocaleString('fr-FR')} FCFA`, styles: { fontStyle: 'bold', halign: 'right', textColor: ORANGE } },
+        ],
+      ],
+      theme: 'plain',
+      styles: { fontSize: 9, cellPadding: 2 },
+      columnStyles: { 0: { cellWidth: 10 }, 1: { cellWidth: 80 }, 2: { cellWidth: 22 }, 3: { cellWidth: 34 }, 4: { cellWidth: 34 } },
+      margin: { left: 14, right: 14 },
+    });
+    y = doc.lastAutoTable.finalY + 6;
+  }
+
+  if (y > 230) { doc.addPage(); y = 20; }
+  y += 10;
+  const sigW = (W - 28 - 10) / 2;
+  [
+    { label: 'Responsable achat', x: 14 },
+    { label: 'Fournisseur (signature & cachet)', x: 14 + sigW + 10 },
+  ].forEach(({ label, x }) => {
+    doc.setDrawColor(...GRAY);
+    doc.setLineWidth(0.3);
+    doc.line(x, y + 20, x + sigW, y + 20);
+    doc.setFontSize(7);
+    doc.setTextColor(...GRAY);
+    doc.setFont('helvetica', 'normal');
+    doc.text(label, x, y + 25);
+  });
+
+  addFooter(doc, 1, 1);
+  return doc.output('blob');
+}

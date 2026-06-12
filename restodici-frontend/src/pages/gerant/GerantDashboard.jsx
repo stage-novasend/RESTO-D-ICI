@@ -90,6 +90,7 @@ import {
 } from "../../utils/formatters";
 import { FREQUENT_LOCATION_ZONES } from "../../components/maps/locationAssistantData";
 import OnboardingWizard from "../../components/wizard/OnboardingWizard";
+import { buildFinanceReportBlob, buildBonCommandeBlob } from "../../utils/syscohada-pdf";
 
 /* ── Badge compte à rebours B2B ── */
 function B2BCountdown({ deadlineAt, statut }) {
@@ -1398,43 +1399,16 @@ function StocksTab({ restaurantId }) {
       return;
     }
     const lignes = bonForm.lignes.filter(l => l.article && l.quantite);
-    const total = lignes.reduce((s, l) => s + (Number(l.prixUnit) || 0) * Number(l.quantite), 0);
-    const date = new Date().toLocaleDateString('fr-FR');
     const num = `BC-${Date.now().toString(36).toUpperCase().slice(-6)}`;
-    const html = `<!DOCTYPE html><html><head><meta charset="utf-8"><title>Bon de commande ${num}</title>
-<style>
-  body{font-family:Georgia,serif;color:#1A0C00;padding:40px;max-width:700px;margin:auto}
-  h1{font-size:22px;margin:0}
-  .meta{display:flex;justify-content:space-between;margin:24px 0;padding:16px;background:#FFF0DF;border-radius:8px}
-  .block{margin-bottom:20px}
-  .block h3{font-size:12px;text-transform:uppercase;letter-spacing:.12em;color:#6B7280;margin:0 0 6px}
-  table{width:100%;border-collapse:collapse;margin-top:16px}
-  th{background:#1A0C00;color:#fff;padding:8px 12px;text-align:left;font-size:12px}
-  td{padding:8px 12px;border-bottom:1px solid #E2D8CC;font-size:13px}
-  tr:last-child td{border-bottom:none}
-  .total{text-align:right;font-size:16px;font-weight:bold;margin-top:16px;color:#FF8C00}
-  .sig{display:flex;gap:40px;margin-top:48px}
-  .sig div{flex:1;border-top:1px solid #1A0C00;padding-top:8px;font-size:11px;color:#6B7280}
-  @media print{body{padding:20px}}
-</style></head><body>
-<h1>Bon de Commande</h1>
-<div class="meta">
-  <div><strong>${restaurantInfo?.nom || 'Restaurant'}</strong><br/>${restaurantInfo?.adresse || ''}</div>
-  <div style="text-align:right"><strong>N° ${num}</strong><br/>Date : ${date}<br/>Livraison souhaitée : ${bonForm.dateLivraison ? new Date(bonForm.dateLivraison).toLocaleDateString('fr-FR') : '—'}</div>
-</div>
-<div class="block"><h3>Fournisseur</h3><strong>${fournisseur.nom}</strong><br/>${fournisseur.contact || ''}${fournisseur.telephone ? ' · ' + fournisseur.telephone : ''}${fournisseur.email ? '<br/>' + fournisseur.email : ''}</div>
-<table>
-  <thead><tr><th>Article</th><th>Quantité</th><th>Prix unitaire (F CFA)</th><th>Total (F CFA)</th></tr></thead>
-  <tbody>${lignes.map(l => `<tr><td>${l.article}</td><td>${l.quantite}</td><td>${l.prixUnit ? Number(l.prixUnit).toLocaleString('fr-FR') : '—'}</td><td>${l.prixUnit ? (Number(l.prixUnit)*Number(l.quantite)).toLocaleString('fr-FR') : '—'}</td></tr>`).join('')}</tbody>
-</table>
-${total > 0 ? `<div class="total">Total estimé : ${total.toLocaleString('fr-FR')} F CFA</div>` : ''}
-<div class="sig"><div>Responsable achat<br/><br/></div><div>Fournisseur (signature & cachet)<br/><br/></div></div>
-</body></html>`;
-    const w = window.open('', '_blank', 'width=800,height=700');
-    w.document.write(html);
-    w.document.close();
-    w.focus();
-    setTimeout(() => w.print(), 500);
+    const blob = buildBonCommandeBlob({
+      num,
+      restaurantNom: restaurantInfo?.nom || 'Restaurant',
+      restaurantAdresse: restaurantInfo?.adresse || '',
+      fournisseur,
+      lignes,
+      dateLivraison: bonForm.dateLivraison,
+    });
+    downloadAndOpenBlob(blob, `bon-commande-${num}.pdf`);
   };
 
   const exportRapportCSV = () => {
@@ -1964,17 +1938,10 @@ function FinanceTab({ restaurantId }) {
     try {
       const r = await tresorerieAPI.generateReport(rp);
       const report = r.data || {};
-      const blob = buildSimplePdfBlob(`Rapport Financier — ${rp === 'monthly' ? 'Mensuel' : rp === 'quarterly' ? 'Trimestriel' : 'Annuel'}`, [
-        `Généré le : ${new Date().toLocaleString('fr-FR')}`,
-        `Période   : ${rp}`,
-        `─────────────────────────────────`,
-        `Revenus totaux  : ${formatFCFA(report.summary?.totalRevenue || 0)}`,
-        `Dépenses totales: ${formatFCFA(report.summary?.totalExpenses || 0)}`,
-        `Profit net      : ${formatFCFA(report.summary?.netProfit || 0)}`,
-        `Marge bénéficiaire : ${report.summary?.profitMargin || 0}%`,
-        `─────────────────────────────────`,
-        `Format SYSCOHADA — RG-29`,
-      ]);
+      // Utilise le générateur jsPDF SYSCOHADA au lieu du PDF texte brut
+      const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+      const rName = cachedUser?.restaurant?.nom || '';
+      const blob = buildFinanceReportBlob(rp, rName, report.summary || {}, expenses);
       downloadAndOpenBlob(blob, `rapport-${rp}-${new Date().toISOString().slice(0,10)}.pdf`);
     } catch { showToast('Erreur génération rapport', false); }
     finally { setDlState(s => ({ ...s, [`rp_${rp}`]: false })); }
@@ -3721,43 +3688,6 @@ function SettingsTab({ restaurantId, user }) {
   );
 }
 
-function sanitizePdfText(value) {
-  return String(value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[()\\]/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function buildSimplePdfBlob(title, lines) {
-  const safeLines = [title, ...lines].map((line) => sanitizePdfText(line));
-  const contentLines = safeLines
-    .map((line, index) => `BT /F1 12 Tf 50 ${760 - index * 18} Td (${line}) Tj ET`)
-    .join("\n");
-  const stream = `${contentLines}\n`;
-  const pdf = `%PDF-1.4
-1 0 obj << /Type /Catalog /Pages 2 0 R >> endobj
-2 0 obj << /Type /Pages /Kids [3 0 R] /Count 1 >> endobj
-3 0 obj << /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >> endobj
-4 0 obj << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> endobj
-5 0 obj << /Length ${stream.length} >> stream
-${stream}endstream endobj
-xref
-0 6
-0000000000 65535 f 
-0000000010 00000 n 
-0000000063 00000 n 
-0000000122 00000 n 
-0000000248 00000 n 
-0000000318 00000 n 
-trailer << /Size 6 /Root 1 0 R >>
-startxref
-${318 + stream.length}
-%%EOF`;
-
-  return new Blob([pdf], { type: "application/pdf" });
-}
 
 function downloadAndOpenBlob(blob, fileName) {
   const url = window.URL.createObjectURL(blob);
@@ -4376,10 +4306,10 @@ function OverviewTab({ restaurantId }) {
 
   const handleExportSyscohada = async () => {
     try {
+      // Télécharge le CSV SYSCOHADA natif (format comptable Sage/Ciel/DGI-CI)
       const response = await tresorerieAPI.exportSyscohada("monthly");
-      const csvText = await response.data.text();
-      const pdfBlob = buildSimplePdfBlob(`Export SYSCOHADA ${restaurantName}`, csvText.split("\n"));
-      downloadAndOpenBlob(pdfBlob, `syscohada-export-${restaurantId || "restaurant"}-monthly.pdf`);
+      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      downloadAndOpenBlob(blob, `SYSCOHADA-monthly-${new Date().toISOString().slice(0, 10)}.csv`);
     } catch (error) {
       console.error("Erreur export SYSCOHADA:", error);
       alert("Erreur lors de l'export SYSCOHADA. Veuillez réessayer.");

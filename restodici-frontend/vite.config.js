@@ -3,6 +3,22 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Mapping module → nom du chunk vendor (Rolldown attend une fonction)
+const VENDOR_CHUNKS = {
+  'react':            'vendor-react',
+  'react-dom':        'vendor-react',
+  'react-router-dom': 'vendor-react',
+  'lucide-react':     'vendor-lucide',
+  'chart.js':         'vendor-charts',
+  'react-chartjs-2':  'vendor-charts',
+  '@tanstack/react-query': 'vendor-query',
+  'axios':            'vendor-query',
+  'leaflet':          'vendor-leaflet',
+  'react-leaflet':    'vendor-leaflet',
+  'jspdf':            'vendor-pdf',
+  'jspdf-autotable':  'vendor-pdf',
+};
+
 export default defineConfig({
   plugins: [react()],
 
@@ -29,23 +45,13 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
-        // Sépare les grosses librairies tierces en chunks distincts
-        // → le navigateur peut les mettre en cache séparément entre les déploiements
-        manualChunks: {
-          // Cœur React (petit, très stable — long cache)
-          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
-
-          // Icônes Lucide (gros paquet, rarement mis à jour)
-          'vendor-lucide': ['lucide-react'],
-
-          // Graphiques Chart.js + wrapper React
-          'vendor-charts': ['chart.js', 'react-chartjs-2'],
-
-          // Requêtes serveur et formulaires
-          'vendor-query': ['@tanstack/react-query', 'axios'],
-
-          // Cartographie (Leaflet est très lourd, ~150kb)
-          'vendor-leaflet': ['leaflet', 'react-leaflet'],
+        // Rolldown / Vite 8 : manualChunks doit être une fonction (pas un objet)
+        manualChunks(id) {
+          for (const [pkg, chunk] of Object.entries(VENDOR_CHUNKS)) {
+            if (id.includes(`/node_modules/${pkg}/`) || id.includes(`/node_modules/${pkg}@`)) {
+              return chunk;
+            }
+          }
         },
       },
     },
