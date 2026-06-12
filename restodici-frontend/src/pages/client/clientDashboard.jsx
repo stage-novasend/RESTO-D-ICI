@@ -20,6 +20,7 @@ import { authAPI } from '../../services/api';
 import SecurityPanel from '../../components/security/SecurityPanel';
 import NotificationBell from '../../components/notifications/NotificationBell';
 import { formatFCFA } from '../../utils/formatters';
+import OnboardingWizard from '../../components/wizard/OnboardingWizard';
 
 import orangeMoneyLogo  from '../../assets/payments/orange-money.svg';
 import mtnMomoLogo      from '../../assets/payments/mtn-momo.svg';
@@ -1590,6 +1591,7 @@ export default function ClientDashboard() {
       {trackOrder   && <OrderTrackModal order={trackOrder}   onClose={() => setTrackOrder(null)}   onReceipt={o => { setTrackOrder(null); setReceiptOrder(o); }} />}
       {receiptOrder && <ReceiptModal    order={receiptOrder} onClose={() => setReceiptOrder(null)} onDownload={downloadPdf} />}
       {avisOrder    && <AvisModal       order={avisOrder}    onClose={() => setAvisOrder(null)}    onSubmit={handleAvisSubmit} />}
+      <OnboardingWizard />
     </div>
   );
 }

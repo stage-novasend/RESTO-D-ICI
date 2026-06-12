@@ -8,6 +8,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import Chart from 'chart.js/auto';
 import { adminAPI, authAPI, fournisseursAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
+import OnboardingWizard from '../../components/wizard/OnboardingWizard';
 import {
   Users, UtensilsCrossed, ScrollText, Download, Settings,
   RefreshCw, ToggleLeft, ToggleRight, Plus, X, Check,
@@ -2749,6 +2750,7 @@ export default function AdminDashboard() {
       {tab === 'commissions'    && <CommissionsTab />}
       {tab === 'exports'        && <ExportsTab />}
       {tab === 'config'         && <ConfigTab />}
+      <OnboardingWizard />
     </div>
   );
 }

@@ -308,22 +308,19 @@ function getCatEmoji(nom) {
   return "🍽️";
 }
 
-function CategoryStrip({ activeCatId, onCategorySelect, menuRef }) {
+function CategoryStrip({ activeCatId, onCategorySelect, menuRef, restaurants = [] }) {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
+    if (!restaurants.length) { setLoading(true); return; }
     let cancelled = false;
-    menuAPI.getRestaurants()
-      .then(({ data: rests }) => {
-        if (cancelled || !Array.isArray(rests) || !rests.length) return null;
-        return menuAPI.getCategories({ restaurantId: rests[0].id });
-      })
-      .then(res => { if (res && !cancelled) setCategories(Array.isArray(res.data) ? res.data : []); })
+    menuAPI.getCategories({ restaurantId: restaurants[0].id })
+      .then(res => { if (!cancelled) setCategories(Array.isArray(res.data) ? res.data : []); })
       .catch(() => {})
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
-  }, []);
+  }, [restaurants]);
 
   const handleClick = (catId) => {
     onCategorySelect(catId === activeCatId ? null : catId);
@@ -451,6 +448,7 @@ function MenuItem({ item, restaurant, idx }) {
   const [fav, setFav] = useState(false);
   const [hov, setHov] = useState(false);
   const tags = [item.categorie?.nom, restaurant?.typeRestaurant || restaurant?.type].filter(Boolean);
+  const rating = Number(restaurant?.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
   return (
     <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
       style={{ background:T.card,borderRadius:18,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}`,transition:"all .35s cubic-bezier(.22,1,.36,1)",cursor:"pointer",transform:hov?"translateY(-4px)":"none" }}>
@@ -472,11 +470,13 @@ function MenuItem({ item, restaurant, idx }) {
         >
           <Heart size={15} fill={fav?T.red:"none"} color={fav?T.red:T.muted} strokeWidth={2.5} />
         </button>
-        {/* Badge note */}
-        <div style={{ position:"absolute",top:12,left:12,background:"rgba(255,255,255,0.95)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:5,boxShadow:"0 2px 10px rgba(0,0,0,0.12)" }}>
-          <Star size={12} fill={T.yellow} color={T.yellow} />
-          <span style={{ fontFamily:sans,fontSize:12,fontWeight:700,color:T.dark }}>4.8</span>
-        </div>
+        {/* Badge note restaurant */}
+        {rating && (
+          <div style={{ position:"absolute",top:12,left:12,background:"rgba(255,255,255,0.95)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:5,boxShadow:"0 2px 10px rgba(0,0,0,0.12)" }}>
+            <Star size={12} fill={T.yellow} color={T.yellow} />
+            <span style={{ fontFamily:sans,fontSize:12,fontWeight:700,color:T.dark }}>{rating}</span>
+          </div>
+        )}
       </div>
 
       {/* Info */}
@@ -519,34 +519,28 @@ function MenuItem({ item, restaurant, idx }) {
 }
 
 /* ─── Section menu — plats populaires ─── */
-function MenuSection({ search, onSearch, sectionRef, activeCatId, onCategorySelect }) {
+function MenuSection({ search, onSearch, sectionRef, activeCatId, onCategorySelect, restaurants = [] }) {
   const [categories, setCategories] = useState([]);
   const [items, setItems]           = useState([]);
   const [restaurantMap, setRestaurantMap] = useState({});
   const [loading, setLoading]       = useState(true);
 
   useEffect(() => {
+    if (!restaurants.length) { setLoading(true); return; }
     let cancelled = false;
     const load = async () => {
       try {
-        const { data: rests } = await menuAPI.getRestaurants();
-        if (cancelled || !Array.isArray(rests) || !rests.length) { setLoading(false); return; }
-
-        /* Map id → restaurant */
         const rmap = {};
-        rests.forEach(r => { rmap[r.id] = r; });
+        restaurants.forEach(r => { rmap[r.id] = r; });
 
-        /* Catégories du 1er restaurant */
-        const catRes = await menuAPI.getCategories({ restaurantId: rests[0].id });
+        const catRes = await menuAPI.getCategories({ restaurantId: restaurants[0].id });
         if (!cancelled) setCategories(Array.isArray(catRes.data) ? catRes.data : []);
 
-        /* Plats des 3 premiers restaurants en parallèle */
-        const toFetch = rests.slice(0, 3);
         const allRaw = await Promise.all(
-          toFetch.map(r =>
+          restaurants.slice(0, 3).map(r =>
             menuAPI.getByRestaurant(r.id, { cible: "CLIENT" })
               .then(res => {
-                const raw = res.data;
+                const raw  = res.data;
                 const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
                 return plats.map(p => ({ ...p, _restaurantId: r.id }));
               })
@@ -564,7 +558,7 @@ function MenuSection({ search, onSearch, sectionRef, activeCatId, onCategorySele
     };
     load();
     return () => { cancelled = true; };
-  }, []);
+  }, [restaurants]);
 
   useEffect(() => {
     if (search && sectionRef?.current) {
@@ -692,9 +686,9 @@ function MenuSection({ search, onSearch, sectionRef, activeCatId, onCategorySele
 /* ─── Bandeaux des avantages ─── */
 function Banners() {
   const banners=[
-    { img:"photo-1568901346375-23c9450c58cd", title:"MOST POPULAR BURGER", sub:"À ne pas manquer", dark:true },
-    { img:"photo-1555939594-58d7cb561ad1", title:"MORE FUN, MORE TASTE", sub:"Essayez aujourd'hui", dark:false },
-    { img:"photo-1565299585323-38d6b0865b47", title:"FRESH & CHILL",       sub:"Fraîcheur garantie",  dark:false },
+    { img:"photo-1568901346375-23c9450c58cd", title:"Le plat du moment",   sub:"À ne pas manquer",  dark:true },
+    { img:"photo-1555939594-58d7cb561ad1", title:"Plaisir à partager",   sub:"Régalez-vous aujourd'hui", dark:false },
+    { img:"photo-1565299585323-38d6b0865b47", title:"Fraîcheur garantie",  sub:"Saison & terroir",  dark:false },
   ];
   return (
     <section style={{ background:T.bgAlt,padding:"120px 0",position:"relative",overflow:"hidden" }}>
@@ -1181,20 +1175,22 @@ function Footer() {
 export default function Home() {
   const [search, setSearch]           = useState("");
   const [activeCatId, setActiveCatId] = useState(null);
-  const [restaurantCount, setRestaurantCount] = useState(0);
+  const [restaurants, setRestaurants] = useState([]);
   const menuRef = useRef(null);
+
   useEffect(() => {
-    menuAPI.getRestaurants().then(res => setRestaurantCount((res.data || []).length)).catch(() => {});
+    menuAPI.getRestaurants().then(res => setRestaurants(Array.isArray(res.data) ? res.data : [])).catch(() => {});
   }, []);
+
   return (
     <div style={{ background:T.bg,minHeight:"100dvh",overflowX:"hidden" }}>
       <FontLoader />
       <Nav />
-      <Hero search={search} onSearch={setSearch} menuRef={menuRef} restaurantCount={restaurantCount} />
-      <CategoryStrip activeCatId={activeCatId} onCategorySelect={setActiveCatId} menuRef={menuRef} />
+      <Hero search={search} onSearch={setSearch} menuRef={menuRef} restaurantCount={restaurants.length} />
+      <CategoryStrip activeCatId={activeCatId} onCategorySelect={setActiveCatId} menuRef={menuRef} restaurants={restaurants} />
       <HowItWorks />
       <Marquee />
-      <MenuSection search={search} onSearch={setSearch} sectionRef={menuRef} activeCatId={activeCatId} onCategorySelect={setActiveCatId} />
+      <MenuSection search={search} onSearch={setSearch} sectionRef={menuRef} activeCatId={activeCatId} onCategorySelect={setActiveCatId} restaurants={restaurants} />
       <Banners />
       <Stats />
       <Testimonials />
