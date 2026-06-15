@@ -103,9 +103,13 @@ function ReceiptModal({ order, onClose, onDownload }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+    <>
+      {/* Overlay */}
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 999, animation: 'fadeIn 0.2s ease' }} />
+      {/* Panel */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 16, pointerEvents: 'none' }}>
+      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
+        style={{ animation: 'slideInUp 0.28s cubic-bezier(0.32,0.72,0,1)', pointerEvents: 'auto' }}>
         <div className="px-6 py-4 flex items-center justify-between" style={{ background: ACCENT }}>
           <div>
             <h3 className="text-white font-extrabold flex items-center gap-2">
@@ -131,7 +135,7 @@ function ReceiptModal({ order, onClose, onDownload }) {
             ))}
             <hr style={{ borderTop: '1px dashed #ccc', margin: '8px 0' }} />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', color: ACCENT }}>
-              <span>Total</span><span>{formatFCFA(total)} FCFA</span>
+              <span>Total</span><span>{formatFCFA(total)}</span>
             </div>
           </div>
         </div>
@@ -148,7 +152,8 @@ function ReceiptModal({ order, onClose, onDownload }) {
           </button>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
@@ -165,9 +170,11 @@ function AvisModal({ order, onClose, onSubmit }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+    <>
+      {/* Overlay */}
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 999, animation: 'fadeIn 0.2s ease' }} />
+      {/* Panel */}
+      <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, maxHeight: '92vh', background: '#fff', borderRadius: '20px 20px 0 0', zIndex: 1000, animation: 'slideInUp 0.28s cubic-bezier(0.32,0.72,0,1)', overflowY: 'auto' }}>
         <div className="px-6 py-4 flex items-center justify-between" style={{ background: ACCENT }}>
           <div>
             <h3 className="text-white font-extrabold">Laisser un avis</h3>
@@ -208,7 +215,7 @@ function AvisModal({ order, onClose, onSubmit }) {
           </button>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -365,9 +372,11 @@ function OrderTrackModal({ order, onClose, onReceipt }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden">
+    <>
+      {/* Overlay */}
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 999, animation: 'fadeIn 0.2s ease' }} />
+      {/* Panel */}
+      <div style={{ position: 'fixed', right: 0, top: 0, bottom: 0, width: 420, maxWidth: '95vw', background: '#fff', zIndex: 1000, animation: 'slideInRight 0.28s cubic-bezier(0.32,0.72,0,1)', overflowY: 'auto' }}>
         <div className="px-6 py-4 flex items-center justify-between" style={{ background: ACCENT }}>
           <div>
             <h3 className="text-white font-extrabold">Suivi commande</h3>
@@ -420,7 +429,7 @@ function OrderTrackModal({ order, onClose, onReceipt }) {
             ))}
             <div className="flex justify-between font-bold text-[#1A1A1A] pt-2 border-t" style={{ borderColor: BORDER }}>
               <span>Total</span>
-              <span style={{ color: ACCENT }}>{formatFCFA(order.montantTotal || 0)} FCFA</span>
+              <span style={{ color: ACCENT }}>{formatFCFA(order.montantTotal || 0)}</span>
             </div>
           </div>
           {(order.estPaye || order.statut === 'LIVREE') && (
@@ -432,7 +441,7 @@ function OrderTrackModal({ order, onClose, onReceipt }) {
           )}
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -488,7 +497,7 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
           {[
             { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length, icon: Clock },
             { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length,     icon: CheckCircle },
-            { label: 'Dépensé',  value: loadingOrders ? '—' : `${formatFCFA(totalSpent)}`, sub: 'CFA', icon: Wallet },
+            { label: 'Dépensé',  value: loadingOrders ? '—' : `${formatFCFA(totalSpent)}`, icon: Wallet },
           ].map((s, i) => (
             <div key={i} className="px-4 sm:px-6 py-4 flex flex-col items-center text-center"
               style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
@@ -515,8 +524,8 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
           },
           {
             label: 'Total dépensé',
-            value: loadingOrders ? '—' : `${formatFCFA(totalSpent)} CFA`,
-            sub: avgOrder > 0 ? `Moy. ${formatFCFA(avgOrder)} CFA` : 'Aucun achat encore',
+            value: loadingOrders ? '—' : `${formatFCFA(totalSpent)}`,
+            sub: avgOrder > 0 ? `Moy. ${formatFCFA(avgOrder)}` : 'Aucun achat encore',
             icon: TrendingUp, iconBg: '#ECFDF5', iconColor: '#10B981',
             accent: '#10B981',
           },
@@ -709,7 +718,7 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-bold text-[#111827]">#{delivered[0].numero}</p>
-                  <p className="text-xs text-[#9CA3AF]">{formatFCFA(delivered[0].montantTotal || 0)} CFA</p>
+                  <p className="text-xs text-[#9CA3AF]">{formatFCFA(delivered[0].montantTotal || 0)}</p>
                 </div>
                 <button onClick={() => setReceiptOrder(delivered[0])}
                   className="p-2 rounded-xl" style={{ background: ACCENT_LIGHT }}>
@@ -799,7 +808,7 @@ function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfi
       <div className="grid grid-cols-3 gap-4">
         {[
           { label: 'Commandes', value: orders.length, icon: ShoppingBag, color: ACCENT, bg: ACCENT_LIGHT },
-          { label: 'Dépenses',  value: `${formatFCFA(totalSpent)} CFA`, icon: Wallet, color: '#10B981', bg: '#ECFDF5' },
+          { label: 'Dépenses',  value: `${formatFCFA(totalSpent)}`, icon: Wallet, color: '#10B981', bg: '#ECFDF5' },
           { label: 'Livrées',   value: delivered.length, icon: CheckCircle, color: '#3B82F6', bg: '#EFF6FF' },
         ].map((s, i) => (
           <div key={i} className="bg-white rounded-2xl border p-4 text-center" style={{ borderColor: BORDER }}>
@@ -1269,6 +1278,12 @@ export default function ClientDashboard() {
   const { user } = useAuth();
   const navigate  = useNavigate();
   const [tab, setTab] = useState('overview');
+  const [tabOverlay, setTabOverlay] = useState(false);
+  const changeTab = (key) => {
+    setTabOverlay(true);
+    setTimeout(() => setTabOverlay(false), 180);
+    setTab(key);
+  };
   const [orders, setOrders] = useState(() => loadCachedOrders(user?.id));
   const [loadingOrders, setLoadingOrders]   = useState(true);
   const [refreshing, setRefreshing]         = useState(false);
@@ -1400,7 +1415,7 @@ export default function ClientDashboard() {
   const delivered     = orders.filter(o => o.statut === 'LIVREE');
   const cancelled     = orders.filter(o => o.statut === 'ANNULEE');
   const pendingAvis   = delivered.filter(o => canAvis(o));
-  const totalSpent    = delivered.reduce((s, o) => s + (o.montantTotal || 0), 0);
+  const totalSpent    = delivered.reduce((s, o) => s + (Number(o.montantTotal) || 0), 0);
   const avgOrder      = delivered.length > 0 ? Math.round(totalSpent / delivered.length) : 0;
 
   const filteredOrders = orderFilter === 'actives'  ? activeOrders
@@ -1448,7 +1463,7 @@ export default function ClientDashboard() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-0 pb-0 overflow-x-auto"
           style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
           {TABS.map(t => (
-            <button key={t.key} onClick={() => setTab(t.key)}
+            <button key={t.key} onClick={() => changeTab(t.key)}
               className="flex items-center gap-1.5 px-4 py-3 text-sm font-semibold whitespace-nowrap transition shrink-0 border-b-2"
               style={{
                 borderBottomColor: tab === t.key ? ACCENT : 'transparent',
@@ -1483,12 +1498,13 @@ export default function ClientDashboard() {
           </div>
         )}
 
+        <div key={tab} style={{ animation: 'fadeUp 0.22s ease both' }}>
         {tab === 'overview' && (
           <OverviewTab
             user={user} orders={orders} activeOrders={activeOrders}
             delivered={delivered} cancelled={cancelled} pendingAvis={pendingAvis}
             totalSpent={totalSpent} avgOrder={avgOrder} loadingOrders={loadingOrders}
-            canAvis={canAvis} setTab={setTab}
+            canAvis={canAvis} setTab={changeTab}
             setTrackOrder={setTrackOrder} setReceiptOrder={setReceiptOrder} setAvisOrder={setAvisOrder}
             downloadPdf={downloadPdf} handleReorder={handleReorder}
           />
@@ -1588,7 +1604,17 @@ export default function ClientDashboard() {
         )}
 
         {tab === 'security' && <SecurityTab user={user} />}
+        </div>
       </div>
+
+      {tabOverlay && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 5,
+          background: 'rgba(15,23,42,0.18)',
+          pointerEvents: 'none',
+          animation: 'fadeIn 0.15s ease',
+        }} />
+      )}
 
       {/* ── Modals ──────────────────────────────────────────────────── */}
       {trackOrder   && <OrderTrackModal order={trackOrder}   onClose={() => setTrackOrder(null)}   onReceipt={o => { setTrackOrder(null); setReceiptOrder(o); }} />}

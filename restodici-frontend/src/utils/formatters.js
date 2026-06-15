@@ -7,13 +7,14 @@
  * @returns {string} Montant formaté ex: "3 500 FCFA"
  */
 export const formatFCFA = (amount) => {
-  if (!amount && amount !== 0) return '-';
+  const n = Number(amount);
+  if (isNaN(n)) return '—';
   return new Intl.NumberFormat('fr-CI', {
     style: 'currency',
     currency: 'XOF',
     maximumFractionDigits: 0,
-    minimumFractionDigits: 0
-  }).format(amount).replace('XOF', 'FCFA');
+    minimumFractionDigits: 0,
+  }).format(n).replace('XOF', 'FCFA').trim();
 };
 
 /**

@@ -78,6 +78,7 @@ import {
   promosAPI,
   commandesExtraAPI,
   fournisseursAPI,
+  retraitAPI,
 } from "../../services/api";
 import { getArticleImage } from "../../utils/articleImage";
 import { createCommandesSocket } from "../../services/commandes.service";
@@ -4646,6 +4647,220 @@ function OverviewTab({ restaurantId }) {
 }
 
 
+/* ══════════════════ Module Retrait de gains ══════════════════ */
+function RetraitTab({ restaurantId }) {
+  const [demandes, setDemandes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [form, setForm] = useState({ montant: '', provider: 'WAVE', numeroMobileMoney: '' });
+  const [formError, setFormError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Solde estimé depuis le rapport mensuel
+  const [soldeEstime, setSoldeEstime] = useState(null);
+
+  useEffect(() => {
+    tresorerieAPI.generateReport('monthly')
+      .then((r) => setSoldeEstime(r.data?.summary?.totalRevenue ?? null))
+      .catch(() => {});
+  }, []);
+
+  const loadDemandes = async () => {
+    try {
+      setLoading(true);
+      const r = await retraitAPI.getMesDemandes();
+      setDemandes(r.data || []);
+    } catch {
+      // silencieux si le backend n'est pas encore disponible
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => { loadDemandes(); }, []);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setFormError('');
+    setSuccessMsg('');
+    const montant = parseFloat(form.montant);
+    if (!montant || montant <= 0) { setFormError('Le montant doit être supérieur à 0'); return; }
+    if (!form.numeroMobileMoney.trim()) { setFormError('Numéro Mobile Money requis'); return; }
+    setSubmitting(true);
+    try {
+      await retraitAPI.creerDemande({
+        montant,
+        provider: form.provider,
+        numeroMobileMoney: form.numeroMobileMoney.trim(),
+        restaurantId,
+      });
+      setSuccessMsg('Demande de retrait envoyée. Elle sera traitée par l\'administrateur.');
+      setForm({ montant: '', provider: 'WAVE', numeroMobileMoney: '' });
+      await loadDemandes();
+    } catch (err) {
+      setFormError(err?.response?.data?.message || 'Erreur lors de l\'envoi de la demande');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const statutBadge = (statut) => {
+    if (statut === 'APPROVED') return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">Approuvée</span>;
+    if (statut === 'REJECTED') return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Rejetée</span>;
+    return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">En attente</span>;
+  };
+
+  const providerLabel = (p) => ({ WAVE: 'Wave', ORANGE_MONEY: 'Orange Money', MTN_MONEY: 'MTN Money' }[p] || p);
+
+  return (
+    <div className="space-y-6">
+      {/* Solde estimé */}
+      <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <div className="inline-flex items-center gap-2 rounded-full bg-[#FFF0DF] px-3 py-1 text-xs font-medium text-[#FF8C00] mb-2">
+              <Wallet className="h-3.5 w-3.5" />
+              Retrait de gains
+            </div>
+            <h3 className="text-xl font-bold text-[#1C1917]">Demander un retrait</h3>
+            <p className="mt-1 text-sm text-[#78716C]">Soumettez une demande de virement vers votre compte Mobile Money.</p>
+          </div>
+          {soldeEstime !== null && (
+            <div className="rounded-2xl bg-[#FFF0DF] px-5 py-3 text-right">
+              <p className="text-xs text-[#78716C] font-medium">CA estimé ce mois</p>
+              <p className="text-2xl font-extrabold text-[#FF8C00]">
+                {Number(soldeEstime).toLocaleString('fr-FR')} FCFA
+              </p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Formulaire */}
+      <section className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
+        <h4 className="text-base font-bold text-[#1C1917] mb-4">Nouvelle demande</h4>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            {/* Montant */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#0F172A]">Montant (FCFA) *</label>
+              <input
+                type="number"
+                min="1"
+                step="1"
+                value={form.montant}
+                onChange={(e) => setForm((f) => ({ ...f, montant: e.target.value }))}
+                placeholder="Ex : 50 000"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
+              />
+            </div>
+            {/* Provider */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#0F172A]">Opérateur *</label>
+              <select
+                value={form.provider}
+                onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
+              >
+                <option value="WAVE">Wave</option>
+                <option value="ORANGE_MONEY">Orange Money</option>
+                <option value="MTN_MONEY">MTN Money</option>
+              </select>
+            </div>
+            {/* Numéro */}
+            <div>
+              <label className="mb-1 block text-sm font-semibold text-[#0F172A]">Numéro Mobile Money *</label>
+              <input
+                type="tel"
+                value={form.numeroMobileMoney}
+                onChange={(e) => setForm((f) => ({ ...f, numeroMobileMoney: e.target.value }))}
+                placeholder="Ex : +225 07 00 00 00 00"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
+              />
+            </div>
+          </div>
+
+          {formError && (
+            <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 border border-red-200">{formError}</p>
+          )}
+          {successMsg && (
+            <p className="rounded-xl bg-green-50 px-4 py-2.5 text-sm text-green-700 border border-green-200">{successMsg}</p>
+          )}
+
+          <button
+            type="submit"
+            disabled={submitting}
+            className="inline-flex items-center gap-2 rounded-2xl bg-[#FF8C00] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#E07A00] disabled:opacity-60"
+          >
+            {submitting ? (
+              <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+            ) : (
+              <DollarSign className="h-4 w-4" />
+            )}
+            {submitting ? 'Envoi en cours…' : 'Soumettre la demande'}
+          </button>
+        </form>
+      </section>
+
+      {/* Historique */}
+      <section className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <h4 className="text-base font-bold text-[#1C1917]">Historique des demandes</h4>
+          <button
+            onClick={loadDemandes}
+            className="flex items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#FFF0DF] transition"
+          >
+            <RefreshCcw className="h-3.5 w-3.5" />
+            Actualiser
+          </button>
+        </div>
+
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <div className="h-8 w-8 rounded-full border-4 border-[#FF8C00] border-t-transparent animate-spin" />
+          </div>
+        ) : demandes.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-10 rounded-2xl bg-[#FFF7ED]">
+            <Wallet className="h-10 w-10 mb-2" style={{ color: '#FF8C00', opacity: 0.4 }} />
+            <p className="text-sm font-medium text-[#0F172A]">Aucune demande de retrait</p>
+            <p className="text-xs mt-1 text-[#94A3B8]">Vos demandes apparaîtront ici après soumission.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-[#F1F5F9]">
+                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Date</th>
+                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Montant</th>
+                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Opérateur</th>
+                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Numéro</th>
+                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B]">Statut</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F8FAFC]">
+                {demandes.map((d) => (
+                  <tr key={d.id} className="hover:bg-[#FFF7ED] transition-colors">
+                    <td className="py-3 pr-4 text-[#0F172A] whitespace-nowrap">{new Date(d.createdAt).toLocaleDateString('fr-FR')}</td>
+                    <td className="py-3 pr-4 font-bold text-[#FF8C00] whitespace-nowrap">{Number(d.montant).toLocaleString('fr-FR')} FCFA</td>
+                    <td className="py-3 pr-4 text-[#0F172A]">{providerLabel(d.provider)}</td>
+                    <td className="py-3 pr-4 text-[#0F172A] font-mono text-xs">{d.numeroMobileMoney}</td>
+                    <td className="py-3">
+                      {statutBadge(d.statut)}
+                      {d.statut === 'REJECTED' && d.motifRejet && (
+                        <p className="mt-1 text-xs text-red-600 italic">Motif : {d.motifRejet}</p>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
 /* ═══ GerantDashboard — Composant principal ═══ */
 export default function GerantDashboard({ restaurantId, token }) {
   const location = useLocation();
@@ -4654,6 +4869,7 @@ export default function GerantDashboard({ restaurantId, token }) {
   const cachedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const user = cachedUser?.user || cachedUser;
   const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode") === "true");
+  const [tabOverlay, setTabOverlay] = useState(false);
 
   useEffect(() => {
     const syncDarkMode = () => setDarkMode(localStorage.getItem("darkMode") === "true");
@@ -4664,6 +4880,12 @@ export default function GerantDashboard({ restaurantId, token }) {
       window.removeEventListener("gerant-dark-mode-changed", syncDarkMode);
     };
   }, []);
+
+  useEffect(() => {
+    setTabOverlay(true);
+    const t = setTimeout(() => setTabOverlay(false), 180);
+    return () => clearTimeout(t);
+  }, [activeTab]);
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -4681,6 +4903,8 @@ export default function GerantDashboard({ restaurantId, token }) {
         return <SettingsTab restaurantId={restaurantId} user={user} />;
       case "history":
         return <HistoryTab restaurantId={restaurantId} />;
+      case "retrait":
+        return <RetraitTab restaurantId={restaurantId} />;
       case "overview":
       default:
         return <OverviewTab restaurantId={restaurantId} />;
@@ -4688,7 +4912,15 @@ export default function GerantDashboard({ restaurantId, token }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-6xl mx-auto" style={{ position: 'relative' }}>
+      {tabOverlay && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 5,
+          background: 'rgba(15,23,42,0.18)',
+          pointerEvents: 'none',
+          animation: 'fadeIn 0.15s ease',
+        }} />
+      )}
       <OnboardingWizard />
       <div
         className={`rounded-3xl p-6 shadow-sm ${
@@ -4697,7 +4929,9 @@ export default function GerantDashboard({ restaurantId, token }) {
             : "bg-white border border-[rgba(0,0,0,0.05)]"
         }`}
       >
-        {renderTabContent()}
+        <div key={activeTab} style={{ animation: 'fadeUp 0.22s ease both' }}>
+          {renderTabContent()}
+        </div>
       </div>
     </div>
   );
