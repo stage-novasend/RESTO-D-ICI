@@ -56,9 +56,13 @@ const PAYMENT_TYPES = [
   { id: 'CARTE_BANCAIRE', label: 'Carte Bancaire',  placeholder: 'XXXX XXXX XXXX XXXX', logo: carteBancaireLogo, color: '#1A1A2E', bg: '#F0F0F5' },
 ];
 
-function pmKey(uid)          { return uid ? `saved_pm:${uid}` : 'saved_pm'; }
-function loadSavedPM(uid)    { try { return JSON.parse(localStorage.getItem(pmKey(uid)) || '[]'); } catch { return []; } }
-function savePM(uid, list)   { localStorage.setItem(pmKey(uid), JSON.stringify(list)); }
+function pmKey(uid)              { return uid ? `saved_pm:${uid}` : 'saved_pm'; }
+function loadSavedPM(uid)        { try { return JSON.parse(localStorage.getItem(pmKey(uid)) || '[]'); } catch { return []; } }
+function savePM(uid, list)       { localStorage.setItem(pmKey(uid), JSON.stringify(list)); }
+
+function addrKey(uid)            { return uid ? `saved_addresses:${uid}` : 'saved_addresses'; }
+function loadSavedAddresses(uid) { try { return JSON.parse(localStorage.getItem(addrKey(uid)) || '[]'); } catch { return []; } }
+function saveAddresses(uid, list){ localStorage.setItem(addrKey(uid), JSON.stringify(list)); }
 
 function ordersKey(uid)   { return uid ? `orders:${uid}` : 'orders'; }
 function avisKey(uid)     { return uid ? `avis_given:${uid}` : 'avis_given'; }
@@ -736,7 +740,7 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
 /* ════════════════════════════════════════════════════════════════
    ──  PROFILE TAB  ───────────────────────────────────────────────
    ════════════════════════════════════════════════════════════════ */
-function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfileSave, orders, totalSpent, delivered }) {
+function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfileSave, orders, totalSpent, delivered, savedAddresses, addrForm, setAddrForm, addAddress, removeAddress }) {
   const initials = ((user?.prenom || user?.nom || 'U').charAt(0)).toUpperCase();
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -927,6 +931,60 @@ function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfi
             <p className="text-xs text-[#9CA3AF]">Vos données sont sécurisées</p>
           </div>
         </form>
+      </div>
+
+      {/* ── Adresses de livraison ──────────────────────────────────── */}
+      <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
+        <div className="px-6 py-5 border-b flex items-center gap-3" style={{ borderColor: BORDER }}>
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: ACCENT_LIGHT }}>
+            <MapPin className="w-4 h-4" style={{ color: ACCENT }} />
+          </div>
+          <div>
+            <h3 className="text-sm font-extrabold text-[#111827]">Adresses de livraison</h3>
+            <p className="text-xs text-[#9CA3AF]">{savedAddresses.length} adresse{savedAddresses.length !== 1 ? 's' : ''} enregistrée{savedAddresses.length !== 1 ? 's' : ''}</p>
+          </div>
+        </div>
+        <div className="p-6 space-y-3">
+          {savedAddresses.length === 0 ? (
+            <p className="text-sm text-[#9CA3AF] text-center py-4">Aucune adresse enregistrée</p>
+          ) : (
+            savedAddresses.map(a => (
+              <div key={a.id} className="flex items-start gap-3 p-4 rounded-xl border" style={{ borderColor: BORDER, background: SURFACE }}>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: ACCENT_LIGHT }}>
+                  <MapPin className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-[#111827]">{a.label}</p>
+                  <p className="text-xs text-[#6B7280] mt-0.5 truncate">{a.adresse}</p>
+                </div>
+                <button onClick={() => removeAddress(a.id)} className="w-8 h-8 rounded-lg flex items-center justify-center transition hover:bg-red-50" title="Supprimer">
+                  <Trash2 className="w-3.5 h-3.5 text-red-400" />
+                </button>
+              </div>
+            ))
+          )}
+          <form onSubmit={addAddress} className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <input
+              type="text" value={addrForm.label} onChange={e => setAddrForm(p => ({ ...p, label: e.target.value }))}
+              placeholder="Libellé (ex: Maison)"
+              className="sm:col-span-1 px-4 py-3 rounded-xl text-sm outline-none transition"
+              style={{ background: SURFACE, border: '1.5px solid rgba(0,0,0,0.08)' }}
+              onFocus={e => e.target.style.borderColor = ACCENT}
+              onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.08)'}
+            />
+            <input
+              type="text" value={addrForm.adresse} onChange={e => setAddrForm(p => ({ ...p, adresse: e.target.value }))}
+              placeholder="Adresse complète"
+              className="sm:col-span-1 px-4 py-3 rounded-xl text-sm outline-none transition"
+              style={{ background: SURFACE, border: '1.5px solid rgba(0,0,0,0.08)' }}
+              onFocus={e => e.target.style.borderColor = ACCENT}
+              onBlur={e => e.target.style.borderColor = 'rgba(0,0,0,0.08)'}
+            />
+            <button type="submit" className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl text-sm font-bold text-white transition hover:opacity-90" style={{ background: `linear-gradient(135deg,${ACCENT},${ACCENT_DARK})` }}>
+              <Plus className="w-4 h-4" /> Ajouter
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   );
@@ -1293,6 +1351,8 @@ export default function ClientDashboard() {
   const [savedPM, setSavedPM]               = useState(() => loadSavedPM(user?.id));
   const [pmForm, setPmForm]                 = useState({ type: 'ORANGE_MONEY', label: '', numero: '' });
   const [pmMsg, setPmMsg]                   = useState('');
+  const [savedAddresses, setSavedAddresses] = useState(() => loadSavedAddresses(user?.id));
+  const [addrForm, setAddrForm]             = useState({ label: '', adresse: '' });
 
   const userId = user?.id;
 
@@ -1404,6 +1464,21 @@ export default function ClientDashboard() {
     const next = savedPM.map(m => ({ ...m, isDefault: m.id === id }));
     setSavedPM(next);
     savePM(userId, next);
+  };
+
+  const addAddress = (e) => {
+    e.preventDefault();
+    if (!addrForm.label.trim() || !addrForm.adresse.trim()) return;
+    const entry = { id: `${Date.now()}`, label: addrForm.label.trim(), adresse: addrForm.adresse.trim() };
+    const next = [...savedAddresses, entry];
+    setSavedAddresses(next);
+    saveAddresses(userId, next);
+    setAddrForm({ label: '', adresse: '' });
+  };
+  const removeAddress = (id) => {
+    const next = savedAddresses.filter(a => a.id !== id);
+    setSavedAddresses(next);
+    saveAddresses(userId, next);
   };
 
   const activeOrders  = orders.filter(o => !['LIVREE', 'ANNULEE'].includes(o.statut));
@@ -1595,6 +1670,8 @@ export default function ClientDashboard() {
             profileForm={profileForm} setProfileForm={setProfileForm}
             profileMsg={profileMsg} handleProfileSave={handleProfileSave}
             orders={orders} totalSpent={totalSpent} delivered={delivered}
+            savedAddresses={savedAddresses} addrForm={addrForm} setAddrForm={setAddrForm}
+            addAddress={addAddress} removeAddress={removeAddress}
           />
         )}
 

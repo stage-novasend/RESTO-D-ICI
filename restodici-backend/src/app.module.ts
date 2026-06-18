@@ -9,6 +9,9 @@ import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { BullModule } from '@nestjs/bullmq';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { User } from './auth/entities/user.entity';
+import { Restaurant } from './restaurants/entities/restaurant.entity';
+import { Commande } from './commandes/entities/commande.entity';
 import { AuthModule } from './auth/auth.module';
 import { MenuModule } from './menu/menu.module';
 import { CommandesModule } from './commandes/commandes.module';
@@ -58,6 +61,7 @@ import { NewsletterModule } from './newsletter/newsletter.module';
       ttl: 60 * 1000, // 1 minute
     }),
     ScheduleModule.forRoot(),
+    TypeOrmModule.forFeature([User, Restaurant, Commande]),
     AuthModule,
     B2BModule,
     AdminModule,

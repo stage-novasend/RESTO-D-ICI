@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════════ */
 import { useState, useEffect, useRef } from "react";
 import { UtensilsCrossed, ArrowRight, Check, Star, Search, ShoppingBag, Truck, Clock, Heart, Mail } from "lucide-react";
-import { menuAPI, newsletterAPI } from "../services/api";
+import { menuAPI, newsletterAPI, api } from "../services/api";
 
 /* ─── Palette de couleurs ─── */
 const T = {
@@ -188,7 +188,7 @@ function Nav() {
           ))}
         </div>
         <div style={{ display:"flex",gap:10,alignItems:"center" }}>
-          <a href="/login" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:"#fff",textDecoration:"none",padding:"10px 24px",borderRadius:50,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,boxShadow:`0 6px 22px ${T.accent}44`,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6 }}>Connexion</a>
+          <a href="/login" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:scrolled?T.accent:"#fff", background:"transparent", border:`1.5px solid ${scrolled?T.accent:"rgba(255,255,255,0.55)"}` }}>Connexion</a>
           <a href="/menu" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:"#fff",textDecoration:"none",padding:"10px 24px",borderRadius:50,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,boxShadow:`0 6px 22px ${T.accent}44`,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6 }}>Commander <ArrowRight size={13} /></a>
         </div>
       </div>
@@ -726,11 +726,15 @@ function Banners() {
 
 /* ─── Section statistiques ─── */
 function Stats() {
+  const [live, setLive] = useState(null);
+  useEffect(() => {
+    api.get('/stats/public').then(r => setLive(r.data)).catch(() => {});
+  }, []);
   const items=[
-    { n:12000, pre:"+", suf:"", l:"Clients actifs",     c:T.accent },
-    { n:98,    pre:"",  suf:"%",l:"Taux livraison",      c:T.yellow },
-    { n:47,    pre:"",  suf:"k",l:"Commandes ce mois",   c:T.accent },
-    { n:4,     pre:"",  suf:" min",l:"Délai moyen",       c:T.yellow },
+    { n: live ? live.clients       : 12000, pre:"+", suf:"",      l:"Clients actifs",   c:T.accent },
+    { n:98,                                  pre:"",  suf:"%",     l:"Taux livraison",   c:T.yellow },
+    { n: live ? live.commandesMois : 47,     pre:"",  suf:" ce mois", l:"Commandes",    c:T.accent },
+    { n: live ? live.restaurants   : 4,      pre:"",  suf:"",      l:"Restaurants actifs", c:T.yellow },
   ];
   return (
     <section style={{ background:T.dark,padding:"90px 0",position:"relative",overflow:"hidden" }}>
