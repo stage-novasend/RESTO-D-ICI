@@ -606,20 +606,52 @@ export class TresorerieService {
     };
   }
 
+  private getPeriodRange(period: 'monthly' | 'quarterly' | 'yearly'): { from: Date; to: Date } {
+    const now = new Date();
+    let from: Date;
+    if (period === 'monthly') {
+      from = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (period === 'quarterly') {
+      const q = Math.floor(now.getMonth() / 3);
+      from = new Date(now.getFullYear(), q * 3, 1);
+    } else {
+      from = new Date(now.getFullYear(), 0, 1);
+    }
+    return { from, to: now };
+  }
+
   async generateFinancialReport(
     restaurantId: string,
     period: 'monthly' | 'quarterly' | 'yearly' = 'monthly',
   ) {
+    const { from, to } = this.getPeriodRange(period);
+
+    const commandes = await this.commandeRepository.find({
+      where: {
+        restaurant: { id: restaurantId },
+        statut: StatutCommande.LIVREE,
+        estPaye: true,
+        createdAt: Between(from, to),
+      },
+    });
+
+    const totalRevenue = commandes.reduce((s, c) => s + Number(c.montantTotal), 0);
+    const totalRemises = commandes.reduce((s, c) => s + Number(c.montantRemise ?? 0), 0);
+    const tva = Math.round(totalRevenue * 0.18);
+    const revenueHT = totalRevenue - tva;
+
     return {
       period,
       restaurantId,
-      reportUrl: `/reports/financial_${restaurantId}_${period}_${Date.now()}.pdf`,
       generatedAt: new Date(),
+      nbCommandes: commandes.length,
       summary: {
-        totalRevenue: Math.floor(Math.random() * 5000000) + 1000000,
-        totalExpenses: Math.floor(Math.random() * 2000000) + 500000,
-        netProfit: Math.floor(Math.random() * 3000000) + 500000,
-        profitMargin: Math.floor(Math.random() * 30) + 20,
+        totalRevenue: Math.round(totalRevenue),
+        totalRemises: Math.round(totalRemises),
+        revenueHT: Math.round(revenueHT),
+        tva,
+        netProfit: Math.round(revenueHT * 0.7),
+        profitMargin: totalRevenue > 0 ? Math.round((revenueHT * 0.7 / totalRevenue) * 100) : 0,
       },
     };
   }
@@ -628,50 +660,43 @@ export class TresorerieService {
     restaurantId: string,
     period: 'monthly' | 'quarterly' | 'yearly' = 'monthly',
   ) {
+    const { from, to } = this.getPeriodRange(period);
+
+    const commandes = await this.commandeRepository.find({
+      where: {
+        restaurant: { id: restaurantId },
+        statut: StatutCommande.LIVREE,
+        estPaye: true,
+        createdAt: Between(from, to),
+      },
+      order: { createdAt: 'ASC' },
+    });
+
+    const totalTTC = commandes.reduce((s, c) => s + Number(c.montantTotal), 0);
+    const tva = Math.round(totalTTC * 0.18);
+    const totalHT = Math.round(totalTTC - tva);
+    const today = new Date().toISOString().slice(0, 10);
+
     const rows = [
-      ['SYSCOHADA Export', `${restaurantId}`, `${period.toUpperCase()}`],
+      ['SYSCOHADA Export', restaurantId, period.toUpperCase(), `Generé le ${today}`],
       ['Date', 'Compte', 'Libelle', 'Debit', 'Credit'],
-      [
-        new Date().toISOString().slice(0, 10),
-        '701',
-        'Ventes de marchandises',
+      [today, '701100', 'Ventes repas — période', '0', String(totalHT)],
+      [today, '4457000', 'TVA collectée 18%', '0', String(tva)],
+      [today, '4110000', 'Clients — règlements', String(totalTTC), '0'],
+      ...commandes.map((c) => [
+        new Date(c.createdAt).toISOString().slice(0, 10),
+        '701100',
+        `Cmd ${c.numero}`,
         '0',
-        '1200000',
-      ],
-      [new Date().toISOString().slice(0, 10), '607', 'Achats', '400000', '0'],
-      [
-        new Date().toISOString().slice(0, 10),
-        '4457',
-        'TVA collectee',
-        '0',
-        '180000',
-      ],
-      [
-        new Date().toISOString().slice(0, 10),
-        '4456',
-        'TVA deductible',
-        '90000',
-        '0',
-      ],
-      [
-        new Date().toISOString().slice(0, 10),
-        'Resultat',
-        'Benefice net',
-        '0',
-        '710000',
-      ],
+        String(Math.round(Number(c.montantTotal) * 0.82)),
+      ]),
     ];
 
     const csvContent = rows
-      .map((row) =>
-        row
-          .map((cell) => `${String(cell).replace(/"/g, '""')}`)
-          .map((cell) => `"${cell}"`)
-          .join(','),
-      )
+      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
       .join('\r\n');
 
-    return Buffer.from(csvContent, 'utf8');
+    return Buffer.from('﻿' + csvContent, 'utf8');
   }
 
   async recordOrderPayment(data: {

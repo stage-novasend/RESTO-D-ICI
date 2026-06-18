@@ -139,7 +139,7 @@ function lieu(order) {
 /* ══════════════════════════════════════════════════════════════════
    OrderCard — Carte commande active
    ══════════════════════════════════════════════════════════════════ */
-function OrderCard({ order, onAction, onPay, saving, col }) {
+function OrderCard({ order, onAction, onPay, saving, col, onDragStart, onDragEnd }) {
   useGlobalTick();
   const sec    = elapsed(order.createdAt);
   const urgent = sec >= 1200;
@@ -150,7 +150,11 @@ function OrderCard({ order, onAction, onPay, saving, col }) {
   const minsUntilDelivery = order._b2bDateLivraison ? minutesUntil(order._b2bDateLivraison) : null;
 
   return (
-    <div style={{
+    <div
+      draggable
+      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; onDragStart(order.id); }}
+      onDragEnd={onDragEnd}
+      style={{
       background: urgent ? '#FFF8F8' : CARD,
       borderRadius: 18,
       border: `1px solid ${urgent ? '#FCA5A5' : BORDER}`,
@@ -159,6 +163,7 @@ function OrderCard({ order, onAction, onPay, saving, col }) {
         ? '0 4px 20px rgba(220,38,38,0.12)'
         : '0 2px 10px rgba(0,0,0,0.05)',
       overflow: 'hidden',
+      cursor: 'grab',
       transition: 'transform 0.12s, box-shadow 0.12s',
     }}
       onMouseEnter={e => {
@@ -393,14 +398,23 @@ function HistoryRow({ order }) {
 /* ══════════════════════════════════════════════════════════════════
    KDSColumn — Colonne Kanban
    ══════════════════════════════════════════════════════════════════ */
-function KDSColumn({ col, orders, onAction, onPay, saving }) {
+function KDSColumn({ col, orders, onAction, onPay, saving, onDragStart, onDragEnd, onDropCard }) {
+  const [dragOver, setDragOver] = useState(false);
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 0, minWidth: 0 }}>
+    <div
+      style={{ display: 'flex', flexDirection: 'column', gap: 0, minWidth: 0 }}
+      onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+      onDragLeave={() => setDragOver(false)}
+      onDrop={e => { e.preventDefault(); setDragOver(false); onDropCard(col.statuts[0]); }}
+    >
       {/* Header colonne */}
       <div style={{
         background: col.grad, borderRadius: 16, padding: '13px 15px',
         marginBottom: 12, display: 'flex', alignItems: 'center', gap: 9,
         boxShadow: `0 4px 16px ${col.accent}33`,
+        outline: dragOver ? `2px solid ${col.accent}` : 'none',
+        transition: 'outline 0.12s',
       }}>
         <span style={{ fontSize: 13, fontWeight: 800, color: '#fff', flex: 1, letterSpacing: '-0.01em' }}>
           {col.label}
@@ -411,14 +425,23 @@ function KDSColumn({ col, orders, onAction, onPay, saving }) {
       </div>
 
       {/* Cards */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{
+        display: 'flex', flexDirection: 'column', gap: 10,
+        minHeight: 80, borderRadius: 14,
+        background: dragOver ? `${col.accent}0a` : 'transparent',
+        transition: 'background 0.15s',
+        padding: dragOver ? 6 : 0,
+      }}>
         {orders.length === 0 ? (
-          <div style={{ background: CARD, border: `1.5px dashed ${BORDER}`, borderRadius: 18, padding: '32px 16px', textAlign: 'center' }}>
-            <ChefHat size={28} color={BORDER} style={{ display: 'block', margin: '0 auto 8px' }} />
-            <p style={{ margin: 0, fontSize: 12, color: FAINT, fontWeight: 500 }}>Aucune commande</p>
+          <div style={{ background: dragOver ? `${col.accent}14` : CARD, border: `1.5px dashed ${dragOver ? col.accent : BORDER}`, borderRadius: 18, padding: '32px 16px', textAlign: 'center', transition: 'all 0.15s' }}>
+            <ChefHat size={28} color={dragOver ? col.accent : BORDER} style={{ display: 'block', margin: '0 auto 8px' }} />
+            <p style={{ margin: 0, fontSize: 12, color: dragOver ? col.accent : FAINT, fontWeight: 500 }}>
+              {dragOver ? 'Déposer ici' : 'Aucune commande'}
+            </p>
           </div>
         ) : orders.map(o => (
-          <OrderCard key={o.id} order={o} onAction={onAction} onPay={onPay} saving={saving} col={col} />
+          <OrderCard key={o.id} order={o} onAction={onAction} onPay={onPay} saving={saving} col={col}
+            onDragStart={onDragStart} onDragEnd={onDragEnd} />
         ))}
       </div>
     </div>
@@ -438,6 +461,7 @@ export default function KDSStaff() {
   const [showHistory,  setShowHistory]  = useState(true);
   const [histFilter,   setHistFilter]   = useState('all');
   const [reminders,    setReminders]    = useState([]);
+  const [draggedId,    setDraggedId]    = useState(null);
 
   const upsert = useCallback(o => {
     if (!o?.id) return;
@@ -701,7 +725,17 @@ export default function KDSStaff() {
           {/* ── 4 COLONNES ACTIVES ── */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'start', marginBottom: 28 }}>
             {grouped.map(col => (
-              <KDSColumn key={col.id} col={col} orders={col.orders} onAction={onAction} onPay={onPay} saving={saving} />
+              <KDSColumn key={col.id} col={col} orders={col.orders} onAction={onAction} onPay={onPay} saving={saving}
+                onDragStart={setDraggedId}
+                onDragEnd={() => setDraggedId(null)}
+                onDropCard={(targetStatut) => {
+                  if (!draggedId) return;
+                  const order = orders.find(o => o.id === draggedId);
+                  if (!order || order.statut === targetStatut) return;
+                  onAction(draggedId, targetStatut);
+                  setDraggedId(null);
+                }}
+              />
             ))}
           </div>
 

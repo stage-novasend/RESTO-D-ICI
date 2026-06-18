@@ -11,6 +11,7 @@ import { Integration } from '../common/entities/integration.entity';
 import { AuthModule } from '../auth/auth.module';
 import { BackupService } from './backup.service';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
+import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { CommissionPlateforme } from '../commandes/entities/commission-plateform
       SystemConfig,
       Integration,
       CommissionPlateforme,
+      FactureMensuelleB2B,
     ]),
     AuthModule,
   ],

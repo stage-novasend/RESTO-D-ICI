@@ -6,6 +6,7 @@ import {
   UnauthorizedException,
   NotFoundException,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -680,5 +681,23 @@ export class AuthService {
     }
 
     throw new UnauthorizedException('Code invalide ou expiré');
+  }
+
+  @Cron(CronExpression.EVERY_HOUR)
+  async cleanExpiredTokens() {
+    const now = new Date();
+    await this.userRepository
+      .createQueryBuilder()
+      .update()
+      .set({ twoFactorTempToken: undefined, twoFactorTempTokenExpires: undefined })
+      .where('twoFactorTempTokenExpires IS NOT NULL AND twoFactorTempTokenExpires < :now', { now })
+      .execute();
+
+    await this.userRepository
+      .createQueryBuilder()
+      .update()
+      .set({ refreshToken: undefined, refreshTokenExpires: undefined })
+      .where('refreshTokenExpires IS NOT NULL AND refreshTokenExpires < :now', { now })
+      .execute();
   }
 }

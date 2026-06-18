@@ -188,6 +188,22 @@ export class AdminController {
     return this.adminService.getPendingB2B();
   }
 
+  @Get('b2b/contestations')
+  getContestations() {
+    return this.adminService.getContestations();
+  }
+
+  @Patch('b2b/contestations/:id/resoudre')
+  @HttpCode(HttpStatus.OK)
+  resolveContestation(
+    @Param('id') id: string,
+    @Body('accepted') accepted: boolean,
+    @Body('note') note: string,
+    @Req() req: { user: { id: string } },
+  ) {
+    return this.adminService.resolveContestation(id, req.user.id, accepted, note || '');
+  }
+
   @Patch('b2b/:id/valider')
   @HttpCode(HttpStatus.OK)
   validateB2B(

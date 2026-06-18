@@ -17,6 +17,7 @@ import {
   IntegrationType,
 } from '../common/entities/integration.entity';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
+import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 
 /* ── Clés de config avec leurs métadonnées ── */
 const CONFIG_DEFAULTS: Array<{
@@ -160,6 +161,8 @@ export class AdminService {
     private integrationRepo: Repository<Integration>,
     @InjectRepository(CommissionPlateforme)
     private commissionRepo: Repository<CommissionPlateforme>,
+    @InjectRepository(FactureMensuelleB2B)
+    private factureRepo: Repository<FactureMensuelleB2B>,
   ) {}
 
   async getStats() {
@@ -389,6 +392,40 @@ export class AdminService {
       relations: ['responsable'],
       order: { createdAt: 'DESC' },
     });
+  }
+
+  async getContestations() {
+    return this.factureRepo.find({
+      where: { statut: 'EN_CONTESTATION' },
+      relations: ['compteB2B'],
+      order: { updatedAt: 'DESC' },
+    });
+  }
+
+  async resolveContestation(
+    factureId: string,
+    adminId: string,
+    accepted: boolean,
+    note: string,
+  ) {
+    const facture = await this.factureRepo.findOne({
+      where: { id: factureId },
+      relations: ['compteB2B'],
+    });
+    if (!facture) throw new NotFoundException('Facture introuvable');
+
+    facture.statut = accepted ? 'EN_ATTENTE' : 'PAYEE';
+    await this.factureRepo.save(facture);
+
+    await this.auditRepo.save(
+      this.auditRepo.create({
+        action: 'CONTESTATION_RESOLUE',
+        userId: adminId,
+        payload: { factureId, accepted, note, numeroFacture: facture.numeroFacture },
+      }),
+    );
+
+    return facture;
   }
 
   async validateB2B(id: string, adminId: string, approved: boolean) {

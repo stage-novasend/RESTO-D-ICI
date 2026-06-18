@@ -6,7 +6,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Chart from 'chart.js/auto';
-import { adminAPI, authAPI, fournisseursAPI, retraitAPI } from '../../services/api';
+import { adminAPI, authAPI, fournisseursAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import OnboardingWizard from '../../components/wizard/OnboardingWizard';
 import {
@@ -18,7 +18,7 @@ import {
   Zap, MessageSquare, Bell, Lock, Globe, Database,
   FileText, Calendar, ChevronRight, ExternalLink, Info,
   CreditCard, Smartphone, Mail, BarChart2, Webhook, Truck, Pencil, Trash2,
-  Percent, TrendingUp as TrendUp, Wallet,
+  Percent, TrendingUp as TrendUp, MessageSquareWarning,
 } from 'lucide-react';
 
 /* ── Palette de couleurs et constantes ── */
@@ -1940,6 +1940,97 @@ function B2BPendingBanner() {
   );
 }
 
+/* ══════════════════ Bannière — Factures en contestation ══════════════════ */
+function ContestationsBanner() {
+  const [factures, setFactures]     = useState([]);
+  const [processing, setProcessing] = useState({});
+  const [noteModal, setNoteModal]   = useState(null); // { id, accept }
+  const [note, setNote]             = useState('');
+
+  const load = () => adminAPI.getContestations().then(r => setFactures(r.data || [])).catch(() => {});
+  useEffect(() => { load(); }, []);
+
+  const resolve = async (id, accepted) => {
+    setProcessing(p => ({ ...p, [id]: true }));
+    try {
+      await adminAPI.resolveContestation(id, accepted, note);
+      setNoteModal(null);
+      setNote('');
+      load();
+    } finally { setProcessing(p => ({ ...p, [id]: false })); }
+  };
+
+  if (factures.length === 0) return null;
+
+  return (
+    <>
+      <div style={{ background: '#EEF2FF', border: '1px solid #C7D2FE', borderRadius: 14, padding: '14px 18px', marginBottom: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <AlertTriangle style={{ width: 16, height: 16, color: '#6366F1' }} />
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#3730A3' }}>
+            {factures.length} facture{factures.length > 1 ? 's' : ''} en contestation
+          </span>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          {factures.map(f => (
+            <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderRadius: 10, padding: '10px 14px', border: '1px solid #C7D2FE', flexWrap: 'wrap', gap: 8 }}>
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>
+                  {f.compteB2B?.raisonSociale} — #{f.numeroFacture}
+                </p>
+                <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0' }}>
+                  {f.mois} {f.annee} · {Number(f.montantTTC).toLocaleString()} FCFA
+                </p>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={() => { setNoteModal({ id: f.id, accept: false }); setNote(''); }}
+                  disabled={processing[f.id]}
+                  style={{ padding: '6px 12px', background: '#FEE2E2', color: '#991B1B', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <XCircle style={{ width: 13, height: 13 }} /> Rejeter
+                </button>
+                <button onClick={() => { setNoteModal({ id: f.id, accept: true }); setNote(''); }}
+                  disabled={processing[f.id]}
+                  style={{ padding: '6px 12px', background: '#DCFCE7', color: '#166534', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <Check style={{ width: 13, height: 13 }} /> Accepter
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {noteModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 420, boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+            <h3 style={{ margin: '0 0 8px', fontSize: 15, fontWeight: 700, color: '#0F172A' }}>
+              {noteModal.accept ? 'Accepter la contestation' : 'Rejeter la contestation'}
+            </h3>
+            <p style={{ margin: '0 0 16px', fontSize: 13, color: '#64748B' }}>
+              {noteModal.accept
+                ? 'La facture reviendra en statut En attente pour permettre une correction.'
+                : 'La facture sera marquée comme payée et la contestation clôturée.'}
+            </p>
+            <textarea value={note} onChange={e => setNote(e.target.value)}
+              placeholder="Note pour le client (optionnel)..."
+              rows={3} style={{ width: '100%', borderRadius: 10, border: '1px solid #E2E8F0', padding: '10px 12px', fontSize: 13, resize: 'none', boxSizing: 'border-box' }} />
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <button onClick={() => setNoteModal(null)}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: '1px solid #E2E8F0', background: '#fff', color: '#64748B', fontWeight: 600, fontSize: 13, cursor: 'pointer' }}>
+                Annuler
+              </button>
+              <button onClick={() => resolve(noteModal.id, noteModal.accept)}
+                disabled={processing[noteModal.id]}
+                style={{ flex: 1, padding: '10px', borderRadius: 10, border: 'none', background: noteModal.accept ? '#22C55E' : '#EF4444', color: '#fff', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                {processing[noteModal.id] ? 'Envoi...' : 'Confirmer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
 /* ══════════════════ MÉTRIQUES SYSTÈME ══════════════════ */
 function MetriquesTab() {
   const [metrics, setMetrics]   = useState(null);
@@ -2675,191 +2766,6 @@ function NotificationsTab() {
   );
 }
 
-/* ══════════════════ Onglet Retraits (admin) ══════════════════ */
-function RetraitsTab() {
-  const [demandes, setDemandes]           = useState([]);
-  const [loading, setLoading]             = useState(true);
-  const [rejetModal, setRejetModal]       = useState(null);
-  const [motifRejet, setMotifRejet]       = useState('');
-  const [actionLoading, setActionLoading] = useState({});
-
-  const load = async () => {
-    try {
-      setLoading(true);
-      const r = await retraitAPI.getAllDemandes();
-      setDemandes(r.data || []);
-    } catch {
-      // silencieux
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { load(); }, []);
-
-  const handleApprouver = async (id) => {
-    setActionLoading((s) => ({ ...s, [id]: 'approuver' }));
-    try {
-      await retraitAPI.approuver(id);
-      await load();
-    } catch (err) {
-      alert(err?.response?.data?.message || "Erreur lors de l'approbation");
-    } finally {
-      setActionLoading((s) => ({ ...s, [id]: null }));
-    }
-  };
-
-  const handleRejeter = async () => {
-    if (!rejetModal) return;
-    if (!motifRejet.trim()) { alert('Le motif de rejet est requis'); return; }
-    setActionLoading((s) => ({ ...s, [rejetModal.id]: 'rejeter' }));
-    try {
-      await retraitAPI.rejeter(rejetModal.id, motifRejet.trim());
-      setRejetModal(null);
-      setMotifRejet('');
-      await load();
-    } catch (err) {
-      alert(err?.response?.data?.message || 'Erreur lors du rejet');
-    } finally {
-      setActionLoading((s) => ({ ...s, [rejetModal?.id]: null }));
-    }
-  };
-
-  const pendingCount = demandes.filter((d) => d.statut === 'PENDING').length;
-
-  const statutBadge = (statut) => {
-    const styles = {
-      APPROVED: { background: '#DCFCE7', color: '#166534', label: 'Approuvée'  },
-      REJECTED: { background: '#FEE2E2', color: '#991B1B', label: 'Rejetée'    },
-      PENDING:  { background: '#FEF3C7', color: '#92400E', label: 'En attente' },
-    };
-    const s = styles[statut] || styles.PENDING;
-    return (
-      <span style={{ background: s.background, color: s.color, borderRadius: 6, padding: '3px 10px', fontSize: 11, fontWeight: 700 }}>
-        {s.label}
-      </span>
-    );
-  };
-
-  const providerLabel = (p) =>
-    ({ WAVE: 'Wave', ORANGE_MONEY: 'Orange Money', MTN_MONEY: 'MTN Money' }[p] || p);
-
-  return (
-    <div>
-      <SectionHeader
-        title={`Demandes de retrait${pendingCount > 0 ? ` · ${pendingCount} en attente` : ''}`}
-        onRefresh={load}
-        loading={loading}
-      />
-
-      {loading ? (
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', border: '4px solid #FF8C00', borderTopColor: 'transparent', animation: 'spin 0.7s linear infinite' }} />
-        </div>
-      ) : demandes.length === 0 ? (
-        <div style={{ ...card, padding: 40, textAlign: 'center' }}>
-          <Wallet style={{ width: 40, height: 40, marginBottom: 12, opacity: 0.3, color: '#FF8C00', display: 'inline-block' }} />
-          <p style={{ fontWeight: 600, fontSize: 14, color: '#0F172A' }}>Aucune demande de retrait</p>
-          <p style={{ fontSize: 12, marginTop: 4, color: '#94A3B8' }}>Les demandes soumises par les gérants apparaîtront ici.</p>
-        </div>
-      ) : (
-        <div style={{ ...card, overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-            <thead>
-              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
-                {['Date', 'Gérant (userId)', 'Montant', 'Opérateur', 'Numéro', 'Statut', 'Actions'].map((h) => (
-                  <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748B', whiteSpace: 'nowrap' }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {demandes.map((d) => (
-                <tr key={d.id} style={{ borderBottom: '1px solid #F1F5F9' }}>
-                  <td style={{ padding: '10px 14px', whiteSpace: 'nowrap', color: '#0F172A' }}>
-                    {new Date(d.createdAt).toLocaleDateString('fr-FR')}
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#475569', fontFamily: 'monospace', fontSize: 11 }}>
-                    {d.userId?.slice(0, 8)}…
-                  </td>
-                  <td style={{ padding: '10px 14px', fontWeight: 800, color: '#FF8C00', whiteSpace: 'nowrap' }}>
-                    {Number(d.montant).toLocaleString('fr-FR')} FCFA
-                  </td>
-                  <td style={{ padding: '10px 14px', color: '#0F172A' }}>{providerLabel(d.provider)}</td>
-                  <td style={{ padding: '10px 14px', fontFamily: 'monospace', fontSize: 12, color: '#0F172A' }}>{d.numeroMobileMoney}</td>
-                  <td style={{ padding: '10px 14px' }}>
-                    {statutBadge(d.statut)}
-                    {d.statut === 'REJECTED' && d.motifRejet && (
-                      <p style={{ fontSize: 11, color: '#DC2626', marginTop: 3, fontStyle: 'italic' }}>{d.motifRejet}</p>
-                    )}
-                  </td>
-                  <td style={{ padding: '10px 14px' }}>
-                    {d.statut === 'PENDING' && (
-                      <div style={{ display: 'flex', gap: 6 }}>
-                        <button
-                          onClick={() => handleApprouver(d.id)}
-                          disabled={!!actionLoading[d.id]}
-                          style={{ background: '#16A34A', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: actionLoading[d.id] ? 0.6 : 1 }}
-                        >
-                          {actionLoading[d.id] === 'approuver' ? '…' : 'Approuver'}
-                        </button>
-                        <button
-                          onClick={() => { setRejetModal(d); setMotifRejet(''); }}
-                          disabled={!!actionLoading[d.id]}
-                          style={{ background: '#DC2626', color: '#fff', border: 'none', borderRadius: 7, padding: '5px 12px', fontSize: 12, fontWeight: 700, cursor: 'pointer', opacity: actionLoading[d.id] ? 0.6 : 1 }}
-                        >
-                          Rejeter
-                        </button>
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {rejetModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 }}>
-          <div style={{ ...card, width: 440, maxWidth: '95vw', padding: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 18 }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>Motif de rejet</h3>
-              <button onClick={() => setRejetModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}>
-                <X style={{ width: 18, height: 18 }} />
-              </button>
-            </div>
-            <p style={{ fontSize: 13, color: '#475569', marginBottom: 14 }}>
-              Demande de <strong>{Number(rejetModal.montant).toLocaleString('fr-FR')} FCFA</strong> via {providerLabel(rejetModal.provider)}
-            </p>
-            <textarea
-              rows={3}
-              value={motifRejet}
-              onChange={(e) => setMotifRejet(e.target.value)}
-              placeholder="Expliquez la raison du rejet…"
-              style={{ ...inputStyle, resize: 'vertical', marginBottom: 16 }}
-            />
-            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => setRejetModal(null)}
-                style={{ background: '#F1F5F9', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer', color: '#475569' }}
-              >
-                Annuler
-              </button>
-              <button
-                onClick={handleRejeter}
-                disabled={actionLoading[rejetModal.id] === 'rejeter'}
-                style={{ background: '#DC2626', border: 'none', borderRadius: 8, padding: '8px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#fff', opacity: actionLoading[rejetModal.id] ? 0.7 : 1 }}
-              >
-                {actionLoading[rejetModal.id] === 'rejeter' ? 'Envoi…' : 'Confirmer le rejet'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
 /* ══════════════════ TABS ══════════════════ */
 const TABS = [
   { id: 'overview',       label: "Vue d'ensemble", icon: LayoutDashboard },
@@ -2872,7 +2778,6 @@ const TABS = [
   { id: 'commissions',    label: 'Commissions',    icon: Percent },
   { id: 'exports',        label: 'Exports',        icon: Download },
   { id: 'config',         label: 'Configuration',  icon: Settings },
-  { id: 'retraits',       label: 'Retraits',       icon: Wallet },
 ];
 
 /* ═══ AdminDashboard — Composant principal ═══ */
@@ -2905,6 +2810,7 @@ export default function AdminDashboard() {
       </div>
 
       {tab === 'overview' && <B2BPendingBanner />}
+      {tab === 'overview' && <ContestationsBanner />}
 
       {/* Tab bar */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: '#fff', borderRadius: 12, padding: 4, border: '1px solid #D1D9E6', overflowX: 'auto' }}>
