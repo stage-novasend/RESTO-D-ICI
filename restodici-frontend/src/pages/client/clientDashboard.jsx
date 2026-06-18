@@ -1278,12 +1278,7 @@ export default function ClientDashboard() {
   const { user } = useAuth();
   const navigate  = useNavigate();
   const [tab, setTab] = useState('overview');
-  const [tabOverlay, setTabOverlay] = useState(false);
-  const changeTab = (key) => {
-    setTabOverlay(true);
-    setTimeout(() => setTabOverlay(false), 180);
-    setTab(key);
-  };
+  const changeTab = (key) => { setTab(key); };
   const [orders, setOrders] = useState(() => loadCachedOrders(user?.id));
   const [loadingOrders, setLoadingOrders]   = useState(true);
   const [refreshing, setRefreshing]         = useState(false);
@@ -1606,15 +1601,6 @@ export default function ClientDashboard() {
         {tab === 'security' && <SecurityTab user={user} />}
         </div>
       </div>
-
-      {tabOverlay && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 5,
-          background: 'rgba(15,23,42,0.18)',
-          pointerEvents: 'none',
-          animation: 'fadeIn 0.15s ease',
-        }} />
-      )}
 
       {/* ── Modals ──────────────────────────────────────────────────── */}
       {trackOrder   && <OrderTrackModal order={trackOrder}   onClose={() => setTrackOrder(null)}   onReceipt={o => { setTrackOrder(null); setReceiptOrder(o); }} />}

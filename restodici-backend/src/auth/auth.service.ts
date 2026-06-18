@@ -88,27 +88,76 @@ export class AuthService {
       );
   }
 
-  private buildAuthResponse(
-    user: User,
-    message?: string,
-  ): {
+  private generateRefreshToken(): string {
+    return crypto.randomBytes(48).toString('hex');
+  }
+
+  private async attachRefreshToken(user: User): Promise<string> {
+    const token = this.generateRefreshToken();
+    user.refreshToken = await bcrypt.hash(token, 8);
+    user.refreshTokenExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 jours
+    await this.userRepository.save(user);
+    return token;
+  }
+
+  async refreshAccessToken(refreshToken: string): Promise<{
     accessToken: string;
     access_token: string;
     token: string;
+    refreshToken: string;
+    user: Record<string, any>;
+  }> {
+    if (!refreshToken) throw new UnauthorizedException('Token de rafraîchissement manquant');
+
+    const users = await this.userRepository.find({
+      where: { actif: true },
+      relations: ['restaurant'],
+    });
+
+    let matchedUser: User | null = null;
+    for (const u of users) {
+      if (
+        u.refreshToken &&
+        u.refreshTokenExpires &&
+        u.refreshTokenExpires > new Date() &&
+        (await bcrypt.compare(refreshToken, u.refreshToken))
+      ) {
+        matchedUser = u;
+        break;
+      }
+    }
+
+    if (!matchedUser) throw new UnauthorizedException('Session expirée, veuillez vous reconnecter');
+
+    const newRefreshToken = await this.attachRefreshToken(matchedUser);
+    const response = await this.buildAuthResponse(matchedUser);
+    return { ...response, refreshToken: newRefreshToken };
+  }
+
+  private async buildAuthResponse(
+    user: User,
+    message?: string,
+  ): Promise<{
+    accessToken: string;
+    access_token: string;
+    token: string;
+    refreshToken: string;
     user: Record<string, any>;
     message?: string;
-  } {
+  }> {
     const payload = {
       sub: user.id,
       email: user.email,
       role: user.role,
     };
     const accessToken = this.jwtService.sign(payload);
+    const refreshToken = await this.attachRefreshToken(user);
 
     return {
       accessToken: accessToken,
       access_token: accessToken,
       token: accessToken,
+      refreshToken,
       user: {
         id: user.id,
         email: user.email,
@@ -149,7 +198,7 @@ export class AuthService {
       throw new NotFoundException('Utilisateur introuvable');
     }
 
-    return this.buildAuthResponse(user).user;
+    return (await this.buildAuthResponse(user)).user;
   }
 
   async updateProfile(
@@ -202,7 +251,7 @@ export class AuthService {
     }
 
     const savedUser = await this.userRepository.save(user);
-    return this.buildAuthResponse(savedUser).user;
+    return (await this.buildAuthResponse(savedUser)).user;
   }
 
   async register(dto: RegisterDto) {

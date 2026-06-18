@@ -29,19 +29,6 @@ export class B2BController {
   // GET /b2b/dashboard
   @Get('dashboard')
   getDashboard(@Req() req: any) {
-    // TEMP DEBUG (à retirer après diagnostic)
-
-    console.log('[DEBUG][b2b/dashboard] CALLED');
-
-    console.log(
-      '[DEBUG][b2b/dashboard] hasUser=',
-      !!req?.user,
-      'role=',
-      req?.user?.role,
-      'authHeader=',
-      req?.headers?.authorization ? 'present' : 'missing',
-    );
-
     return this.b2bService.getDashboard(req?.user);
   }
 

@@ -25,15 +25,63 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
-// Sur 401 : vide la session et redirige vers /login (sauf si déjà dessus)
+let _refreshing = false;
+let _refreshQueue = [];
+
+function _flushQueue(token, error) {
+  _refreshQueue.forEach((cb) => (token ? cb.resolve(token) : cb.reject(error)));
+  _refreshQueue = [];
+}
+
+// Sur 401 : tente un rafraîchissement de session avant de déconnecter
 api.interceptors.response.use(
   (res) => res,
-  (err) => {
-    if (err.response?.status === 401) {
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+  async (err) => {
+    const original = err.config;
+    if (
+      err.response?.status === 401 &&
+      !original._retry &&
+      !original.url?.includes('/auth/refresh') &&
+      !original.url?.includes('/auth/login')
+    ) {
+      const storedRefresh = localStorage.getItem('refreshToken');
+      if (!storedRefresh) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        if (window.location.pathname !== '/login') window.location.href = '/login';
+        return Promise.reject(err);
+      }
+
+      if (_refreshing) {
+        return new Promise((resolve, reject) => {
+          _refreshQueue.push({
+            resolve: (token) => { original.headers.Authorization = `Bearer ${token}`; resolve(api(original)); },
+            reject,
+          });
+        });
+      }
+
+      original._retry = true;
+      _refreshing = true;
+
+      try {
+        const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: storedRefresh });
+        const { accessToken, refreshToken: newRefresh } = res.data;
+        localStorage.setItem('token', accessToken);
+        if (newRefresh) localStorage.setItem('refreshToken', newRefresh);
+        api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
+        original.headers.Authorization = `Bearer ${accessToken}`;
+        _flushQueue(accessToken, null);
+        return api(original);
+      } catch (refreshErr) {
+        _flushQueue(null, refreshErr);
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        if (window.location.pathname !== '/login') window.location.href = '/login';
+        return Promise.reject(refreshErr);
+      } finally {
+        _refreshing = false;
       }
     }
     return Promise.reject(err);
@@ -219,16 +267,27 @@ export const b2bAPI = {
 // ── Auth ──────────────────────────────────────────────────────────────────────
 
 export const authAPI = {
-  login:              (credentials)           => api.post("/auth/login", credentials),
+  login: async (credentials) => {
+    const res = await api.post('/auth/login', credentials);
+    if (res.data?.refreshToken) localStorage.setItem('refreshToken', res.data.refreshToken);
+    return res;
+  },
   register:           (data)                  => api.post("/auth/register", data),
   me:                 ()                      => api.get("/auth/me"),
   updateProfile:      (data)                  => api.patch("/auth/me", data),
-  logout:             ()                      => api.post("/auth/logout"),
+  logout: async () => {
+    localStorage.removeItem('refreshToken');
+    return api.post('/auth/logout');
+  },
   changePassword:     (data)                  => api.patch("/auth/change-password", data),
   setup2FA:           ()                      => api.post("/auth/2fa/setup"),
   enable2FA:          (code)                  => api.post("/auth/2fa/enable", { code }),
   disable2FA:         ()                      => api.post("/auth/2fa/disable"),
-  verify2FALogin:     (tempToken, code)       => api.post("/auth/2fa/verify-login", { tempToken, code }),
+  verify2FALogin: async (tempToken, code) => {
+    const res = await api.post('/auth/2fa/verify-login', { tempToken, code });
+    if (res.data?.refreshToken) localStorage.setItem('refreshToken', res.data.refreshToken);
+    return res;
+  },
   verifyEmail:        (token)                 => api.post("/auth/verify-email", { token }),
   resendVerification: (email)                 => api.post("/auth/resend-verification", { email }),
   forgotPassword:     (email)                 => api.post("/auth/forgot-password", { email }),
@@ -362,3 +421,4 @@ export const fournisseursAPI = {
 export const commandesExtraAPI = {
   rembourser: (id, motif) => api.patch(`/commandes/${id}/rembourser`, { motif }),
 };
+

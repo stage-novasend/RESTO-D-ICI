@@ -74,7 +74,6 @@ export class B2BService {
     compte['validePar'] = adminId;
     compte.actif = true;
 
-    console.log(`Validation B2B envoyée à ${compte['emailProfessionnel']}`);
 
     //  FIX: Cast via unknown
     return this.compteB2BRepo.save(compte);

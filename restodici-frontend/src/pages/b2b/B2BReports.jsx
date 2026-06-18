@@ -312,8 +312,18 @@ export default function B2BReports() {
   const [reports, setReports]     = useState(null);
   const [loading, setLoading]     = useState(true);
   const [tab, setTab]             = useState('collaborateurs');
-  const [exported, setExported]   = useState(false);
-  const [viewerOpen, setViewerOpen] = useState(false);
+  const [exported, setExported]     = useState(false);
+  const [viewerOpen, setViewerOpen]   = useState(false);
+  const [contesterModal, setContesterModal] = useState(null); // { id, numeroFacture }
+  const [motif, setMotif]             = useState('');
+  const [contesterLoading, setContesterLoading] = useState(false);
+  const [contesterErr, setContesterErr]   = useState('');
+
+  const refreshReports = () => {
+    b2bAPI.getReports()
+      .then(r => setReports(r.data))
+      .catch(() => {});
+  };
 
   useEffect(() => {
     b2bAPI.getReports()
@@ -321,6 +331,22 @@ export default function B2BReports() {
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  const handleContester = async () => {
+    if (!motif.trim()) { setContesterErr('Veuillez indiquer un motif.'); return; }
+    setContesterLoading(true);
+    setContesterErr('');
+    try {
+      await b2bAPI.contesterFacture(contesterModal.id, motif.trim());
+      setContesterModal(null);
+      setMotif('');
+      refreshReports();
+    } catch (e) {
+      setContesterErr(e?.response?.data?.message || 'Une erreur est survenue.');
+    } finally {
+      setContesterLoading(false);
+    }
+  };
 
   const collaborateurs = reports?.collaborateurs ?? [];
   const auditLogs      = reports?.auditLogs ?? [];
@@ -604,6 +630,8 @@ export default function B2BReports() {
               ) : factures.map((f, i, arr) => {
                 const isPaid = f.statut === 'PAYEE' || f.statut === 'paid';
                 const isLate = f.statut === 'RETARDEE';
+                const isContested = f.statut === 'EN_CONTESTATION';
+                const canContest = !isPaid && !isContested;
                 return (
                   <div key={i} className="flex items-center justify-between px-5 py-4 transition"
                     style={{ borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}
@@ -611,8 +639,8 @@ export default function B2BReports() {
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     <div className="flex items-center gap-3">
                       <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                        style={{ background: isPaid ? GREEN_L : isLate ? RED_L : AMBER_L }}>
-                        <FileText className="w-4 h-4" style={{ color: isPaid ? GREEN : isLate ? RED : AMBER }} />
+                        style={{ background: isPaid ? GREEN_L : isLate ? RED_L : isContested ? '#EEF2FF' : AMBER_L }}>
+                        <FileText className="w-4 h-4" style={{ color: isPaid ? GREEN : isLate ? RED : isContested ? '#6366F1' : AMBER }} />
                       </div>
                       <div>
                         <p className="text-[13px] font-bold" style={{ color: TEXT }}>
@@ -622,13 +650,21 @@ export default function B2BReports() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
+                      {canContest && (
+                        <button
+                          onClick={() => { setContesterModal({ id: f.id, numeroFacture: f.numeroFacture }); setMotif(''); setContesterErr(''); }}
+                          className="text-[11px] font-semibold px-3 py-1 rounded-lg border transition"
+                          style={{ color: RED, borderColor: '#FECACA', background: RED_L }}>
+                          Contester
+                        </button>
+                      )}
                       <div className="text-right">
                         <p className="text-[13px] font-bold" style={{ color: TEXT }}>
                           {(f.montantTTC ?? f.amount ?? 0).toLocaleString()} FCFA
                         </p>
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                          style={{ background: isPaid ? GREEN_L : isLate ? RED_L : AMBER_L, color: isPaid ? GREEN : isLate ? RED : AMBER }}>
-                          {isPaid ? 'Payée' : isLate ? 'En retard' : 'En attente'}
+                          style={{ background: isPaid ? GREEN_L : isLate ? RED_L : isContested ? '#EEF2FF' : AMBER_L, color: isPaid ? GREEN : isLate ? RED : isContested ? '#6366F1' : AMBER }}>
+                          {isPaid ? 'Payée' : isLate ? 'En retard' : isContested ? 'En contestation' : 'En attente'}
                         </span>
                       </div>
                     </div>
@@ -641,6 +677,44 @@ export default function B2BReports() {
           <p className="text-center text-[11px]" style={{ color: FAINT }}>
             Données SYSCOHADA · TVA 18% · Export CSV disponible le {lastDayDisplay}
           </p>
+        </div>
+      )}
+
+      {/* Modal contestation */}
+      {contesterModal && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 50, background: 'rgba(15,23,42,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
+          <div style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, boxShadow: SH2 }}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-bold text-[15px]" style={{ color: TEXT }}>Contester la facture #{contesterModal.numeroFacture}</h3>
+              <button onClick={() => setContesterModal(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: MUTED }}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-[13px] mb-4" style={{ color: MUTED }}>
+              Décrivez le problème constaté sur cette facture. Un message sera envoyé à l'administrateur.
+            </p>
+            <textarea
+              value={motif}
+              onChange={e => setMotif(e.target.value)}
+              placeholder="Ex : montant incorrect, commandes manquantes..."
+              rows={4}
+              className="w-full rounded-xl border px-4 py-3 text-[13px] resize-none"
+              style={{ borderColor: contesterErr ? RED : BORDER, outline: 'none', color: TEXT }}
+            />
+            {contesterErr && <p className="text-[12px] mt-1" style={{ color: RED }}>{contesterErr}</p>}
+            <div className="flex gap-3 mt-4">
+              <button onClick={() => setContesterModal(null)}
+                className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold border"
+                style={{ borderColor: BORDER, color: MUTED, background: '#fff' }}>
+                Annuler
+              </button>
+              <button onClick={handleContester} disabled={contesterLoading}
+                className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-white"
+                style={{ background: contesterLoading ? '#FCA5A5' : RED }}>
+                {contesterLoading ? 'Envoi...' : 'Envoyer la contestation'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

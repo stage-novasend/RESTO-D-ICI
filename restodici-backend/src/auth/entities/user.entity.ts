@@ -86,6 +86,12 @@ export class User {
     inverseJoinColumn: { name: 'restaurantId', referencedColumnName: 'id' },
   })
   favorites?: Restaurant[];
+  @Column({ nullable: true })
+  refreshToken?: string;
+
+  @Column({ nullable: true })
+  refreshTokenExpires?: Date;
+
   @CreateDateColumn()
   createdAt!: Date;
 

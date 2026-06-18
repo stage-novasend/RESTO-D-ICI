@@ -71,6 +71,12 @@ export class AuthController {
     return { message: 'Déconnexion réussie' };
   }
 
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  refresh(@Body('refreshToken') refreshToken: string) {
+    return this.authService.refreshAccessToken(refreshToken);
+  }
+
   // Password reset routes
   @Post('forgot-password')
   @HttpCode(HttpStatus.OK)

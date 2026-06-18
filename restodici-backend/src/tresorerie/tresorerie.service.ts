@@ -1,4 +1,7 @@
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository, Between } from 'typeorm';
+import { Commande, StatutCommande } from '../commandes/entities/commande.entity';
 import axios from 'axios';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const PDFDocument = require('pdfkit');
@@ -23,7 +26,10 @@ async function fetchImageBuffer(url: string): Promise<Buffer | null> {
 
 @Injectable()
 export class TresorerieService {
-  constructor() {}
+  constructor(
+    @InjectRepository(Commande)
+    private commandeRepository: Repository<Commande>,
+  ) {}
 
   async generateReceiptPdf(data: {
     commandeId: string;
@@ -549,31 +555,45 @@ export class TresorerieService {
     restaurantId: string,
     period: 'day' | 'week' | 'month' = 'day',
   ) {
-    const stats = {
-      caJour: 0,
-      caSemaine: 0,
-      caMois: 0,
-      nbCommandes: 0,
-      ticketMoyen: 0,
-      margesBrutes: 0,
-    };
+    const now = new Date();
+    let dateFrom: Date;
 
     if (period === 'day') {
-      stats.caJour = Math.floor(Math.random() * 200000) + 100000;
-      stats.nbCommandes = Math.floor(Math.random() * 15) + 8;
+      dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
     } else if (period === 'week') {
-      stats.caSemaine = Math.floor(Math.random() * 1000000) + 500000;
-      stats.nbCommandes = Math.floor(Math.random() * 80) + 40;
+      const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+      dateFrom = new Date(now);
+      dateFrom.setDate(now.getDate() - dayOfWeek);
+      dateFrom.setHours(0, 0, 0, 0);
     } else {
-      stats.caMois = Math.floor(Math.random() * 4000000) + 2000000;
-      stats.nbCommandes = Math.floor(Math.random() * 300) + 150;
+      dateFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
     }
 
-    stats.ticketMoyen =
-      stats.caJour > 0 ? Math.round(stats.caJour / stats.nbCommandes) : 0;
-    stats.margesBrutes = Math.floor(Math.random() * 30) + 60;
+    const commandes = await this.commandeRepository.find({
+      where: {
+        restaurant: { id: restaurantId },
+        statut: StatutCommande.LIVREE,
+        estPaye: true,
+        createdAt: Between(dateFrom, now),
+      },
+    });
 
-    return stats;
+    const caTotal = commandes.reduce((s, c) => s + Number(c.montantTotal), 0);
+    const nbCommandes = commandes.length;
+    const ticketMoyen = nbCommandes > 0 ? Math.round(caTotal / nbCommandes) : 0;
+
+    const caJour = period === 'day' ? caTotal : 0;
+    const caSemaine = period === 'week' ? caTotal : 0;
+    const caMois = period === 'month' ? caTotal : 0;
+
+    return {
+      caJour,
+      caSemaine,
+      caMois,
+      nbCommandes,
+      ticketMoyen,
+      margesBrutes: 0,
+    };
   }
 
   async recordExpense(data: any, restaurantId: string) {
