@@ -1,8 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import axios from 'axios';
 import { FournisseurLivraison, TypeFournisseurLivraison } from './entities/fournisseur-livraison.entity';
 import { LivraisonExterne, StatutLivraisonExterne } from './entities/livraison-externe.entity';
 
@@ -13,7 +12,6 @@ export class LivraisonsExternesService {
     private fournisseurRepo: Repository<FournisseurLivraison>,
     @InjectRepository(LivraisonExterne)
     private livraisonRepo: Repository<LivraisonExterne>,
-    private httpService: HttpService,
   ) {}
 
   // ── Fournisseurs ────────────────────────────────────────────────
@@ -74,19 +72,22 @@ export class LivraisonsExternesService {
     if (fournisseur.apiUrl && fournisseur.apiKey) {
       try {
         const body = this.buildRequestBody(fournisseur.type, { ...payload, livraisonId: saved.id });
-        const response = await firstValueFrom(
-          this.httpService.post(fournisseur.apiUrl + '/orders', body, {
+        const response = await axios.post<Record<string, any>>(
+          fournisseur.apiUrl + '/orders',
+          body,
+          {
             headers: {
               Authorization: `Bearer ${fournisseur.apiKey}`,
               'Content-Type': 'application/json',
             },
             timeout: 10000,
-          }),
+          },
         );
-        saved.referenceExterne = response.data?.id || response.data?.orderId || response.data?.reference;
+        const d = response.data;
+        saved.referenceExterne = d?.id || d?.orderId || d?.reference;
         saved.statut = StatutLivraisonExterne.AFFECTEE;
-        if (response.data?.trackingUrl) saved.trackingUrl = response.data.trackingUrl;
-        saved.metadonnees = response.data;
+        if (d?.trackingUrl) saved.trackingUrl = d.trackingUrl;
+        saved.metadonnees = d;
         await this.livraisonRepo.save(saved);
       } catch {
         saved.statut = StatutLivraisonExterne.ECHEC;
