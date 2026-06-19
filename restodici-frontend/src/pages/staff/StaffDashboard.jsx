@@ -22,37 +22,12 @@ import {
 } from '../../utils/formatters';
 import DispatchModal from '../../components/livraison/DispatchModal';
 
-/* ── Palette Premium ── */
-const COLORS = {
-  primary: {
-    50: '#FFF7ED',
-    100: '#FFEDD5',
-    200: '#FED7AA',
-    300: '#FDBA74',
-    400: '#FB923C',
-    500: '#F97316',
-    600: '#EA580C',
-    700: '#C2410C',
-    800: '#9A3412',
-    900: '#7C2D12',
-  },
-  slate: {
-    50: '#F8FAFC',
-    100: '#F1F5F9',
-    200: '#E2E8F0',
-    300: '#CBD5E1',
-    400: '#94A3B8',
-    500: '#64748B',
-    600: '#475569',
-    700: '#334155',
-    800: '#1E293B',
-    900: '#0F172A',
-  },
-  success: '#10B981',
-  warning: '#F59E0B',
-  danger: '#EF4444',
-  info: '#3B82F6',
-};
+const GREEN = '#16A34A';
+const GREEN_LIGHT = '#22C55E';
+const GREEN_BG = '#F0FDF4';
+const GREEN_BORDER = '#BBF7D0';
+const ORANGE = '#FF8C00';
+const DARK = '#0F172A';
 
 const STATUS_FLOW = {
   RECUE: ['CONFIRMEE'],
@@ -95,22 +70,22 @@ const B2B_ACTION_LABELS = {
 };
 
 const STATUS_CONFIG = {
-  RECUE: { bg: 'bg-blue-50', text: 'text-blue-700', border: 'border-blue-200', dot: 'bg-blue-500' },
-  CONFIRMEE: { bg: 'bg-purple-50', text: 'text-purple-700', border: 'border-purple-200', dot: 'bg-purple-500' },
-  EN_PREP: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
-  PRETE: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  EN_LIVRAISON: { bg: 'bg-indigo-50', text: 'text-indigo-700', border: 'border-indigo-200', dot: 'bg-indigo-500' },
-  LIVREE: { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
-  ANNULEE: { bg: 'bg-rose-50', text: 'text-rose-700', border: 'border-rose-200', dot: 'bg-rose-500' },
-  EN_ATTENTE: { bg: 'bg-slate-50', text: 'text-slate-700', border: 'border-slate-200', dot: 'bg-slate-500' },
-  EN_PREPARATION: { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
+  RECUE:        { bg: '#DBEAFE', text: '#1D4ED8', border: '#93C5FD', dot: '#2563EB', label: 'Reçue' },
+  CONFIRMEE:    { bg: '#EDE9FE', text: '#5B21B6', border: '#C4B5FD', dot: '#7C3AED', label: 'Confirmée' },
+  EN_PREP:      { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D', dot: '#D97706', label: 'En préparation' },
+  PRETE:        { bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#16A34A', label: 'Prête' },
+  EN_LIVRAISON: { bg: '#E0E7FF', text: '#3730A3', border: '#A5B4FC', dot: '#4F46E5', label: 'En livraison' },
+  LIVREE:       { bg: '#DCFCE7', text: '#15803D', border: '#86EFAC', dot: '#16A34A', label: 'Livrée' },
+  ANNULEE:      { bg: '#FFE4E6', text: '#BE123C', border: '#FCA5A5', dot: '#EF4444', label: 'Annulée' },
+  EN_ATTENTE:   { bg: '#F1F5F9', text: '#475569', border: '#CBD5E1', dot: '#64748B', label: 'En attente' },
+  EN_PREPARATION: { bg: '#FEF3C7', text: '#92400E', border: '#FCD34D', dot: '#D97706', label: 'En préparation' },
 };
 
 const KDS_COLS = [
-  { key: 'new', label: 'Nouvelles', dot: COLORS.primary[500], statuses: ['RECUE', 'CONFIRMEE'] },
-  { key: 'prep', label: 'En préparation', dot: COLORS.warning, statuses: ['EN_PREP'] },
-  { key: 'ready', label: 'Prêtes', dot: COLORS.success, statuses: ['PRETE'] },
-  { key: 'deliv', label: 'En livraison', dot: COLORS.info, statuses: ['EN_LIVRAISON'] },
+  { key: 'new',   label: 'Nouvelles',      dot: '#3B82F6', statuses: ['RECUE', 'CONFIRMEE'] },
+  { key: 'prep',  label: 'En préparation', dot: '#F59E0B', statuses: ['EN_PREP'] },
+  { key: 'ready', label: 'Prêtes',         dot: GREEN_LIGHT, statuses: ['PRETE'] },
+  { key: 'deliv', label: 'En livraison',   dot: '#6366F1', statuses: ['EN_LIVRAISON'] },
 ];
 
 const WEEK_DAYS = [
@@ -137,28 +112,23 @@ function isInService(open, close) {
   return cur >= oh * 60 + om && cur < ch * 60 + cm;
 }
 
-/* ── Composants UI ── */
-
-function Spinner({ size = 16, className = '' }) {
+function Spinner({ size = 16 }) {
   return (
-    <div className={`animate-spin ${className}`} style={{ width: size, height: size }}>
-      <div className="w-full h-full rounded-full border-2 border-current border-t-transparent" style={{ color: 'currentColor' }} />
+    <div style={{ width: size, height: size }} className="animate-spin">
+      <div className="w-full h-full rounded-full border-2 border-current border-t-transparent" />
     </div>
   );
 }
 
-function StatusBadge({ status, size = 'md' }) {
-  const config = STATUS_CONFIG[status] || STATUS_CONFIG.RECUE;
-  const sizes = {
-    sm: 'px-2 py-0.5 text-[10px]',
-    md: 'px-2.5 py-1 text-xs',
-    lg: 'px-3 py-1.5 text-sm',
-  };
-
+function StatusBadge({ status }) {
+  const cfg = STATUS_CONFIG[status] || STATUS_CONFIG.RECUE;
   return (
-    <span className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${config.bg} ${config.text} ${sizes[size]} border ${config.border}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${config.dot}`} />
-      {STATUS_LABELS[status] || status}
+    <span
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold border"
+      style={{ background: cfg.bg, color: cfg.text, borderColor: cfg.border }}
+    >
+      <span className="w-1.5 h-1.5 rounded-full" style={{ background: cfg.dot }} />
+      {STATUS_LABELS[status] || cfg.label || status}
     </span>
   );
 }
@@ -166,43 +136,41 @@ function StatusBadge({ status, size = 'md' }) {
 function TimerBadge({ minutesAgo }) {
   const isLate = minutesAgo >= 20;
   const isWarn = !isLate && minutesAgo >= 10;
-  
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-semibold text-xs ${
-      isLate ? 'bg-rose-50 text-rose-700 border border-rose-200 animate-pulse' :
-      isWarn ? 'bg-amber-50 text-amber-700 border border-amber-200' :
-      'bg-slate-100 text-slate-600 border border-slate-200'
-    }`}>
+    <div
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold border ${
+        isLate ? 'animate-pulse' : ''
+      }`}
+      style={
+        isLate
+          ? { background: '#FFF1F2', color: '#BE123C', borderColor: '#FECDD3' }
+          : isWarn
+          ? { background: '#FFFBEB', color: '#B45309', borderColor: '#FDE68A' }
+          : { background: '#F8FAFC', color: '#475569', borderColor: '#E2E8F0' }
+      }
+    >
       <Clock className="w-3 h-3" />
-      {minutesAgo} min
+      {minutesAgo}m
     </div>
   );
 }
 
-function KpiCard({ icon: Icon, iconBg, iconColor, eyebrow, label, value, unit, sub, subOk = true }) {
+function StatCard({ icon: Icon, value, label, color, bg, border, accentColor }) {
+  const accent = accentColor || color;
   return (
-    <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex-1">
-          {eyebrow && (
-            <p className="text-[10px] font-bold tracking-wider uppercase text-primary-600 mb-1">{eyebrow}</p>
-          )}
-          <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>
+    <div
+      className="relative flex flex-col p-4 rounded-2xl border overflow-hidden"
+      style={{ background: bg, borderColor: border }}
+    >
+      {/* Colored top accent bar */}
+      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: accent }} />
+      <div className="flex items-center justify-between mb-3 mt-1">
+        <div className="w-11 h-11 rounded-xl flex items-center justify-center" style={{ background: accent + '22' }}>
+          <Icon className="w-6 h-6" style={{ color: accent }} />
         </div>
-        <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0`}>
-          <Icon className="w-5 h-5" style={{ color: iconColor }} />
-        </div>
+        <p className="text-3xl font-black leading-none" style={{ color: DARK }}>{value}</p>
       </div>
-      <div className="flex items-baseline gap-1 mb-2">
-        <p className="text-3xl font-bold text-slate-900 tracking-tight">{value}</p>
-        {unit && <span className="text-sm font-medium text-slate-500">{unit}</span>}
-      </div>
-      {sub && (
-        <p className={`text-xs font-semibold flex items-center gap-1 ${subOk ? 'text-emerald-600' : 'text-amber-600'}`}>
-          {!subOk && <AlertTriangle className="w-3 h-3" />}
-          {sub}
-        </p>
-      )}
+      <p className="text-[11px] font-black uppercase tracking-wider" style={{ color: accent }}>{label}</p>
     </div>
   );
 }
@@ -217,40 +185,56 @@ function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDr
   const note = order.notes || order.commentaire;
   const draft = paymentDraft || {};
 
+  const statusCfg = STATUS_CONFIG[order.statut] || STATUS_CONFIG.RECUE;
+  const leftBorderColor = isUrgent ? '#BE123C' : statusCfg.dot;
+
   return (
-    <div className={`bg-white rounded-xl border-2 p-4 transition-all duration-200 hover:shadow-md ${
-      isUrgent ? 'border-rose-200 bg-rose-50/30' : 'border-slate-200'
-    }`}>
+    <div
+      className="rounded-2xl border p-4 transition-all duration-200 hover:shadow-lg"
+      style={{
+        background: isUrgent ? '#FFF1F2' : '#FFFFFF',
+        borderColor: isUrgent ? '#FECDD3' : '#E2E8F0',
+        borderLeft: `4px solid ${leftBorderColor}`,
+      }}
+    >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-            isUrgent ? 'bg-rose-100' : 'bg-primary-50'
-          }`}>
-            <ChefHat className={`w-5 h-5 ${isUrgent ? 'text-rose-600' : 'text-primary-600'}`} />
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+            style={{ background: isUrgent ? '#FECDD3' : statusCfg.bg }}
+          >
+            <ChefHat className="w-5 h-5" style={{ color: isUrgent ? '#BE123C' : statusCfg.dot }} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">#{order.numero}</span>
-              <StatusBadge status={order.statut} size="sm" />
+            <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+              <span className="px-2 py-0.5 rounded-md text-xs font-bold" style={{ background: '#F1F5F9', color: '#334155' }}>
+                #{order.numero}
+              </span>
+              <StatusBadge status={order.statut} />
               {order.modeLivraison && (
-                <span className="px-2 py-0.5 bg-primary-50 text-primary-700 rounded-md text-xs font-semibold border border-primary-200">
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-bold border" style={{ background: '#FFF7ED', color: ORANGE, borderColor: '#FDBA74' }}>
                   {formatDeliveryMode(order.modeLivraison)}
                 </span>
               )}
-              {isUrgent && <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-md text-xs font-bold border border-rose-200">URGENT</span>}
+              {isUrgent && (
+                <span className="px-2 py-0.5 rounded-md text-[10px] font-black animate-pulse" style={{ background: '#BE123C', color: '#FFF' }}>
+                  URGENT
+                </span>
+              )}
             </div>
-            <p className="font-semibold text-slate-900 text-sm truncate">
+            <p className="font-semibold text-sm truncate" style={{ color: DARK }}>
               {(order.lignes || []).map(l => l.article?.nom).filter(Boolean).join(', ') || `Commande ${order.numero}`}
             </p>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Reçue à {timeStr}
+            <p className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: '#94A3B8' }}>
+              <Clock className="w-3 h-3" /> {timeStr}
             </p>
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
           <TimerBadge minutesAgo={minutesAgo} />
-          <p className="text-lg font-bold text-primary-600">
-            {(Number(order.montantTotal) || 0).toLocaleString('fr-FR')} <span className="text-xs text-slate-500 font-normal">FCFA</span>
+          <p className="text-base font-black" style={{ color: ORANGE }}>
+            {(Number(order.montantTotal) || 0).toLocaleString('fr-FR')}{' '}
+            <span className="text-[10px] font-normal" style={{ color: '#94A3B8' }}>FCFA</span>
           </p>
         </div>
       </div>
@@ -258,13 +242,13 @@ function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDr
       {(order.lignes || []).length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {order.lignes.slice(0, 4).map((l, i) => (
-            <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-700">
-              <span className="font-bold text-primary-600">{l.quantite}×</span>
+            <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border" style={{ background: '#F8FAFC', borderColor: '#E2E8F0', color: '#334155' }}>
+              <span className="font-black" style={{ color: ORANGE }}>{l.quantite}×</span>
               {l.article?.nom || 'Article'}
             </span>
           ))}
           {order.lignes.length > 4 && (
-            <span className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-md text-xs text-slate-500">
+            <span className="px-2 py-1 rounded-lg text-xs border" style={{ background: '#F8FAFC', borderColor: '#E2E8F0', color: '#94A3B8' }}>
               +{order.lignes.length - 4}
             </span>
           )}
@@ -272,22 +256,23 @@ function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDr
       )}
 
       {note && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-2.5 mb-3 flex gap-2">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <span className="text-sm text-amber-800 font-medium">{note}</span>
+        <div className="flex gap-2 rounded-xl p-2.5 mb-3 border" style={{ background: '#FFFBEB', borderColor: '#FDE68A' }}>
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#D97706' }} />
+          <span className="text-sm font-medium" style={{ color: '#92400E' }}>{note}</span>
         </div>
       )}
 
       {!order.estPaye && (
-        <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 mb-3">
-          <p className="text-xs font-semibold text-slate-700 mb-2 flex items-center gap-1.5">
-            <CircleDollarSign className="w-3.5 h-3.5 text-primary-600" /> Encaissement
+        <div className="rounded-xl p-3 mb-3 border" style={{ background: '#F8FAFC', borderColor: '#E2E8F0' }}>
+          <p className="text-xs font-bold mb-2 flex items-center gap-1.5" style={{ color: '#475569' }}>
+            <CircleDollarSign className="w-3.5 h-3.5" style={{ color: GREEN }} /> Encaissement
           </p>
           <div className="flex gap-2">
             <select
               value={draft.modePaiement || 'ESPECES'}
               onChange={e => setPaymentDraft({ ...draft, modePaiement: e.target.value })}
-              className="flex-1 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="flex-1 rounded-lg border px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2"
+              style={{ borderColor: '#CBD5E1', focusRingColor: GREEN }}
             >
               <option value="ESPECES">Espèces</option>
               <option value="CARTE_BANCAIRE">Carte</option>
@@ -300,55 +285,62 @@ function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDr
               min="0"
               value={draft.montantRemis ?? Number(order.montantTotal)}
               onChange={e => setPaymentDraft({ ...draft, montantRemis: e.target.value })}
-              className="w-24 rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              className="w-24 rounded-lg border px-2.5 py-1.5 text-xs font-medium focus:outline-none focus:ring-2"
+              style={{ borderColor: '#CBD5E1' }}
             />
             <button
               onClick={() => onPayment(order)}
               disabled={saving}
-              className="px-3 py-1.5 bg-primary-600 hover:bg-primary-700 disabled:bg-slate-400 text-white rounded-lg text-xs font-bold transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-black text-white transition-all disabled:opacity-50"
+              style={{ background: saving ? '#94A3B8' : GREEN }}
             >
               {saving ? <Spinner size={14} /> : 'OK'}
             </button>
           </div>
           {Number(draft.montantRemis) > Number(order.montantTotal) && (
-            <p className="text-xs text-emerald-600 font-semibold mt-2">
+            <p className="text-xs font-bold mt-2" style={{ color: GREEN }}>
               Rendu : {formatFCFA(Number(draft.montantRemis) - Number(order.montantTotal))}
             </p>
           )}
         </div>
       )}
 
-      <div className="flex gap-2">
-        {nextStatuses.map((ns, i) => (
-          <button
-            key={ns}
-            onClick={() => onAction(order.id, ns)}
-            disabled={saving}
-            className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
-              i === 0
-                ? 'bg-primary-600 hover:bg-primary-700 text-white shadow-sm'
-                : 'bg-white border-2 border-primary-600 text-primary-600 hover:bg-primary-50'
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
-          >
-            {ACTION_LABELS[ns] || ns}
-          </button>
-        ))}
-      </div>
+      {nextStatuses.length > 0 && (
+        <div className="flex gap-2">
+          {nextStatuses.map((ns, i) => (
+            <button
+              key={ns}
+              onClick={() => onAction(order.id, ns)}
+              disabled={saving}
+              className="flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={
+                i === 0
+                  ? { background: GREEN, color: '#FFF', boxShadow: `0 4px 12px ${GREEN}40` }
+                  : { background: '#FFF', color: GREEN, border: `2px solid ${GREEN}` }
+              }
+            >
+              {ACTION_LABELS[ns] || ns}
+            </button>
+          ))}
+        </div>
+      )}
 
       {canCancel && (
         <button
           onClick={() => onAction(order.id, 'ANNULEE')}
           disabled={saving}
-          className="w-full mt-2 py-2 px-3 rounded-lg text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors disabled:opacity-50"
+          className="w-full mt-2 py-2 px-3 rounded-xl text-xs font-semibold border transition-colors disabled:opacity-50"
+          style={{ background: '#FFF1F2', color: '#BE123C', borderColor: '#FECDD3' }}
         >
           Annuler
         </button>
       )}
 
-      {order.modeLivraison === 'LIVRAISON' && ['PRETE','EN_LIVRAISON'].includes(order.statut) && onDispatch && (
+      {order.modeLivraison === 'LIVRAISON' && ['PRETE', 'EN_LIVRAISON'].includes(order.statut) && onDispatch && (
         <button
           onClick={() => onDispatch(order)}
-          className="w-full mt-2 py-2 px-3 rounded-lg text-xs font-bold border border-primary-300 text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors flex items-center justify-center gap-1.5"
+          className="w-full mt-2 py-2 px-3 rounded-xl text-xs font-bold border transition-colors flex items-center justify-center gap-1.5"
+          style={{ background: '#EFF6FF', color: '#1D4ED8', borderColor: '#BFDBFE' }}
         >
           <Truck className="w-3 h-3" /> Dispatcher la livraison
         </button>
@@ -365,33 +357,32 @@ function B2BOrderCard({ order, onAction, saving }) {
   const nextStatuses = B2B_STATUS_FLOW[order.statut] || [];
 
   return (
-    <div className={`bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl border-2 p-4 transition-all duration-200 hover:shadow-md ${
-      isUrgent ? 'border-amber-300' : 'border-amber-200'
-    }`}>
+    <div
+      className="rounded-2xl border p-4 transition-all duration-200 hover:shadow-lg"
+      style={{
+        background: 'linear-gradient(135deg, #FFFBEB, #FFF7ED)',
+        borderColor: isUrgent ? '#FCD34D' : '#FDE68A',
+        borderLeft: `4px solid ${isUrgent ? '#D97706' : '#F59E0B'}`,
+      }}
+    >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-start gap-3 flex-1 min-w-0">
-          <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
-            <Package className="w-5 h-5 text-amber-700" />
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#FEF3C7' }}>
+            <Package className="w-5 h-5" style={{ color: '#D97706' }} />
           </div>
           <div className="flex-1 min-w-0">
-            <div className="flex flex-wrap items-center gap-2 mb-2">
-              <span className="px-2 py-0.5 bg-amber-100 text-amber-800 rounded-md text-xs font-bold border border-amber-200">B2B</span>
-              <span className="px-2 py-0.5 bg-slate-100 text-slate-700 rounded-md text-xs font-semibold">#{order.numero}</span>
-              <span className={`px-2 py-0.5 rounded-md text-xs font-semibold border ${
-                STATUS_CONFIG[order.statut]?.bg || 'bg-slate-100'} ${
-                STATUS_CONFIG[order.statut]?.text || 'text-slate-700'} ${
-                STATUS_CONFIG[order.statut]?.border || 'border-slate-200'
-              }`}>
-                {B2B_STATUS_LABELS[order.statut] || order.statut}
-              </span>
-              {isUrgent && <span className="px-2 py-0.5 bg-rose-100 text-rose-700 rounded-md text-xs font-bold border border-rose-200">URGENT</span>}
+            <div className="flex flex-wrap items-center gap-1.5 mb-1.5">
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-black" style={{ background: ORANGE, color: '#FFF' }}>B2B</span>
+              <span className="px-2 py-0.5 rounded-md text-xs font-bold" style={{ background: '#FEF3C7', color: '#92400E' }}>#{order.numero}</span>
+              <StatusBadge status={order.statut} />
+              {isUrgent && <span className="px-2 py-0.5 rounded-md text-[10px] font-black animate-pulse" style={{ background: '#BE123C', color: '#FFF' }}>URGENT</span>}
             </div>
-            <p className="font-semibold text-slate-900 text-sm truncate">{order.entreprise || 'Entreprise B2B'}</p>
-            <p className="text-xs text-slate-500 mt-1 flex items-center gap-1">
-              <Clock className="w-3 h-3" /> Reçue à {timeStr}
+            <p className="font-semibold text-sm truncate" style={{ color: DARK }}>{order.entreprise || 'Entreprise B2B'}</p>
+            <p className="text-[11px] mt-0.5 flex items-center gap-1" style={{ color: '#94A3B8' }}>
+              <Clock className="w-3 h-3" /> {timeStr}
             </p>
             {(order.dateLivraison || order.heureLivraison) && (
-              <p className="text-xs text-amber-800 mt-1 flex items-center gap-1">
+              <p className="text-[11px] mt-0.5 flex items-center gap-1 font-semibold" style={{ color: '#92400E' }}>
                 <Truck className="w-3 h-3" />
                 {order.dateLivraison ? new Date(order.dateLivraison).toLocaleDateString('fr-FR', { day: '2-digit', month: 'short' }) : ''}
                 {order.heureLivraison ? ` à ${order.heureLivraison}` : ''}
@@ -399,11 +390,12 @@ function B2BOrderCard({ order, onAction, saving }) {
             )}
           </div>
         </div>
-        <div className="flex flex-col items-end gap-2 flex-shrink-0">
+        <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
           <TimerBadge minutesAgo={minutesAgo} />
           {order.totalEstime != null && (
-            <p className="text-lg font-bold text-amber-700">
-              {(Number(order.totalEstime) || 0).toLocaleString('fr-FR')} <span className="text-xs text-slate-500 font-normal">FCFA</span>
+            <p className="text-base font-black" style={{ color: '#D97706' }}>
+              {(Number(order.totalEstime) || 0).toLocaleString('fr-FR')}{' '}
+              <span className="text-[10px] font-normal" style={{ color: '#94A3B8' }}>FCFA</span>
             </p>
           )}
         </div>
@@ -412,12 +404,12 @@ function B2BOrderCard({ order, onAction, saving }) {
       {(order.lignes || []).length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-3">
           {order.lignes.slice(0, 4).map((l, i) => (
-            <span key={i} className="inline-flex items-center gap-1 px-2 py-1 bg-white border border-amber-200 rounded-md text-xs text-amber-900 font-medium">
-              <span className="font-bold">{l.quantite}×</span> {l.nomArticle || 'Article'}
+            <span key={i} className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs border" style={{ background: '#FFF', borderColor: '#FDE68A', color: '#92400E' }}>
+              <span className="font-black">{l.quantite}×</span> {l.nomArticle || 'Article'}
             </span>
           ))}
           {order.lignes.length > 4 && (
-            <span className="px-2 py-1 bg-white border border-amber-200 rounded-md text-xs text-slate-500">
+            <span className="px-2 py-1 rounded-lg text-xs border" style={{ background: '#FFF', borderColor: '#FDE68A', color: '#94A3B8' }}>
               +{order.lignes.length - 4}
             </span>
           )}
@@ -431,11 +423,12 @@ function B2BOrderCard({ order, onAction, saving }) {
               key={ns}
               onClick={() => onAction(order.id, ns)}
               disabled={saving}
-              className={`flex-1 py-2 px-3 rounded-lg text-xs font-bold transition-all ${
+              className="flex-1 py-2.5 px-3 rounded-xl text-xs font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={
                 i === 0
-                  ? 'bg-amber-600 hover:bg-amber-700 text-white shadow-sm'
-                  : 'bg-white border-2 border-amber-600 text-amber-600 hover:bg-amber-50'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
+                  ? { background: '#D97706', color: '#FFF', boxShadow: '0 4px 12px #D9770640' }
+                  : { background: '#FFF', color: '#D97706', border: '2px solid #D97706' }
+              }
             >
               {B2B_ACTION_LABELS[ns] || ns}
             </button>
@@ -459,13 +452,13 @@ function KDSBoard({ orders, b2bOrders, onAction, onB2BAction, onPayment, payment
         const total = colOrders.length + colB2B.length;
 
         return (
-          <div key={col.key} className="bg-slate-100 rounded-2xl p-3 min-h-[400px]">
-            <div className="flex items-center justify-between mb-3 px-2">
-              <div className="flex items-center gap-2 font-bold text-sm text-slate-700">
-                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: col.dot }} />
+          <div key={col.key} className="rounded-2xl p-3 min-h-[400px]" style={{ background: '#F8FAFC' }}>
+            <div className="flex items-center justify-between mb-3 px-1">
+              <div className="flex items-center gap-2 text-sm font-bold" style={{ color: '#334155' }}>
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: col.dot }} />
                 {col.label}
               </div>
-              <span className="text-xs font-bold text-slate-500 bg-white px-2 py-1 rounded-md border border-slate-200">
+              <span className="text-xs font-black px-2 py-0.5 rounded-lg" style={{ background: '#FFF', color: '#64748B', border: '1px solid #E2E8F0' }}>
                 {total}
               </span>
             </div>
@@ -483,17 +476,12 @@ function KDSBoard({ orders, b2bOrders, onAction, onB2BAction, onPayment, payment
                 />
               ))}
               {colB2B.map(o => (
-                <B2BOrderCard
-                  key={o.id}
-                  order={o}
-                  onAction={onB2BAction}
-                  saving={savingB2BId === o.id}
-                />
+                <B2BOrderCard key={o.id} order={o} onAction={onB2BAction} saving={savingB2BId === o.id} />
               ))}
               {total === 0 && (
-                <div className="text-center py-8 px-3 bg-white/50 rounded-xl border-2 border-dashed border-slate-300">
-                  <ChefHat className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                  <p className="text-xs font-semibold text-slate-600">Aucune commande</p>
+                <div className="text-center py-10 px-3 rounded-2xl border-2 border-dashed" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
+                  <ChefHat className="w-8 h-8 mx-auto mb-2" style={{ color: '#CBD5E1' }} />
+                  <p className="text-xs font-semibold" style={{ color: '#94A3B8' }}>Aucune commande</p>
                 </div>
               )}
             </div>
@@ -510,43 +498,43 @@ function WeeklySchedule({ openingTime, closingTime }) {
   const inService = isInService(openingTime, closingTime);
 
   return (
-    <div className="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+    <div className="rounded-2xl border p-5" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h3 className="text-sm font-bold text-slate-900 mb-1">Planning</h3>
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${inService ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-            <span className={`text-xs font-semibold ${inService ? 'text-emerald-600' : 'text-slate-500'}`}>
-              {inService ? 'Ouvert' : 'Fermé'}
+          <h3 className="text-sm font-black" style={{ color: DARK }}>Planning semaine</h3>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="w-2 h-2 rounded-full" style={{ background: inService ? GREEN_LIGHT : '#94A3B8' }} />
+            <span className="text-xs font-bold" style={{ color: inService ? GREEN : '#94A3B8' }}>
+              {inService ? 'En service' : 'Fermé'}
             </span>
           </div>
         </div>
-        <Calendar className="w-4 h-4 text-slate-400" />
+        <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#F8FAFC' }}>
+          <Calendar className="w-4 h-4" style={{ color: '#94A3B8' }} />
+        </div>
       </div>
-      <div className="space-y-2">
+      <div className="space-y-1">
         {week.map((day, i) => {
           const isToday = i === todayIdx;
           return (
             <div
               key={i}
-              className={`flex items-center gap-3 p-2 rounded-lg transition-colors ${
-                isToday ? 'bg-primary-50 border border-primary-200' : 'hover:bg-slate-50'
-              }`}
+              className="flex items-center gap-3 p-2 rounded-xl transition-colors"
+              style={isToday ? { background: GREEN_BG, border: `1px solid ${GREEN_BORDER}` } : { border: '1px solid transparent' }}
             >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold flex-shrink-0 ${
-                isToday ? 'bg-primary-600 text-white' : 'bg-slate-100 text-slate-600'
-              }`}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0"
+                style={isToday ? { background: GREEN, color: '#FFF' } : { background: '#F1F5F9', color: '#64748B' }}
+              >
                 {day.init}
               </div>
               <div className="flex-1 min-w-0">
-                <p className={`text-xs font-semibold truncate ${isToday ? 'text-primary-900' : 'text-slate-700'}`}>
-                  {day.name}
-                </p>
-                <p className={`text-[10px] truncate ${day.rest ? 'text-rose-500' : 'text-slate-500'}`}>
-                  {day.hours}
-                </p>
+                <p className="text-xs font-bold truncate" style={{ color: isToday ? '#14532D' : '#334155' }}>{day.name}</p>
+                <p className="text-[10px] truncate" style={{ color: day.rest ? '#F43F5E' : '#94A3B8' }}>{day.hours}</p>
               </div>
-              {isToday && <span className={`w-2 h-2 rounded-full ${inService ? 'bg-emerald-500' : 'bg-amber-500'}`} />}
+              {isToday && (
+                <span className="w-2 h-2 rounded-full" style={{ background: inService ? GREEN_LIGHT : '#F59E0B' }} />
+              )}
             </div>
           );
         })}
@@ -561,21 +549,22 @@ function ToastList({ toasts }) {
       {toasts.map(t => (
         <div
           key={t.id}
-          className="bg-white rounded-xl p-4 shadow-2xl border border-slate-200 min-w-[300px] max-w-md animate-[slideIn_0.3s_ease-out] pointer-events-auto"
+          className="rounded-2xl p-4 shadow-2xl min-w-[300px] max-w-md pointer-events-auto border animate-[slideIn_0.3s_ease-out]"
+          style={{ background: '#FFF', borderColor: '#E2E8F0' }}
         >
           <div className="flex items-start gap-3">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0 ${
-              t.ok ? 'bg-emerald-50' : 'bg-primary-50'
-            }`}>
-              {t.ok ? (
-                <CheckCircle className="w-5 h-5 text-emerald-600" />
-              ) : (
-                <UtensilsCrossed className="w-5 h-5 text-primary-600" />
-              )}
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: t.ok ? GREEN_BG : '#FFF7ED' }}
+            >
+              {t.ok
+                ? <CheckCircle className="w-5 h-5" style={{ color: GREEN }} />
+                : <UtensilsCrossed className="w-5 h-5" style={{ color: ORANGE }} />
+              }
             </div>
-            <div className="flex-1">
-              <p className="text-sm font-bold text-slate-900 mb-0.5">{t.title}</p>
-              <p className="text-xs text-slate-600">{t.msg}</p>
+            <div>
+              <p className="text-sm font-black" style={{ color: DARK }}>{t.title}</p>
+              <p className="text-xs mt-0.5" style={{ color: '#64748B' }}>{t.msg}</p>
             </div>
           </div>
         </div>
@@ -786,10 +775,13 @@ export default function StaffDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: '#F8FAFC' }}>
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary-200 border-t-primary-600 rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-slate-600 font-medium">Chargement...</p>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: `linear-gradient(135deg, ${GREEN}, #15803D)` }}>
+            <UtensilsCrossed className="w-7 h-7 text-white" />
+          </div>
+          <div className="w-8 h-8 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-3" style={{ borderColor: `${GREEN}40`, borderTopColor: 'transparent' }} />
+          <p className="text-sm font-semibold" style={{ color: '#64748B' }}>Chargement...</p>
         </div>
       </div>
     );
@@ -802,7 +794,7 @@ export default function StaffDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen" style={{ background: '#F1F5F9' }}>
       <style>{`
         @keyframes slideIn {
           from { transform: translateX(100%); opacity: 0; }
@@ -812,38 +804,44 @@ export default function StaffDashboard() {
       <OnboardingWizard />
 
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/80 backdrop-blur-xl border-b border-slate-200 shadow-sm">
+      <header className="sticky top-0 z-30 border-b" style={{ background: DARK, borderColor: '#1E293B' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary-500 to-primary-700 flex items-center justify-center shadow-lg shadow-primary-500/30">
-                  <UtensilsCrossed className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-bold text-slate-900 text-sm leading-tight">Resto d'ici</p>
-                  <p className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Espace Staff</p>
-                </div>
+
+            {/* Brand */}
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${ORANGE}, #EA6C00)` }}
+              >
+                <UtensilsCrossed className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-black text-sm leading-tight text-white">Resto d'ici</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#64748B' }}>Espace Staff</p>
               </div>
             </div>
 
+            {/* Nav */}
             <nav className="hidden md:flex items-center gap-1">
               {TABS.map(({ id, label, icon: Icon, badge, badgeRed }) => (
                 <button
                   key={id}
                   onClick={() => goTab(id)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all"
+                  style={
                     activeTab === id
-                      ? 'bg-primary-50 text-primary-700 shadow-sm'
-                      : 'text-slate-600 hover:bg-slate-100'
-                  }`}
+                      ? { background: '#1E293B', color: '#FFF' }
+                      : { color: '#94A3B8' }
+                  }
                 >
                   <Icon className="w-4 h-4" />
                   {label}
                   {badge != null && badge > 0 && (
-                    <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold ${
-                      activeTab === id ? 'bg-primary-200 text-primary-800' : badgeRed ? 'bg-rose-100 text-rose-700' : 'bg-slate-200 text-slate-700'
-                    }`}>
+                    <span
+                      className="px-1.5 py-0.5 rounded-md text-[10px] font-black"
+                      style={badgeRed ? { background: '#BE123C', color: '#FFF' } : { background: GREEN, color: '#FFF' }}
+                    >
                       {badge}
                     </span>
                   )}
@@ -851,31 +849,47 @@ export default function StaffDashboard() {
               ))}
             </nav>
 
+            {/* Actions */}
             <div className="flex items-center gap-2">
+              {/* Bouton personnalisé — Nouvelle commande */}
               <button
                 onClick={() => setShowNewOrder(true)}
-                className="hidden sm:flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-bold transition-all shadow-sm hover:shadow-md"
+                className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-black text-white transition-all hover:scale-105 active:scale-95"
+                style={{
+                  background: `linear-gradient(135deg, ${GREEN}, #15803D)`,
+                  boxShadow: `0 4px 16px ${GREEN}50`,
+                }}
               >
                 <Plus className="w-4 h-4" />
-                Nouvelle
+                Nouvelle commande
               </button>
+
               <Link
                 to="/staff/kds"
-                className="hidden sm:flex items-center gap-1.5 px-3 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg text-sm font-semibold transition-colors"
+                className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-xl text-sm font-semibold transition-colors border"
+                style={{ background: '#1E293B', borderColor: '#334155', color: '#CBD5E1' }}
               >
                 <UtensilsCrossed className="w-4 h-4" />
                 KDS
               </Link>
-              <NotificationBell accentColor={COLORS.primary[600]} />
+
+              <NotificationBell accentColor={GREEN} />
+
               <button
                 onClick={() => void refresh()}
-                className="p-2 hover:bg-slate-100 rounded-lg transition-colors"
+                className="p-2 rounded-xl transition-colors"
+                style={{ color: '#64748B' }}
               >
-                <RefreshCw className="w-4 h-4 text-slate-600" />
+                <RefreshCw className="w-4 h-4" />
               </button>
+
               <button
                 onClick={() => setShowPanel(true)}
-                className="w-9 h-9 rounded-full bg-gradient-to-br from-primary-500 to-primary-700 text-white font-bold text-sm flex items-center justify-center shadow-md hover:shadow-lg transition-shadow"
+                className="w-9 h-9 rounded-xl font-black text-sm flex items-center justify-center text-white transition-all hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #16A34A 0%, #22C55E 100%)',
+                  boxShadow: '0 4px 14px rgba(22,163,74,0.4)',
+                }}
               >
                 {initials}
               </button>
@@ -885,141 +899,164 @@ export default function StaffDashboard() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        {/* ── DASHBOARD TAB ── */}
         {activeTab === 'dashboard' && (
           <div className="space-y-6">
-            {/* Hero */}
-            <div className="bg-gradient-to-br from-white to-slate-50 rounded-2xl p-6 border border-slate-200 shadow-sm">
-              <div className="flex flex-col lg:flex-row lg:items-center gap-6">
-                <div className="flex items-center gap-4 flex-1">
-                  <div className="relative">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center text-2xl font-bold text-primary-700 border-2 border-primary-300">
-                      {initials}
-                    </div>
-                    <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white ${isAvailable ? 'bg-emerald-500' : 'bg-slate-400'}`} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-primary-600 uppercase tracking-wider mb-1">
-                      {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </p>
-                    <h1 className="text-2xl font-bold text-slate-900 mb-1">Bonjour, {firstName} !</h1>
-                    <p className="text-sm text-slate-600">
-                      {allActive.length === 0
-                        ? 'Aucune commande active pour le moment'
-                        : `${allActive.length} commande${allActive.length > 1 ? 's' : ''} active${allActive.length > 1 ? 's' : ''} · ${urgentOrders.length > 0 ? `${urgentOrders.length} urgente${urgentOrders.length > 1 ? 's' : ''}` : 'Tout sous contrôle'}`}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 bg-slate-100 rounded-full p-1">
-                  <button
-                    onClick={() => setIsAvailable(true)}
-                    className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                      isAvailable ? 'bg-white text-primary-700 shadow-sm' : 'text-slate-600'
-                    }`}
-                  >
-                    Disponible
-                  </button>
-                  <button
-                    onClick={() => setIsAvailable(false)}
-                    className={`px-4 py-2 rounded-full text-sm font-bold transition-all ${
-                      !isAvailable ? 'bg-white text-slate-700 shadow-sm' : 'text-slate-600'
-                    }`}
-                  >
-                    Occupé
-                  </button>
-                </div>
-              </div>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-slate-200">
-                {[
-                  { label: 'Actives', value: allActive.length, icon: Clock, color: 'text-primary-600', bg: 'bg-primary-50' },
-                  { label: 'Livrées', value: completedToday.length, icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                  { label: 'Encaissé', value: encaissementsToday > 0 ? `${Math.round(encaissementsToday/1000)}k` : '—', icon: Wallet, color: 'text-blue-600', bg: 'bg-blue-50' },
-                  { label: 'B2B actifs', value: activeB2B.length, icon: Package, color: 'text-amber-600', bg: 'bg-amber-50' },
-                ].map((stat, i) => (
-                  <div key={i} className="text-center p-3 rounded-xl bg-white border border-slate-200">
-                    <stat.icon className={`w-5 h-5 mx-auto mb-2 ${stat.color}`} />
-                    <p className="text-2xl font-bold text-slate-900 mb-0.5">{stat.value}</p>
-                    <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{stat.label}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <KpiCard
-                icon={Clock}
-                iconBg="bg-primary-50"
-                iconColor={COLORS.primary[600]}
-                eyebrow="En cours"
-                label="Commandes actives"
-                value={allActive.length}
-                sub={urgentOrders.length > 0 ? `${urgentOrders.length} urgente${urgentOrders.length > 1 ? 's' : ''}` : 'Tout sous contrôle'}
-                subOk={urgentOrders.length === 0}
-              />
-              <KpiCard
-                icon={Wallet}
-                iconBg="bg-emerald-50"
-                iconColor={COLORS.success}
-                eyebrow="Aujourd'hui"
-                label="Encaissements"
-                value={encaissementsToday > 0 ? formatFCFA(encaissementsToday) : '—'}
-                sub={completedToday.length > 0 ? `${completedToday.length} livrée${completedToday.length > 1 ? 's' : ''}` : 'Aucun encaissement'}
-                subOk={encaissementsToday > 0}
-              />
-              <KpiCard
-                icon={Boxes}
-                iconBg={stockAlerts.length > 0 ? 'bg-rose-50' : 'bg-emerald-50'}
-                iconColor={stockAlerts.length > 0 ? COLORS.danger : COLORS.success}
-                eyebrow="Inventaire"
-                label="Alertes stock"
-                value={stockAlerts.length}
-                sub={stockAlerts.length > 0 ? `${stockAlerts.length} article${stockAlerts.length > 1 ? 's' : ''} en alerte` : 'Stocks OK'}
-                subOk={stockAlerts.length === 0}
-              />
-              <KpiCard
-                icon={Package}
-                iconBg="bg-amber-50"
-                iconColor={COLORS.warning}
-                eyebrow="Entreprises"
-                label="B2B actifs"
-                value={activeB2B.length}
-                sub={activeB2B.length > 0 ? 'Commandes entreprise' : 'Aucune commande B2B'}
-                subOk={activeB2B.length === 0}
-              />
-            </div>
-
-            {/* Main content */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-4">
-                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                  <div className="flex items-center justify-between p-4 border-b border-slate-200">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-primary-50 flex items-center justify-center">
-                        <ChefHat className="w-4 h-4 text-primary-600" />
+            {/* Hero card */}
+            <div className="rounded-3xl border overflow-hidden" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
+              {/* Top stripe */}
+              <div className="h-1.5" style={{ background: `linear-gradient(90deg, ${GREEN}, ${GREEN_LIGHT}, ${ORANGE})` }} />
+              <div className="p-6">
+                <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+                  <div className="flex items-center gap-4 flex-1">
+                    <div className="relative">
+                      <div
+                        className="w-16 h-16 rounded-2xl flex items-center justify-center text-xl font-black text-white"
+                        style={{ background: `linear-gradient(135deg, ${ORANGE}, #EA6C00)` }}
+                      >
+                        {initials}
                       </div>
-                      <h3 className="font-bold text-slate-900">Commandes en cours</h3>
-                      {allActive.length > 0 && (
-                        <span className="px-2 py-0.5 bg-primary-100 text-primary-700 rounded-md text-xs font-bold">{allActive.length}</span>
-                      )}
+                      <div
+                        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-white"
+                        style={{ background: isAvailable ? GREEN_LIGHT : '#94A3B8' }}
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-xs font-black uppercase tracking-wider mb-1" style={{ color: GREEN }}>
+                        {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                      </p>
+                      <h1 className="text-2xl font-black mb-1" style={{ color: DARK }}>
+                        Bonjour, {firstName} !
+                      </h1>
+                      <p className="text-sm" style={{ color: '#64748B' }}>
+                        {allActive.length === 0
+                          ? 'Aucune commande active pour le moment'
+                          : `${allActive.length} commande${allActive.length > 1 ? 's' : ''} active${allActive.length > 1 ? 's' : ''} · ${urgentOrders.length > 0 ? `${urgentOrders.length} urgente${urgentOrders.length > 1 ? 's' : ''}` : 'Tout sous contrôle'}`}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Disponibilité */}
+                  <div className="flex items-center gap-1 rounded-2xl p-1" style={{ background: '#F1F5F9' }}>
+                    <button
+                      onClick={() => setIsAvailable(true)}
+                      className="px-5 py-2.5 rounded-xl text-sm font-black transition-all"
+                      style={isAvailable
+                        ? { background: GREEN, color: '#FFF', boxShadow: `0 4px 12px ${GREEN}40` }
+                        : { color: '#94A3B8' }
+                      }
+                    >
+                      Disponible
+                    </button>
+                    <button
+                      onClick={() => setIsAvailable(false)}
+                      className="px-5 py-2.5 rounded-xl text-sm font-black transition-all"
+                      style={!isAvailable
+                        ? { background: '#FFF', color: DARK, boxShadow: '0 2px 8px #0001' }
+                        : { color: '#94A3B8' }
+                      }
+                    >
+                      Occupé
+                    </button>
+                  </div>
+                </div>
+
+                {/* Mini stats */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6 pt-6" style={{ borderTop: '1px solid #F1F5F9' }}>
+                  {[
+                    { label: 'Commandes actives',  value: allActive.length,       icon: Clock,        color: ORANGE,    bg: '#FFF7ED', border: '#FED7AA',  accentColor: ORANGE },
+                    { label: 'Livrées auj.',        value: completedToday.length,  icon: CheckCircle,  color: GREEN,     bg: GREEN_BG,  border: GREEN_BORDER, accentColor: GREEN },
+                    { label: 'Encaissements',       value: encaissementsToday > 0 ? `${Math.round(encaissementsToday/1000)}k` : '—', icon: Wallet, color: '#7C3AED', bg: '#F5F3FF', border: '#DDD6FE', accentColor: '#7C3AED' },
+                    { label: 'B2B actifs',          value: activeB2B.length,       icon: Package,      color: '#D97706', bg: '#FFFBEB', border: '#FDE68A',  accentColor: '#D97706' },
+                  ].map((s, i) => (
+                    <StatCard key={i} {...s} />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Kente decorative separator — zigzag géométrique orange → terracotta → or */}
+            <div style={{ position: 'relative', height: '12px', overflow: 'hidden', borderRadius: '4px' }}>
+              {/* Base color band */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                background: 'repeating-linear-gradient(90deg, #FF8C00 0px, #FF8C00 14px, #C2612B 14px, #C2612B 28px, #D97706 28px, #D97706 42px, #B45309 42px, #B45309 56px)',
+              }} />
+              {/* Zigzag mask rendered via inline SVG background */}
+              <div style={{
+                position: 'absolute', inset: 0,
+                backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='12'%3E%3Cpolygon points='0,0 10,12 20,0' fill='%23F1F5F9'/%3E%3C/svg%3E")`,
+                backgroundRepeat: 'repeat-x',
+                backgroundPosition: 'bottom',
+                backgroundSize: '20px 12px',
+              }} />
+            </div>
+
+            {/* Urgence banner */}
+            {urgentOrders.length > 0 && (
+              <div
+                className="flex items-center gap-3 rounded-2xl px-5 py-3.5 border"
+                style={{ background: '#FFF1F2', borderColor: '#FECDD3' }}
+              >
+                <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: '#BE123C' }}>
+                  <AlertTriangle className="w-5 h-5 text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-black" style={{ color: '#9F1239' }}>
+                    {urgentOrders.length} commande{urgentOrders.length > 1 ? 's' : ''} urgente{urgentOrders.length > 1 ? 's' : ''}
+                  </p>
+                  <p className="text-xs" style={{ color: '#BE123C' }}>En attente depuis plus de 15 minutes</p>
+                </div>
+                <button
+                  onClick={() => goTab('commandes')}
+                  className="px-4 py-2 rounded-xl text-xs font-black text-white flex-shrink-0"
+                  style={{ background: '#BE123C' }}
+                >
+                  Traiter →
+                </button>
+              </div>
+            )}
+
+            {/* Main grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+              {/* Commandes en cours */}
+              <div className="lg:col-span-2">
+                <div className="rounded-3xl border overflow-hidden" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
+                  <div className="flex items-center justify-between px-5 py-4 border-b" style={{ borderColor: '#F1F5F9' }}>
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#FFF7ED' }}>
+                        <ChefHat className="w-4 h-4" style={{ color: ORANGE }} />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-sm" style={{ color: DARK }}>Commandes en cours</h3>
+                        {allActive.length > 0 && (
+                          <p className="text-[10px] font-bold" style={{ color: '#94A3B8' }}>{allActive.length} active{allActive.length > 1 ? 's' : ''}</p>
+                        )}
+                      </div>
                     </div>
                     <button
                       onClick={() => goTab('commandes')}
-                      className="text-sm font-semibold text-primary-600 hover:text-primary-700 flex items-center gap-1"
+                      className="flex items-center gap-1 text-xs font-bold transition-colors"
+                      style={{ color: GREEN }}
                     >
                       Voir tout <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </div>
+
                   {allActive.length === 0 ? (
-                    <div className="text-center py-12">
-                      <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-4">
-                        <Coffee className="w-8 h-8 text-primary-400" />
+                    <div className="text-center py-14 px-6">
+                      <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: GREEN_BG }}>
+                        <Coffee className="w-8 h-8" style={{ color: GREEN }} />
                       </div>
-                      <p className="font-semibold text-slate-900 mb-1">Calme plat</p>
-                      <p className="text-sm text-slate-600 mb-4">Les nouvelles commandes apparaissent ici en temps réel.</p>
+                      <p className="font-black text-base mb-1" style={{ color: DARK }}>Calme plat</p>
+                      <p className="text-sm mb-5" style={{ color: '#94A3B8' }}>Les nouvelles commandes apparaissent ici en temps réel.</p>
                       <button
                         onClick={() => setShowNewOrder(true)}
-                        className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-bold transition-colors"
+                        className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black text-white transition-all hover:scale-105"
+                        style={{ background: `linear-gradient(135deg, ${GREEN}, #15803D)`, boxShadow: `0 4px 16px ${GREEN}40` }}
                       >
                         <Plus className="w-4 h-4" /> Nouvelle commande
                       </button>
@@ -1043,7 +1080,8 @@ export default function StaffDashboard() {
                       {allActive.length > 4 && (
                         <button
                           onClick={() => goTab('commandes')}
-                          className="w-full py-2.5 text-sm font-semibold text-primary-600 bg-primary-50 hover:bg-primary-100 rounded-lg transition-colors"
+                          className="w-full py-3 text-sm font-black rounded-2xl transition-colors"
+                          style={{ background: GREEN_BG, color: GREEN }}
                         >
                           Voir les {allActive.length - 4} autres commandes →
                         </button>
@@ -1053,29 +1091,36 @@ export default function StaffDashboard() {
                 </div>
               </div>
 
+              {/* Sidebar */}
               <div className="space-y-4">
                 <WeeklySchedule openingTime={user?.restaurant?.openingTime} closingTime={user?.restaurant?.closingTime} />
-                
+
                 {stockAlerts.length > 0 && (
-                  <div className="bg-white rounded-2xl border border-rose-200 shadow-sm p-4">
+                  <div className="rounded-3xl border p-4" style={{ background: '#FFF', borderColor: '#FECDD3' }}>
                     <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-bold text-rose-700 flex items-center gap-2">
+                      <h3 className="font-black text-sm flex items-center gap-2" style={{ color: '#BE123C' }}>
                         <AlertTriangle className="w-4 h-4" /> Alertes stock
                       </h3>
-                      <button onClick={() => goTab('stocks')} className="text-xs font-semibold text-primary-600 hover:text-primary-700">
-                        Gérer →
-                      </button>
+                      <button onClick={() => goTab('stocks')} className="text-xs font-bold" style={{ color: GREEN }}>Gérer →</button>
                     </div>
                     <div className="space-y-2">
                       {stockAlerts.slice(0, 3).map(item => (
-                        <div key={item.id} className={`p-3 rounded-lg border ${item.stock <= 0 ? 'bg-rose-50 border-rose-200' : 'bg-amber-50 border-amber-200'}`}>
+                        <div key={item.id} className="p-3 rounded-xl border" style={
+                          item.stock <= 0
+                            ? { background: '#FFF1F2', borderColor: '#FECDD3' }
+                            : { background: '#FFFBEB', borderColor: '#FDE68A' }
+                        }>
                           <div className="flex items-center justify-between">
-                            <p className="text-sm font-semibold text-slate-900 truncate flex-1">{item.nom}</p>
-                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${item.stock <= 0 ? 'bg-rose-200 text-rose-800' : 'bg-amber-200 text-amber-800'}`}>
+                            <p className="text-sm font-bold truncate flex-1" style={{ color: DARK }}>{item.nom}</p>
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-black ml-2" style={
+                              item.stock <= 0
+                                ? { background: '#BE123C', color: '#FFF' }
+                                : { background: '#D97706', color: '#FFF' }
+                            }>
                               {item.stock <= 0 ? 'RUPTURE' : 'FAIBLE'}
                             </span>
                           </div>
-                          <p className="text-xs text-slate-600 mt-1">Stock: {item.stock} / Min: {item.seuil}</p>
+                          <p className="text-[11px] mt-1" style={{ color: '#64748B' }}>Stock: {item.stock} · Seuil: {item.seuil}</p>
                         </div>
                       ))}
                     </div>
@@ -1083,53 +1128,42 @@ export default function StaffDashboard() {
                 )}
 
                 {(serverActivity.length > 0 || actionHistory.length > 0) && (
-                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
+                  <div className="rounded-3xl border p-4" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 rounded-lg bg-primary-50 flex items-center justify-center">
-                          <Activity className="w-4 h-4 text-primary-600" />
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: GREEN_BG }}>
+                          <Activity className="w-4 h-4" style={{ color: GREEN }} />
                         </div>
-                        <h3 className="font-bold text-slate-900 text-sm">Activité récente</h3>
+                        <h3 className="font-black text-sm" style={{ color: DARK }}>Activité récente</h3>
                       </div>
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: GREEN_LIGHT }} />
                     </div>
                     <div className="space-y-2">
-                      {serverActivity.length > 0
-                        ? serverActivity.slice(0, 5).map(entry => {
-                            const color = entry.statutNouvel === 'LIVREE' ? 'emerald' : entry.statutNouvel === 'ANNULEE' ? 'rose' : entry.statutNouvel === 'EN_PREP' ? 'amber' : 'primary';
-                            return (
-                              <div key={entry.id} className="flex items-start gap-3 p-2 rounded-lg bg-slate-50">
-                                <div className={`w-7 h-7 rounded-md bg-${color}-100 flex items-center justify-center flex-shrink-0`}>
-                                  <span className={`w-2 h-2 rounded-full bg-${color}-500`} />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-xs font-semibold text-slate-900 truncate">
-                                    #{entry.commandeNumero || entry.commandeId?.slice(0, 8)}
-                                    <span className={`text-${color}-600 ml-1`}>→ {STATUS_LABELS[entry.statutNouvel] || entry.statutNouvel}</span>
-                                  </p>
-                                  {entry.actorNom && <p className="text-[10px] text-slate-500">par {entry.actorNom}</p>}
-                                </div>
-                                <p className="text-[10px] text-slate-400 flex-shrink-0">{timeAgo(entry.createdAt)}</p>
-                              </div>
-                            );
-                          })
-                        : actionHistory.slice(0, 4).map(entry => (
-                            <div key={entry.id} className="flex items-start gap-3 p-2 rounded-lg bg-slate-50">
-                              <div className={`w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 ${
-                                entry.type === 'paiement' ? 'bg-emerald-100' : entry.type === 'commande' ? 'bg-primary-100' : entry.type === 'b2b' ? 'bg-amber-100' : 'bg-slate-200'
-                              }`}>
-                                <span className={`w-2 h-2 rounded-full ${
-                                  entry.type === 'paiement' ? 'bg-emerald-500' : entry.type === 'commande' ? 'bg-primary-500' : entry.type === 'b2b' ? 'bg-amber-500' : 'bg-slate-500'
-                                }`} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-xs font-semibold text-slate-900 truncate">{entry.title}</p>
-                                <p className="text-[10px] text-slate-500">{entry.desc}</p>
-                              </div>
-                              <p className="text-[10px] text-slate-400 flex-shrink-0">{timeAgo(entry.at)}</p>
+                      {(serverActivity.length > 0 ? serverActivity.slice(0, 5) : actionHistory.slice(0, 4)).map((entry, i) => {
+                        const isServer = serverActivity.length > 0;
+                        const color = isServer
+                          ? (entry.statutNouvel === 'LIVREE' ? GREEN : entry.statutNouvel === 'ANNULEE' ? '#F43F5E' : entry.statutNouvel === 'EN_PREP' ? '#D97706' : ORANGE)
+                          : (entry.type === 'paiement' ? GREEN : entry.type === 'commande' ? ORANGE : entry.type === 'b2b' ? '#D97706' : '#64748B');
+                        return (
+                          <div key={isServer ? entry.id : entry.id} className="flex items-start gap-3 p-2 rounded-xl" style={{ background: '#F8FAFC' }}>
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: color + '20' }}>
+                              <span className="w-2 h-2 rounded-full" style={{ background: color }} />
                             </div>
-                          ))
-                      }
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-bold truncate" style={{ color: DARK }}>
+                                {isServer ? `#${entry.commandeNumero || entry.commandeId?.slice(0, 8)}` : entry.title}
+                                {isServer && <span className="ml-1" style={{ color }}>→ {STATUS_LABELS[entry.statutNouvel] || entry.statutNouvel}</span>}
+                              </p>
+                              <p className="text-[10px]" style={{ color: '#94A3B8' }}>
+                                {isServer ? (entry.actorNom ? `par ${entry.actorNom}` : '') : entry.desc}
+                              </p>
+                            </div>
+                            <p className="text-[10px] flex-shrink-0" style={{ color: '#CBD5E1' }}>
+                              {timeAgo(isServer ? entry.createdAt : entry.at)}
+                            </p>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -1138,50 +1172,53 @@ export default function StaffDashboard() {
           </div>
         )}
 
+        {/* ── COMMANDES TAB ── */}
         {activeTab === 'commandes' && (
           <div className="space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 flex-wrap">
               {[
-                { id: 'board', label: 'Tableau', count: allActive.length },
-                { id: 'b2b', label: 'B2B', count: activeB2B.length },
-                { id: 'all', label: 'Historique', count: null },
+                { id: 'board', label: 'Tableau KDS', count: allActive.length },
+                { id: 'b2b',   label: 'B2B',         count: activeB2B.length },
+                { id: 'all',   label: 'Historique',  count: null },
               ].map(({ id, label, count }) => (
                 <button
                   key={id}
                   onClick={() => setOrderFilter(id)}
-                  className={`px-4 py-2 rounded-lg text-sm font-semibold transition-all ${
+                  className="px-4 py-2 rounded-xl text-sm font-black transition-all"
+                  style={
                     orderFilter === id
-                      ? 'bg-primary-600 text-white shadow-sm'
-                      : 'bg-white text-slate-700 border border-slate-300 hover:bg-slate-50'
-                  }`}
+                      ? { background: GREEN, color: '#FFF', boxShadow: `0 4px 12px ${GREEN}40` }
+                      : { background: '#FFF', color: '#475569', border: '1px solid #E2E8F0' }
+                  }
                 >
                   {label}
                   {count != null && count > 0 && (
-                    <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                      orderFilter === id ? 'bg-white/20' : 'bg-slate-200'
-                    }`}>
+                    <span className="ml-2 px-1.5 py-0.5 rounded-md text-[10px] font-black" style={
+                      orderFilter === id ? { background: '#fff3', color: '#FFF' } : { background: '#F1F5F9', color: '#64748B' }
+                    }>
                       {count}
                     </span>
                   )}
                 </button>
               ))}
-              <span className="ml-auto text-xs text-slate-500 font-medium flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="ml-auto text-xs font-semibold flex items-center gap-1.5" style={{ color: '#94A3B8' }}>
+                <span className="w-2 h-2 rounded-full animate-pulse" style={{ background: GREEN_LIGHT }} />
                 Màj auto 8s
               </span>
             </div>
 
             {orderFilter === 'board' && (
               allActive.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-                  <div className="w-16 h-16 rounded-2xl bg-primary-50 flex items-center justify-center mx-auto mb-4">
-                    <ChefHat className="w-8 h-8 text-primary-400" />
+                <div className="text-center py-16 rounded-3xl border" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
+                  <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: GREEN_BG }}>
+                    <ChefHat className="w-8 h-8" style={{ color: GREEN }} />
                   </div>
-                  <p className="font-semibold text-slate-900 mb-1">Le passe est calme</p>
-                  <p className="text-sm text-slate-600 mb-4">Aucune commande active.</p>
+                  <p className="font-black text-base mb-1" style={{ color: DARK }}>Le passe est calme</p>
+                  <p className="text-sm mb-5" style={{ color: '#94A3B8' }}>Aucune commande active.</p>
                   <button
                     onClick={() => setShowNewOrder(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-bold transition-colors"
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl text-sm font-black text-white transition-all hover:scale-105"
+                    style={{ background: `linear-gradient(135deg, ${GREEN}, #15803D)`, boxShadow: `0 4px 16px ${GREEN}40` }}
                   >
                     <Plus className="w-4 h-4" /> Nouvelle commande
                   </button>
@@ -1204,9 +1241,10 @@ export default function StaffDashboard() {
 
             {orderFilter === 'b2b' && (
               activeB2B.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-                  <p className="font-semibold text-slate-900 mb-1">Aucune commande B2B active</p>
-                  <p className="text-sm text-slate-600">Les commandes entreprise apparaissent ici.</p>
+                <div className="text-center py-16 rounded-3xl border" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
+                  <Package className="w-12 h-12 mx-auto mb-3" style={{ color: '#CBD5E1' }} />
+                  <p className="font-black" style={{ color: DARK }}>Aucune commande B2B active</p>
+                  <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>Les commandes entreprise apparaissent ici.</p>
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -1219,9 +1257,8 @@ export default function StaffDashboard() {
 
             {orderFilter === 'all' && (
               filteredOrders.length === 0 ? (
-                <div className="text-center py-16 bg-white rounded-2xl border border-slate-200">
-                  <p className="font-semibold text-slate-900 mb-1">Aucune commande</p>
-                  <p className="text-sm text-slate-600">Aucune commande trouvée.</p>
+                <div className="text-center py-16 rounded-3xl border" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
+                  <p className="font-black" style={{ color: DARK }}>Aucune commande</p>
                 </div>
               ) : (
                 <div className="grid gap-4">
@@ -1245,45 +1282,43 @@ export default function StaffDashboard() {
           </div>
         )}
 
+        {/* ── STOCKS TAB ── */}
         {activeTab === 'stocks' && (
           <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {[
-                { label: 'Articles', value: stocks.length, color: 'text-primary-600', bg: 'bg-primary-50' },
-                { label: 'Disponibles', value: stocks.filter(s => s.stock > s.seuil).length, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-                { label: 'En alerte', value: stockAlerts.length, color: 'text-rose-600', bg: 'bg-rose-50' },
-              ].map((stat, i) => (
-                <div key={i} className="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                  <p className={`text-3xl font-bold ${stat.color} mb-1`}>{stat.value}</p>
-                  <p className="text-sm font-semibold text-slate-600">{stat.label}</p>
+                { label: 'Articles total',  value: stocks.length,                              color: ORANGE,    bg: '#FFF7ED', border: '#FED7AA' },
+                { label: 'Disponibles',     value: stocks.filter(s => s.stock > s.seuil).length, color: GREEN,  bg: GREEN_BG,  border: GREEN_BORDER },
+                { label: 'En alerte',       value: stockAlerts.length,                         color: '#BE123C', bg: '#FFF1F2', border: '#FECDD3' },
+              ].map((s, i) => (
+                <div key={i} className="rounded-2xl border p-5" style={{ background: s.bg, borderColor: s.border }}>
+                  <p className="text-3xl font-black mb-1" style={{ color: s.color }}>{s.value}</p>
+                  <p className="text-sm font-bold" style={{ color: '#475569' }}>{s.label}</p>
                 </div>
               ))}
             </div>
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+            <div className="rounded-3xl border overflow-hidden" style={{ background: '#FFF', borderColor: '#E2E8F0' }}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-5 border-b" style={{ borderColor: '#F1F5F9' }}>
                 <div>
-                  <h2 className="text-lg font-bold text-slate-900">Inventaire</h2>
-                  <p className="text-sm text-slate-600">
-                    {stocks.length} article{stocks.length > 1 ? 's' : ''}{' '}
-                    <span className={stockAlerts.length > 0 ? 'text-rose-600 font-semibold' : 'text-emerald-600 font-semibold'}>
+                  <h2 className="text-lg font-black" style={{ color: DARK }}>Inventaire</h2>
+                  <p className="text-sm" style={{ color: '#94A3B8' }}>
+                    {stocks.length} article{stocks.length > 1 ? 's' : ''} ·{' '}
+                    <span className="font-bold" style={{ color: stockAlerts.length > 0 ? '#BE123C' : GREEN }}>
                       {stockAlerts.length} alerte{stockAlerts.length !== 1 ? 's' : ''}
                     </span>
                   </p>
                 </div>
-                <div className="flex bg-slate-100 rounded-lg p-1">
-                  {[
-                    ['all', 'Tous'],
-                    ['alerts', `Alertes (${stockAlerts.length})`],
-                  ].map(([key, label]) => (
+                <div className="flex rounded-xl p-1" style={{ background: '#F1F5F9' }}>
+                  {[['all', 'Tous'], [`alerts`, `Alertes (${stockAlerts.length})`]].map(([key, label]) => (
                     <button
                       key={key}
                       onClick={() => setStockFilter(key)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-semibold transition-all ${
-                        stockFilter === key
-                          ? 'bg-white text-slate-900 shadow-sm'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
+                      className="px-4 py-1.5 rounded-lg text-sm font-bold transition-all"
+                      style={stockFilter === key
+                        ? { background: '#FFF', color: DARK, boxShadow: '0 2px 8px #0001' }
+                        : { color: '#94A3B8' }
+                      }
                     >
                       {label}
                     </button>
@@ -1292,71 +1327,74 @@ export default function StaffDashboard() {
               </div>
 
               {displayedStocks.length === 0 ? (
-                <div className="text-center py-12 bg-slate-50 rounded-xl border-2 border-dashed border-slate-300">
-                  <Package className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                  <p className="font-semibold text-slate-900 mb-1">Aucun article</p>
-                  <p className="text-sm text-slate-600">
+                <div className="text-center py-14 border-2 border-dashed m-4 rounded-2xl" style={{ borderColor: '#E2E8F0' }}>
+                  <Package className="w-12 h-12 mx-auto mb-3" style={{ color: '#CBD5E1' }} />
+                  <p className="font-black" style={{ color: DARK }}>Aucun article</p>
+                  <p className="text-sm mt-1" style={{ color: '#94A3B8' }}>
                     {stockFilter === 'alerts' ? 'Tous les stocks sont OK.' : 'Les articles apparaîtront ici.'}
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {displayedStocks.map((item, idx) => {
+                <div className="divide-y" style={{ borderColor: '#F1F5F9' }}>
+                  {displayedStocks.map(item => {
                     const isRupture = item.stock <= 0;
                     const isLow = !isRupture && item.stock <= item.seuil;
                     const pct = item.seuil > 0 ? Math.min(100, Math.round((item.stock / (item.seuil * 3)) * 100)) : 50;
+                    const barColor = isRupture ? '#F43F5E' : isLow ? '#F59E0B' : GREEN;
                     return (
-                      <div key={item.id} className="flex items-center gap-4 p-4 bg-white border border-slate-200 rounded-xl hover:shadow-sm transition-shadow">
-                        <div className={`w-11 h-11 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                          isRupture ? 'bg-rose-100' : isLow ? 'bg-amber-100' : 'bg-emerald-100'
-                        }`}>
-                          {isRupture ? (
-                            <AlertTriangle className="w-5 h-5 text-rose-600" />
-                          ) : isLow ? (
-                            <AlertCircle className="w-5 h-5 text-amber-600" />
-                          ) : (
-                            <CheckCircle className="w-5 h-5 text-emerald-600" />
-                          )}
+                      <div key={item.id} className="flex items-center gap-4 px-5 py-4 hover:bg-slate-50 transition-colors">
+                        <div
+                          className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0"
+                          style={{ background: isRupture ? '#FFF1F2' : isLow ? '#FFFBEB' : GREEN_BG }}
+                        >
+                          {isRupture
+                            ? <AlertTriangle className="w-5 h-5" style={{ color: '#F43F5E' }} />
+                            : isLow
+                            ? <AlertCircle className="w-5 h-5" style={{ color: '#F59E0B' }} />
+                            : <CheckCircle className="w-5 h-5" style={{ color: GREEN }} />
+                          }
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1.5">
-                            <p className="font-semibold text-slate-900 truncate">{item.nom}</p>
+                            <p className="font-bold truncate" style={{ color: DARK }}>{item.nom}</p>
                             {item.categorie && (
-                              <span className="px-2 py-0.5 bg-slate-100 text-slate-600 rounded text-[10px] font-semibold">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold flex-shrink-0" style={{ background: '#F1F5F9', color: '#64748B' }}>
                                 {item.categorie}
                               </span>
                             )}
                           </div>
-                          <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden mb-1">
-                            <div
-                              className={`h-full rounded-full transition-all ${isRupture ? 'bg-rose-500' : isLow ? 'bg-amber-500' : 'bg-emerald-500'}`}
-                              style={{ width: `${pct}%` }}
-                            />
+                          <div className="h-1.5 rounded-full overflow-hidden mb-1" style={{ background: '#F1F5F9' }}>
+                            <div className="h-full rounded-full transition-all" style={{ width: `${pct}%`, background: barColor }} />
                           </div>
-                          <p className="text-xs text-slate-600">
-                            <span className={`font-bold ${isRupture ? 'text-rose-600' : isLow ? 'text-amber-600' : 'text-slate-900'}`}>
-                              {item.stock}
-                            </span>{' '}
-                            {item.unite || ''} en stock · seuil {item.seuil}
+                          <p className="text-xs" style={{ color: '#94A3B8' }}>
+                            <span className="font-black" style={{ color: barColor }}>{item.stock}</span>
+                            {' '}{item.unite || ''} en stock · seuil {item.seuil}
                           </p>
                         </div>
-                        <span className={`px-2.5 py-1 rounded-lg text-xs font-bold flex-shrink-0 ${
-                          isRupture ? 'bg-rose-100 text-rose-700' : isLow ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'
-                        }`}>
+                        <span
+                          className="px-2.5 py-1 rounded-lg text-xs font-black flex-shrink-0"
+                          style={
+                            isRupture ? { background: '#FFF1F2', color: '#BE123C' }
+                            : isLow ? { background: '#FFFBEB', color: '#D97706' }
+                            : { background: GREEN_BG, color: GREEN }
+                          }
+                        >
                           {isRupture ? 'RUPTURE' : isLow ? 'FAIBLE' : 'OK'}
                         </span>
-                        <div className="flex items-center gap-1 flex-shrink-0">
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
                           <button
                             onClick={() => void adjustStock(item.id, -1, 'Correction')}
                             disabled={savingStockId === item.id || item.stock <= 0}
-                            className="w-8 h-8 rounded-lg border border-slate-300 hover:bg-slate-50 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="w-8 h-8 rounded-xl flex items-center justify-center transition-colors border disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ background: '#FFF1F2', borderColor: '#FECDD3', color: '#F43F5E' }}
                           >
-                            <Minus className="w-4 h-4 text-rose-600" />
+                            <Minus className="w-4 h-4" />
                           </button>
                           <button
                             onClick={() => void adjustStock(item.id, 1, 'Réception')}
                             disabled={savingStockId === item.id}
-                            className="w-8 h-8 rounded-lg bg-primary-600 hover:bg-primary-700 text-white flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                            className="w-8 h-8 rounded-xl flex items-center justify-center text-white transition-all hover:scale-110 disabled:opacity-40 disabled:cursor-not-allowed"
+                            style={{ background: GREEN }}
                           >
                             <Plus className="w-4 h-4" />
                           </button>
@@ -1371,84 +1409,85 @@ export default function StaffDashboard() {
         )}
       </main>
 
+      {/* Profile panel */}
       {showPanel && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setShowPanel(false)} />
-          <div className="relative w-full max-w-md bg-white h-full overflow-y-auto shadow-2xl">
-            <div className="p-6 border-b border-slate-200">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPanel(false)} />
+          <div className="relative w-full max-w-md h-full overflow-y-auto shadow-2xl" style={{ background: '#FFF' }}>
+            {/* Header stripe */}
+            <div className="h-1" style={{ background: `linear-gradient(90deg, ${GREEN}, ${GREEN_LIGHT})` }} />
+            <div className="p-6 border-b" style={{ borderColor: '#F1F5F9' }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary-100 to-primary-200 flex items-center justify-center text-xl font-bold text-primary-700 border-2 border-primary-300">
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center text-xl font-black text-white"
+                    style={{ background: `linear-gradient(135deg, ${ORANGE}, #EA6C00)` }}
+                  >
                     {initials}
                   </div>
                   <div>
-                    <p className="font-bold text-slate-900">{[user?.prenom, user?.nom].filter(Boolean).join(' ') || 'Mon Profil'}</p>
-                    <p className="text-sm text-slate-600">{user?.email}</p>
+                    <p className="font-black" style={{ color: DARK }}>{[user?.prenom, user?.nom].filter(Boolean).join(' ') || 'Mon Profil'}</p>
+                    <p className="text-sm" style={{ color: '#94A3B8' }}>{user?.email}</p>
                   </div>
                 </div>
-                <button onClick={() => setShowPanel(false)} className="p-2 hover:bg-slate-100 rounded-lg transition-colors">
-                  <X className="w-5 h-5 text-slate-600" />
+                <button onClick={() => setShowPanel(false)} className="p-2 rounded-xl transition-colors hover:bg-slate-100">
+                  <X className="w-5 h-5" style={{ color: '#64748B' }} />
                 </button>
               </div>
             </div>
             <div className="p-6">
               <form onSubmit={handleSaveProfile} className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Prénom</label>
+                  {[
+                    { label: 'Prénom', key: 'prenom', placeholder: 'Jean', type: 'text' },
+                    { label: 'Nom', key: 'nom', placeholder: 'Kouassi', type: 'text' },
+                  ].map(f => (
+                    <div key={f.key}>
+                      <label className="block text-xs font-bold mb-1.5" style={{ color: '#475569' }}>{f.label}</label>
+                      <input
+                        type={f.type}
+                        value={form[f.key]}
+                        onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                        className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all"
+                        style={{ borderColor: '#E2E8F0', focusRingColor: GREEN }}
+                        placeholder={f.placeholder}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {[
+                  { label: 'Email', key: 'email', type: 'email', placeholder: 'jean@staff.ci' },
+                  { label: 'Téléphone', key: 'telephone', type: 'tel', placeholder: '+225 07 00 00 00' },
+                ].map(f => (
+                  <div key={f.key}>
+                    <label className="block text-xs font-bold mb-1.5" style={{ color: '#475569' }}>{f.label}</label>
                     <input
-                      type="text"
-                      value={form.prenom}
-                      onChange={e => setForm(p => ({ ...p, prenom: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="Jean"
+                      type={f.type}
+                      value={form[f.key]}
+                      onChange={e => setForm(p => ({ ...p, [f.key]: e.target.value }))}
+                      className="w-full px-3 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 transition-all"
+                      style={{ borderColor: '#E2E8F0' }}
+                      placeholder={f.placeholder}
                     />
                   </div>
-                  <div>
-                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">Nom</label>
-                    <input
-                      type="text"
-                      value={form.nom}
-                      onChange={e => setForm(p => ({ ...p, nom: e.target.value }))}
-                      className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                      placeholder="Kouassi"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Email</label>
-                  <input
-                    type="email"
-                    value={form.email}
-                    onChange={e => setForm(p => ({ ...p, email: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="jean@staff.ci"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">Téléphone</label>
-                  <input
-                    type="tel"
-                    value={form.telephone}
-                    onChange={e => setForm(p => ({ ...p, telephone: e.target.value }))}
-                    className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-                    placeholder="+225 07 00 00 00"
-                  />
-                </div>
+                ))}
+
                 {profileError && (
-                  <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-sm text-rose-700 font-medium">
+                  <div className="p-3 rounded-xl border text-sm font-medium" style={{ background: '#FFF1F2', borderColor: '#FECDD3', color: '#BE123C' }}>
                     {profileError}
                   </div>
                 )}
                 {profileSuccess && (
-                  <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-sm text-emerald-700 font-medium">
+                  <div className="p-3 rounded-xl border text-sm font-medium" style={{ background: GREEN_BG, borderColor: GREEN_BORDER, color: '#15803D' }}>
                     {profileSuccess}
                   </div>
                 )}
+
                 <button
                   type="submit"
                   disabled={savingProfile}
-                  className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 disabled:bg-slate-400 text-white rounded-lg text-sm font-bold transition-colors flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-2xl text-sm font-black text-white transition-all hover:scale-[1.02] disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
+                  style={{ background: `linear-gradient(135deg, ${GREEN}, #15803D)`, boxShadow: `0 4px 16px ${GREEN}40` }}
                 >
                   {savingProfile ? <><Spinner size={16} /> Enregistrement...</> : <><Save className="w-4 h-4" /> Enregistrer</>}
                 </button>
