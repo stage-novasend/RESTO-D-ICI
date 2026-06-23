@@ -20,7 +20,7 @@ const MENU_ITEMS = [
   { id: 'finance', label: 'Trésorerie', icon: TrendingUp, path: '/gerant?tab=finance' },
   { id: 'promos', label: 'Promotions', icon: Tag, path: '/gerant?tab=promos' },
   { id: 'history', label: 'Historique', icon: Activity, path: '/gerant?tab=history' },
-  { id: 'settings', label: 'Paramètres', icon: Settings, path: '/gerant?tab=settings' },
+{ id: 'settings', label: 'Paramètres', icon: Settings, path: '/gerant?tab=settings' },
 ];
 
 export default function GerantLayout() {

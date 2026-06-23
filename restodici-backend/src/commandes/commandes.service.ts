@@ -170,6 +170,12 @@ export class CommandesService {
 
       const montantCommissionPlateforme = Math.max(0, montantTotal - montantBaseTotal);
 
+      // Frais de livraison externe ajoutés au total client (séquestrés jusqu'à confirmation réception)
+      const fraisLivraison = dto.modeLivraison === ModeLivraison.LIVRAISON
+        ? Math.max(0, Number(dto.fraisLivraison || 0))
+        : 0;
+      if (fraisLivraison > 0) montantTotal += fraisLivraison;
+
       const created = manager.create(Commande, {
         numero,
         modeLivraison: dto.modeLivraison,
@@ -182,6 +188,7 @@ export class CommandesService {
             ? dto.tableNumber
             : undefined,
         montantTotal,
+        fraisLivraison: fraisLivraison > 0 ? fraisLivraison : undefined,
         montantNetRestaurant: montantBaseTotal,
         tauxCommission: tauxPct,
         montantCommissionPlateforme,
@@ -766,7 +773,7 @@ export class CommandesService {
   }
 
   async rembourser(id: string, motif: string, restaurantId?: string) {
-    const commande = await this.commandeRepo.findOne({ where: { id } });
+    const commande = await this.commandeRepo.findOne({ where: { id }, relations: ['client'] });
     if (!commande) throw new NotFoundException('Commande introuvable');
     if (restaurantId && (commande as any).restaurantId !== restaurantId)
       throw new ForbiddenException();
@@ -794,6 +801,53 @@ export class CommandesService {
       numero: commande.numero,
     });
 
+    if (commande.client?.id) {
+      this.commandesGateway.emitToClient(commande.client.id, 'commande.remboursee', {
+        commandeId: id,
+        numero: commande.numero,
+        motif: motif ?? null,
+      });
+    }
+
     return commande;
+  }
+
+  async confirmerReception(commandeId: string, clientId: string): Promise<Commande> {
+    const commande = await this.commandeRepo.findOne({
+      where: { id: commandeId },
+      relations: ['client', 'restaurant'],
+    });
+
+    if (!commande) throw new NotFoundException('Commande introuvable');
+    if (commande.client.id !== clientId) throw new ForbiddenException('Accès refusé');
+    if (commande.receptionConfirmeeAt) throw new BadRequestException('Réception déjà confirmée');
+    if (commande.statut !== StatutCommande.EN_LIVRAISON) {
+      throw new BadRequestException('La commande n\'est pas en cours de livraison');
+    }
+
+    commande.statut = StatutCommande.LIVREE;
+    commande.receptionConfirmeeAt = new Date();
+    /* escrow libéré : le livreur peut maintenant recevoir sa part */
+    commande.livreurPaiementBloque = false;
+    commande.livreurPaye = true;
+
+    const saved = await this.commandeRepo.save(commande);
+
+    const payload = {
+      id: saved.id,
+      numero: saved.numero,
+      statut: StatutCommande.LIVREE,
+      fraisLivraison: Number(saved.fraisLivraison ?? 0),
+    };
+
+    this.commandesGateway.emitToKitchen(saved.restaurant.id, 'commande.statut', payload);
+    this.commandesGateway.emitToManagers('commande.statut', payload);
+    this.commandesGateway.emitToClient(clientId, 'commande.statut', {
+      id: saved.id,
+      numero: saved.numero,
+      statut: StatutCommande.LIVREE,
+    });
+
+    return saved;
   }
 }

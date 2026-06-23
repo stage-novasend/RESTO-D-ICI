@@ -78,7 +78,6 @@ import {
   promosAPI,
   commandesExtraAPI,
   fournisseursAPI,
-  retraitAPI,
 } from "../../services/api";
 import { getArticleImage } from "../../utils/articleImage";
 import { createCommandesSocket } from "../../services/commandes.service";
@@ -567,7 +566,7 @@ function MenuTab({ restaurantId, token }) {
           <h4 className="text-lg font-bold text-[#1C1917]">Créer une nouvelle catégorie</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F172A]">
+              <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">
                 Nom de la catégorie *
               </label>
               <input
@@ -576,7 +575,7 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewCategory({ ...newCategory, nom: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${categoryErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${categoryErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: Plats Principaux"
               />
               {categoryErrors.nom && (
@@ -584,7 +583,7 @@ function MenuTab({ restaurantId, token }) {
               )}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F172A]">
+              <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">
                 Icône
               </label>
               <input
@@ -593,7 +592,7 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewCategory({ ...newCategory, icone: e.target.value })
                 }
-                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
+                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
                 placeholder="Ex: 🍽️"
               />
             </div>
@@ -623,20 +622,20 @@ function MenuTab({ restaurantId, token }) {
           <h4 className="text-lg font-bold text-[#1C1917]">Créer un nouvel article</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Nom *</label>
+              <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">Nom *</label>
               <input
                 type="text"
                 value={newArticle.nom}
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, nom: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: Attiéké Poisson"
               />
               {formErrors.nom && <p className="mt-1 text-xs text-red-500">{formErrors.nom}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Prix (FCFA) *</label>
+              <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">Prix (FCFA) *</label>
               <input
                 type="number"
                 min="1"
@@ -644,19 +643,19 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, prix: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.prix ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.prix ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: 3500"
               />
               {formErrors.prix && <p className="mt-1 text-xs text-red-500">{formErrors.prix}</p>}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Catégorie *</label>
+              <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">Catégorie *</label>
               <select
                 value={newArticle.categorieId}
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, categorieId: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.categorieId ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.categorieId ? "border-red-500" : "border-[#E2E8F0]"}`}
               >
                 <option value="">Sélectionner une catégorie</option>
                 {categories.map((cat) => (
@@ -670,7 +669,7 @@ function MenuTab({ restaurantId, token }) {
               )}
             </div>
             <div>
-              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Stock initial</label>
+              <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">Stock initial</label>
               <input
                 type="number"
                 min="0"
@@ -678,13 +677,13 @@ function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, stock: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.stock ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] ${formErrors.stock ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: 50"
               />
               {formErrors.stock && <p className="mt-1 text-xs text-red-500">{formErrors.stock}</p>}
             </div>
             <div className="md:col-span-2">
-              <label className="mb-1 block text-sm font-medium text-[#0F172A]">Photo de l'article</label>
+              <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">Photo de l'article</label>
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
                 <div className="flex-1">
                   <input
@@ -693,7 +692,7 @@ function MenuTab({ restaurantId, token }) {
                     onChange={(e) =>
                       setNewArticle({ ...newArticle, photoUrl: e.target.value })
                     }
-                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
+                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
                     placeholder="URL de l'image ou laissez vide"
                   />
                   <p className="mt-2 text-xs text-[#78716C]">
@@ -723,13 +722,13 @@ function MenuTab({ restaurantId, token }) {
             </div>
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium text-[#0F172A]">Description</label>
+            <label className="mb-1.5 block text-sm font-semibold text-[#0F172A]">Description</label>
             <textarea
               value={newArticle.description}
               onChange={(e) =>
                 setNewArticle({ ...newArticle, description: e.target.value })
               }
-              className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
+              className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
               rows="3"
               placeholder="Description du plat..."
             />
@@ -1650,16 +1649,16 @@ function StocksTab({ restaurantId }) {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Article</label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Article</label>
                   <select value={entreeForm.articleId}
                     onChange={e => setEntreeForm({ ...entreeForm, articleId: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition">
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition">
                     <option value="">Sélectionner un article</option>
                     {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">
                     Fournisseur <span className="text-red-500">*</span>
                   </label>
                   {fournisseurs.length === 0 ? (
@@ -1669,29 +1668,29 @@ function StocksTab({ restaurantId }) {
                   ) : (
                     <select value={entreeForm.fournisseurId}
                       onChange={e => setEntreeForm({ ...entreeForm, fournisseurId: e.target.value })}
-                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition">
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition">
                       <option value="">Sélectionner un fournisseur</option>
                       {fournisseurs.map(f => <option key={f.id} value={f.id}>{f.nom}{f.delaiLivraison ? ` (${f.delaiLivraison}j)` : ''}</option>)}
                     </select>
                   )}
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Quantité reçue</label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Quantité reçue</label>
                   <input type="number" min="1" value={entreeForm.quantity}
                     onChange={e => setEntreeForm({ ...entreeForm, quantity: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition"
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition"
                     placeholder="Ex: 10" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Motif / Référence bon de livraison</label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Motif / Référence bon de livraison</label>
                   <input type="text" value={entreeForm.motif}
                     onChange={e => setEntreeForm({ ...entreeForm, motif: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition"
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition"
                     placeholder="BL-2026-042, livraison hebdo..." />
                 </div>
               </div>
               <button onClick={handleEntreeStock} disabled={saving || !entreeForm.fournisseurId}
-                className="flex items-center gap-2 rounded-xl bg-[#FF8C00] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#E07A00] disabled:opacity-60">
+                className="flex items-center gap-2 rounded-xl bg-[#FF8C00] px-5 py-3.5 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[#E07A00] disabled:opacity-60">
                 {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
                 {saving ? 'Enregistrement...' : 'Enregistrer la réception'}
               </button>
@@ -1703,7 +1702,7 @@ function StocksTab({ restaurantId }) {
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Article</label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Article</label>
                   <select value={adjustmentForm.articleId}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, articleId: e.target.value })}
                     className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#FF8C00] focus:ring-1 transition">
@@ -1712,14 +1711,14 @@ function StocksTab({ restaurantId }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Quantité (+/-)</label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Quantité (+/-)</label>
                   <input type="number" value={adjustmentForm.quantity}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, quantity: e.target.value })}
                     className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#FF8C00] focus:ring-1 transition"
                     placeholder="Ex: -2 (casse)" />
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Motif</label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Motif</label>
                   <input type="text" value={adjustmentForm.motif}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, motif: e.target.value })}
                     className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-[#FF8C00] focus:ring-1 transition"
@@ -1791,7 +1790,7 @@ function StocksTab({ restaurantId }) {
               <p className="text-xs text-[#6B7280] mb-4">Générez un bon de commande PDF à envoyer à votre fournisseur</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Fournisseur <span className="text-red-500">*</span></label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Fournisseur <span className="text-red-500">*</span></label>
                   <select value={bonForm.fournisseurId} onChange={e => setBonForm(p => ({ ...p, fournisseurId: e.target.value }))}
                     className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition">
                     <option value="">Sélectionner…</option>
@@ -1799,7 +1798,7 @@ function StocksTab({ restaurantId }) {
                   </select>
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-semibold text-[#475569]">Date de livraison souhaitée</label>
+                  <label className="mb-1 block text-sm font-semibold text-[#475569]">Date de livraison souhaitée</label>
                   <input type="date" value={bonForm.dateLivraison} onChange={e => setBonForm(p => ({ ...p, dateLivraison: e.target.value }))}
                     className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-1 transition" />
                 </div>
@@ -2132,7 +2131,7 @@ function FinanceTab({ restaurantId }) {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#475569]">Catégorie *</label>
+              <label className="mb-1 block text-sm font-semibold text-[#475569]">Catégorie *</label>
               <select value={expenseForm.categorie} onChange={e => setExpenseForm(f => ({ ...f, categorie: e.target.value }))}
                 className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition">
                 <option value="">Catégorie…</option>
@@ -2140,13 +2139,13 @@ function FinanceTab({ restaurantId }) {
               </select>
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#475569]">Montant (FCFA) *</label>
+              <label className="mb-1 block text-sm font-semibold text-[#475569]">Montant (FCFA) *</label>
               <input type="number" min="1" value={expenseForm.montant} onChange={e => setExpenseForm(f => ({ ...f, montant: e.target.value }))}
                 className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition"
                 placeholder="Ex: 50 000" />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[#475569]">Description</label>
+              <label className="mb-1 block text-sm font-semibold text-[#475569]">Description</label>
               <input type="text" value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))}
                 className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm text-[#0F172A] outline-none focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] transition"
                 placeholder="Optionnel" />
@@ -3081,7 +3080,7 @@ function SettingsTab({ restaurantId, user }) {
     );
   }
 
-  const inputCls = "w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition focus:ring-2 focus:ring-[#FF8C00]/20 focus:border-[#FF8C00]/60";
+  const inputCls = "w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none transition focus:ring-2 focus:ring-[#FF8C00]/20 focus:border-[#FF8C00]/60";
   const inputStyle = { borderColor: 'rgba(192,80,21,0.2)', background: '#FDF8F3' };
 
   const SEC_NAV = [
@@ -3214,31 +3213,31 @@ function SettingsTab({ restaurantId, user }) {
             {/* Champs */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Nom du restaurant</label>
+                <label className="mb-1.5 block text-sm font-semibold text-[#374151]">Nom du restaurant</label>
                 <input type="text" value={settings.nom}
                   onChange={e => setSettings(p => ({ ...p, nom: e.target.value }))}
                   className={inputCls} style={inputStyle} placeholder="Ex: Le Bistrot d'Abidjan" />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Téléphone</label>
+                <label className="mb-1.5 block text-sm font-semibold text-[#374151]">Téléphone</label>
                 <input type="tel" value={settings.telephone}
                   onChange={e => setSettings(p => ({ ...p, telephone: e.target.value }))}
                   className={inputCls} style={inputStyle} placeholder="+225 07 00 00 00" />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Email</label>
+                <label className="mb-1.5 block text-sm font-semibold text-[#374151]">Email</label>
                 <input type="email" value={settings.email}
                   onChange={e => setSettings(p => ({ ...p, email: e.target.value }))}
                   className={inputCls} style={inputStyle} placeholder="contact@restaurant.ci" />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Adresse</label>
+                <label className="mb-1.5 block text-sm font-semibold text-[#374151]">Adresse</label>
                 <input type="text" value={settings.adresse}
                   onChange={e => setSettings(p => ({ ...p, adresse: e.target.value }))}
                   className={inputCls} style={inputStyle} placeholder="Cocody, Abidjan" />
               </div>
               <div className="md:col-span-2">
-                <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Description</label>
+                <label className="mb-1.5 block text-sm font-semibold text-[#374151]">Description</label>
                 <textarea value={settings.description}
                   onChange={e => setSettings(p => ({ ...p, description: e.target.value }))}
                   rows={3} placeholder="Décrivez l'ambiance et la spécialité de votre restaurant…"
@@ -3257,13 +3256,13 @@ function SettingsTab({ restaurantId, user }) {
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Ouverture</label>
+                <label className="mb-1.5 block text-sm font-semibold text-[#374151]">Ouverture</label>
                 <input type="time" value={settings.horaires.ouverture}
                   onChange={e => setSettings(p => ({ ...p, horaires: { ...p.horaires, ouverture: e.target.value } }))}
                   className={inputCls} style={inputStyle} />
               </div>
               <div>
-                <label className="mb-1.5 block text-xs font-semibold text-[#374151]">Fermeture</label>
+                <label className="mb-1.5 block text-sm font-semibold text-[#374151]">Fermeture</label>
                 <input type="time" value={settings.horaires.fermeture}
                   onChange={e => setSettings(p => ({ ...p, horaires: { ...p.horaires, fermeture: e.target.value } }))}
                   className={inputCls} style={inputStyle} />
@@ -3363,27 +3362,27 @@ function SettingsTab({ restaurantId, user }) {
                   { label: 'Téléphone', key: 'telephone', type: 'tel', ph: '+225 07 00 00 00' },
                 ].map(f => (
                   <div key={f.key}>
-                    <label className="block text-[10px] font-semibold text-[#64748B] mb-0.5">{f.label}</label>
+                    <label className="block text-sm font-semibold text-[#374151] mb-1.5">{f.label}</label>
                     <input type={f.type} value={staffForm[f.key]}
                       onChange={e => setStaffForm(p => ({ ...p, [f.key]: e.target.value }))}
                       placeholder={f.ph}
-                      className="w-full rounded-lg border px-3 py-2 text-xs outline-none transition focus:ring-1 focus:ring-[#FF8C00]/30"
+                      className="w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none transition focus:ring-1 focus:ring-[#FF8C00]/30"
                       style={{ borderColor: 'rgba(192,80,21,0.2)', background: '#fff' }}
                     />
                   </div>
                 ))}
                 <div>
-                  <label className="block text-[10px] font-semibold text-[#64748B] mb-0.5">Mot de passe (optionnel)</label>
+                  <label className="block text-sm font-semibold text-[#374151] mb-1.5">Mot de passe (optionnel)</label>
                   <input type="password" value={staffForm.password}
                     onChange={e => setStaffForm(p => ({ ...p, password: e.target.value }))}
                     placeholder="Vide = généré auto"
-                    className="w-full rounded-lg border px-3 py-2 text-xs outline-none"
+                    className="w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none"
                     style={{ borderColor: 'rgba(192,80,21,0.2)', background: '#fff' }}
                   />
                 </div>
               </div>
               <button onClick={handleCreateStaff}
-                className="w-full rounded-xl py-2.5 text-xs font-bold text-white transition"
+                className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition"
                 style={{ background: '#FF8C00' }}>
                 Créer le compte
               </button>
@@ -4647,219 +4646,6 @@ function OverviewTab({ restaurantId }) {
 }
 
 
-/* ══════════════════ Module Retrait de gains ══════════════════ */
-function RetraitTab({ restaurantId }) {
-  const [demandes, setDemandes] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [form, setForm] = useState({ montant: '', provider: 'WAVE', numeroMobileMoney: '' });
-  const [formError, setFormError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  // Solde estimé depuis le rapport mensuel
-  const [soldeEstime, setSoldeEstime] = useState(null);
-
-  useEffect(() => {
-    tresorerieAPI.generateReport('monthly')
-      .then((r) => setSoldeEstime(r.data?.summary?.totalRevenue ?? null))
-      .catch(() => {});
-  }, []);
-
-  const loadDemandes = async () => {
-    try {
-      setLoading(true);
-      const r = await retraitAPI.getMesDemandes();
-      setDemandes(r.data || []);
-    } catch {
-      // silencieux si le backend n'est pas encore disponible
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => { loadDemandes(); }, []);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setFormError('');
-    setSuccessMsg('');
-    const montant = parseFloat(form.montant);
-    if (!montant || montant <= 0) { setFormError('Le montant doit être supérieur à 0'); return; }
-    if (!form.numeroMobileMoney.trim()) { setFormError('Numéro Mobile Money requis'); return; }
-    setSubmitting(true);
-    try {
-      await retraitAPI.creerDemande({
-        montant,
-        provider: form.provider,
-        numeroMobileMoney: form.numeroMobileMoney.trim(),
-        restaurantId,
-      });
-      setSuccessMsg('Demande de retrait envoyée. Elle sera traitée par l\'administrateur.');
-      setForm({ montant: '', provider: 'WAVE', numeroMobileMoney: '' });
-      await loadDemandes();
-    } catch (err) {
-      setFormError(err?.response?.data?.message || 'Erreur lors de l\'envoi de la demande');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const statutBadge = (statut) => {
-    if (statut === 'APPROVED') return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-green-100 text-green-700">Approuvée</span>;
-    if (statut === 'REJECTED') return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-red-100 text-red-700">Rejetée</span>;
-    return <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-700">En attente</span>;
-  };
-
-  const providerLabel = (p) => ({ WAVE: 'Wave', ORANGE_MONEY: 'Orange Money', MTN_MONEY: 'MTN Money' }[p] || p);
-
-  return (
-    <div className="space-y-6">
-      {/* Solde estimé */}
-      <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="inline-flex items-center gap-2 rounded-full bg-[#FFF0DF] px-3 py-1 text-xs font-medium text-[#FF8C00] mb-2">
-              <Wallet className="h-3.5 w-3.5" />
-              Retrait de gains
-            </div>
-            <h3 className="text-xl font-bold text-[#1C1917]">Demander un retrait</h3>
-            <p className="mt-1 text-sm text-[#78716C]">Soumettez une demande de virement vers votre compte Mobile Money.</p>
-          </div>
-          {soldeEstime !== null && (
-            <div className="rounded-2xl bg-[#FFF0DF] px-5 py-3 text-right">
-              <p className="text-xs text-[#78716C] font-medium">CA estimé ce mois</p>
-              <p className="text-2xl font-extrabold text-[#FF8C00]">
-                {Number(soldeEstime).toLocaleString('fr-FR')} FCFA
-              </p>
-            </div>
-          )}
-        </div>
-      </section>
-
-      {/* Formulaire */}
-      <section className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <h4 className="text-base font-bold text-[#1C1917] mb-4">Nouvelle demande</h4>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-            {/* Montant */}
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-[#0F172A]">Montant (FCFA) *</label>
-              <input
-                type="number"
-                min="1"
-                step="1"
-                value={form.montant}
-                onChange={(e) => setForm((f) => ({ ...f, montant: e.target.value }))}
-                placeholder="Ex : 50 000"
-                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
-              />
-            </div>
-            {/* Provider */}
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-[#0F172A]">Opérateur *</label>
-              <select
-                value={form.provider}
-                onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value }))}
-                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
-              >
-                <option value="WAVE">Wave</option>
-                <option value="ORANGE_MONEY">Orange Money</option>
-                <option value="MTN_MONEY">MTN Money</option>
-              </select>
-            </div>
-            {/* Numéro */}
-            <div>
-              <label className="mb-1 block text-sm font-semibold text-[#0F172A]">Numéro Mobile Money *</label>
-              <input
-                type="tel"
-                value={form.numeroMobileMoney}
-                onChange={(e) => setForm((f) => ({ ...f, numeroMobileMoney: e.target.value }))}
-                placeholder="Ex : +225 07 00 00 00 00"
-                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-3 text-[#0F172A] outline-none transition focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00]"
-              />
-            </div>
-          </div>
-
-          {formError && (
-            <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700 border border-red-200">{formError}</p>
-          )}
-          {successMsg && (
-            <p className="rounded-xl bg-green-50 px-4 py-2.5 text-sm text-green-700 border border-green-200">{successMsg}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="inline-flex items-center gap-2 rounded-2xl bg-[#FF8C00] px-6 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#E07A00] disabled:opacity-60"
-          >
-            {submitting ? (
-              <span className="h-4 w-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-            ) : (
-              <DollarSign className="h-4 w-4" />
-            )}
-            {submitting ? 'Envoi en cours…' : 'Soumettre la demande'}
-          </button>
-        </form>
-      </section>
-
-      {/* Historique */}
-      <section className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h4 className="text-base font-bold text-[#1C1917]">Historique des demandes</h4>
-          <button
-            onClick={loadDemandes}
-            className="flex items-center gap-1.5 rounded-xl border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#0F172A] hover:bg-[#FFF0DF] transition"
-          >
-            <RefreshCcw className="h-3.5 w-3.5" />
-            Actualiser
-          </button>
-        </div>
-
-        {loading ? (
-          <div className="flex justify-center py-8">
-            <div className="h-8 w-8 rounded-full border-4 border-[#FF8C00] border-t-transparent animate-spin" />
-          </div>
-        ) : demandes.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-10 rounded-2xl bg-[#FFF7ED]">
-            <Wallet className="h-10 w-10 mb-2" style={{ color: '#FF8C00', opacity: 0.4 }} />
-            <p className="text-sm font-medium text-[#0F172A]">Aucune demande de retrait</p>
-            <p className="text-xs mt-1 text-[#94A3B8]">Vos demandes apparaîtront ici après soumission.</p>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-[#F1F5F9]">
-                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Date</th>
-                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Montant</th>
-                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Opérateur</th>
-                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B] pr-4">Numéro</th>
-                  <th className="pb-3 text-left text-xs font-semibold text-[#64748B]">Statut</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F8FAFC]">
-                {demandes.map((d) => (
-                  <tr key={d.id} className="hover:bg-[#FFF7ED] transition-colors">
-                    <td className="py-3 pr-4 text-[#0F172A] whitespace-nowrap">{new Date(d.createdAt).toLocaleDateString('fr-FR')}</td>
-                    <td className="py-3 pr-4 font-bold text-[#FF8C00] whitespace-nowrap">{Number(d.montant).toLocaleString('fr-FR')} FCFA</td>
-                    <td className="py-3 pr-4 text-[#0F172A]">{providerLabel(d.provider)}</td>
-                    <td className="py-3 pr-4 text-[#0F172A] font-mono text-xs">{d.numeroMobileMoney}</td>
-                    <td className="py-3">
-                      {statutBadge(d.statut)}
-                      {d.statut === 'REJECTED' && d.motifRejet && (
-                        <p className="mt-1 text-xs text-red-600 italic">Motif : {d.motifRejet}</p>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </section>
-    </div>
-  );
-}
 
 /* ═══ GerantDashboard — Composant principal ═══ */
 export default function GerantDashboard({ restaurantId, token }) {
@@ -4869,8 +4655,7 @@ export default function GerantDashboard({ restaurantId, token }) {
   const cachedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const user = cachedUser?.user || cachedUser;
   const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode") === "true");
-  const [tabOverlay, setTabOverlay] = useState(false);
-
+  const tabContentRef = useRef(null);
   useEffect(() => {
     const syncDarkMode = () => setDarkMode(localStorage.getItem("darkMode") === "true");
     window.addEventListener("storage", syncDarkMode);
@@ -4882,10 +4667,13 @@ export default function GerantDashboard({ restaurantId, token }) {
   }, []);
 
   useEffect(() => {
-    setTabOverlay(true);
-    const t = setTimeout(() => setTabOverlay(false), 180);
-    return () => clearTimeout(t);
+    const el = tabContentRef.current;
+    if (!el) return;
+    el.style.animation = 'none';
+    el.offsetHeight; // force reflow
+    el.style.animation = 'fadeUp 0.22s ease both';
   }, [activeTab]);
+
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -4903,8 +4691,6 @@ export default function GerantDashboard({ restaurantId, token }) {
         return <SettingsTab restaurantId={restaurantId} user={user} />;
       case "history":
         return <HistoryTab restaurantId={restaurantId} />;
-      case "retrait":
-        return <RetraitTab restaurantId={restaurantId} />;
       case "overview":
       default:
         return <OverviewTab restaurantId={restaurantId} />;
@@ -4913,14 +4699,6 @@ export default function GerantDashboard({ restaurantId, token }) {
 
   return (
     <div className="max-w-6xl mx-auto" style={{ position: 'relative' }}>
-      {tabOverlay && (
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 5,
-          background: 'rgba(15,23,42,0.18)',
-          pointerEvents: 'none',
-          animation: 'fadeIn 0.15s ease',
-        }} />
-      )}
       <OnboardingWizard />
       <div
         className={`rounded-3xl p-6 shadow-sm ${
@@ -4929,7 +4707,7 @@ export default function GerantDashboard({ restaurantId, token }) {
             : "bg-white border border-[rgba(0,0,0,0.05)]"
         }`}
       >
-        <div key={activeTab} style={{ animation: 'fadeUp 0.22s ease both' }}>
+        <div ref={tabContentRef} style={{ animation: 'fadeUp 0.22s ease both' }}>
           {renderTabContent()}
         </div>
       </div>

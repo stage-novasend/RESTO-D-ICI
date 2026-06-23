@@ -698,6 +698,22 @@ export class AdminService {
       baseUrl: 'https://api.resend.com',
       enabled: false,
     },
+    {
+      name: 'NovaSMS',
+      description:
+        'SMS transactionnels ivoiriens — confirmations de commande, alertes statut, OTP. Endpoint: POST {baseUrl}/send',
+      type: IntegrationType.SMS,
+      baseUrl: 'https://api.novasms.ci',
+      enabled: false,
+    },
+    {
+      name: 'Dobi Livraison',
+      description:
+        "Service de livraison Dobi — recherche de livreurs disponibles en temps réel et dispatch de commandes. Configurer aussi dans l'onglet Livraisons ext.",
+      type: IntegrationType.REST_API,
+      baseUrl: 'https://api.dobi.ci',
+      enabled: false,
+    },
   ];
 
   async getIntegrations() {

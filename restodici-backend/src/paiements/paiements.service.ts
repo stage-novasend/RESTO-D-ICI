@@ -276,6 +276,30 @@ export class PaiementsService {
     );
   }
 
+  // ── Méthodes de paiement disponibles (pour le frontend) ──────────────────
+  async getPaymentMethods(): Promise<{ methods: { id: string; label: string; provider: string; gateway: string; needsPhone: boolean }[]; configured: boolean }> {
+    const gateways = await this.gatewayRegistry.getEnabledPaymentGateways();
+    const methods: { id: string; label: string; provider: string; gateway: string; needsPhone: boolean }[] = [];
+
+    for (const gw of gateways) {
+      switch (gw.name) {
+        case 'novasend':
+          methods.push(
+            { id: 'orange_money', label: 'Orange Money',  provider: 'ORANGE', gateway: 'novasend', needsPhone: true  },
+            { id: 'mtn_momo',     label: 'MTN MoMo',      provider: 'MOMO',   gateway: 'novasend', needsPhone: true  },
+            { id: 'moov_money',   label: 'Moov Money',    provider: 'MOOV',   gateway: 'novasend', needsPhone: true  },
+            { id: 'wave',         label: 'Wave',           provider: 'WAVE',   gateway: 'novasend', needsPhone: false },
+            { id: 'card',         label: 'Carte Bancaire', provider: 'CARTE',  gateway: 'novasend', needsPhone: false },
+          );
+          break;
+        // Ajouter ici d'autres gateways (cinetpay, stripe, monetbil…)
+        // case 'cinetpay': methods.push({ id: 'cinetpay', ... }); break;
+      }
+    }
+
+    return { methods, configured: gateways.length > 0 };
+  }
+
   async handleCinetpayWebhook(body: any): Promise<void> {
     const { cpm_trans_id, cpm_result } = body;
     if (cpm_result !== '00') return;

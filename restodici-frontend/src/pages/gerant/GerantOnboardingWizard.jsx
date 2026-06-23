@@ -435,7 +435,10 @@ export default function GerantOnboardingWizard() {
                 ))}
               </div>
 
-              <button onClick={() => navigate('/gerant')}
+              <button onClick={() => {
+                  localStorage.setItem(`rdi_ob_${user?.id}`, '1');
+                  navigate('/gerant');
+                }}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: A }}>
                 <ChefHat className="w-5 h-5" />

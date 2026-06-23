@@ -184,6 +184,8 @@ export const commandesService = {
 
   getRestaurantActivity: (limit = 50) =>
     api.get("/commandes/activity/restaurant", { params: { limit } }),
+
+  confirmerReception: (id) => api.post(`/commandes/${id}/confirmer-reception`),
 };
 
 // ── Stocks ────────────────────────────────────────────────────────────────────
@@ -358,10 +360,12 @@ export const adminAPI = {
 // ── Paiements digitaux (NovaSend) ─────────────────────────────────────────────
 
 export const paiementsAPI = {
+  // GET /paiements/methodes → { methods: [...], configured: bool }
+  getMethods: ()     => api.get("/paiements/methodes"),
   // POST /paiements/initier → { sessionId, paymentUrl?, simulated }
-  initier: (data) => api.post("/paiements/initier", data),
+  initier:    (data) => api.post("/paiements/initier", data),
   // POST /paiements/simuler — déclenche le webhook en dev uniquement
-  simuler: (data) => api.post("/paiements/simuler", data),
+  simuler:    (data) => api.post("/paiements/simuler", data),
 };
 
 // ── Uploads ───────────────────────────────────────────────────────────────────
@@ -429,6 +433,7 @@ export const livraisonsExtAPI = {
   deleteFournisseur:     (id)            => api.delete(`/livraisons-externes/fournisseurs/${id}`),
   dispatch:              (data)          => api.post("/livraisons-externes/dispatch", data),
   getLivraisonCommande:  (commandeId)    => api.get(`/livraisons-externes/commande/${commandeId}`),
+  rechercheLivreurs:     (id, payload)   => api.post(`/livraisons-externes/fournisseurs/${id}/recherche-livreurs`, payload),
 };
 
 // ── Commandes — extras ────────────────────────────────────────────────────────

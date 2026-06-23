@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { PromosService } from './promos.service';
-import { PromoCode, TypePromo } from './entities/promo-code.entity';
+import { PromoCode, TypePromo, VisibilitePromo } from './entities/promo-code.entity';
 import { Commande } from '../commandes/entities/commande.entity';
 
 const mockCommandeRepo = { find: jest.fn(), findOne: jest.fn() };
@@ -28,6 +28,7 @@ function makePromo(overrides: Partial<PromoCode> = {}): PromoCode {
     usedCount: 0,
     expiresAt: undefined,
     actif: true,
+    visibilite: VisibilitePromo.TOUS,
     restaurantId: 'resto-1',
     restaurant: undefined as any,
     createdAt: new Date(),

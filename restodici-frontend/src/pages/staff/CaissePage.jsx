@@ -1,7 +1,8 @@
 // src/pages/staff/CaissePage.jsx — Caisse · B2B-aligned design
 import { useCallback, useEffect, useRef, useState } from 'react';
 import QRCode from 'qrcode';
-import { CheckCircle2, Receipt, X, AlertCircle, History, ChevronDown, ChevronUp, Link2, QrCode } from 'lucide-react';
+import { CheckCircle2, Receipt, X, AlertCircle, History, ChevronDown, ChevronUp, Link2, QrCode, Wallet } from 'lucide-react';
+import EconomicReconciliation from '../../components/staff/EconomicReconciliation';
 import { commandesService, createCommandesSocket } from '../../services/commandes.service';
 import { paiementsAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -520,6 +521,7 @@ export default function CaissePage() {
   const [toast,        setToast]        = useState(null);
   const [payHistory,   setPayHistory]   = useState(() => loadPayHistory());
   const [histLoading,  setHistLoading]  = useState(false);
+  const [showCloture,  setShowCloture]  = useState(false);
   const [showHist,     setShowHist]     = useState(true);
   const [digitalModal,  setDigitalModal]  = useState(null);  // { payMode, commande }
   const [failedPayment, setFailedPayment] = useState(null);   // { commandeId, reason }
@@ -672,14 +674,23 @@ export default function CaissePage() {
       )}
 
       {/* Welcome bar */}
-      <div style={{ marginBottom: 28 }}>
-        <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, color: TER, textTransform: 'uppercase', letterSpacing: '0.24em' }}>
-          Encaissement
-        </p>
-        <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.03em' }}>Caisse</h1>
-        <p style={{ margin: '4px 0 0', fontSize: 13, color: MUTED }}>
-          {active.length} commande{active.length !== 1 ? 's' : ''} active{active.length !== 1 ? 's' : ''} · cliquez pour encaisser
-        </p>
+      <div style={{ marginBottom: 28, display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <p style={{ margin: '0 0 4px', fontSize: 10, fontWeight: 800, color: TER, textTransform: 'uppercase', letterSpacing: '0.24em' }}>
+            Encaissement
+          </p>
+          <h1 style={{ margin: 0, fontSize: 26, fontWeight: 800, color: NAVY, letterSpacing: '-0.03em' }}>Caisse</h1>
+          <p style={{ margin: '4px 0 0', fontSize: 13, color: MUTED }}>
+            {active.length} commande{active.length !== 1 ? 's' : ''} active{active.length !== 1 ? 's' : ''} · cliquez pour encaisser
+          </p>
+        </div>
+        <button
+          onClick={() => setShowCloture(true)}
+          style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 18px', borderRadius: 12, border: `1px solid ${BORDER}`, background: CARD, fontSize: 13, fontWeight: 700, color: NAVY, cursor: 'pointer', boxShadow: SH, flexShrink: 0, whiteSpace: 'nowrap' }}
+        >
+          <Wallet size={15} color={TER} />
+          Clôture Caisse
+        </button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: 20, alignItems: 'start' }}>
@@ -810,6 +821,14 @@ export default function CaissePage() {
                   Lien NovaSend sécurisé — le client scanne le QR ou ouvre {currentMode?.label} pour valider
                 </div>
               )}
+              {/* Indicateur frais Novasend */}
+              <div style={{ marginTop: 10, padding: '8px 12px', borderRadius: 10, background: isDigitalMode ? '#FFFBEB' : '#F0FDF4', border: `1px solid ${isDigitalMode ? '#FDE68A' : '#BBF7D0'}`, fontSize: 11, color: isDigitalMode ? '#92400E' : '#166534', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Wallet size={12} />
+                {isDigitalMode
+                  ? `Frais Novasend : 1–5 % déduits du montant encaissé (taux réel communiqué lors de l'intégration)`
+                  : `Frais Novasend : 0 % — 100 % reversé au restaurant`
+                }
+              </div>
             </div>
 
             {/* Instruction TPE — carte bancaire */}
@@ -998,6 +1017,11 @@ export default function CaissePage() {
           onSimConfirmed={() => { /* WebSocket confirmera et fermera */ }}
           externalFailed={failedPayment?.commandeId === digitalModal.commande.id ? failedPayment.reason : null}
         />
+      )}
+
+      {/* Modal clôture caisse */}
+      {showCloture && (
+        <EconomicReconciliation onClose={() => setShowCloture(false)} />
       )}
     </div>
   );

@@ -27,38 +27,18 @@ const MODE_LABELS = {
   sur_place: 'Sur place', emporter: 'À emporter', livraison: 'Livraison à domicile',
 };
 
-const PAYMENT_METHODS = [
-  {
-    id: 'orange_money', provider: 'ORANGE', name: 'Orange Money', shortName: 'Orange',
-    logo: orangeMoneyLogo, accent: '#FF7900', accentLight: '#FFF3E0',
-    borderActive: 'border-orange-400', bgActive: 'bg-orange-50',
-    phoneRequired: true, otpRequired: true,
-  },
-  {
-    id: 'mtn_money', provider: 'MOMO', name: 'MTN Mobile Money', shortName: 'MTN MoMo',
-    logo: mtnMomoLogo, accent: '#FFCC00', accentLight: '#FFFDE7',
-    borderActive: 'border-yellow-400', bgActive: 'bg-yellow-50',
-    phoneRequired: true, otpRequired: false,
-  },
-  {
-    id: 'moov_money', provider: 'MOOV', name: 'Moov Money', shortName: 'Moov',
-    logo: moovMoneyLogo, accent: '#0066CC', accentLight: '#E3F0FF',
-    borderActive: 'border-blue-400', bgActive: 'bg-blue-50',
-    phoneRequired: true, otpRequired: false,
-  },
-  {
-    id: 'wave', provider: 'WAVE', name: 'Wave', shortName: 'Wave',
-    logo: null, accent: '#1DA1F2', accentLight: '#E8F5FD',
-    borderActive: 'border-sky-400', bgActive: 'bg-sky-50',
-    phoneRequired: false, otpRequired: false,
-  },
-  ...(NOVASEND_CARD_ENABLED ? [{
-    id: 'card', provider: 'CARTE', name: 'Carte Bancaire', shortName: 'Carte',
-    logo: carteBancaireLogo, accent: '#0F172A', accentLight: '#F5F0FF',
-    borderActive: 'border-slate-500', bgActive: 'bg-slate-50',
-    phoneRequired: false, otpRequired: false,
-  }] : []),
-];
+/* Métadonnées visuelles locales — ne contient aucune logique métier */
+const METHOD_VISUAL_MAP = {
+  orange_money: { provider: 'ORANGE', name: 'Orange Money',   shortName: 'Orange',   logo: orangeMoneyLogo,   accent: '#FF7900', accentLight: '#FFF3E0', borderActive: 'border-orange-400', bgActive: 'bg-orange-50',  phoneRequired: true,  otpRequired: true  },
+  mtn_momo:     { provider: 'MOMO',   name: 'MTN Mobile Money',shortName: 'MTN MoMo', logo: mtnMomoLogo,       accent: '#FFCC00', accentLight: '#FFFDE7', borderActive: 'border-yellow-400', bgActive: 'bg-yellow-50',  phoneRequired: true,  otpRequired: false },
+  moov_money:   { provider: 'MOOV',   name: 'Moov Money',     shortName: 'Moov',     logo: moovMoneyLogo,     accent: '#0066CC', accentLight: '#E3F0FF', borderActive: 'border-blue-400',   bgActive: 'bg-blue-50',    phoneRequired: true,  otpRequired: false },
+  wave:         { provider: 'WAVE',   name: 'Wave',           shortName: 'Wave',     logo: null,              accent: '#1DA1F2', accentLight: '#E8F5FD', borderActive: 'border-sky-400',    bgActive: 'bg-sky-50',     phoneRequired: false, otpRequired: false },
+  card:         { provider: 'CARTE',  name: 'Carte Bancaire', shortName: 'Carte',    logo: carteBancaireLogo, accent: '#0F172A', accentLight: '#F5F0FF', borderActive: 'border-slate-500',  bgActive: 'bg-slate-50',   phoneRequired: false, otpRequired: false },
+};
+
+const METHODS_FALLBACK = Object.entries(METHOD_VISUAL_MAP)
+  .filter(([id]) => id !== 'card' || NOVASEND_CARD_ENABLED)
+  .map(([id, meta]) => ({ id, ...meta }));
 
 const PROVIDER_NOTE = {
   ORANGE: 'Confirmez la demande de paiement sur votre téléphone. Si vous n\'avez pas reçu la demande, composez #144*46# pour générer un OTP.',
@@ -155,6 +135,7 @@ export default function CheckoutPage() {
   const { clearCart } = useCart();
   const isB2B = user?.role === 'B2B';
 
+  const [paymentMethods, setPaymentMethods] = useState(METHODS_FALLBACK);
   const [selectedMethod, setSelectedMethod] = useState('orange_money');
   const [pendingOrder, setPendingOrder]     = useState(null);
   const [phone, setPhone]                   = useState('');
@@ -195,7 +176,20 @@ export default function CheckoutPage() {
     if (user?.telephone && !phone) setPhone(user.telephone);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const method = PAYMENT_METHODS.find(m => m.id === selectedMethod);
+  /* Chargement dynamique des méthodes depuis l'API */
+  useEffect(() => {
+    paiementsAPI.getMethods()
+      .then(r => {
+        if (!r.data?.methods?.length) return;
+        const merged = r.data.methods
+          .filter(m => m.id !== 'card' || NOVASEND_CARD_ENABLED)
+          .map(m => ({ ...m, ...(METHOD_VISUAL_MAP[m.id] ?? { accent: '#64748B', accentLight: '#F1F5F9', borderActive: 'border-slate-300', bgActive: 'bg-slate-50', logo: null, phoneRequired: !!m.needsPhone, otpRequired: false }) }));
+        setPaymentMethods(merged);
+      })
+      .catch(() => { /* fallback silencieux */ });
+  }, []);
+
+  const method = paymentMethods.find(m => m.id === selectedMethod);
 
   // ── Promo ──────────────────────────────────────────────────────────────────
   const handleApplyPromo = async () => {
@@ -317,6 +311,10 @@ export default function CheckoutPage() {
           ...(item.variantSupplement ? { variantSupplement: Number(item.variantSupplement) } : {}),
         })),
         ...(promoResult ? { codePromo: promoResult.promo.code } : {}),
+        ...(modeLivraison === 'LIVRAISON' && pendingOrder.deliveryFee
+          ? { fraisLivraison: Number(pendingOrder.deliveryFee) } : {}),
+        ...(modeLivraison === 'LIVRAISON' && pendingOrder.fournisseurLivraisonId
+          ? { fournisseurLivraisonId: pendingOrder.fournisseurLivraisonId } : {}),
       });
 
       const order = res.data;
@@ -513,7 +511,7 @@ export default function CheckoutPage() {
 
             {/* Method selector */}
             <div className="grid grid-cols-2 gap-3">
-              {PAYMENT_METHODS.map(m => {
+              {paymentMethods.map(m => {
                 const active = selectedMethod === m.id;
                 return (
                   <button key={m.id} type="button" onClick={() => { setSelectedMethod(m.id); setOtp(''); }}

@@ -52,15 +52,31 @@ export default function Login() {
      Redirection après une connexion réussie
      Chaque rôle a son espace dédié
   ───────────────────────────────────────────────── */
+  const needsOnboarding = (user, role) => {
+    if (localStorage.getItem(`rdi_ob_${user.id}`)) return false;
+    if (role === 'ADMIN') return false;
+    if (role === 'GERANT') return !user.restaurant?.adresse;
+    return !user.telephone;
+  };
+
   const redirectAfterLogin = (user) => {
     const role = user.role?.toUpperCase();
 
-    if (redirectParam === 'checkout') navigate('/checkout');
-    else if (role === 'ADMIN')        navigate('/admin');
-    else if (role === 'GERANT')       navigate('/gerant');
-    else if (role === 'B2B')          navigate('/b2b/dashboard');
-    else if (role === 'STAFF')        navigate('/staff');
-    else                              navigate('/menu');
+    if (redirectParam === 'checkout') { navigate('/checkout'); return; }
+
+    if (needsOnboarding(user, role)) {
+      if (role === 'GERANT')      navigate('/onboarding/gerant');
+      else if (role === 'B2B')    navigate('/onboarding/b2b');
+      else if (role === 'STAFF')  navigate('/onboarding/staff');
+      else                        navigate('/onboarding/client');
+      return;
+    }
+
+    if (role === 'ADMIN')        navigate('/admin');
+    else if (role === 'GERANT')  navigate('/gerant');
+    else if (role === 'B2B')     navigate('/b2b/dashboard');
+    else if (role === 'STAFF')   navigate('/staff');
+    else                         navigate('/menu');
   };
 
   /* ─────────────────────────────────────────────────

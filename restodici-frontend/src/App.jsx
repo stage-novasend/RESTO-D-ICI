@@ -43,6 +43,7 @@ const KDSStaff              = lazy(() => import('./pages/staff/KDSStaff'));
 const CaissePage            = lazy(() => import('./pages/staff/CaissePage'));
 const ServeurPage           = lazy(() => import('./pages/staff/ServeurPage'));
 const ArticlesStaff         = lazy(() => import('./pages/staff/ArticlesStaff'));
+const StaffOnboardingWizard = lazy(() => import('./pages/staff/StaffOnboardingWizard'));
 const B2BDashboard          = lazy(() => import('./pages/b2b/B2BDashboard'));
 const BulkOrder             = lazy(() => import('./pages/b2b/BulkOrder'));
 const B2BOrders             = lazy(() => import('./pages/b2b/B2BOrders'));
@@ -53,6 +54,7 @@ const AcceptInvitation      = lazy(() => import('./pages/b2b/AcceptInvitation'))
 const B2BOrderTracking      = lazy(() => import('./pages/b2b/B2BOrderTracking'));
 const B2BOnboardingPage     = lazy(() => import('./pages/b2b/B2BOnboardingPage'));
 const AdminDashboard        = lazy(() => import('./pages/admin/AdminDashboard'));
+const ClientOnboardingWizard = lazy(() => import('./pages/client/ClientOnboardingWizard'));
 
 const queryClient = new QueryClient();
 
@@ -176,8 +178,14 @@ export default function App() {
                 <Route path="/orders"         element={<OrdersPage />} />
                 <Route path="/mes-commandes"  element={<Navigate to="/account" replace />} />
                 <Route path="/client/orders"  element={<Navigate to="/account" replace />} />
-                <Route path="/account"        element={<ClientDashboard />} />
               </Route>
+
+              {/* Dashboard client — sans ClientLayout (layout propre avec sidebar navy) */}
+              <Route path="/account" element={
+                <CartProvider>
+                  <ProtectedClientRoute><ClientDashboard /></ProtectedClientRoute>
+                </CartProvider>
+              } />
 
               {/* === AUTHENTIFICATION (sans layout) === */}
               <Route path="/login"            element={<Login />} />
@@ -193,6 +201,14 @@ export default function App() {
               } />
               <Route path="/onboarding/b2b" element={
                 <ProtectedBusinessRoute><B2BOnboardingPage /></ProtectedBusinessRoute>
+              } />
+              <Route path="/onboarding/staff" element={
+                <ProtectedStaffRoute><StaffOnboardingWizard /></ProtectedStaffRoute>
+              } />
+              <Route path="/onboarding/client" element={
+                <ProtectedClientRoute>
+                  <CartProvider><ClientOnboardingWizard /></CartProvider>
+                </ProtectedClientRoute>
               } />
 
               {/* === DASHBOARD GÉRANT === */}

@@ -78,4 +78,15 @@ export class CreateCommandeDto {
   @IsOptional()
   @IsString()
   tableNumber?: string;
+
+  /** Frais de livraison externe (ajoutés au montant total payé par le client) */
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  fraisLivraison?: number;
+
+  /** ID du fournisseur de livraison choisi */
+  @IsOptional()
+  @IsString()
+  fournisseurLivraisonId?: string;
 }

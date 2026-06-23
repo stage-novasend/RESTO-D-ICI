@@ -8,15 +8,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import {
   ShoppingBag, Clock, CheckCircle, Star, Download, Eye,
   User, Shield, ChefHat, Package, X, Send,
-  Printer, RefreshCw, RefreshCcw, Receipt, Truck, ArrowRight,
+  Printer, RefreshCcw, Receipt, Truck, ArrowRight,
   UtensilsCrossed, Wallet, AlertCircle, MessageSquare, CreditCard,
   Plus, Trash2, Phone, Mail, MapPin, Camera, TrendingUp, Award,
   Zap, Lock, Key, Smartphone, Globe, ChevronRight, BarChart3,
   Heart, Gift, Percent, BadgeCheck, Star as StarIcon,
+  LogOut, Menu as MenuIcon,
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { commandesService as svcTs, createCommandesSocket } from '../../services/commandes.service';
-import { authAPI } from '../../services/api';
+import { authAPI, commandesService } from '../../services/api';
 import SecurityPanel from '../../components/security/SecurityPanel';
 import NotificationBell from '../../components/notifications/NotificationBell';
 import { formatFCFA } from '../../utils/formatters';
@@ -27,12 +28,16 @@ import mtnMomoLogo      from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo    from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
-/* ── Palette ── */
+/* ── Palette — alignée sur Home.jsx ── */
 const ACCENT       = '#FF8C00';
 const ACCENT_DARK  = '#E07A00';
-const ACCENT_LIGHT = '#FFF0DF';
-const SURFACE      = '#F4F5F7';
-const BORDER       = 'rgba(0,0,0,0.07)';
+const ACCENT_LIGHT = '#FFF5E8';   /* Home.bgAlt */
+const SURFACE      = '#FFEFD8';   /* Home.surface */
+const BORDER       = 'rgba(255,140,0,0.14)'; /* Home.line */
+const NAVY         = '#1A0C00';   /* Home.dark */
+const NAVY2        = '#3B2409';   /* Home.text */
+const BG           = '#FFFAF3';   /* Home.bg — crème chaude */
+const RED          = '#EF4444';
 
 const ORDER_STATUS = {
   RECUE:        { label: 'Reçue',          bg: '#FFFBEB', color: '#D97706' },
@@ -224,7 +229,7 @@ function AvisModal({ order, onClose, onSubmit }) {
 }
 
 /* ── Carte commande active ── */
-function ActiveOrderCard({ order, onTrack, onReceipt }) {
+function ActiveOrderCard({ order, onTrack, onReceipt, onConfirmReceipt }) {
   const idx = STEPS.indexOf(order.statut);
   const progress = idx >= 0 ? Math.round(((idx + 1) / STEPS.length) * 100) : 0;
   const status = ORDER_STATUS[order.statut] || { label: order.statut, bg: '#F3F4F6', color: '#6B7280' };
@@ -265,7 +270,14 @@ function ActiveOrderCard({ order, onTrack, onReceipt }) {
           style={{ borderColor: BORDER }}>
           <Eye className="w-3.5 h-3.5" /> Suivre
         </button>
-        {order.estPaye && (
+        {order.statut === 'EN_LIVRAISON' && !order.receptionConfirmeeAt && onConfirmReceipt && (
+          <button onClick={() => onConfirmReceipt(order)}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white"
+            style={{ background: '#16A34A' }}>
+            <CheckCircle className="w-3.5 h-3.5" /> Reçu
+          </button>
+        )}
+        {order.estPaye && order.statut !== 'EN_LIVRAISON' && (
           <button onClick={onReceipt}
             className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl text-xs font-semibold text-white"
             style={{ background: ACCENT }}>
@@ -464,7 +476,7 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
 
       {/* ── Hero Banner ─────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl"
-        style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, #FF6B00 40%, #FF4D00 100%)`, boxShadow: `0 8px 40px ${ACCENT}55` }}>
+        style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`, boxShadow: `0 8px 40px ${ACCENT}44` }}>
 
         <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           {/* Avatar */}
@@ -635,7 +647,8 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
                 {activeOrders.slice(0, 3).map(o => (
                   <ActiveOrderCard key={o.id} order={o}
                     onTrack={() => setTrackOrder(o)}
-                    onReceipt={() => setReceiptOrder(o)} />
+                    onReceipt={() => setReceiptOrder(o)}
+                    onConfirmReceipt={handleConfirmReceipt} />
                 ))}
               </div>
             )}
@@ -675,7 +688,7 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
 
           {/* CTA Commander */}
           <div className="rounded-2xl p-5 text-white space-y-4"
-            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, #FF4D00 100%)` }}>
+            style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)` }}>
             <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
               <ChefHat className="w-6 h-6 text-white" />
             </div>
@@ -1333,10 +1346,12 @@ function SecurityTab({ user }) {
    ──  COMPOSANT PRINCIPAL  ───────────────────────────────────────
    ════════════════════════════════════════════════════════════════ */
 export default function ClientDashboard() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate  = useNavigate();
   const [tab, setTab] = useState('overview');
-  const changeTab = (key) => { setTab(key); };
+  const [sideOpen, setSideOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const changeTab = (key) => { setTab(key); setSideOpen(false); };
   const [orders, setOrders] = useState(() => loadCachedOrders(user?.id));
   const [loadingOrders, setLoadingOrders]   = useState(true);
   const [refreshing, setRefreshing]         = useState(false);
@@ -1422,6 +1437,16 @@ export default function ClientDashboard() {
 
   const canAvis = (o) => o.statut === 'LIVREE' && !avisGiven.has(o.id) && !o.avis;
 
+  const handleConfirmReceipt = async (order) => {
+    if (!window.confirm(`Confirmer la réception de la commande #${order.numero} ?`)) return;
+    try {
+      await commandesService.confirmerReception(order.id);
+      await loadOrders(true);
+    } catch (e) {
+      alert(e?.response?.data?.message ?? 'Erreur lors de la confirmation');
+    }
+  };
+
   const handleReorder = (order) => {
     const items = (order.lignes || []).map(l => ({
       articleId: l.article?.id || l.articleId,
@@ -1501,189 +1526,302 @@ export default function ClientDashboard() {
     { key: 'security', label: 'Sécurité',         icon: Shield },
   ];
 
-  return (
-    <div className="min-h-screen" style={{ background: '#F4F5F7' }}>
-
-      {/* ── Top bar ─────────────────────────────────────────────────── */}
-      <header className="sticky top-0 z-30 bg-white"
-        style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 8px rgba(0,0,0,0.05)' }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div style={{ width: 38, height: 38, borderRadius: 12, background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 10px ${ACCENT}44`, flexShrink: 0 }}>
-              <UtensilsCrossed className="w-4 h-4 text-white" />
-            </div>
-            <div>
-              <p style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', color: ACCENT, textTransform: 'uppercase', margin: 0, lineHeight: 1 }}>Espace client</p>
-              <h1 style={{ fontSize: 15, fontWeight: 800, color: '#111827', margin: 0, lineHeight: 1.3, letterSpacing: '-0.01em' }}>
-                {user?.prenom || user?.nom || 'Mon compte'}
-              </h1>
-            </div>
+  /* ── Sidebar nav component ── */
+  const Sidebar = ({ mobile = false }) => (
+    <div className="flex flex-col h-full" style={{ background: NAVY }}>
+      {/* Brand */}
+      <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+            style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})` }}>
+            <UtensilsCrossed className="w-4 h-4 text-white" />
           </div>
-          <div className="flex items-center gap-2">
-            <button onClick={() => loadOrders(true)} disabled={refreshing}
-              className="w-9 h-9 rounded-xl flex items-center justify-center transition-colors hover:bg-gray-50"
-              style={{ border: '1px solid rgba(0,0,0,0.08)', background: '#fff' }}>
-              <RefreshCw className={`w-4 h-4 text-gray-400 ${refreshing ? 'animate-spin' : ''}`} />
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-white leading-none">Resto d'ici</p>
+            <p className="text-[10px] mt-0.5 font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              Espace client
+            </p>
+          </div>
+          {mobile && (
+            <button onClick={() => setSideOpen(false)} style={{ color: 'rgba(255,255,255,0.5)' }}>
+              <X className="w-4 h-4" />
             </button>
-            <NotificationBell accentColor={ACCENT} />
-          </div>
+          )}
         </div>
+      </div>
 
-        {/* Tab bar */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 flex gap-0 pb-0 overflow-x-auto"
-          style={{ borderTop: '1px solid rgba(0,0,0,0.04)' }}>
-          {TABS.map(t => (
-            <button key={t.key} onClick={() => changeTab(t.key)}
-              className="flex items-center gap-1.5 px-4 py-3 text-sm font-semibold whitespace-nowrap transition shrink-0 border-b-2"
+      {/* Section label */}
+      <div className="px-4 pt-5 pb-2">
+        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
+          Navigation
+        </p>
+      </div>
+
+      {/* Nav items */}
+      <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto pb-4">
+        {TABS.map(item => {
+          const Icon = item.icon;
+          const active = tab === item.key;
+          return (
+            <button key={item.key} onClick={() => changeTab(item.key)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all"
               style={{
-                borderBottomColor: tab === t.key ? ACCENT : 'transparent',
-                color: tab === t.key ? ACCENT : '#6B7280',
-                background: 'transparent',
-                marginBottom: -1,
+                background: active ? `${ACCENT}22` : 'transparent',
+                color: active ? ACCENT : 'rgba(255,255,255,0.65)',
+                borderLeft: active ? `3px solid ${ACCENT}` : '3px solid transparent',
               }}>
-              <t.icon className="w-3.5 h-3.5" />
-              {t.label}
-              {t.badge > 0 && (
-                <span className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[10px] font-bold text-white"
-                  style={{ background: ACCENT }}>
-                  {t.badge}
+              <Icon className="w-4 h-4 shrink-0" />
+              <span className="flex-1 text-left">{item.label}</span>
+              {(item.badge ?? 0) > 0 && (
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
+                  style={{ background: `${ACCENT}33`, color: ACCENT }}>
+                  {item.badge}
                 </span>
               )}
             </button>
-          ))}
-        </div>
-      </header>
+          );
+        })}
+      </nav>
 
-      {/* ── Content ──────────────────────────────────────────────────── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+      {/* Divider */}
+      <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
 
-        {ordersError && (
-          <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-2xl border"
-            style={{ background: '#FFF1F2', borderColor: '#FECDD3' }}>
-            <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
-            <p className="text-sm text-red-700 flex-1">{ordersError}</p>
-            <button onClick={() => loadOrders(false)} className="text-xs font-bold text-red-700 underline shrink-0">
-              Réessayer
-            </button>
+      {/* User block */}
+      <div className="px-3 py-4">
+        <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl"
+          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
+          <div className="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-sm font-bold text-white"
+            style={{ background: ACCENT }}>
+            {(user?.prenom || user?.nom || 'C')[0].toUpperCase()}
           </div>
-        )}
-
-        <div key={tab} style={{ animation: 'fadeUp 0.22s ease both' }}>
-        {tab === 'overview' && (
-          <OverviewTab
-            user={user} orders={orders} activeOrders={activeOrders}
-            delivered={delivered} cancelled={cancelled} pendingAvis={pendingAvis}
-            totalSpent={totalSpent} avgOrder={avgOrder} loadingOrders={loadingOrders}
-            canAvis={canAvis} setTab={changeTab}
-            setTrackOrder={setTrackOrder} setReceiptOrder={setReceiptOrder} setAvisOrder={setAvisOrder}
-            downloadPdf={downloadPdf} handleReorder={handleReorder}
-          />
-        )}
-
-        {tab === 'orders' && (
-          <div className="space-y-4">
-            <div className="flex gap-2 flex-wrap">
-              {[
-                { k: 'all',      label: `Toutes (${orders.length})` },
-                { k: 'actives',  label: `En cours (${activeOrders.length})` },
-                { k: 'livrees',  label: `Livrées (${delivered.length})` },
-                { k: 'annulees', label: `Annulées (${cancelled.length})` },
-              ].map(f => (
-                <button key={f.k} onClick={() => setOrderFilter(f.k)}
-                  className="px-4 py-1.5 rounded-full text-sm font-semibold border transition"
-                  style={{
-                    background: orderFilter === f.k ? ACCENT : '#fff',
-                    color: orderFilter === f.k ? '#fff' : '#6B7280',
-                    borderColor: orderFilter === f.k ? ACCENT : BORDER,
-                  }}>
-                  {f.label}
-                </button>
-              ))}
-            </div>
-
-            <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
-              <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: BORDER }}>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-bold text-[#111827]">Mes commandes</span>
-                  <span className="text-xs text-[#9CA3AF]">
-                    {filteredOrders.length} résultat{filteredOrders.length !== 1 ? 's' : ''}
-                  </span>
-                </div>
-                <Link to="/menu" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: ACCENT }}>
-                  <ShoppingBag className="w-3.5 h-3.5" /> Commander
-                </Link>
-              </div>
-
-              {loadingOrders ? (
-                <div className="flex justify-center py-12">
-                  <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
-                    style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
-                </div>
-              ) : filteredOrders.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-12 text-center" style={{ background: '#FFF7ED' }}>
-                  <ShoppingBag className="w-12 h-12 mb-3" style={{ color: '#FF8C00', opacity: 0.4 }} />
-                  <p className="text-sm font-medium mb-1" style={{ color: '#0F172A' }}>
-                    {orders.length === 0 ? "Vous n'avez pas encore passé de commande" : 'Aucune commande dans cette catégorie'}
-                  </p>
-                  <p className="text-xs mb-4" style={{ color: '#94A3B8' }}>Explorez notre menu et passez votre première commande.</p>
-                  <Link to="/menu"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-                    style={{ background: ACCENT, textDecoration: 'none' }}>
-                    Commander maintenant
-                  </Link>
-                </div>
-              ) : (
-                filteredOrders.map(o =>
-                  ['LIVREE', 'ANNULEE'].includes(o.statut) ? (
-                    <PastOrderRow key={o.id} order={o}
-                      onReceipt={() => setReceiptOrder(o)}
-                      onDownload={() => downloadPdf(o.id)}
-                      onAvis={() => setAvisOrder(o)}
-                      canAvis={canAvis(o)}
-                      onReorder={handleReorder} />
-                  ) : (
-                    <div key={o.id} className="p-4 border-b last:border-0" style={{ borderColor: BORDER }}>
-                      <ActiveOrderCard order={o}
-                        onTrack={() => setTrackOrder(o)}
-                        onReceipt={() => setReceiptOrder(o)} />
-                    </div>
-                  )
-                )
-              )}
-            </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold truncate text-white">{user?.prenom || user?.nom || 'Client'}</p>
+            <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>
+              {user?.email || ''}
+            </p>
           </div>
-        )}
-
-        {tab === 'payment' && (
-          <PaymentTab
-            savedPM={savedPM} setSavedPM={setSavedPM}
-            pmForm={pmForm} setPmForm={setPmForm}
-            pmMsg={pmMsg} setPmMsg={setPmMsg}
-            addPM={addPM} removePM={removePM} setDefaultPM={setDefaultPM}
-            userId={userId}
-          />
-        )}
-
-        {tab === 'profile' && (
-          <ProfileTab
-            user={user}
-            profileForm={profileForm} setProfileForm={setProfileForm}
-            profileMsg={profileMsg} handleProfileSave={handleProfileSave}
-            orders={orders} totalSpent={totalSpent} delivered={delivered}
-            savedAddresses={savedAddresses} addrForm={addrForm} setAddrForm={setAddrForm}
-            addAddress={addAddress} removeAddress={removeAddress}
-          />
-        )}
-
-        {tab === 'security' && <SecurityTab user={user} />}
+          <button onClick={() => setShowLogoutConfirm(true)} title="Déconnexion"
+            className="w-7 h-7 rounded-lg flex items-center justify-center transition hover:opacity-80"
+            style={{ background: `${RED}22`, color: '#FCA5A5' }}>
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
         </div>
       </div>
+    </div>
+  );
+
+  return (
+    <div className="flex h-screen overflow-hidden" style={{ background: BG }}>
+
+      {/* ── Desktop sidebar ── */}
+      <div className="hidden lg:flex flex-col w-[220px] shrink-0 h-full border-r"
+        style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+        <Sidebar />
+      </div>
+
+      {/* ── Mobile sidebar overlay ── */}
+      {sideOpen && (
+        <div className="lg:hidden fixed inset-0 z-40 flex">
+          <div className="w-[220px] h-full"><Sidebar mobile /></div>
+          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setSideOpen(false)} />
+        </div>
+      )}
+
+      {/* ── Main area ── */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+
+        {/* Top bar — profile button + notifications only */}
+        <header className="shrink-0 bg-white flex items-center justify-between px-4 sm:px-6 h-14"
+          style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+          <div className="flex items-center gap-3">
+            {/* Mobile menu toggle */}
+            <button className="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center"
+              style={{ background: '#F1F5F9' }}
+              onClick={() => setSideOpen(true)}>
+              <MenuIcon className="w-4 h-4 text-gray-500" />
+            </button>
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: ACCENT, lineHeight: 1 }}>
+                Espace client
+              </p>
+              <p className="text-[13px] font-bold" style={{ color: '#111827', lineHeight: 1.3 }}>
+                {TABS.find(t => t.key === tab)?.label || 'Mon compte'}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <NotificationBell accentColor={ACCENT} light />
+          </div>
+        </header>
+
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="w-full px-4 sm:px-6 py-6">
+
+            {ordersError && (
+              <div className="mb-5 flex items-center gap-3 px-4 py-3 rounded-2xl border"
+                style={{ background: '#FFF1F2', borderColor: '#FECDD3' }}>
+                <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
+                <p className="text-sm text-red-700 flex-1">{ordersError}</p>
+                <button onClick={() => loadOrders(false)} className="text-xs font-bold text-red-700 underline shrink-0">
+                  Réessayer
+                </button>
+              </div>
+            )}
+
+            <div key={tab} style={{ animation: 'fadeUp 0.22s ease both' }}>
+            {tab === 'overview' && (
+              <OverviewTab
+                user={user} orders={orders} activeOrders={activeOrders}
+                delivered={delivered} cancelled={cancelled} pendingAvis={pendingAvis}
+                totalSpent={totalSpent} avgOrder={avgOrder} loadingOrders={loadingOrders}
+                canAvis={canAvis} setTab={changeTab}
+                setTrackOrder={setTrackOrder} setReceiptOrder={setReceiptOrder} setAvisOrder={setAvisOrder}
+                downloadPdf={downloadPdf} handleReorder={handleReorder}
+              />
+            )}
+
+            {tab === 'orders' && (
+              <div className="space-y-4">
+                <div className="flex gap-2 flex-wrap">
+                  {[
+                    { k: 'all',      label: `Toutes (${orders.length})` },
+                    { k: 'actives',  label: `En cours (${activeOrders.length})` },
+                    { k: 'livrees',  label: `Livrées (${delivered.length})` },
+                    { k: 'annulees', label: `Annulées (${cancelled.length})` },
+                  ].map(f => (
+                    <button key={f.k} onClick={() => setOrderFilter(f.k)}
+                      className="px-4 py-1.5 rounded-full text-sm font-semibold border transition"
+                      style={{
+                        background: orderFilter === f.k ? ACCENT : '#fff',
+                        color: orderFilter === f.k ? '#fff' : '#6B7280',
+                        borderColor: orderFilter === f.k ? ACCENT : BORDER,
+                      }}>
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
+                  <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: BORDER }}>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-[#111827]">Mes commandes</span>
+                      <span className="text-xs text-[#9CA3AF]">
+                        {filteredOrders.length} résultat{filteredOrders.length !== 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <Link to="/menu" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: ACCENT }}>
+                      <ShoppingBag className="w-3.5 h-3.5" /> Commander
+                    </Link>
+                  </div>
+
+                  {loadingOrders ? (
+                    <div className="flex justify-center py-12">
+                      <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
+                        style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
+                    </div>
+                  ) : filteredOrders.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-12 text-center" style={{ background: '#FFF7ED' }}>
+                      <ShoppingBag className="w-12 h-12 mb-3" style={{ color: '#FF8C00', opacity: 0.4 }} />
+                      <p className="text-sm font-medium mb-1" style={{ color: '#0F172A' }}>
+                        {orders.length === 0 ? "Vous n'avez pas encore passé de commande" : 'Aucune commande dans cette catégorie'}
+                      </p>
+                      <p className="text-xs mb-4" style={{ color: '#94A3B8' }}>Explorez notre menu et passez votre première commande.</p>
+                      <Link to="/menu"
+                        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                        style={{ background: ACCENT, textDecoration: 'none' }}>
+                        Commander maintenant
+                      </Link>
+                    </div>
+                  ) : (
+                    filteredOrders.map(o =>
+                      ['LIVREE', 'ANNULEE'].includes(o.statut) ? (
+                        <PastOrderRow key={o.id} order={o}
+                          onReceipt={() => setReceiptOrder(o)}
+                          onDownload={() => downloadPdf(o.id)}
+                          onAvis={() => setAvisOrder(o)}
+                          canAvis={canAvis(o)}
+                          onReorder={handleReorder} />
+                      ) : (
+                        <div key={o.id} className="p-4 border-b last:border-0" style={{ borderColor: BORDER }}>
+                          <ActiveOrderCard order={o}
+                            onTrack={() => setTrackOrder(o)}
+                            onReceipt={() => setReceiptOrder(o)}
+                            onConfirmReceipt={handleConfirmReceipt} />
+                        </div>
+                      )
+                    )
+                  )}
+                </div>
+              </div>
+            )}
+
+            {tab === 'payment' && (
+              <PaymentTab
+                savedPM={savedPM} setSavedPM={setSavedPM}
+                pmForm={pmForm} setPmForm={setPmForm}
+                pmMsg={pmMsg} setPmMsg={setPmMsg}
+                addPM={addPM} removePM={removePM} setDefaultPM={setDefaultPM}
+                userId={userId}
+              />
+            )}
+
+            {tab === 'profile' && (
+              <ProfileTab
+                user={user}
+                profileForm={profileForm} setProfileForm={setProfileForm}
+                profileMsg={profileMsg} handleProfileSave={handleProfileSave}
+                orders={orders} totalSpent={totalSpent} delivered={delivered}
+                savedAddresses={savedAddresses} addrForm={addrForm} setAddrForm={setAddrForm}
+                addAddress={addAddress} removeAddress={removeAddress}
+              />
+            )}
+
+            {tab === 'security' && <SecurityTab user={user} />}
+            </div>{/* key={tab} */}
+          </div>{/* max-w-5xl */}
+        </div>{/* flex-1 overflow-y-auto */}
+      </div>{/* flex-1 flex-col main area */}
 
       {/* ── Modals ──────────────────────────────────────────────────── */}
       {trackOrder   && <OrderTrackModal order={trackOrder}   onClose={() => setTrackOrder(null)}   onReceipt={o => { setTrackOrder(null); setReceiptOrder(o); }} />}
       {receiptOrder && <ReceiptModal    order={receiptOrder} onClose={() => setReceiptOrder(null)} onDownload={downloadPdf} />}
       {avisOrder    && <AvisModal       order={avisOrder}    onClose={() => setAvisOrder(null)}    onSubmit={handleAvisSubmit} />}
       <OnboardingWizard />
+
+      {/* ── Logout confirmation ─────────────────────────────────────── */}
+      {showLogoutConfirm && (
+        <>
+          <div onClick={() => setShowLogoutConfirm(false)}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(3px)', zIndex: 999, animation: 'fadeIn 0.2s ease' }} />
+          <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+            <div className="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden"
+              style={{ animation: 'slideInUp 0.25s cubic-bezier(0.32,0.72,0,1)' }}>
+              <div className="px-6 pt-6 pb-2 flex flex-col items-center text-center">
+                <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4"
+                  style={{ background: `${RED}15` }}>
+                  <LogOut className="w-6 h-6" style={{ color: RED }} />
+                </div>
+                <h3 className="text-lg font-extrabold text-[#111827] mb-1">Déconnexion</h3>
+                <p className="text-sm text-[#6B7280]">Voulez-vous vous déconnecter ?</p>
+              </div>
+              <div className="px-6 pb-6 pt-5 flex gap-3">
+                <button onClick={() => setShowLogoutConfirm(false)}
+                  className="flex-1 py-3 rounded-xl text-sm font-semibold text-[#374151] border transition hover:bg-gray-50"
+                  style={{ borderColor: 'rgba(0,0,0,0.1)' }}>
+                  Annuler
+                </button>
+                <button onClick={() => { setShowLogoutConfirm(false); logout?.(); navigate('/login'); }}
+                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                  style={{ background: RED }}>
+                  Se déconnecter
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }

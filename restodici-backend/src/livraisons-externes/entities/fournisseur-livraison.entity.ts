@@ -34,6 +34,10 @@ export class FournisseurLivraison {
   @Column({ nullable: true })
   webhookCallbackUrl?: string;
 
+  // URL pour rechercher les livreurs disponibles (ex: Dobi, Gozem)
+  @Column({ nullable: true })
+  rechercheUrl?: string;
+
   // Frais de livraison par défaut en FCFA (0 = calculé dynamiquement par l'API)
   @Column({ type: 'int', default: 0 })
   fraisLivraisonDefaut!: number;

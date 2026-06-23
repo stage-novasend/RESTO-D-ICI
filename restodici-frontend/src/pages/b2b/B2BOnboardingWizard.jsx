@@ -342,19 +342,19 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                 ))}
               </div>
 
-              <button onClick={() => onComplete('order')}
+              <button onClick={() => { localStorage.setItem(`rdi_ob_${user?.id}`, '1'); onComplete('order'); }}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 mb-3"
                 style={{ background: A }}>
                 <ShoppingBag className="w-5 h-5" />
                 Passer ma première commande
               </button>
-              <button onClick={() => onComplete('invite')}
+              <button onClick={() => { localStorage.setItem(`rdi_ob_${user?.id}`, '1'); onComplete('invite'); }}
                 className="w-full py-3 rounded-2xl font-bold border text-sm flex items-center justify-center gap-2"
                 style={{ borderColor: A, color: A }}>
                 <Users className="w-4 h-4" />
                 Gérer mon équipe
               </button>
-              <button onClick={() => onComplete()} className="mt-3 w-full text-sm text-[#6B7280] hover:text-[#6B7280]">
+              <button onClick={() => { localStorage.setItem(`rdi_ob_${user?.id}`, '1'); onComplete(); }} className="mt-3 w-full text-sm text-[#6B7280] hover:text-[#6B7280]">
                 Explorer le tableau de bord
               </button>
             </div>

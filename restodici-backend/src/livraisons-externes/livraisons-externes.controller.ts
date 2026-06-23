@@ -76,6 +76,19 @@ export class LivraisonsExternesController {
     return this.service.getLivraisonsCommande(commandeId);
   }
 
+  // ── Recherche de livreurs disponibles ─────────────────────────
+
+  @Post('fournisseurs/:id/recherche-livreurs')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'GERANT', 'STAFF')
+  @HttpCode(HttpStatus.OK)
+  rechercheLivreurs(
+    @Param('id') id: string,
+    @Body() body: { adresse: string; date?: string },
+  ) {
+    return this.service.rechercheLivreurs(id, body);
+  }
+
   // ── Webhook : statuts entrants depuis les fournisseurs ─────────
   // Pas de guard JWT : le fournisseur externe envoie directement ici
 

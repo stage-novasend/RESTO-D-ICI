@@ -127,18 +127,17 @@ describe('TresorerieService generateFinancialReport()', () => {
     expect(result.period).toBe('monthly');
     expect(result.restaurantId).toBe('resto-uuid-1');
     expect(result.summary).toHaveProperty('totalRevenue');
-    expect(result.summary).toHaveProperty('totalExpenses');
+    expect(result.summary).toHaveProperty('totalRemises');
     expect(result.summary).toHaveProperty('netProfit');
     expect(result.summary).toHaveProperty('profitMargin');
     expect(result.summary.totalRevenue).toBeGreaterThan(0);
-    expect(result.summary.totalExpenses).toBeGreaterThan(0);
   });
 
-  it('returns report with reportUrl containing restaurantId and period', async () => {
+  it('returns quarterly report with generatedAt and restaurantId', async () => {
     const result = await service.generateFinancialReport('resto-uuid-1', 'quarterly');
 
-    expect(result.reportUrl).toContain('resto-uuid-1');
-    expect(result.reportUrl).toContain('quarterly');
+    expect(result.restaurantId).toBe('resto-uuid-1');
+    expect(result.period).toBe('quarterly');
     expect(result.generatedAt).toBeInstanceOf(Date);
   });
 

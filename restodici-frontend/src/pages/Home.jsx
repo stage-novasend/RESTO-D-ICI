@@ -388,62 +388,78 @@ function Marquee() {
 
 /* ─── Section "Comment ça marche" ─── */
 function HowItWorks() {
+  const [hovIdx, setHovIdx] = useState(null);
+
+  /* Thème de base + thème survol par carte */
   const cards = [
     {
-      icon: <Truck size={26} color={T.accent} />,
-      iconBg: `${T.accent}14`,
+      Icon: Truck,
       title: "Livraison Rapide",
       body: "Des repas chauds livrés directement à votre porte ou bureau en moins de 30 minutes. Ne faites plus attendre votre faim.",
-      bg: "#fff",
-      titleColor: T.dark,
-      bodyColor: T.muted,
-      border: `1px solid ${T.line}`,
       cta: null,
+      base:  { bg:"#fff",       icon:T.accent,  iconBg:`${T.accent}14`,         title:T.dark,  body:T.muted,             border:`1px solid ${T.line}`,   shadow:"0 1px 4px rgba(0,0,0,0.06)" },
+      hover: { bg:`linear-gradient(135deg,${T.accent},${T.accentD})`, icon:"#fff", iconBg:"rgba(255,255,255,0.22)", title:"#fff", body:"rgba(255,255,255,0.85)", border:"none", shadow:`0 16px 48px ${T.accent}44` },
     },
     {
-      icon: <ShoppingBag size={26} color="#fff" />,
-      iconBg: "rgba(255,255,255,0.2)",
+      Icon: ShoppingBag,
       title: "Solutions Entreprise",
       body: "Commandes groupées, facturation mensuelle simplifiée et reçus conformes SYSCOHADA pour votre comptabilité.",
-      bg: T.accent,
-      titleColor: "#fff",
-      bodyColor: "rgba(255,255,255,0.78)",
-      border: "none",
       cta: { label:"En savoir plus →", href:"/register?type=b2b" },
+      base:  { bg:T.accent,     icon:"#fff",    iconBg:"rgba(255,255,255,0.2)", title:"#fff",  body:"rgba(255,255,255,0.78)", border:"none",                shadow:"0 12px 40px rgba(249,115,22,0.22)" },
+      hover: { bg:"linear-gradient(135deg,#1A0C00,#3B1500)", icon:T.yellow, iconBg:`${T.yellow}22`, title:T.yellow, body:"rgba(255,255,255,0.72)", border:"none", shadow:"0 20px 60px rgba(26,12,0,0.35)" },
     },
     {
-      icon: <Heart size={26} color={T.accent} />,
-      iconBg: `${T.accent}14`,
+      Icon: Heart,
       title: "Paiement Mobile",
       body: "Réglez vos commandes en toute simplicité et sécurité avec Orange Money, MTN Mobile Money ou Wave.",
-      bg: "#fff",
-      titleColor: T.dark,
-      bodyColor: T.muted,
-      border: `1px solid ${T.line}`,
       cta: null,
+      base:  { bg:"#fff",       icon:T.accent,  iconBg:`${T.accent}14`,         title:T.dark,  body:T.muted,             border:`1px solid ${T.line}`,   shadow:"0 1px 4px rgba(0,0,0,0.06)" },
+      hover: { bg:"linear-gradient(135deg,#1DC9E8,#0284C7)", icon:"#fff", iconBg:"rgba(255,255,255,0.22)", title:"#fff", body:"rgba(255,255,255,0.85)", border:"none", shadow:"0 16px 48px rgba(29,201,232,0.38)" },
     },
   ];
+
   return (
     <section id="processus" style={{ background:T.bgAlt, padding:"64px 0" }}>
       <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 24px", display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
-        {cards.map((c,i) => (
-          <Reveal key={i} delay={i*80}>
-            <div style={{ background:c.bg, borderRadius:18, padding:"36px 32px", border:c.border, boxShadow:c.bg==="#fff"?"0 1px 4px rgba(0,0,0,0.06)":"0 12px 40px rgba(249,115,22,0.22)", height:"100%", display:"flex", flexDirection:"column", gap:16 }}>
-              <div style={{ width:52, height:52, borderRadius:14, background:c.iconBg, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                {c.icon}
+        {cards.map((c,i) => {
+          const isHov = hovIdx === i;
+          const theme = isHov ? c.hover : c.base;
+          return (
+            <Reveal key={i} delay={i*80}>
+              <div
+                onMouseEnter={() => setHovIdx(i)}
+                onMouseLeave={() => setHovIdx(null)}
+                style={{
+                  background: theme.bg,
+                  borderRadius: 18,
+                  padding: "36px 32px",
+                  border: theme.border,
+                  boxShadow: theme.shadow,
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 16,
+                  cursor: "default",
+                  transition: "background 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s, border 0.25s, transform 0.25s",
+                  transform: isHov ? "translateY(-6px)" : "translateY(0)",
+                }}
+              >
+                <div style={{ width:52, height:52, borderRadius:14, background:theme.iconBg, display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.35s" }}>
+                  <c.Icon size={26} color={theme.icon} style={{ transition:"color 0.25s" }} />
+                </div>
+                <div style={{ flex:1 }}>
+                  <h3 style={{ fontFamily:serif, fontSize:20, fontWeight:800, color:theme.title, margin:"0 0 10px", transition:"color 0.25s" }}>{c.title}</h3>
+                  <p style={{ fontFamily:sans, fontSize:14, color:theme.body, lineHeight:1.7, margin:0, fontWeight:300, transition:"color 0.25s" }}>{c.body}</p>
+                </div>
+                {c.cta && (
+                  <a href={c.cta.href} style={{ fontFamily:sans, fontSize:13, fontWeight:700, color:isHov?T.yellow:"#fff", textDecoration:"none", alignSelf:"flex-start", transition:"color 0.2s" }}>
+                    {c.cta.label}
+                  </a>
+                )}
               </div>
-              <div style={{ flex:1 }}>
-                <h3 style={{ fontFamily:serif, fontSize:20, fontWeight:800, color:c.titleColor, margin:"0 0 10px" }}>{c.title}</h3>
-                <p style={{ fontFamily:sans, fontSize:14, color:c.bodyColor, lineHeight:1.7, margin:0, fontWeight:300 }}>{c.body}</p>
-              </div>
-              {c.cta && (
-                <a href={c.cta.href} style={{ fontFamily:sans, fontSize:13, fontWeight:700, color:"#fff", textDecoration:"none", alignSelf:"flex-start" }}>
-                  {c.cta.label}
-                </a>
-              )}
-            </div>
-          </Reveal>
-        ))}
+            </Reveal>
+          );
+        })}
       </div>
     </section>
   );

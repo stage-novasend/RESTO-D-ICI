@@ -142,6 +142,45 @@ export class LivraisonsExternesService {
     });
   }
 
+  // ── Recherche de livreurs disponibles via l'API du fournisseur ──
+
+  async rechercheLivreurs(
+    fournisseurId: string,
+    payload: { adresse: string; date?: string },
+  ): Promise<{ id: string; nom: string; telephone?: string; vehicule?: string; distanceKm?: number; eta?: string }[]> {
+    const f = await this.fournisseurRepo.findOne({
+      where: { id: fournisseurId },
+      select: ['id', 'nom', 'type', 'apiUrl', 'apiKey', 'rechercheUrl'],
+    });
+    if (!f) throw new NotFoundException('Fournisseur de livraison introuvable');
+
+    const url = f.rechercheUrl || (f.apiUrl ? `${f.apiUrl}/drivers/available` : null);
+    if (!url || !f.apiKey) return [];
+
+    try {
+      const response = await axios.get<any>(url, {
+        params: { address: payload.adresse, date: payload.date },
+        headers: { Authorization: `Bearer ${f.apiKey}`, 'Content-Type': 'application/json' },
+        timeout: 8000,
+      });
+
+      const raw: any[] = Array.isArray(response.data)
+        ? response.data
+        : response.data?.drivers || response.data?.data || [];
+
+      return raw.map(d => ({
+        id:          d.id        ?? d.driver_id  ?? d.livreurId  ?? String(Math.random()),
+        nom:         d.nom       ?? d.name        ?? d.driver_name ?? 'Livreur',
+        telephone:   d.telephone ?? d.phone       ?? d.driver_phone,
+        vehicule:    d.vehicule  ?? d.vehicle     ?? d.vehicle_type,
+        distanceKm:  d.distanceKm ?? d.distance_km ?? d.distance,
+        eta:         d.eta       ?? d.pickup_eta  ?? d.estimated_pickup,
+      }));
+    } catch {
+      return [];
+    }
+  }
+
   // ── Construction du body selon le type de fournisseur ──────────
 
   private buildRequestBody(type: TypeFournisseurLivraison, data: any): object {

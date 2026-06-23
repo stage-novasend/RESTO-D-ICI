@@ -45,10 +45,10 @@ const ACTION_LABELS = {
 };
 
 const COLS = [
-  { id: 'todo',     label: 'À traiter',      accent: OG,     accentL: OG_L,                   grad: OG_G,      statuts: ['RECUE','CONFIRMEE'] },
-  { id: 'prep',     label: 'En préparation', accent: AMBER,  accentL: 'rgba(217,119,6,0.08)', grad: AMBER_G,   statuts: ['EN_PREP'] },
-  { id: 'ready',    label: 'Prête',          accent: GREEN,  accentL: 'rgba(22,163,74,0.08)', grad: GREEN_G,   statuts: ['PRETE'] },
-  { id: 'delivery', label: 'En livraison',   accent: PURPLE, accentL: 'rgba(124,58,237,0.08)',grad: PURPLE_G,  statuts: ['EN_LIVRAISON'] },
+  { id: 'todo',     label: 'À confirmer',   accent: OG,     accentL: OG_L,                   grad: OG_G,      statuts: ['RECUE','CONFIRMEE'] },
+  { id: 'prep',     label: 'En Cuisine',    accent: AMBER,  accentL: 'rgba(217,119,6,0.08)', grad: AMBER_G,   statuts: ['EN_PREP'] },
+  { id: 'ready',    label: 'Prêt',          accent: GREEN,  accentL: 'rgba(22,163,74,0.08)', grad: GREEN_G,   statuts: ['PRETE'] },
+  { id: 'delivery', label: 'En livraison',  accent: PURPLE, accentL: 'rgba(124,58,237,0.08)',grad: PURPLE_G,  statuts: ['EN_LIVRAISON'] },
 ];
 
 /* B2B statut ↔ KDS statut mapping */
@@ -167,6 +167,7 @@ function OrderCard({ order, onAction, onPay, saving, col, onDragStart, onDragEnd
       overflow: 'hidden',
       cursor: 'grab',
       transition: 'transform 0.12s, box-shadow 0.12s',
+      animation: urgent ? 'kds-urgent-blink 1.8s ease-in-out infinite' : undefined,
     }}
       onMouseEnter={e => {
         e.currentTarget.style.transform = 'translateY(-2px)';
@@ -264,13 +265,28 @@ function OrderCard({ order, onAction, onPay, saving, col, onDragStart, onDragEnd
           </div>
         )}
 
-        {/* Badge paiement B2B */}
-        {order.isB2B && order.estPaye && (
+        {/* Badge paiement */}
+        {order.isB2B && order.estPaye ? (
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
             color: '#166534', background: '#DCFCE7', borderRadius: 8, padding: '4px 10px', marginBottom: 10 }}>
             <CheckCircle2 size={10} /> Encaissé
           </div>
-        )}
+        ) : !order.isB2B && order.estPaye ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
+            color: ['ESPECES','CARTE_BANCAIRE'].includes(order.modePaiement) ? '#166534' : '#1E40AF',
+            background: ['ESPECES','CARTE_BANCAIRE'].includes(order.modePaiement) ? '#DCFCE7' : '#DBEAFE',
+            borderRadius: 8, padding: '4px 10px', marginBottom: 10 }}>
+            <CreditCard size={10} />
+            {['ESPECES','CARTE_BANCAIRE'].includes(order.modePaiement)
+              ? `Payé (${order.modePaiement === 'ESPECES' ? 'Espèces' : 'Carte'})`
+              : 'Payé (Frais déduits)'}
+          </div>
+        ) : !order.isB2B && !order.estPaye ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, fontWeight: 700,
+            color: '#92400E', background: '#FEF3C7', borderRadius: 8, padding: '4px 10px', marginBottom: 10 }}>
+            <AlertCircle size={10} /> Non Payé
+          </div>
+        ) : null}
 
         {/* Bouton action */}
         {needsPayment ? (
@@ -657,6 +673,10 @@ export default function KDSStaff() {
       <style>{`
         @keyframes kds-spin { to { transform: rotate(360deg); } }
         @keyframes kds-fade-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes kds-urgent-blink {
+          0%, 100% { border-color: #FCA5A5; box-shadow: 0 4px 20px rgba(220,38,38,0.12); }
+          50% { border-color: #EF4444; box-shadow: 0 4px 24px rgba(220,38,38,0.32); }
+        }
       `}</style>
 
       {/* ── HEADER ── */}

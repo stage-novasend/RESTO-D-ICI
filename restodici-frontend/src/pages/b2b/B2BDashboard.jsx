@@ -154,39 +154,62 @@ function buildNotifFromEvent(event, data) {
 
 // ── Micro components ───────────────────────────────────────────────────────────
 function Avatar({ name = '', size = 32 }) {
-  const ini = name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase() || '?';
-  const hue = ((name.charCodeAt(0) || 0) * 37) % 360;
+  const initials = name.trim().split(' ').slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
+  const hue = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
   return (
-    <div className="rounded-full flex items-center justify-center font-bold shrink-0 select-none"
-      style={{ width: size, height: size, fontSize: size * 0.38,
-        background: `hsl(${hue},65%,88%)`, color: `hsl(${hue},65%,32%)` }}>
-      {ini}
+    <div style={{
+      width: size, height: size, borderRadius: size * 0.35,
+      background: `hsl(${hue}, 60%, 92%)`,
+      border: `1.5px solid hsl(${hue}, 50%, 82%)`,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      fontSize: size * 0.36, fontWeight: 800, color: `hsl(${hue}, 55%, 35%)`,
+      flexShrink: 0, letterSpacing: '-0.02em',
+    }}>
+      {initials || '?'}
     </div>
   );
 }
 
 function StatusPill({ statut }) {
-  const s = STATUS[statut] || { label: statut, color: MUTED, bg: BG, dot: BORDER };
+  const s = STATUS[statut] || { label: statut, color: '#6B7280', bg: '#F3F4F6', dot: '#D1D5DB' };
   return (
-    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-semibold"
-      style={{ background: s.bg, color: s.color }}>
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: s.dot }} />
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 5,
+      padding: '4px 10px', borderRadius: 99,
+      fontSize: 11, fontWeight: 700, letterSpacing: '0.01em',
+      background: s.bg, color: s.color,
+      border: `1px solid ${s.color}30`,
+    }}>
+      <span style={{ width: 6, height: 6, borderRadius: '50%', background: s.dot, flexShrink: 0 }} />
       {s.label}
     </span>
   );
 }
 
 function BudgetBar({ spent, budget }) {
-  const pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
-  const bar = pct > 85 ? RED : pct > 65 ? ORANGE : GREEN;
+  if (!budget) return null;
+  const pct = Math.min(100, Math.round((spent / budget) * 100));
+  const color = pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#16A34A';
   return (
     <div>
-      <div className="flex justify-between text-[10px] mb-1" style={{ color: FAINT }}>
-        <span>{formatFCFA(spent)}</span>
-        <span style={{ color: pct > 85 ? RED : pct > 65 ? ORANGE : MUTED, fontWeight: 600 }}>{pct}%</span>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+        <span style={{ fontSize: 11, fontWeight: 600, color: '#6B7280' }}>Budget mensuel</span>
+        <span style={{ fontSize: 11, fontWeight: 800, color }}>{pct}%</span>
       </div>
-      <div className="h-1.5 rounded-full overflow-hidden" style={{ background: BORDER }}>
-        <div className="h-full rounded-full transition-all duration-500" style={{ width: `${pct}%`, background: bar }} />
+      <div style={{ height: 6, background: '#F1F5F9', borderRadius: 99, overflow: 'hidden' }}>
+        <div style={{
+          height: '100%', borderRadius: 99, width: `${pct}%`,
+          background: pct >= 90
+            ? 'linear-gradient(90deg, #EF4444, #DC2626)'
+            : pct >= 70
+            ? 'linear-gradient(90deg, #F59E0B, #D97706)'
+            : 'linear-gradient(90deg, #22C55E, #16A34A)',
+          transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
+        }} />
+      </div>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+        <span style={{ fontSize: 10, color: '#9CA3AF' }}>{formatFCFA(spent)} dépensés</span>
+        <span style={{ fontSize: 10, color: '#9CA3AF' }}>{formatFCFA(budget)} budget</span>
       </div>
     </div>
   );
@@ -532,7 +555,7 @@ function B2BProfileDrawer({ user, onClose, profileForm, setProfileForm, onSave, 
         animation: 'b2b-drawer-in 240ms cubic-bezier(.4,0,.2,1)',
         fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
       }}>
-        <style>{`@keyframes b2b-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
+        <style>{`@keyframes b2b-drawer-in { from { transform: translateX(100%); } to { transform: translateX(0); } } @keyframes kpiIn { from { opacity:0; transform:translateY(12px) scale(0.97); } to { opacity:1; transform:translateY(0) scale(1); } } @keyframes shimmer { 0% { background-position:-200% 0; } 100% { background-position:200% 0; } }`}</style>
 
         {/* Header navy */}
         <div style={{ background: `linear-gradient(135deg, ${NAVY} 0%, ${NAVY2} 100%)`, padding: '28px 24px 20px', position: 'relative', overflow: 'hidden' }}>
@@ -749,7 +772,9 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                         const sol = Math.max(0, bgt - dep);
                         const pct = bgt > 0 ? Math.round((dep / bgt) * 100) : 0;
                         return (
-                          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#F8FAFC' }}>
+                          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#F8FAFC', transition: 'background 0.15s', cursor: 'default' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#F0F7FF'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F8FAFC'; }}>
                             <td style={{ padding: '9px 12px', textAlign: 'center', color: '#6B7280' }}>{i + 1}</td>
                             <td style={{ padding: '9px 12px', fontWeight: 600, color: '#111827' }}>{c.nom || '—'}</td>
                             <td style={{ padding: '9px 12px', color: '#6B7280' }}>{c.poste || '—'}</td>
@@ -805,7 +830,9 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                         const tva = ttc - ht;
                         const paid = f.statut === 'PAYEE' || f.statut === 'paid';
                         return (
-                          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#F8FAFC' }}>
+                          <tr key={i} style={{ background: i % 2 === 0 ? '#fff' : '#F8FAFC', transition: 'background 0.15s', cursor: 'default' }}
+                            onMouseEnter={e => { e.currentTarget.style.background = '#F0F7FF'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#F8FAFC'; }}>
                             <td style={{ padding: '9px 12px', textAlign: 'center', color: '#6B7280' }}>{i + 1}</td>
                             <td style={{ padding: '9px 12px', fontWeight: 600, color: '#111827' }}>{f.numeroFacture || `FAC-${String(i+1).padStart(3,'0')}`}</td>
                             <td style={{ padding: '9px 12px', color: '#6B7280' }}>{f.periode || f.mois || '—'}</td>
@@ -1265,12 +1292,15 @@ export default function B2BDashboard() {
           return (
             <button key={item.key} onClick={() => goTo(item.key)}
               data-tour={item.key === 'collaborateurs' ? 'b2b-collab-tab' : item.key === 'overview' ? 'b2b-overview-tab' : undefined}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all relative"
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium relative"
               style={{
-                background: active ? `${ORANGE}22` : 'transparent',
+                background: active ? `${ORANGE}18` : 'transparent',
                 color: active ? ORANGE : 'rgba(255,255,255,0.65)',
                 borderLeft: active ? `3px solid ${ORANGE}` : '3px solid transparent',
-              }}>
+                transition: 'all 0.18s ease',
+              }}
+              onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.9)'; } }}
+              onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; } }}>
               <Icon className="w-4 h-4 shrink-0" />
               <span className="flex-1 text-left">{item.label}</span>
               {(item.badge ?? 0) > 0 && (
@@ -1530,6 +1560,7 @@ export default function B2BDashboard() {
                     background: CARD,
                     boxShadow: '0 2px 16px rgba(15,23,42,0.08)',
                     border: `1px solid ${BORDER}`,
+                    animation: 'kpiIn 0.45s cubic-bezier(0.22,1,0.36,1) both',
                   }}>
                   {/* Left */}
                   <div className="flex-1 space-y-5">
@@ -1624,6 +1655,7 @@ export default function B2BDashboard() {
                   style={{
                     background: `linear-gradient(135deg, ${ORANGE} 0%, #FF6B00 50%, ${ORANGE_D} 100%)`,
                     boxShadow: `0 8px 28px ${ORANGE}50`,
+                    animation: 'kpiIn 0.45s 0.1s cubic-bezier(0.22,1,0.36,1) both',
                   }}>
                   <div className="space-y-3">
                     <div className="w-12 h-12 rounded-2xl flex items-center justify-center"

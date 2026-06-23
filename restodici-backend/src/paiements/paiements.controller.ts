@@ -1,5 +1,6 @@
 import {
   Controller,
+  Get,
   Post,
   Body,
   Headers,
@@ -28,6 +29,12 @@ export class PaiementsController {
     private readonly paiementsService: PaiementsService,
     private readonly config: ConfigService,
   ) {}
+
+  // ── Méthodes de paiement actives (public — aucune clé exposée) ─────────────
+  @Get('methodes')
+  async getPaymentMethods() {
+    return this.paiementsService.getPaymentMethods();
+  }
 
   // ── Initier un paiement digital (NovaSend / Wave / Orange / MTN / Moov) ────
   @Post('initier')

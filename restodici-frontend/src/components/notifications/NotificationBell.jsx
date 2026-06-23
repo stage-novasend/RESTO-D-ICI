@@ -1,6 +1,6 @@
 // src/components/notifications/NotificationBell.jsx
 import { useState, useEffect, useRef } from 'react';
-import { Bell, X, CheckCheck, ChefHat, Truck, CreditCard, AlertTriangle, Package } from 'lucide-react';
+import { Bell, X, CheckCheck, ChefHat, Truck, CreditCard, AlertTriangle, Package, RotateCcw } from 'lucide-react';
 import { createCommandesSocket } from '../../services/commandes.service';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -8,16 +8,26 @@ const ROLE_EVENTS = {
   STAFF:  ['commande.nouvelle', 'commande.statut', 'commande.b2b.nouvelle', 'commande.b2b.statut'],
   GERANT: ['commande.nouvelle', 'commande.creee', 'commande.statut', 'commande.paiement', 'commande.b2b.nouvelle', 'commande.b2b.statut'],
   B2B:    ['commande.nouvelle', 'commande.statut', 'commande.b2b.nouvelle', 'commande.b2b.statut'],
-  CLIENT: ['commande.creee', 'commande.statut', 'commande.paiement'],
+  CLIENT: ['commande.creee', 'commande.statut', 'commande.paiement', 'commande.remboursee'],
 };
 
 const EVENT_META = {
-  'commande.nouvelle':     { icon: ChefHat,       color: '#FF8C00', label: 'Nouvelle commande',  body: (p) => p?.numero ? `Commande #${p.numero} reçue` : 'Nouvelle commande reçue' },
-  'commande.creee':        { icon: ChefHat,       color: '#FF8C00', label: 'Commande créée',      body: (p) => p?.numero ? `Votre commande #${p.numero} a été placée` : 'Commande enregistrée' },
-  'commande.statut':       { icon: Truck,         color: '#2563EB', label: 'Statut mis à jour',   body: (p) => p?.numero && p?.statut ? `#${p.numero} → ${STATUS_FR[p.statut] || p.statut}` : 'Statut de commande mis à jour' },
-  'commande.paiement':     { icon: CreditCard,    color: '#16A34A', label: 'Paiement confirmé',   body: (p) => p?.numero ? `Paiement reçu pour #${p.numero}` : 'Paiement confirmé' },
-  'commande.b2b.nouvelle': { icon: Package,       color: '#7C3AED', label: 'Commande B2B',        body: (p) => p?.entreprise ? `${p.entreprise} — nouvelle commande groupée` : 'Nouvelle commande entreprise' },
-  'commande.b2b.statut':   { icon: AlertTriangle, color: '#D97706', label: 'Statut B2B',          body: (p) => p?.statut ? `Commande B2B → ${STATUS_FR[p.statut] || p.statut}` : 'Statut B2B mis à jour' },
+  'commande.nouvelle':     { icon: ChefHat,       color: '#FF8C00', label: 'Nouvelle commande',   body: (p) => p?.numero ? `Commande #${p.numero} reçue` : 'Nouvelle commande reçue' },
+  'commande.creee':        { icon: ChefHat,       color: '#FF8C00', label: 'Commande enregistrée', body: (p) => p?.numero ? `Votre commande #${p.numero} est bien enregistrée` : 'Commande enregistrée' },
+  'commande.statut':       { icon: Truck,         color: '#2563EB', label: 'Mise à jour commande', body: (p) => {
+    if (!p?.numero) return 'Statut de commande mis à jour';
+    if (p.statut === 'LIVREE')       return `🎉 Commande #${p.numero} livrée avec succès !`;
+    if (p.statut === 'ANNULEE')      return `Commande #${p.numero} annulée`;
+    if (p.statut === 'EN_LIVRAISON') return `Commande #${p.numero} en cours de livraison`;
+    if (p.statut === 'PRETE')        return `Commande #${p.numero} prête à être récupérée`;
+    if (p.statut === 'EN_PREP')      return `Commande #${p.numero} en préparation`;
+    if (p.statut === 'CONFIRMEE')    return `Commande #${p.numero} confirmée par le restaurant`;
+    return `#${p.numero} → ${STATUS_FR[p.statut] || p.statut}`;
+  }},
+  'commande.paiement':     { icon: CreditCard,    color: '#16A34A', label: 'Paiement confirmé',   body: (p) => p?.numero ? `✓ Paiement reçu pour la commande #${p.numero}` : 'Paiement confirmé' },
+  'commande.remboursee':   { icon: RotateCcw,     color: '#7C3AED', label: 'Remboursement effectué', body: (p) => p?.numero ? `Remboursement de la commande #${p.numero} effectué` : 'Remboursement effectué' },
+  'commande.b2b.nouvelle': { icon: Package,       color: '#7C3AED', label: 'Commande B2B',         body: (p) => p?.entreprise ? `${p.entreprise} — nouvelle commande groupée` : 'Nouvelle commande entreprise' },
+  'commande.b2b.statut':   { icon: AlertTriangle, color: '#D97706', label: 'Statut B2B',           body: (p) => p?.statut ? `Commande B2B → ${STATUS_FR[p.statut] || p.statut}` : 'Statut B2B mis à jour' },
 };
 
 const STATUS_FR = {
@@ -66,6 +76,13 @@ export default function NotificationBell({ accentColor = '#FF8C00', size = 'md',
       try { localStorage.setItem(`notifs:${user.id}`, JSON.stringify(notifications.slice(0, 40))); } catch {}
     }
   }, [notifications, user?.id]);
+
+  /* Demande automatique de permission navigateur au montage */
+  useEffect(() => {
+    if (user?.role?.toUpperCase() === 'CLIENT' && Notification.permission === 'default') {
+      Notification.requestPermission().catch(() => {});
+    }
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Socket — une seule connexion */
   useEffect(() => {

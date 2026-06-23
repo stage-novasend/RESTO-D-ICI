@@ -102,11 +102,13 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-[#0F172A]/55 p-4 backdrop-blur-sm sm:items-center"
+      className="fixed inset-0 flex items-center justify-center bg-[#0F172A]/55 p-4 backdrop-blur-sm"
+      style={{ zIndex: 200 }}
       onClick={onClose}
     >
       <div
         className="max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-[32px] bg-[#FDF5EF] shadow-2xl"
+        style={{ animation: 'fadeUp 0.25s ease both' }}
         onClick={(event) => event.stopPropagation()}
       >
         <div className="grid lg:grid-cols-[1.05fr,0.95fr]">

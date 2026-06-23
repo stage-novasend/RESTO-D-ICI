@@ -65,6 +65,25 @@ export class Commande {
   @Column('decimal', { precision: 10, scale: 2 })
   montantTotal!: number;
 
+  /* ── Livraison externe ── */
+  @Column('decimal', { precision: 10, scale: 2, nullable: true, default: 0 })
+  fraisLivraison?: number;
+
+  @Column({ nullable: true })
+  livraisonExterneId?: string;
+
+  /* escrow : frais livreur bloqués dès le paiement client */
+  @Column({ default: false })
+  livreurPaiementBloque!: boolean;
+
+  /* libéré quand le client confirme la réception */
+  @Column({ default: false })
+  livreurPaye!: boolean;
+
+  @Column({ type: 'timestamp', nullable: true })
+  receptionConfirmeeAt?: Date;
+
+  /* ── Commissions ── */
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   montantNetRestaurant?: number;
 

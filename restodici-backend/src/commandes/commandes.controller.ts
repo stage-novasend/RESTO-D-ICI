@@ -338,4 +338,11 @@ export class CommandesController {
       req.user.role === 'GERANT' ? req.user.restaurant?.id : undefined;
     return this.commandesService.rembourser(id, motif, restaurantId);
   }
+
+  @Post(':id/confirmer-reception')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('CLIENT', 'B2B')
+  async confirmerReception(@Param('id') id: string, @Req() req: any) {
+    return this.commandesService.confirmerReception(id, req.user.id);
+  }
 }
