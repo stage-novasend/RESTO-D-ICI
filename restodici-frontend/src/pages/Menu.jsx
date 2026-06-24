@@ -20,11 +20,11 @@ import { getArticleImage } from '../utils/articleImage';
 
 /* ── Design tokens ── */
 const C = {
-  bg:     '#F6F6F8',
+  bg:     '#FFFAF3',
   card:   '#FFFFFF',
   accent: '#973100',
-  aD:     '#C04000',
-  aL:     '#FFF3E0',
+  aD:     '#E07A00',
+  aL:     '#FFF5E8',
   yellow: '#FFB800',
   red:    '#FF3B30',
   green:  '#22C55E',
@@ -851,7 +851,7 @@ export default function MenuPage() {
 
           <div style={{ padding: 'clamp(16px,3vw,24px) clamp(12px,4vw,28px) 40px' }}>
             {/* Hero */}
-            <div style={{ background: 'linear-gradient(135deg, #973100 0%, #C04000 100%)', borderRadius: 20, padding: 'clamp(16px,4vw,28px)', marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 8px 32px #97310044', overflow: 'hidden', position: 'relative' }}>
+            <div style={{ background: 'linear-gradient(135deg, #973100 0%, #E07A00 100%)', borderRadius: 20, padding: 'clamp(16px,4vw,28px)', marginBottom: 28, display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 8px 32px #97310044', overflow: 'hidden', position: 'relative' }}>
               <div style={{ position: 'absolute', right: -20, top: -20, width: 160, height: 160, borderRadius: '50%', background: 'rgba(255,255,255,0.08)' }} />
               <div style={{ position: 'relative' }}>
                 <p style={{ margin: '0 0 6px', fontFamily: sans, fontSize: 'clamp(16px,4vw,22px)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>Commandez chez <br />vos restaurants préférés</p>

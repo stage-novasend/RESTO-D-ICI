@@ -190,12 +190,12 @@ function Nav() {
         </a>
         <div style={{ display:"flex",gap:34,alignItems:"center" }}>
           {links.map(([l,h])=>(
-            <a key={l} href={h} className="rd-nav-link" style={{ fontFamily:sans,fontSize:14,color:T.muted,textDecoration:"none",fontWeight:500,transition:"color .2s" }}>{l}</a>
+            <a key={l} href={h} className="rd-nav-link" style={{ fontFamily:sans,fontSize:14,color:scrolled?T.accent:"#fff",textDecoration:"none",fontWeight:600,transition:"color .2s" }}>{l}</a>
           ))}
         </div>
         <div style={{ display:"flex",gap:10,alignItems:"center" }}>
           <a href="/login" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:scrolled?T.accent:"#fff", background:"transparent", border:`1.5px solid ${scrolled?T.accent:"rgba(255,255,255,0.55)"}` }}>Connexion</a>
-          <a href="/menu" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:"#fff",textDecoration:"none",padding:"10px 24px",borderRadius:50,background:`linear-gradient(135deg,${T.accent},${T.accentD})`,boxShadow:`0 6px 22px ${T.accent}44`,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6 }}>Commander <ArrowRight size={13} /></a>
+          <a href="/register" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:scrolled?T.accent:"#fff", background:"transparent", border:`1.5px solid ${scrolled?T.accent:"rgba(255,255,255,0.55)"}` }}>S'inscrire</a>
         </div>
       </div>
     </nav>

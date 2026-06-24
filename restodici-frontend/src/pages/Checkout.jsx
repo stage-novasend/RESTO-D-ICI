@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, CheckCircle, Tag, X, Phone, RefreshCw,
-  AlertCircle, ExternalLink, CreditCard, Lock,
+  ArrowLeft, Bike, CheckCircle, Tag, X, Phone, RefreshCw,
+  AlertCircle, ExternalLink, CreditCard, Lock, MapPin, Star, User,
 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -20,7 +20,7 @@ const SIMULATE_PAYMENT    = true;
 // Flip to false when NovaSend card payment is live in CI
 const NOVASEND_CARD_ENABLED = true;
 
-const ACCENT = '#FF8C00';
+const ACCENT = '#973100';
 
 const MODE_LABELS = {
   SUR_PLACE: 'Sur place', EMPORTER: 'À emporter', LIVRAISON: 'Livraison à domicile',
@@ -41,7 +41,7 @@ const METHODS_FALLBACK = Object.entries(METHOD_VISUAL_MAP)
   .map(([id, meta]) => ({ id, ...meta }));
 
 const PROVIDER_NOTE = {
-  ORANGE: 'Confirmez la demande de paiement sur votre téléphone. Si vous n\'avez pas reçu la demande, composez #144*46# pour générer un OTP.',
+  ORANGE: 'Confirmez la demande de paiement sur votre téléphone. Si vous n\'avez pas reçu la demande, composez #144*82# pour générer un OTP.',
   MOMO:   'Approuvez la transaction depuis l\'application MTN Mobile Money ou composez *133#.',
   MOOV:   'Assurez-vous que votre écran est déverrouillé. Approuvez la demande dans votre application.',
   WAVE:   'Scannez le QR code ou appuyez sur le lien pour ouvrir l\'application Wave.',
@@ -119,7 +119,7 @@ function OtpInput({ value, onChange }) {
           className="w-12 h-14 text-center text-xl font-extrabold rounded-2xl border-2 outline-none transition"
           style={{
             borderColor: digits[i].trim() ? ACCENT : '#E2E8F0',
-            background: digits[i].trim() ? '#FFF0DF' : '#F8FAFC',
+            background: digits[i].trim() ? '#FFDBCF' : '#F9F9FC',
             color: '#0F172A',
           }}
         />
@@ -168,9 +168,16 @@ export default function CheckoutPage() {
 
   useEffect(() => {
     const saved = localStorage.getItem('pendingOrder');
-    if (saved) setPendingOrder(JSON.parse(saved));
-    else navigate('/cart');
-  }, [navigate]);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      setPendingOrder(parsed);
+      /* Pré-remplir méthode de paiement et téléphone depuis CartDrawer */
+      if (parsed.paymentMethod) setSelectedMethod(parsed.paymentMethod);
+      if (parsed.phone) setPhone(parsed.phone);
+    } else {
+      navigate('/cart');
+    }
+  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (user?.telephone && !phone) setPhone(user.telephone);
@@ -417,13 +424,13 @@ export default function CheckoutPage() {
               <div key={i} className="flex justify-between items-start text-sm">
                 <div>
                   <span className="inline-flex items-center gap-1.5">
-                    <span className="w-5 h-5 rounded-lg bg-[#FFF0DF] text-[#FF8C00] font-bold text-xs flex items-center justify-center">
+                    <span className="w-5 h-5 rounded-lg bg-[#FFDBCF] text-[#973100] font-bold text-xs flex items-center justify-center">
                       {item.quantite ?? item.quantity ?? 1}
                     </span>
                     <span className="text-[#0F172A] font-medium">{item.nom || 'Article'}</span>
                   </span>
                   {item.variantLabel && (
-                    <p className="text-xs text-[#FF8C00] mt-0.5 ml-6 font-semibold">{item.variantLabel}</p>
+                    <p className="text-xs text-[#973100] mt-0.5 ml-6 font-semibold">{item.variantLabel}</p>
                   )}
                 </div>
                 <span className="text-[#64748B] font-medium ml-4 shrink-0">
@@ -432,6 +439,41 @@ export default function CheckoutPage() {
               </div>
             ))}
           </div>
+          {/* Livraison + driver (si mode LIVRAISON) */}
+          {(pendingOrder.orderMode ?? '').toUpperCase() === 'LIVRAISON' && (
+            <div className="px-5 py-3 border-t border-[rgba(89,67,42,0.08)] space-y-2.5">
+              {pendingOrder.deliveryAddress && (
+                <div className="flex items-start gap-2 text-xs text-[#64748B]">
+                  <MapPin className="w-3.5 h-3.5 text-[#973100] mt-0.5 shrink-0" />
+                  <span>{pendingOrder.deliveryAddress}{pendingOrder.deliveryZone ? ` · ${pendingOrder.deliveryZone}` : ''}</span>
+                </div>
+              )}
+              {pendingOrder.driver && (
+                <div className="flex items-center gap-2.5 rounded-xl bg-[#F0FDF4] border border-[#86EFAC] px-3 py-2.5">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#973100] to-[#C04000] flex items-center justify-center shrink-0">
+                    <User className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-bold text-[#0F172A]">{pendingOrder.driver.name}</p>
+                    <p className="text-[10px] text-[#64748B] flex items-center gap-1 mt-0.5">
+                      <Bike className="w-3 h-3" /> {pendingOrder.driver.vehicle}
+                      {pendingOrder.driver.rating && (
+                        <span className="flex items-center gap-1">· <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" /> {pendingOrder.driver.rating}</span>
+                      )}
+                    </p>
+                  </div>
+                  <CheckCircle className="w-4 h-4 text-[#16A34A] shrink-0" />
+                </div>
+              )}
+              {Number(pendingOrder.deliveryFee ?? 0) > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#64748B]">Frais de livraison</span>
+                  <span className="font-semibold text-[#973100]">{formatFCFA(Number(pendingOrder.deliveryFee))}</span>
+                </div>
+              )}
+            </div>
+          )}
+
           <div className="mx-5 border-t border-[rgba(89,67,42,0.08)]" />
           <div className="px-5 py-3 space-y-1.5">
             <div className="flex justify-between">
@@ -448,7 +490,7 @@ export default function CheckoutPage() {
             )}
             <div className="flex justify-between pt-1 border-t border-[rgba(89,67,42,0.08)]">
               <span className="font-bold text-[#0F172A]">Total à payer</span>
-              <span className="text-xl font-extrabold text-[#FF8C00]">{formatFCFA(effectiveTotal)} FCFA</span>
+              <span className="text-xl font-extrabold text-[#973100]">{formatFCFA(effectiveTotal)} FCFA</span>
             </div>
           </div>
         </section>
@@ -457,7 +499,7 @@ export default function CheckoutPage() {
         {!isB2B && (
           <section className="bg-white rounded-2xl border border-[rgba(89,67,42,0.10)] p-4">
             <div className="flex items-center gap-2 mb-3">
-              <Tag className="w-4 h-4 text-[#FF8C00]" />
+              <Tag className="w-4 h-4 text-[#973100]" />
               <span className="text-sm font-bold text-[#0F172A]">Code promo</span>
             </div>
             {promoResult ? (
@@ -479,10 +521,10 @@ export default function CheckoutPage() {
                   onChange={e => { setPromoCode(e.target.value.toUpperCase()); setPromoError(''); }}
                   onKeyDown={e => e.key === 'Enter' && handleApplyPromo()}
                   placeholder="Entrez votre code…"
-                  className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 text-sm font-mono font-semibold uppercase tracking-widest text-[#0F172A] focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] outline-none transition"
+                  className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm font-mono font-semibold uppercase tracking-widest text-[#0F172A] focus:border-[#973100] focus:ring-1 focus:ring-[#973100] outline-none transition"
                 />
                 <button onClick={handleApplyPromo} disabled={promoLoading || !promoCode.trim()}
-                  className="rounded-xl bg-[#FF8C00] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#E07A00] disabled:opacity-60 transition">
+                  className="rounded-xl bg-[#973100] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#C04000] disabled:opacity-60 transition">
                   {promoLoading ? '…' : 'Appliquer'}
                 </button>
               </div>
@@ -493,11 +535,11 @@ export default function CheckoutPage() {
 
         {/* Payment method + fields */}
         {isB2B ? (
-          <section className="bg-[#FFF0DF] rounded-2xl border border-[rgba(192,80,21,0.20)] p-5">
+          <section className="bg-[#FFDBCF] rounded-2xl border border-[rgba(192,80,21,0.20)] p-5">
             <div className="flex items-start gap-3">
               <span className="text-2xl mt-0.5">📋</span>
               <div>
-                <h2 className="font-bold text-[#FF8C00] mb-1">Facturation mensuelle B2B</h2>
+                <h2 className="font-bold text-[#973100] mb-1">Facturation mensuelle B2B</h2>
                 <p className="text-sm text-[#64748B] leading-relaxed">
                   Cette commande sera ajoutée à votre facture mensuelle consolidée.
                   Vous recevrez en fin de mois une <strong>facture SYSCOHADA</strong> globale.
@@ -525,7 +567,7 @@ export default function CheckoutPage() {
                       ) : (
                         <CreditCard className="w-7 h-7" style={{ color: m.accent }} />
                       )}
-                      <div className={`ml-auto w-4 h-4 rounded-full border-2 transition ${active ? 'border-[#FF8C00] bg-[#FF8C00]' : 'border-[#64748B]/30'}`}>
+                      <div className={`ml-auto w-4 h-4 rounded-full border-2 transition ${active ? 'border-[#973100] bg-[#973100]' : 'border-[#64748B]/30'}`}>
                         {active && <div className="w-1.5 h-1.5 bg-white rounded-full mx-auto mt-0.5" />}
                       </div>
                     </div>
@@ -539,12 +581,12 @@ export default function CheckoutPage() {
             {method?.phoneRequired && (
               <div className="mt-4">
                 <label className="flex items-center gap-1.5 text-xs font-bold text-[#0F172A] mb-1.5">
-                  <Phone className="w-3.5 h-3.5 text-[#FF8C00]" />
+                  <Phone className="w-3.5 h-3.5 text-[#973100]" />
                   Numéro {method.name} *
                 </label>
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value)}
                   placeholder="Ex : 07 XX XX XX XX"
-                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-sm font-semibold text-[#0F172A] focus:border-[#FF8C00] focus:ring-1 focus:ring-[#FF8C00] outline-none transition"
+                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3 text-sm font-semibold text-[#0F172A] focus:border-[#973100] focus:ring-1 focus:ring-[#973100] outline-none transition"
                 />
               </div>
             )}
@@ -557,7 +599,7 @@ export default function CheckoutPage() {
                   <p className="text-sm font-bold text-[#0F172A]">Code OTP Orange *</p>
                 </div>
                 <p className="text-xs text-orange-700 mb-3 leading-relaxed">
-                  Composez <strong>#144*46#</strong> depuis votre téléphone Orange pour recevoir votre code à 4 chiffres.
+                  Composez <strong>#144*82#</strong> depuis votre téléphone Orange pour recevoir votre code à 4 chiffres.
                 </p>
                 <OtpInput value={otp} onChange={setOtp} />
                 {otp.length > 0 && otp.length < 4 && (
@@ -583,7 +625,7 @@ export default function CheckoutPage() {
                 <input type="text" value={cardName}
                   onChange={e => setCardName(e.target.value.toUpperCase())}
                   placeholder="NOM DU TITULAIRE"
-                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-sm font-semibold text-[#0F172A] uppercase tracking-wider focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
+                  className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3 text-sm font-semibold text-[#0F172A] uppercase tracking-wider focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
                 />
 
                 {/* Numéro de carte */}
@@ -592,7 +634,7 @@ export default function CheckoutPage() {
                     onChange={e => setCardNumber(fmtCardNumber(e.target.value))}
                     placeholder="0000 0000 0000 0000"
                     maxLength={19}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 pr-12 text-sm font-mono font-bold text-[#0F172A] tracking-widest focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
+                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3 pr-12 text-sm font-mono font-bold text-[#0F172A] tracking-widest focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
                   />
                   <CreditCard className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8]" />
                 </div>
@@ -605,7 +647,7 @@ export default function CheckoutPage() {
                       onChange={e => setCardExpiry(fmtExpiry(e.target.value))}
                       placeholder="MM/AA"
                       maxLength={5}
-                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-sm font-mono font-bold text-[#0F172A] tracking-widest focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3 text-sm font-mono font-bold text-[#0F172A] tracking-widest focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
                     />
                   </div>
                   <div>
@@ -614,7 +656,7 @@ export default function CheckoutPage() {
                       onChange={e => setCardCvv(e.target.value.replace(/\D/g, '').slice(0, 4))}
                       placeholder="•••"
                       maxLength={4}
-                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-4 py-3 text-sm font-mono font-bold text-[#0F172A] tracking-widest focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
+                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3 text-sm font-mono font-bold text-[#0F172A] tracking-widest focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] outline-none transition"
                     />
                   </div>
                 </div>
@@ -645,7 +687,7 @@ export default function CheckoutPage() {
         )}
 
         <button onClick={handlePay} disabled={!canSubmit}
-          className="w-full py-4 rounded-2xl font-extrabold text-white text-base bg-[#FF8C00] hover:bg-[#E07A00] active:scale-[0.98] transition-all shadow-lg shadow-[#FF8C00]/25 disabled:opacity-50 disabled:cursor-not-allowed">
+          className="w-full py-4 rounded-2xl font-extrabold text-white text-base bg-[#973100] hover:bg-[#C04000] active:scale-[0.98] transition-all shadow-lg shadow-[#973100]/25 disabled:opacity-50 disabled:cursor-not-allowed">
           {isB2B
             ? `Confirmer la commande · ${formatFCFA(effectiveTotal)} FCFA`
             : `Payer ${formatFCFA(effectiveTotal)} FCFA · ${method?.shortName}`}
@@ -730,7 +772,7 @@ export default function CheckoutPage() {
 
                   {canRetry && (
                     <button onClick={handleRetry}
-                      className="mt-4 flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl border text-sm font-semibold text-[#0F172A] hover:bg-[#F8FAFC] transition"
+                      className="mt-4 flex items-center gap-2 mx-auto px-5 py-2.5 rounded-xl border text-sm font-semibold text-[#0F172A] hover:bg-[#F9F9FC] transition"
                       style={{ borderColor: 'rgba(89,67,42,0.15)' }}>
                       <RefreshCw className="w-4 h-4" />
                       Relancer le paiement
@@ -775,7 +817,7 @@ export default function CheckoutPage() {
                     </button>
                   )}
                   <button onClick={handleClose}
-                    className="w-full py-2.5 rounded-xl border border-[rgba(89,67,42,0.12)] text-[#64748B] text-sm font-medium hover:bg-[#F8FAFC] transition">
+                    className="w-full py-2.5 rounded-xl border border-[rgba(89,67,42,0.12)] text-[#64748B] text-sm font-medium hover:bg-[#F9F9FC] transition">
                     Retour
                   </button>
                 </div>
