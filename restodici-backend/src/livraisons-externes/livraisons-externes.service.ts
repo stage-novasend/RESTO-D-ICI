@@ -54,7 +54,7 @@ export class LivraisonsExternesService {
   }): Promise<LivraisonExterne> {
     const fournisseur = await this.fournisseurRepo.findOne({
       where: { id: payload.fournisseurId },
-      select: ['id', 'nom', 'type', 'apiUrl', 'apiKey', 'fraisLivraisonDefaut'],
+      select: ['id', 'nom', 'type', 'apiUrl', 'apiKey', 'fraisLivraisonDefaut', 'createOrderEndpoint', 'fieldMapping'],
     });
     if (!fournisseur) throw new NotFoundException('Fournisseur de livraison introuvable');
 
@@ -71,9 +71,13 @@ export class LivraisonsExternesService {
     // Appel API fournisseur si configuré
     if (fournisseur.apiUrl && fournisseur.apiKey) {
       try {
-        const body = this.buildRequestBody(fournisseur.type, { ...payload, livraisonId: saved.id });
+        const data = { ...payload, livraisonId: saved.id };
+        const body = fournisseur.fieldMapping && Object.keys(fournisseur.fieldMapping).length > 0
+          ? this.buildDynamicBody(fournisseur.fieldMapping, data)
+          : this.buildRequestBody(fournisseur.type, data);
+        const endpoint = fournisseur.apiUrl + (fournisseur.createOrderEndpoint || '/orders');
         const response = await axios.post<Record<string, any>>(
-          fournisseur.apiUrl + '/orders',
+          endpoint,
           body,
           {
             headers: {
@@ -181,6 +185,61 @@ export class LivraisonsExternesService {
     }
   }
 
+  // ── Suivi en temps réel depuis le provider ─────────────────────
+
+  async getSuivi(livraisonId: string): Promise<any> {
+    const livraison = await this.livraisonRepo.findOne({ where: { id: livraisonId } });
+    if (!livraison) throw new NotFoundException('Livraison introuvable');
+    if (!livraison.referenceExterne) {
+      return { statut: livraison.statut, details: livraison.metadonnees };
+    }
+
+    const fournisseur = await this.fournisseurRepo.findOne({
+      where: { id: livraison.fournisseurId },
+      select: ['id', 'apiUrl', 'apiKey', 'trackingEndpoint'],
+    });
+    if (!fournisseur?.apiUrl || !fournisseur?.apiKey) {
+      return { statut: livraison.statut, details: livraison.metadonnees };
+    }
+
+    const trackingPath = (fournisseur.trackingEndpoint || '/orders/{id}')
+      .replace('{id}', livraison.referenceExterne);
+
+    try {
+      const response = await axios.get<any>(`${fournisseur.apiUrl}${trackingPath}`, {
+        headers: { Authorization: `Bearer ${fournisseur.apiKey}` },
+        timeout: 8000,
+      });
+      return { statut: livraison.statut, liveData: response.data };
+    } catch {
+      return { statut: livraison.statut, details: livraison.metadonnees };
+    }
+  }
+
+  // ── Estimation de frais de livraison ───────────────────────────
+
+  async estimer(fournisseurId: string, payload: any): Promise<any> {
+    const f = await this.fournisseurRepo.findOne({
+      where: { id: fournisseurId },
+      select: ['id', 'apiUrl', 'apiKey', 'estimateEndpoint'],
+    });
+    if (!f) throw new NotFoundException('Fournisseur introuvable');
+    if (!f.apiUrl || !f.apiKey) {
+      return { fraisEstime: null, message: 'Fournisseur non configuré' };
+    }
+
+    const estimatePath = f.estimateEndpoint || '/quote';
+    try {
+      const response = await axios.post<any>(`${f.apiUrl}${estimatePath}`, payload, {
+        headers: { Authorization: `Bearer ${f.apiKey}`, 'Content-Type': 'application/json' },
+        timeout: 8000,
+      });
+      return response.data;
+    } catch {
+      return { fraisEstime: null, message: 'Estimation indisponible' };
+    }
+  }
+
   // ── Construction du body selon le type de fournisseur ──────────
 
   private buildRequestBody(type: TypeFournisseurLivraison, data: any): object {
@@ -212,5 +271,34 @@ export class LivraisonsExternesService {
           amount: data.montantTotal,
         };
     }
+  }
+
+  // ── Body dynamique via fieldMapping JSON ───────────────────────
+  // fieldMapping ex: { "deliveryAddress": "drop_address", "clientNom": "customer.name" }
+  // Supporte la notation pointée pour les objets imbriqués.
+
+  private buildDynamicBody(fieldMapping: Record<string, string>, data: any): object {
+    const STANDARD: Record<string, any> = {
+      livraisonId:      data.livraisonId,
+      commandeId:       data.commandeId,
+      deliveryAddress:  data.adresseLivraison,
+      pickupAddress:    data.adresseRetrait,
+      clientNom:        data.clientNom,
+      clientTelephone:  data.clientTelephone,
+      montantTotal:     data.montantTotal,
+    };
+
+    const body: Record<string, any> = {};
+    for (const [ourKey, providerKey] of Object.entries(fieldMapping)) {
+      if (STANDARD[ourKey] === undefined) continue;
+      const parts = providerKey.split('.');
+      let obj = body;
+      for (let i = 0; i < parts.length - 1; i++) {
+        obj[parts[i]] = obj[parts[i]] ?? {};
+        obj = obj[parts[i]];
+      }
+      obj[parts[parts.length - 1]] = STANDARD[ourKey];
+    }
+    return body;
   }
 }

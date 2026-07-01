@@ -42,6 +42,23 @@ export class FournisseurLivraison {
   @Column({ type: 'int', default: 0 })
   fraisLivraisonDefaut!: number;
 
+  // Endpoint de création de commande (ex: /orders). Par défaut : /orders
+  @Column({ nullable: true })
+  createOrderEndpoint?: string;
+
+  // Endpoint de suivi avec placeholder {id} (ex: /orders/{id})
+  @Column({ nullable: true })
+  trackingEndpoint?: string;
+
+  // Endpoint d'estimation de frais (ex: /quote)
+  @Column({ nullable: true })
+  estimateEndpoint?: string;
+
+  // Mapping des champs RESTODICI → noms spécifiques au provider
+  // Ex: { "deliveryAddress": "drop_address", "clientNom": "customer_name" }
+  @Column({ type: 'json', nullable: true })
+  fieldMapping?: Record<string, string>;
+
   @Column({ default: true })
   actif!: boolean;
 

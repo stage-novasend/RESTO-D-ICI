@@ -2813,15 +2813,16 @@ function NotificationsTab() {
 
 /* ══════════════════ LIVRAISONS EXTERNES TAB ══════════════════ */
 const TYPE_LIVRAISON = ['YANGO', 'GOZEM', 'KOOLI', 'JUMIA_FOOD', 'CUSTOM'];
-const EMPTY_LIV = { nom: '', type: 'CUSTOM', apiUrl: '', rechercheUrl: '', apiKey: '', webhookCallbackUrl: '', fraisLivraisonDefaut: '', actif: true };
+const EMPTY_LIV = { nom: '', type: 'CUSTOM', apiUrl: '', rechercheUrl: '', apiKey: '', webhookCallbackUrl: '', fraisLivraisonDefaut: '', createOrderEndpoint: '', trackingEndpoint: '', estimateEndpoint: '', fieldMapping: '', actif: true };
 
 function LivraisonsExtTab() {
   const [list, setList]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal]     = useState(null);
   const [form, setForm]       = useState(EMPTY_LIV);
-  const [saving, setSaving]   = useState(false);
-  const [showKey, setShowKey] = useState({});
+  const [saving, setSaving]         = useState(false);
+  const [showKey, setShowKey]       = useState({});
+  const [fmError, setFmError]       = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2833,15 +2834,24 @@ function LivraisonsExtTab() {
   useEffect(() => { load(); }, [load]);
 
   const openCreate = () => { setForm(EMPTY_LIV); setModal('create'); };
-  const openEdit   = (f)  => { setForm({ ...f, apiKey: '', fraisLivraisonDefaut: f.fraisLivraisonDefaut ?? '' }); setModal(f); };
+  const openEdit   = (f)  => { setForm({ ...f, apiKey: '', fraisLivraisonDefaut: f.fraisLivraisonDefaut ?? '', fieldMapping: f.fieldMapping ? JSON.stringify(f.fieldMapping, null, 2) : '' }); setFmError(''); setModal(f); };
 
   const handleSave = async () => {
     if (!form.nom.trim()) return;
+    let parsedMapping = undefined;
+    if (form.fieldMapping && form.fieldMapping.trim()) {
+      try { parsedMapping = JSON.parse(form.fieldMapping); setFmError(''); }
+      catch { setFmError('JSON invalide — vérifiez la syntaxe du mapping.'); return; }
+    }
     setSaving(true);
     try {
       const payload = {
         ...form,
         fraisLivraisonDefaut: form.fraisLivraisonDefaut ? Number(form.fraisLivraisonDefaut) : undefined,
+        fieldMapping: parsedMapping ?? null,
+        createOrderEndpoint: form.createOrderEndpoint || null,
+        trackingEndpoint:    form.trackingEndpoint    || null,
+        estimateEndpoint:    form.estimateEndpoint    || null,
       };
       if (!payload.apiKey) delete payload.apiKey;
       if (modal === 'create') await livraisonsExtAPI.createFournisseur(payload);
@@ -2986,6 +2996,42 @@ function LivraisonsExtTab() {
                 </div>
               </div>
               <Field label="URL callback webhook" field="webhookCallbackUrl" placeholder="https://restodici.ci/livraisons-externes/webhook/..." full />
+
+              {/* ── Endpoints plug-and-play ── */}
+              <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #F1F5F9', paddingTop: 16, marginTop: 4 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.08em', margin: '0 0 12px' }}>Configuration avancée (plug-and-play)</p>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14 }}>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Endpoint création <span style={{ color: '#94A3B8', fontWeight: 400 }}>(/orders)</span></label>
+                    <input type="text" value={form.createOrderEndpoint ?? ''} onChange={e => setForm(p => ({ ...p, createOrderEndpoint: e.target.value }))} placeholder="/orders" style={{ width: '100%', border: '1px solid #D1D9E6', borderRadius: 9, padding: '10px 14px', fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Endpoint suivi <span style={{ color: '#94A3B8', fontWeight: 400 }}>({'{id}'})</span></label>
+                    <input type="text" value={form.trackingEndpoint ?? ''} onChange={e => setForm(p => ({ ...p, trackingEndpoint: e.target.value }))} placeholder="/orders/{id}" style={{ width: '100%', border: '1px solid #D1D9E6', borderRadius: 9, padding: '10px 14px', fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace' }} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>Endpoint estimation</label>
+                    <input type="text" value={form.estimateEndpoint ?? ''} onChange={e => setForm(p => ({ ...p, estimateEndpoint: e.target.value }))} placeholder="/quote" style={{ width: '100%', border: '1px solid #D1D9E6', borderRadius: 9, padding: '10px 14px', fontSize: 13, outline: 'none', boxSizing: 'border-box', fontFamily: 'monospace' }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* ── Field Mapping JSON ── */}
+              <div style={{ gridColumn: '1 / -1' }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#374151', marginBottom: 5 }}>
+                  Mapping des champs <span style={{ color: '#94A3B8', fontWeight: 400 }}>— JSON (nos noms → noms du provider)</span>
+                </label>
+                <textarea
+                  value={form.fieldMapping ?? ''}
+                  onChange={e => { setForm(p => ({ ...p, fieldMapping: e.target.value })); setFmError(''); }}
+                  placeholder={'{\n  "deliveryAddress": "drop_address",\n  "pickupAddress": "pickup_address",\n  "clientNom": "customer.name",\n  "clientTelephone": "customer.phone",\n  "montantTotal": "order_value"\n}'}
+                  rows={6}
+                  style={{ width: '100%', border: `1px solid ${fmError ? '#EF4444' : '#D1D9E6'}`, borderRadius: 9, padding: '12px 14px', fontSize: 12, fontFamily: 'monospace', outline: 'none', boxSizing: 'border-box', resize: 'vertical', lineHeight: 1.6 }}
+                />
+                {fmError && <p style={{ fontSize: 11, color: '#EF4444', margin: '4px 0 0' }}>{fmError}</p>}
+                <p style={{ fontSize: 11, color: '#94A3B8', margin: '4px 0 0' }}>Clés RESTODICI : livraisonId, commandeId, deliveryAddress, pickupAddress, clientNom, clientTelephone, montantTotal. Notation pointée supportée : <code>customer.name</code></p>
+              </div>
+
               <Field label="Frais par défaut (FCFA)" field="fraisLivraisonDefaut" type="number" placeholder="1500" />
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 8 }}>
                 <input

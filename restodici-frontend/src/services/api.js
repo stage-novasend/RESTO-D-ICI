@@ -434,6 +434,8 @@ export const livraisonsExtAPI = {
   dispatch:              (data)          => api.post("/livraisons-externes/dispatch", data),
   getLivraisonCommande:  (commandeId)    => api.get(`/livraisons-externes/commande/${commandeId}`),
   rechercheLivreurs:     (id, payload)   => api.post(`/livraisons-externes/fournisseurs/${id}/recherche-livreurs`, payload),
+  getSuivi:              (livraisonId)   => api.get(`/livraisons-externes/${livraisonId}/suivi`),
+  estimer:               (id, payload)   => api.post(`/livraisons-externes/fournisseurs/${id}/estimer`, payload),
 };
 
 // ── Commandes — extras ────────────────────────────────────────────────────────

@@ -76,6 +76,24 @@ export class LivraisonsExternesController {
     return this.service.getLivraisonsCommande(commandeId);
   }
 
+  // ── Suivi temps réel d'une livraison ─────────────────────────
+
+  @Get(':id/suivi')
+  @UseGuards(AuthGuard('jwt'))
+  getSuivi(@Param('id') id: string) {
+    return this.service.getSuivi(id);
+  }
+
+  // ── Estimation de frais ───────────────────────────────────────
+
+  @Post('fournisseurs/:id/estimer')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'GERANT', 'STAFF', 'CLIENT')
+  @HttpCode(HttpStatus.OK)
+  estimer(@Param('id') id: string, @Body() body: any) {
+    return this.service.estimer(id, body);
+  }
+
   // ── Recherche de livreurs disponibles ─────────────────────────
 
   @Post('fournisseurs/:id/recherche-livreurs')
