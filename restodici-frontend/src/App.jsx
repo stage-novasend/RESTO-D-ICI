@@ -1,21 +1,18 @@
-// src/App.jsx — Point d'entrée du routage React
-// Définit toutes les routes de l'application et protège les espaces privés
-// selon le rôle de l'utilisateur connecté (CLIENT, GERANT, STAFF, B2B, ADMIN)
+// src/App.jsx — routage et gardes de route par rôle
 import { lazy, Suspense, useRef, useLayoutEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { CartProvider } from './hooks/useCart';
 
-// ===== LAYOUTS — chargés immédiatement (petits fichiers, toujours utilisés) =====
+// layouts
 import GerantLayout from './layouts/GerantLayout';
 import ClientLayout from './layouts/ClientLayout';
 import B2BLayout from './layouts/B2BLayout';
 import StaffLayout from './layouts/StaffLayout';
 import AdminLayout from './layouts/AdminLayout';
 
-// ===== PAGES — lazy loading (chaque page = chunk JS séparé chargé à la demande) =====
-// Pages publiques
+// pages — lazy loading par chunk
 const Home            = lazy(() => import('./pages/Home'));
 const Contact         = lazy(() => import('./pages/Contact'));
 const Legal           = lazy(() => import('./pages/Legal'));
@@ -58,7 +55,7 @@ const ClientOnboardingWizard = lazy(() => import('./pages/client/ClientOnboardin
 
 const queryClient = new QueryClient();
 
-// Écran de chargement affiché pendant qu'un chunk se télécharge
+// spinner pendant le chargement d'un chunk lazy
 function PageLoader() {
   return (
     <div style={{ minHeight: '100dvh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F2F3F7' }}>
@@ -68,7 +65,7 @@ function PageLoader() {
   );
 }
 
-// Déclenche un fondu opacity 0→1 sur chaque changement de route (location.key unique par navigation)
+// fondu opacity 0→1 à chaque changement de route
 function RouteTransition({ children }) {
   const location = useLocation();
   const ref = useRef(null);
@@ -76,7 +73,7 @@ function RouteTransition({ children }) {
     const el = ref.current;
     if (!el) return;
     el.style.animationName = 'none';
-    void el.offsetHeight; // force reflow pour relancer l'animation
+    void el.offsetHeight; // force reflow
     el.style.animationName = 'pageIn';
   }, [location.key]);
   return (
@@ -89,11 +86,7 @@ function RouteTransition({ children }) {
   );
 }
 
-// ── Composants de garde (route guards) ───────────────────────────────────────
-// Chaque garde vérifie le rôle de l'utilisateur avant d'afficher la page.
-// Si l'utilisateur n'a pas le bon rôle → redirection vers /login ou son espace.
-
-// Accès réservé aux administrateurs système
+// gardes de route — redirigent si le rôle ne correspond pas
 function ProtectedAdminRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -101,7 +94,6 @@ function ProtectedAdminRoute({ children }) {
   return children;
 }
 
-// Accès réservé aux gérants de restaurant
 function ProtectedGerantRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -109,7 +101,6 @@ function ProtectedGerantRoute({ children }) {
   return children;
 }
 
-// Accès réservé au staff (serveurs, cuisiniers) — le gérant peut aussi y accéder
 function ProtectedStaffRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -117,7 +108,6 @@ function ProtectedStaffRoute({ children }) {
   return children;
 }
 
-// Checkout autorisé pour CLIENT et B2B — les autres rôles sont renvoyés vers leur espace
 function ProtectedCheckoutRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -128,7 +118,6 @@ function ProtectedCheckoutRoute({ children }) {
   return children;
 }
 
-// Espace client (compte, commandes) — le B2B est renvoyé vers /b2b
 function ProtectedClientRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -140,7 +129,6 @@ function ProtectedClientRoute({ children }) {
   return children;
 }
 
-// Accès réservé aux comptes entreprise (B2B)
 function ProtectedBusinessRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <PageLoader />;
@@ -148,7 +136,6 @@ function ProtectedBusinessRoute({ children }) {
   return children;
 }
 
-// Injecte restaurantId et token dans le dashboard gérant (lus depuis le contexte)
 function GerantDashboardWrapper() {
   const { user } = useAuth();
   const token = localStorage.getItem('token');
@@ -162,25 +149,21 @@ export default function App() {
       <AuthProvider>
         <BrowserRouter>
           <RouteTransition>
-          {/* Suspense affiche PageLoader pendant le téléchargement d'un chunk lazy */}
           <Suspense fallback={<PageLoader />}>
             <Routes>
-              {/* === PAGE D'ACCUEIL === */}
               <Route path="/" element={<Home />} />
-
-              {/* === PAGES PUBLIQUES INFORMATIVES === */}
               <Route path="/contact" element={<Contact />} />
               <Route path="/legal"   element={<Legal />} />
               <Route path="/privacy" element={<Privacy />} />
               <Route path="/aide"    element={<Aide />} />
 
-              {/* === MENU + PANIER — publics avec layout client === */}
+              {/* menu + panier */}
               <Route element={<CartProvider><ClientLayout /></CartProvider>}>
                 <Route path="/menu" element={<MenuPage />} />
                 <Route path="/cart" element={<CartPage />} />
               </Route>
 
-              {/* === CHECKOUT / SUIVI — CLIENT + B2B autorisés === */}
+              {/* checkout + suivi */}
               <Route element={
                 <CartProvider>
                   <ProtectedCheckoutRoute><ClientLayout /></ProtectedCheckoutRoute>
@@ -191,7 +174,7 @@ export default function App() {
                 <Route path="/suivi/:id"             element={<OrderTrackingPage />} />
               </Route>
 
-              {/* === ESPACE CLIENT — CLIENT uniquement === */}
+              {/* espace client */}
               <Route element={
                 <CartProvider>
                   <ProtectedClientRoute><ClientLayout /></ProtectedClientRoute>
@@ -202,14 +185,14 @@ export default function App() {
                 <Route path="/client/orders"  element={<Navigate to="/account" replace />} />
               </Route>
 
-              {/* Dashboard client — sans ClientLayout (layout propre avec sidebar navy) */}
+              {/* dashboard client */}
               <Route path="/account" element={
                 <CartProvider>
                   <ProtectedClientRoute><ClientDashboard /></ProtectedClientRoute>
                 </CartProvider>
               } />
 
-              {/* === AUTHENTIFICATION (sans layout) === */}
+              {/* authentification */}
               <Route path="/login"            element={<Login />} />
               <Route path="/register"         element={<Register />} />
               <Route path="/verify-email"     element={<VerifyEmail />} />
@@ -217,7 +200,7 @@ export default function App() {
               <Route path="/reset-password"   element={<ResetPassword />} />
               <Route path="/b2b/invitation/:token" element={<AcceptInvitation />} />
 
-              {/* === ONBOARDING WIZARDS (post-inscription) === */}
+              {/* onboarding */}
               <Route path="/onboarding/gerant" element={
                 <ProtectedGerantRoute><GerantOnboardingWizard /></ProtectedGerantRoute>
               } />
@@ -233,7 +216,7 @@ export default function App() {
                 </ProtectedClientRoute>
               } />
 
-              {/* === DASHBOARD GÉRANT === */}
+              {/* gérant */}
               <Route path="/gerant/*" element={
                 <ProtectedGerantRoute><GerantLayout /></ProtectedGerantRoute>
               }>
@@ -241,7 +224,7 @@ export default function App() {
                 <Route path="kds" element={<KDSPage />} />
               </Route>
 
-              {/* === DASHBOARD STAFF === */}
+              {/* staff */}
               <Route path="/staff/*" element={
                 <ProtectedStaffRoute><StaffLayout /></ProtectedStaffRoute>
               }>
@@ -253,7 +236,7 @@ export default function App() {
                 <Route path="articles"   element={<ArticlesStaff />} />
               </Route>
 
-              {/* === DASHBOARD ENTREPRISE (B2B) === */}
+              {/* B2B */}
               <Route path="/b2b/*" element={
                 <ProtectedBusinessRoute><B2BLayout /></ProtectedBusinessRoute>
               }>
@@ -270,14 +253,14 @@ export default function App() {
                 <Route path="suivi/:id"     element={<B2BOrderTracking />} />
               </Route>
 
-              {/* === DASHBOARD ADMIN === */}
+              {/* admin */}
               <Route path="/admin/*" element={
                 <ProtectedAdminRoute><AdminLayout /></ProtectedAdminRoute>
               }>
                 <Route index element={<AdminDashboard />} />
               </Route>
 
-              {/* === FALLBACK — redirige toute URL inconnue vers l'accueil === */}
+              {/* fallback */}
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </Suspense>

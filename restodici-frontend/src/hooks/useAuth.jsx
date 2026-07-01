@@ -1,12 +1,10 @@
-// src/hooks/useAuth.jsx
-// Contexte d'authentification global — gère la session JWT et les opérations login/register/logout
+// src/hooks/useAuth.jsx — contexte d'authentification JWT
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
 import { authService } from "../services/auth.service";
 
-// Contexte partagé dans toute l'appli via AuthProvider
 const AuthContext = createContext(null);
 
-// Décode la partie payload d'un JWT (format base64url → JSON)
+// décode le payload base64url d'un JWT
 function decodeToken(token) {
   const rawPayload = token.split(".")[1];
   const payload = rawPayload?.replace(/-/g, "+").replace(/_/g, "/");
@@ -18,12 +16,10 @@ function decodeToken(token) {
   return JSON.parse(atob(paddedPayload));
 }
 
-// Vérifie si le token est expiré (champ exp en secondes Unix)
 function isExpired(payload) {
   return payload?.exp ? payload.exp * 1000 <= Date.now() : false;
 }
 
-// Extrait le message d'erreur lisible depuis la réponse Axios
 function getErrorMessage(error, fallback) {
   const apiError = error?.response?.data;
   const message = apiError?.message || apiError?.error || apiError;
@@ -34,7 +30,7 @@ function getErrorMessage(error, fallback) {
   return error?.message || fallback;
 }
 
-// Restitue la session stockée dans localStorage au rechargement de la page
+// restitue la session au rechargement
 function getStoredSession() {
   const token = localStorage.getItem("token");
   const storedUser = localStorage.getItem("user");
@@ -59,13 +55,10 @@ function getStoredSession() {
   return null;
 }
 
-// Fournisseur du contexte d'authentification — à placer autour de <App>
 export function AuthProvider({ children }) {
-  // user = null si non connecté, sinon objet { id, role, nom, restaurant, ... }
   const [user, setUser] = useState(getStoredSession);
-  const loading = false; // La session est restaurée de façon synchrone (localStorage)
+  const loading = false; // synchrone depuis localStorage
 
-  // Met à jour le profil en mémoire ET dans localStorage
   const syncUser = useCallback((nextUser) => {
     const token = localStorage.getItem("token") || user?.token;
     localStorage.setItem("user", JSON.stringify(nextUser));

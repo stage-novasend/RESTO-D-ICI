@@ -15,7 +15,7 @@ import mtnMomoLogo from '../assets/payments/mtn-momo.svg';
 import moovMoneyLogo from '../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../assets/payments/carte-bancaire.svg';
 
-// ── Flags ─────────────────────────────────────────────────────────────────────
+// Flags
 // Flip to false when the real NovaSend API key is configured in production
 const SIMULATE_PAYMENT    = true;
 // Flip to false when NovaSend card payment is live in CI
@@ -54,7 +54,7 @@ const CLR_TER   = '#22C55E';
 const CLR_AMBER = '#F59E0B';
 const CLR_RED   = '#EF4444';
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// Helpers
 const fmtCardNumber = (v) =>
   v.replace(/\D/g, '').slice(0, 16).replace(/(.{4})/g, '$1 ').trim();
 
@@ -63,7 +63,7 @@ const fmtExpiry = (v) => {
   return d.length > 2 ? d.slice(0, 2) + '/' + d.slice(2) : d;
 };
 
-// ── CountdownRing ─────────────────────────────────────────────────────────────
+// CountdownRing
 function CountdownRing({ total, current }) {
   const R = 30, C = 2 * Math.PI * R;
   const color = current > 30 ? CLR_TER : current > 10 ? CLR_AMBER : CLR_RED;
@@ -86,7 +86,7 @@ function CountdownRing({ total, current }) {
   );
 }
 
-// ── OTP input — 4 cases individuelles ─────────────────────────────────────────
+// OTP input — 4 cases individuelles
 function OtpInput({ value, onChange }) {
   const refs = [useRef(), useRef(), useRef(), useRef()];
   const digits = (value + '    ').slice(0, 4).split('');
@@ -138,7 +138,7 @@ function OtpInput({ value, onChange }) {
   );
 }
 
-// ── Inline styles injected once ───────────────────────────────────────────────
+// Inline styles injected once
 const GLOBAL_STYLES = `
   @keyframes fadeUp {
     from { opacity: 0; transform: translateY(14px); }
@@ -180,7 +180,7 @@ const GLOBAL_STYLES = `
   }
 `;
 
-// ── Main component ────────────────────────────────────────────────────────────
+// Main component
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user } = useAuth();

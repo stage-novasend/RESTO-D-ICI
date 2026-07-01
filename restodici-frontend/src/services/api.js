@@ -1,8 +1,4 @@
-// src/services/api.js
-// Centralise tous les appels HTTP vers le backend NestJS.
-// Chaque section (menuAPI, authAPI, b2bAPI…) correspond à un module backend.
-// L'instance Axios partagée (`api`) injecte automatiquement le token JWT
-// et redirige vers /login en cas de session expirée (401).
+// src/services/api.js — appels HTTP centralisés vers le backend
 import axios from "axios";
 import { resolveFrontendApiAndSocketBase } from "./backend-endpoints.js";
 
@@ -11,14 +7,12 @@ const { apiBaseUrl: API_URL } = resolveFrontendApiAndSocketBase({
   browserOrigin: window.location.origin,
 });
 
-// Instance Axios partagée — baseURL + token JWT injecté automatiquement
 export const api = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 10000,
 });
 
-// Injecte le token JWT sur chaque requête
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
   if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -88,12 +82,12 @@ api.interceptors.response.use(
   },
 );
 
-// ── Helpers privés ────────────────────────────────────────────────────────────
+// helpers
 
 const _UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const _isUUID = (v) => typeof v === "string" && _UUID_RE.test(v.trim());
 
-// Lit le restaurantId depuis le user en cache (fallback localStorage)
+
 function _getStoredRestaurantId() {
   try {
     const user = JSON.parse(localStorage.getItem("user") || "{}");
@@ -104,7 +98,7 @@ function _getStoredRestaurantId() {
   }
 }
 
-// Enrichit un payload avec restaurantId si absent
+
 function _withRestaurantId(data) {
   const payload = { ...data };
   if (!payload.restaurantId) {
@@ -114,7 +108,7 @@ function _withRestaurantId(data) {
   return payload;
 }
 
-// ── Menu ─────────────────────────────────────────────────────────────────────
+// menu
 
 export const menuAPI = {
   getAll: (params) => api.get("/menu", { params }),
@@ -145,7 +139,7 @@ export const menuAPI = {
   deleteArticle: (id) => api.delete(`/menu/articles/${id}`),
 };
 
-// ── Commandes ─────────────────────────────────────────────────────────────────
+// commandes
 
 export const commandesService = {
   getAll: (params) => api.get("/commandes", { params }),
@@ -188,7 +182,7 @@ export const commandesService = {
   confirmerReception: (id) => api.post(`/commandes/${id}/confirmer-reception`),
 };
 
-// ── Stocks ────────────────────────────────────────────────────────────────────
+// stocks
 
 export const stocksAPI = {
   getAll: (params) => api.get("/stocks", { params }),
@@ -205,7 +199,7 @@ export const stocksAPI = {
     api.get("/stocks/rapport-ecarts", { params: { restaurantId } }),
 };
 
-// ── B2B ───────────────────────────────────────────────────────────────────────
+// b2b
 
 export const b2bAPI = {
   // Dashboard
@@ -266,7 +260,7 @@ export const b2bAPI = {
   getReports:   () => api.get("/b2b/reports"),
 };
 
-// ── Auth ──────────────────────────────────────────────────────────────────────
+// auth
 
 export const authAPI = {
   login: async (credentials) => {
@@ -296,7 +290,7 @@ export const authAPI = {
   resetPassword:      (token, newPassword)    => api.post("/auth/reset-password", { token, newPassword }),
 };
 
-// ── Trésorerie ────────────────────────────────────────────────────────────────
+// trésorerie
 
 export const tresorerieAPI = {
   getStats: (period = "day") =>
@@ -314,14 +308,14 @@ export const tresorerieAPI = {
     api.post("/tresorerie/budget-alerts", config),
 };
 
-// ── Restaurant ────────────────────────────────────────────────────────────────
+// restaurant
 
 export const restaurantAPI = {
   getMine:  ()                    => api.get("/restaurants/me/profile"),
   update:   (restaurantId, data)  => api.patch(`/restaurants/${restaurantId}`, data),
 };
 
-// ── Admin ─────────────────────────────────────────────────────────────────────
+// admin
 
 export const adminAPI = {
   getStats:           ()              => api.get("/admin/stats"),
@@ -357,7 +351,7 @@ export const adminAPI = {
   runBackup:          ()              => api.post("/admin/backup/run"),
 };
 
-// ── Paiements digitaux (NovaSend) ─────────────────────────────────────────────
+// paiements
 
 export const paiementsAPI = {
   // GET /paiements/methodes → { methods: [...], configured: bool }
@@ -368,7 +362,7 @@ export const paiementsAPI = {
   simuler:    (data) => api.post("/paiements/simuler", data),
 };
 
-// ── Uploads ───────────────────────────────────────────────────────────────────
+// uploads
 
 export const uploadsAPI = {
   // Ne pas forcer Content-Type manuellement : le navigateur ajoute automatiquement
@@ -381,7 +375,7 @@ export const uploadsAPI = {
   getStatus: () => api.get("/uploads/status"),
 };
 
-// ── Promos ────────────────────────────────────────────────────────────────────
+// promos
 
 export const promosAPI = {
   getAll:   ()              => api.get("/promos"),
@@ -395,7 +389,7 @@ export const promosAPI = {
     api.get("/menu/promos-actives", { params: { restaurantId, ...(userId ? { userId } : {}) } }),
 };
 
-// ── Newsletter ────────────────────────────────────────────────────────────────
+// newsletter
 
 export const newsletterAPI = {
   subscribe:    (email)  => api.post("/newsletter/subscribe", { email }),
@@ -403,7 +397,7 @@ export const newsletterAPI = {
   remove:       (id)     => api.delete(`/newsletter/${id}`),
 };
 
-// ── Staff ─────────────────────────────────────────────────────────────────────
+// staff
 
 export const staffAPI = {
   getStaffAccounts:   (restaurantId)              => api.get(`/restaurants/${restaurantId}/staff`),
@@ -411,7 +405,7 @@ export const staffAPI = {
   toggleStaffAccount: (restaurantId, id, data)    => api.put(`/restaurants/${restaurantId}/staff/${id}`, data),
 };
 
-// ── Fournisseurs ──────────────────────────────────────────────────────────────
+// fournisseurs
 
 export const fournisseursAPI = {
   getAll:   ()          => api.get("/fournisseurs"),
@@ -423,7 +417,7 @@ export const fournisseursAPI = {
   remove:   (id)        => api.delete(`/fournisseurs/${id}`),
 };
 
-// ── Livraisons externes ───────────────────────────────────────────────────────
+// livraisons
 
 export const livraisonsExtAPI = {
   getFournisseurs:       (restaurantId)  => api.get("/livraisons-externes/fournisseurs", { params: restaurantId ? { restaurantId } : undefined }),
@@ -438,20 +432,19 @@ export const livraisonsExtAPI = {
   estimer:               (id, payload)   => api.post(`/livraisons-externes/fournisseurs/${id}/estimer`, payload),
 };
 
-// ── Commandes — extras ────────────────────────────────────────────────────────
+// commandes extras
 
 export const commandesExtraAPI = {
   rembourser: (id, motif) => api.patch(`/commandes/${id}/rembourser`, { motif }),
 };
 
-// ── Config publique ───────────────────────────────────────────────────────────
+// config
 
 export const publicConfigAPI = {
   getBannerMessages: () => api.get('/config/public/banner'),
 };
 
-// ── Modules client — plug-and-play depuis l'admin ────────────────────────────
-// GET /app/modules renvoie { delivery: { enabled, provider, apiUrl }, messaging: { ... } }
+// modules
 // L'admin active/désactive ces modules depuis son dashboard sans modifier le code.
 
 export const modulesAPI = {

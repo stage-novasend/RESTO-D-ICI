@@ -14,7 +14,6 @@ import mtnMomoLogo       from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo     from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
-/* ── Constantes ─────────────────────────────────────────────────────────── */
 const NAVY   = '#0F172A';
 const ORANGE = '#FF8C00';
 const BG     = '#FFFFFF';
@@ -39,7 +38,6 @@ const ZONES = [
   { name: 'Koumassi',    fee: 1300 },
 ];
 
-/* Métadonnées visuelles locales — logo, couleur, fond — indexées par id */
 const METHOD_VISUAL = {
   orange_money: { logo: orangeMoneyLogo,   color: '#FF7900', bg: '#FFF3E0' },
   mtn_momo:     { logo: mtnMomoLogo,       color: '#FFCC00', bg: '#FFFDE7' },
@@ -48,7 +46,7 @@ const METHOD_VISUAL = {
   card:         { logo: carteBancaireLogo, color: '#0F172A', bg: '#F1F5F9' },
 };
 
-/* Fallback utilisé si l'API est indisponible */
+// fallback si l'API est indisponible
 const METHODS_FALLBACK = [
   { id: 'orange_money', label: 'Orange Money',   provider: 'ORANGE', gateway: 'novasend', needsPhone: true  },
   { id: 'mtn_momo',     label: 'MTN MoMo',       provider: 'MOMO',   gateway: 'novasend', needsPhone: true  },
@@ -57,12 +55,10 @@ const METHODS_FALLBACK = [
   { id: 'card',         label: 'Carte Bancaire',  provider: 'CARTE',  gateway: 'novasend', needsPhone: false },
 ];
 
-/* Fusionne la réponse API avec les métadonnées visuelles locales */
 const mergeVisual = (methods) =>
   methods.map(m => ({ ...m, ...(METHOD_VISUAL[m.id] ?? { logo: null, color: '#64748B', bg: '#F1F5F9' }) }));
 
 
-/* ── Sous-composants ────────────────────────────────────────────────────── */
 function KenteStrip() {
   return (
     <div style={{ display: 'flex', height: 4, flexShrink: 0 }}>
@@ -98,20 +94,16 @@ function SectionTitle({ children }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════════════════
-   CartDrawer — composant principal
-══════════════════════════════════════════════════════════════════════════ */
 export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, initialAddress }) {
   const { items, total, updateQuantity, removeItem, clearCart, restaurantId, restaurantName } = useCart();
   const { user } = useAuth();
   const navigate  = useNavigate();
 
-  /* ── Step 1 state ── */
   const [step,    setStep]    = useState(1);
   const [mode,    setMode]    = useState(initialMode || 'SUR_PLACE');
   const [address, setAddress] = useState(initialAddress || '');
 
-  /* ── Step 2 — livraison ── */
+  // livraison
   const [zone,          setZone]          = useState('');
   const [driverStatus,  setDriverStatus]  = useState('idle'); // idle | searching | found | error
   const [driver,        setDriver]        = useState(null);
@@ -120,7 +112,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
   const zoneFee     = ZONES.find(z => z.name === zone)?.fee ?? 0;
   const deliveryFee = driverFee !== null ? driverFee : zoneFee;
 
-  /* ── Méthodes de paiement dynamiques ── */
+  // Méthodes de paiement dynamiques
   const [paymentMethods, setPaymentMethods] = useState(mergeVisual(METHODS_FALLBACK));
 
   useEffect(() => {
@@ -129,7 +121,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
       .catch(() => { /* fallback silencieux sur le tableau local */ });
   }, []);
 
-  /* Charge les fournisseurs de livraison disponibles quand mode=LIVRAISON */
+  // Charge les fournisseurs de livraison disponibles quand mode=LIVRAISON
   useEffect(() => {
     if (mode === 'LIVRAISON' && restaurantId) {
       livraisonsExtAPI.getFournisseurs(restaurantId)
@@ -138,24 +130,24 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
     }
   }, [mode, restaurantId]);
 
-  /* ── Step 2 — promo ── */
+  // Step 2 — promo
   const [promoCode,     setPromoCode]     = useState('');
   const [promoApplied,  setPromoApplied]  = useState(false);
   const [promoDiscount, setPromoDiscount] = useState(0);
   const [promoError,    setPromoError]    = useState('');
 
-  /* ── Step 2 — paiement ── */
+  // Step 2 — paiement
   const [selectedPayment, setSelectedPayment] = useState('');
   const [phone,           setPhone]           = useState('');
 
-  /* ── Calculs ── */
+  // Calculs
   const subtotal   = total();
   const grandTotal = Math.max(0, subtotal + deliveryFee - promoDiscount);
   const totalItems = items.reduce((s, i) => s + i.quantite, 0);
 
   const selectedMethod = paymentMethods.find(m => m.id === selectedPayment);
 
-  /* Reset step quand on ferme, sync mode + adresse à l'ouverture */
+  // Reset step quand on ferme, sync mode + adresse à l'ouverture
   useEffect(() => {
     if (!isOpen) {
       setTimeout(() => setStep(1), 300);
@@ -165,7 +157,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
     }
   }, [isOpen, initialMode, initialAddress]);
 
-  /* ── Handlers ── */
+  // Handlers
   const handleApplyPromo = () => {
     const code = promoCode.trim().toLowerCase();
     setPromoError('');
@@ -196,7 +188,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
     const fournisseur = fournisseurs[0] ?? null;
 
     if (!fournisseur) {
-      /* Aucun fournisseur configuré — simulation locale */
+      // Aucun fournisseur configuré — simulation locale
       await new Promise(r => setTimeout(r, 1400));
       setDriver({ name: 'Livreur disponible', vehicle: 'Moto', rating: 4.7 });
       setDriverStatus('found');
@@ -340,7 +332,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
       >
         <KenteStrip />
 
-        {/* ─── STEP 1 : Panier ─────────────────────────────────────── */}
+        {/* STEP 1 : Panier */}
         {step === 1 && (
           <>
             {/* Header */}
@@ -461,7 +453,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
           </>
         )}
 
-        {/* ─── STEP 2 : Finaliser / Paiement ──────────────────────── */}
+        {/* STEP 2 : Finaliser / Paiement */}
         {step === 2 && (
           <>
             {/* Header */}
@@ -483,7 +475,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
             {/* Body scrollable */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '20px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
 
-              {/* ── Section livraison ── */}
+              {/* Section livraison */}
               {mode === 'LIVRAISON' && (
                 <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, padding: '16px' }}>
                   <SectionTitle>Livraison</SectionTitle>
@@ -576,7 +568,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                 </div>
               )}
 
-              {/* ── Code promo ── */}
+              {/* Code promo */}
               <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, padding: '16px' }}>
                 <SectionTitle>Code promo</SectionTitle>
                 {promoApplied ? (
@@ -617,7 +609,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                 )}
               </div>
 
-              {/* ── Moyens de paiement ── */}
+              {/* Moyens de paiement */}
               <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, padding: '16px' }}>
                 <SectionTitle>Moyen de paiement</SectionTitle>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
@@ -672,7 +664,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                 )}
               </div>
 
-              {/* ── Récapitulatif ── */}
+              {/* Récapitulatif */}
               <div style={{ background: '#fff', border: `1px solid ${LINE}`, borderRadius: 16, padding: '16px' }}>
                 <SectionTitle>Récapitulatif</SectionTitle>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
