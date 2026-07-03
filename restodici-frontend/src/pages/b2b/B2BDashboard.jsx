@@ -915,7 +915,8 @@ export default function B2BDashboard() {
 
   const [tab, setTab]               = useState('overview');
   const [settingsTab, setSettingsTab] = useState('profil');
-  const [sideOpen, setSideOpen]     = useState(false);
+  const [sideOpen, setSideOpen]         = useState(false);
+  const [sideCollapsed, setSideCollapsed] = useState(false);
   const [dashboard, setDashboard]   = useState(cached?.dashboard || null);
   const [compte, setCompte]         = useState(cached?.compte || null);
   const [collabs, setCollabs]       = useState(cached?.collabs || []);
@@ -1246,156 +1247,199 @@ export default function B2BDashboard() {
 
   const goTo = (key) => { setTab(key); setSideOpen(false); };
 
-  // ── Sidebar — dark navy avec accents orange ───────────────────────────────────
-  const Sidebar = ({ mobile = false }) => (
-    <div className="flex flex-col h-full" style={{ background: NAVY }}>
+  // ── Sidebar — blanc avec accents orange (style GerantLayout) ─────────────────
+  const Sidebar = ({ mobile = false }) => {
+    const col = sideCollapsed && !mobile;
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: '#FFFFFF' }}>
 
-      {/* Brand */}
-      <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(255,255,255,0.08)' }}>
-        <div className="flex items-center gap-2.5">
-          <div className="relative shrink-0">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})` }}>
-              <UtensilsCrossed className="w-4.5 h-4.5 text-white" />
+        {/* Brand */}
+        <div style={{ padding: col ? '20px 0' : '20px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+          {!col ? (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: ORANGE, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, position: 'relative' }}>
+                  <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
+                  {unreadCount > 0 && (
+                    <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, background: RED, color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', boxShadow: '0 0 0 2px #fff' }}>
+                      {unreadCount > 9 ? '9+' : unreadCount}
+                    </span>
+                  )}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontSize: 9, fontWeight: 700, color: ORANGE, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace B2B</p>
+                  <p style={{ fontSize: 15, fontWeight: 800, color: '#1F2937', margin: 0, lineHeight: 1.2 }}>Resto d'ici</p>
+                </div>
+                {mobile && (
+                  <button onClick={() => setSideOpen(false)} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', borderRadius: 8, width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', color: '#8B6E50', flexShrink: 0 }}>
+                    <X style={{ width: 14, height: 14 }} />
+                  </button>
+                )}
+              </div>
+              {compte?.raisonSociale && (
+                <div style={{ background: 'rgba(234,88,12,0.07)', borderRadius: 8, padding: '6px 10px' }}>
+                  <p style={{ fontSize: 10, color: '#9CA3AF', margin: '0 0 1px' }}>Entreprise active</p>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{compte.raisonSociale}</p>
+                </div>
+              )}
             </div>
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 min-w-[16px] h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center px-1"
-                style={{ background: RED, boxShadow: `0 0 0 2px ${NAVY}` }}>
-                {unreadCount > 9 ? '9+' : unreadCount}
-              </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-bold text-white leading-none">Resto d'ici</p>
-            <p className="text-[10px] mt-0.5 font-semibold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              Entreprise B2B
-            </p>
-          </div>
-          {mobile && (
-            <button onClick={() => setSideOpen(false)} style={{ color: 'rgba(255,255,255,0.5)' }}>
-              <X className="w-4 h-4" />
-            </button>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ width: 36, height: 36, borderRadius: 10, background: ORANGE, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
+                {unreadCount > 0 && (
+                  <span style={{ position: 'absolute', top: -4, right: -4, minWidth: 16, height: 16, borderRadius: 8, background: RED, color: '#fff', fontSize: 9, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 3px', boxShadow: '0 0 0 2px #fff' }}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </div>
+            </div>
           )}
         </div>
-      </div>
 
-      {/* Section label */}
-      <div className="px-4 pt-5 pb-2">
-        <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'rgba(255,255,255,0.3)' }}>
-          Navigation
-        </p>
-      </div>
-
-      {/* Nav items */}
-      <nav className="flex-1 px-2 space-y-0.5 overflow-y-auto pb-4">
-        {NAV.map(item => {
-          const Icon = item.icon;
-          const active = tab === item.key;
-          return (
-            <button key={item.key} onClick={() => goTo(item.key)}
-              data-tour={item.key === 'collaborateurs' ? 'b2b-collab-tab' : item.key === 'overview' ? 'b2b-overview-tab' : undefined}
-              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-[13px] font-medium relative"
-              style={{
-                background: active ? `${ORANGE}18` : 'transparent',
-                color: active ? ORANGE : 'rgba(255,255,255,0.65)',
-                borderLeft: active ? `3px solid ${ORANGE}` : '3px solid transparent',
-                transition: 'all 0.18s ease',
-              }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.9)'; } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.65)'; } }}>
-              <Icon className="w-4 h-4 shrink-0" />
-              <span className="flex-1 text-left">{item.label}</span>
-              {(item.badge ?? 0) > 0 && (
-                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center"
-                  style={{
-                    background: item.key === 'factures' && unpaidInvoices > 0
-                      ? `${RED}33` : `${ORANGE}33`,
-                    color: item.key === 'factures' && unpaidInvoices > 0 ? '#FCA5A5' : ORANGE,
-                  }}>
-                  {item.badge}
+        {/* Nav */}
+        <nav style={{ padding: '12px 10px', display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflowY: 'auto' }}>
+          {NAV.map(item => {
+            const Icon = item.icon;
+            const active = tab === item.key;
+            return (
+              <button key={item.key} onClick={() => goTo(item.key)}
+                title={col ? item.label : undefined}
+                data-tour={item.key === 'collaborateurs' ? 'b2b-collab-tab' : item.key === 'overview' ? 'b2b-overview-tab' : undefined}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: col ? 0 : 12,
+                  justifyContent: col ? 'center' : 'flex-start',
+                  width: '100%', padding: col ? '12px' : '10px 12px',
+                  border: 'none', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
+                  background: active ? ORANGE : 'transparent',
+                  boxShadow: active ? `0 4px 14px ${ORANGE}4D` : 'none',
+                  transition: 'all 0.18s',
+                }}
+                onMouseEnter={e => { if (!active) e.currentTarget.style.background = 'rgba(234,88,12,0.08)'; }}
+                onMouseLeave={e => { if (!active) e.currentTarget.style.background = 'transparent'; }}>
+                <span style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(255,255,255,0.22)' : 'rgba(234,88,12,0.10)', color: active ? '#fff' : ORANGE, transition: 'all 0.18s', position: 'relative' }}>
+                  <Icon style={{ width: 16, height: 16 }} />
+                  {(item.badge ?? 0) > 0 && col && (
+                    <span style={{ position: 'absolute', top: -3, right: -3, minWidth: 14, height: 14, borderRadius: 7, background: item.key === 'factures' ? RED : ORANGE, color: '#fff', fontSize: 8, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 2px', boxShadow: '0 0 0 2px #fff' }}>
+                      {item.badge}
+                    </span>
+                  )}
                 </span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+                {!col && (
+                  <span style={{ flex: 1, minWidth: 0 }}>
+                    <span style={{ display: 'block', fontSize: 13, fontWeight: 600, color: active ? '#fff' : '#374151', lineHeight: 1.3 }}>{item.label}</span>
+                    <span style={{ display: 'block', fontSize: 10, color: active ? 'rgba(255,255,255,0.70)' : '#9CA3AF', marginTop: 1 }}>
+                      {item.key === 'overview' && 'Pilotage global'}
+                      {item.key === 'orders' && 'Commandes B2B'}
+                      {item.key === 'collaborateurs' && 'Gestion équipe'}
+                      {item.key === 'abonnements' && 'Repas récurrents'}
+                      {item.key === 'factures' && 'SYSCOHADA'}
+                      {item.key === 'historique' && 'Audit & traces'}
+                      {item.key === 'notifications' && 'Alertes temps réel'}
+                      {item.key === 'settings' && 'Réglages compte'}
+                    </span>
+                  </span>
+                )}
+                {!col && (item.badge ?? 0) > 0 && (
+                  <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 6px', borderRadius: 99, background: item.key === 'factures' ? `${RED}22` : `${ORANGE}22`, color: item.key === 'factures' ? RED : ORANGE, flexShrink: 0 }}>
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </nav>
 
-      {/* Divider */}
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '0 16px' }} />
-
-      {/* User block */}
-      <div className="px-3 py-4">
-        <div className="flex items-center gap-3 px-2 py-2.5 rounded-xl"
-          style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)' }}>
-          <Avatar name={user?.nom || 'B2B'} size={32} />
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold truncate text-white">{user?.nom || 'Gestionnaire'}</p>
-            <p className="text-[10px] truncate" style={{ color: 'rgba(255,255,255,0.4)' }}>
-              {compte?.raisonSociale || 'Entreprise B2B'}
-            </p>
-          </div>
-          {/* Logout — action risquée → rouge */}
-          <button onClick={() => setShowLogoutModal(true)} title="Déconnexion"
-            className="w-7 h-7 rounded-lg flex items-center justify-center transition hover:opacity-80"
-            style={{ background: `${RED}22`, color: '#FCA5A5' }}>
-            <LogOut className="w-3.5 h-3.5" />
+        {/* User / logout */}
+        <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', padding: col ? '12px 0' : '12px 10px' }}>
+          {!col && (
+            <div style={{ background: 'rgba(0,0,0,0.03)', borderRadius: 9, padding: '8px 12px', marginBottom: 8 }}>
+              <p style={{ fontSize: 10, color: '#9CA3AF', margin: '0 0 2px' }}>Connecté en tant que</p>
+              <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nom}</p>
+              {compte?.raisonSociale && <p style={{ fontSize: 10, color: '#9CA3AF', margin: '1px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{compte.raisonSociale}</p>}
+            </div>
+          )}
+          <button onClick={() => setShowLogoutModal(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: col ? 0 : 10, justifyContent: col ? 'center' : 'flex-start', width: '100%', padding: col ? '10px' : '10px 12px', border: 'none', borderRadius: 9, cursor: 'pointer', background: 'transparent', color: '#9CA3AF', transition: 'all 0.2s' }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.04)'; e.currentTarget.style.color = '#6B7280'; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#9CA3AF'; }}>
+            <LogOut style={{ width: 16, height: 16, flexShrink: 0 }} />
+            {!col && <span style={{ fontSize: 12, fontWeight: 600 }}>Déconnexion</span>}
           </button>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: BG }}>
 
-      {/* Desktop sidebar */}
-      <div className="hidden lg:flex flex-col w-[220px] shrink-0 h-full border-r" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+      {/* Desktop sidebar — blanc, collapsible */}
+      <aside
+        className={`hidden lg:flex flex-col shrink-0 h-full transition-all duration-300 ${sideCollapsed ? 'w-20' : 'w-64'}`}
+        style={{ background: '#FFFFFF', borderRight: '1px solid rgba(0,0,0,0.07)', boxShadow: '4px 0 20px rgba(0,0,0,0.05)', position: 'relative', zIndex: 10 }}
+      >
+        {/* Bouton collapse */}
+        <button
+          onClick={() => setSideCollapsed(c => !c)}
+          className="absolute -right-3 top-6 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md transition"
+          style={{ background: ORANGE, border: 'none', cursor: 'pointer', zIndex: 20 }}
+          aria-label={sideCollapsed ? 'Développer' : 'Réduire'}
+        >
+          <ChevronRight className={`h-4 w-4 transition-transform ${sideCollapsed ? '' : 'rotate-180'}`} />
+        </button>
         <Sidebar />
-      </div>
+      </aside>
 
-      {/* Mobile sidebar */}
+      {/* Overlay mobile */}
       {sideOpen && (
-        <div className="lg:hidden fixed inset-0 z-40 flex">
-          <div className="w-[220px] h-full"><Sidebar mobile /></div>
-          <div className="flex-1 bg-black/60 backdrop-blur-sm" onClick={() => setSideOpen(false)} />
-        </div>
+        <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setSideOpen(false)} />
+      )}
+
+      {/* Sidebar mobile — slide depuis la gauche */}
+      {sideOpen && (
+        <aside className="lg:hidden fixed left-0 top-0 z-50 h-full w-64"
+          style={{ background: '#FFFFFF', boxShadow: '4px 0 24px rgba(0,0,0,0.12)' }}>
+          <Sidebar mobile />
+        </aside>
       )}
 
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
 
-        {/* Top bar */}
-        <header className="shrink-0 relative" style={{ background: NAVY, boxShadow: '0 1px 0 rgba(255,255,255,0.06), 0 2px 16px rgba(0,0,0,0.22)' }}>
-          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${ORANGE} 0%, ${ORANGE_D} 60%, transparent 100%)` }} />
+        {/* Top bar — blanc */}
+        <header className="shrink-0" style={{ background: '#FFFFFF', borderBottom: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+          <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${ORANGE} 0%, #FFB800 50%, ${ORANGE} 100%)`, pointerEvents: 'none' }} />
           <div className="h-16 px-4 lg:px-6 flex items-center gap-4">
-            <button className="lg:hidden p-1.5 rounded-lg" onClick={() => setSideOpen(true)}
-              style={{ color: 'rgba(255,255,255,0.65)', background: 'rgba(255,255,255,0.08)' }}>
+            {/* Hamburger mobile */}
+            <button className="lg:hidden p-2 rounded-xl" onClick={() => setSideOpen(true)}
+              style={{ background: `${ORANGE}12`, border: `1px solid ${ORANGE}22`, color: ORANGE, cursor: 'pointer' }}>
               <Menu className="w-5 h-5" />
             </button>
 
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: 'rgba(255,255,255,0.45)' }}>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em]" style={{ color: '#9CA3AF' }}>
                 Tableau de bord entreprise
               </p>
-              <h1 className="text-base font-bold mt-0.5 leading-tight" style={{ color: '#fff' }}>
+              <h1 className="text-base font-bold mt-0.5 leading-tight" style={{ color: TEXT }}>
                 Bonjour, {user?.prenom || user?.nom?.split(' ')[0] || 'Gestionnaire'} 👋
               </h1>
             </div>
 
             {/* Search */}
             <div className="hidden md:flex flex-1 max-w-sm relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'rgba(255,255,255,0.4)' }} />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: '#9CA3AF' }} />
               <input
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Rechercher commande, centre de coûts…"
                 className="w-full rounded-xl border pl-9 pr-8 py-2 text-sm outline-none transition"
-                style={{ borderColor: searchQuery ? ORANGE : 'rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.08)', color: '#fff', boxShadow: searchQuery ? `0 0 0 3px ${ORANGE}30` : 'none' }}
+                style={{ borderColor: searchQuery ? ORANGE : '#E5E7EB', background: searchQuery ? `${ORANGE}08` : '#F9FAFB', color: TEXT, boxShadow: searchQuery ? `0 0 0 3px ${ORANGE}25` : 'none' }}
               />
               {searchQuery && (
                 <button onClick={() => setSearchQuery('')}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center transition hover:opacity-70"
-                  style={{ background: 'rgba(255,255,255,0.15)', color: 'rgba(255,255,255,0.7)' }}>
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full flex items-center justify-center"
+                  style={{ background: '#E5E7EB', color: '#9CA3AF', border: 'none', cursor: 'pointer' }}>
                   <X className="w-2.5 h-2.5" />
                 </button>
               )}
@@ -1404,12 +1448,12 @@ export default function B2BDashboard() {
             <div className="flex items-center gap-2">
               <button onClick={() => loadData(true)} disabled={refreshing}
                 className="w-8 h-8 rounded-lg flex items-center justify-center transition hover:opacity-70"
-                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.65)' }}>
+                style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280', cursor: 'pointer' }}>
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
               <button onClick={() => goTo('notifications')}
                 className="relative w-8 h-8 rounded-lg flex items-center justify-center transition hover:opacity-70"
-                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.65)' }}>
+                style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280', cursor: 'pointer' }}>
                 <Bell className="w-3.5 h-3.5" />
                 {unreadCount > 0 && (
                   <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full text-[9px] font-bold text-white flex items-center justify-center"
@@ -1419,29 +1463,21 @@ export default function B2BDashboard() {
                 )}
               </button>
               {/* Avatar profil */}
-              <div className="relative group">
-                <button
-                  onClick={() => setShowProfile(true)}
-                  className="flex items-center rounded-full transition-all"
-                  style={{
-                    padding: '4px 10px 4px 4px',
-                    border: `1.5px solid rgba(234,88,12,0.45)`,
-                    background: `rgba(234,88,12,0.12)`,
-                    cursor: 'pointer',
-                    gap: 6,
-                  }}
-                >
-                  <Avatar name={[user?.prenom, user?.nom].filter(Boolean).join(' ') || user?.nom || 'B2B'} size={30} />
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
-                    <span className="text-[10px] font-bold hidden sm:block" style={{ color: 'rgba(255,255,255,0.9)', maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {[user?.prenom, user?.nom].filter(Boolean).join(' ') || user?.nom || 'Gestionnaire'}
-                    </span>
-                    <span className="text-[9px] hidden sm:flex items-center gap-1" style={{ color: ORANGE }}>
-                      <Shield className="w-2.5 h-2.5" /> Mon profil
-                    </span>
-                  </div>
-                </button>
-              </div>
+              <button
+                onClick={() => setShowProfile(true)}
+                className="flex items-center rounded-full transition-all"
+                style={{ padding: '4px 10px 4px 4px', border: `1.5px solid ${ORANGE}44`, background: `${ORANGE}10`, cursor: 'pointer', gap: 6 }}
+              >
+                <Avatar name={[user?.prenom, user?.nom].filter(Boolean).join(' ') || user?.nom || 'B2B'} size={30} />
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', lineHeight: 1 }}>
+                  <span className="text-[10px] font-bold hidden sm:block" style={{ color: TEXT, maxWidth: 80, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {[user?.prenom, user?.nom].filter(Boolean).join(' ') || user?.nom || 'Gestionnaire'}
+                  </span>
+                  <span className="text-[9px] hidden sm:flex items-center gap-1" style={{ color: ORANGE }}>
+                    <Shield className="w-2.5 h-2.5" /> Mon profil
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         </header>
