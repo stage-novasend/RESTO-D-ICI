@@ -1739,14 +1739,10 @@ export default function ClientDashboard() {
               onClick={() => setSideOpen(true)}>
               <MenuIcon className="w-4 h-4 text-gray-500" />
             </button>
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: ACCENT, lineHeight: 1 }}>
-                Espace client
-              </p>
-              <p className="text-[13px] font-bold" style={{ color: '#1A0C00', lineHeight: 1.3 }}>
-                {TABS.find(t => t.key === tab)?.label || 'Mon compte'}
-              </p>
-            </div>
+            {/* Tab name — mobile only (sidebar masquée) */}
+            <p className="lg:hidden text-[13px] font-bold" style={{ color: '#1A0C00' }}>
+              {TABS.find(t => t.key === tab)?.label || 'Mon compte'}
+            </p>
           </div>
 
           <div className="flex items-center gap-2">
