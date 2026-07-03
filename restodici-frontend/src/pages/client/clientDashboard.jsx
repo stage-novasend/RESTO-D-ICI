@@ -29,15 +29,15 @@ import mtnMomoLogo      from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo    from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
-/* ── Palette — alignée sur Home.jsx ── */
-const ACCENT       = '#EA580C';
-const ACCENT_DARK  = '#C2410C';
-const ACCENT_LIGHT = '#FFF5E8';
+/* ── Palette espace client — vert naturel / humain ── */
+const ACCENT       = '#16A34A';   // vert-600 — principal
+const ACCENT_DARK  = '#15803D';   // vert-700 — hover / foncé
+const ACCENT_LIGHT = '#F0FDF4';   // vert-50  — fonds légers
 const SURFACE      = '#FFFFFF';
-const BORDER       = 'rgba(0,0,0,0.09)';
-const NAVY         = '#1A0C00';
+const BORDER       = 'rgba(0,0,0,0.08)';
+const NAVY         = '#052e16';   // vert très sombre — titres
 const NAVY2        = '#374151';
-const BG           = '#F9FAFB';
+const BG           = '#FFFFFF';
 const RED          = '#EF4444';
 
 const ORDER_STATUS = {
@@ -494,7 +494,12 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
 
       {/* ── Hero Banner ─────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl"
-        style={{ background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT_DARK} 100%)`, boxShadow: `0 8px 40px ${ACCENT}44` }}>
+        style={{ background: `linear-gradient(135deg, #166534 0%, #16A34A 60%, #22C55E 100%)`, boxShadow: `0 8px 40px rgba(22,163,74,0.35)` }}>
+
+        {/* Cercles décoratifs — ambiance organique */}
+        <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -60, left: -20, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 20, right: 100, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
 
         <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
           {/* Avatar */}
@@ -503,38 +508,38 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
               style={{ backdropFilter: 'blur(8px)' }}>
               {initials}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-400 border-2 border-white" />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white" style={{ background: '#4ADE80' }} />
           </div>
 
           {/* Text */}
           <div className="flex-1">
-            <p className="text-white/70 text-sm font-semibold uppercase tracking-widest mb-1">{greeting} 👋</p>
+            <p className="text-white/70 text-sm font-semibold uppercase tracking-widest mb-1">{greeting} 🌿</p>
             <h2 className="text-white font-extrabold text-2xl sm:text-3xl mb-2" style={{ letterSpacing: '-0.02em' }}>
               {firstName} !
             </h2>
             <p className="text-white/75 text-sm max-w-md">
-              Retrouvez vos commandes, gérez votre profil et suivez vos dépenses en temps réel.
+              Vos plats préférés à portée de main. Commandez, suivez, savourez — simplement.
             </p>
           </div>
 
           {/* CTA */}
           <Link to="/menu"
-            className="shrink-0 flex items-center gap-2 bg-white rounded-2xl px-6 py-3 font-extrabold text-sm transition hover:shadow-xl"
-            style={{ color: ACCENT, textDecoration: 'none' }}>
+            className="shrink-0 flex items-center gap-2 rounded-2xl px-6 py-3 font-extrabold text-sm transition hover:shadow-xl"
+            style={{ background: 'rgba(255,255,255,0.95)', color: ACCENT_DARK, textDecoration: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
             <ChefHat className="w-4 h-4" /> Commander
           </Link>
         </div>
 
         {/* Stats strip */}
-        <div className="relative grid grid-cols-3 divide-x border-t mx-0"
-          style={{ borderColor: 'rgba(255,255,255,0.2)', borderTop: '1px solid rgba(255,255,255,0.2)', divideColor: 'rgba(255,255,255,0.2)' }}>
+        <div className="relative grid grid-cols-3"
+          style={{ borderTop: '1px solid rgba(255,255,255,0.18)' }}>
           {[
             { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length, icon: Clock },
             { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length,     icon: CheckCircle },
             { label: 'Dépensé',  value: loadingOrders ? '—' : `${formatFCFA(totalSpent)}`, icon: Wallet },
           ].map((s, i) => (
             <div key={i} className="px-4 sm:px-6 py-4 flex flex-col items-center text-center"
-              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
+              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.15)' : 'none' }}>
               <s.icon className="w-4 h-4 text-white/60 mb-1.5" />
               <p className="text-white font-extrabold text-xl sm:text-2xl leading-none">
                 {s.value}
@@ -1669,7 +1674,7 @@ export default function ClientDashboard() {
     ...(clientModules.messaging?.enabled ? [{ key: 'messaging', label: 'Messages',  icon: MessageSquare }] : []),
   ];
 
-  /* ── Sidebar nav component — fond blanc, accent orange ── */
+  /* ── Sidebar nav component — fond blanc, accent vert ── */
   const Sidebar = ({ mobile = false }) => (
     <div className="flex flex-col h-full" style={{ background: '#fff', borderRight: '1px solid rgba(0,0,0,0.08)' }}>
       {/* Brand */}
