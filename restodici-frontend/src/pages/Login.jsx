@@ -404,7 +404,7 @@ export default function Login() {
                 <Link
                   to="/register"
                   className="font-semibold hover:underline"
-                  style={{ color: '#EA580C' }}
+                  style={{ color: '#16A34A', fontWeight: 700 }}
                 >
                   S'inscrire
                 </Link>

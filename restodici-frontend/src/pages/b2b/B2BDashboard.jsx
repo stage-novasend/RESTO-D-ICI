@@ -20,8 +20,8 @@ import { buildSyscohadaBlob, buildFactureBlob } from '../../utils/syscohada-pdf'
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const BG       = '#F5F6F8';      // fond principal
 const CARD     = '#FFFFFF';
-const NAVY     = '#0B4A33';      // sidebar & header — vert forêt
-const NAVY2    = '#155C40';      // secondary dark green
+const NAVY     = '#111827';      // dark principal
+const NAVY2    = '#1F2937';      // dark secondaire
 const TEXT     = '#111827';
 const MUTED    = '#6B7280';
 const FAINT    = '#6B7280';
@@ -32,9 +32,9 @@ const ORANGE   = '#EA580C';      // CTA principal standard
 const ORANGE_L = '#FFF0DF';      // fond orange léger
 const ORANGE_D = '#C2410C';      // orange foncé hover
 
-const GREEN    = '#16A34A';      // exports PDF / succès / confirmé
-const GREEN_L  = '#DCFCE7';      // fond vert léger
-const GREEN_D  = '#15803D';      // vert foncé hover
+const GREEN    = '#EA580C';      // statuts positifs (alias orange)
+const GREEN_L  = '#FFF0DF';      // fond statut positif
+const GREEN_D  = '#C2410C';      // foncé hover
 
 const RED      = '#DC2626';      // actions risquées (supprimer, déconnexion, bloquer)
 const RED_L    = '#FEF2F2';      // fond rouge léger
@@ -59,12 +59,12 @@ function downloadBlob(blob, name) {
 const STATUS = {
   EN_ATTENTE:     { label: 'En attente',     color: AMBER,    bg: AMBER_L,  dot: '#FBBF24' },
   RECUE:          { label: 'Reçue',          color: '#2563EB', bg: '#EFF6FF', dot: '#60A5FA' },
-  CONFIRMEE:      { label: 'Confirmée',      color: GREEN,    bg: GREEN_L,  dot: '#34D399' },
+  CONFIRMEE:      { label: 'Confirmée',      color: GREEN,    bg: GREEN_L,  dot: '#F59E0B' },
   EN_PREP:        { label: 'En préparation', color: AMBER,    bg: AMBER_L,  dot: '#FBBF24' },
   EN_PREPARATION: { label: 'En préparation', color: AMBER,    bg: AMBER_L,  dot: '#FBBF24' },
-  PRETE:          { label: 'Prête',          color: GREEN,    bg: GREEN_L,  dot: '#34D399' },
+  PRETE:          { label: 'Prête',          color: GREEN,    bg: GREEN_L,  dot: '#F59E0B' },
   EN_LIVRAISON:   { label: 'En livraison',   color: '#7C3AED', bg: '#F5F3FF', dot: '#A78BFA' },
-  LIVREE:         { label: 'Livrée',         color: GREEN,    bg: GREEN_L,  dot: '#34D399' },
+  LIVREE:         { label: 'Livrée',         color: GREEN,    bg: GREEN_L,  dot: '#F59E0B' },
   ANNULEE:        { label: 'Annulée',        color: RED,      bg: RED_L,    dot: '#F87171' },
 };
 const ACTIVE = ['EN_ATTENTE','RECUE','CONFIRMEE','EN_PREP','EN_PREPARATION','PRETE','EN_LIVRAISON'];
@@ -190,7 +190,7 @@ function StatusPill({ statut }) {
 function BudgetBar({ spent, budget }) {
   if (!budget) return null;
   const pct = Math.min(100, Math.round((spent / budget) * 100));
-  const color = pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#16A34A';
+  const color = pct >= 90 ? '#DC2626' : pct >= 70 ? '#D97706' : '#EA580C';
   return (
     <div>
       <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
@@ -204,7 +204,7 @@ function BudgetBar({ spent, budget }) {
             ? 'linear-gradient(90deg, #EF4444, #DC2626)'
             : pct >= 70
             ? 'linear-gradient(90deg, #F59E0B, #D97706)'
-            : 'linear-gradient(90deg, #22C55E, #16A34A)',
+            : 'linear-gradient(90deg, #EA580C, #EA580C)',
           transition: 'width 0.6s cubic-bezier(0.4, 0, 0.2, 1)',
         }} />
       </div>
@@ -680,7 +680,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
             {isLastDayOfMonth ? (
               <button onClick={onDownload} disabled={downloading}
                 className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg,#16A34A,#15803D)', opacity: downloading ? 0.7 : 1 }}>
+                style={{ background: 'linear-gradient(135deg,#EA580C,#C2410C)', opacity: downloading ? 0.7 : 1 }}>
                 {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 {downloading ? 'Génération…' : 'Télécharger PDF'}
               </button>
@@ -781,8 +781,8 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                             <td style={{ padding: '9px 12px', color: '#6B7280' }}>{c.poste || '—'}</td>
                             <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111827' }}>{fcfa(bgt)}</td>
                             <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111827' }}>{fcfa(dep)}</td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 600, color: sol > 0 ? '#16A34A' : '#DC2626' }}>{fcfa(sol)}</td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: pct >= 100 ? '#DC2626' : pct >= 80 ? '#D97706' : '#16A34A' }}>{pct} %</td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 600, color: sol > 0 ? '#EA580C' : '#DC2626' }}>{fcfa(sol)}</td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: pct >= 100 ? '#DC2626' : pct >= 80 ? '#D97706' : '#EA580C' }}>{pct} %</td>
                           </tr>
                         );
                       })}
@@ -798,7 +798,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                             <td style={{ padding: '9px 12px' }}></td>
                             <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111827' }}>{fcfa(tb)}</td>
                             <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111827' }}>{fcfa(td)}</td>
-                            <td style={{ padding: '9px 12px', textAlign: 'right', color: ts > 0 ? '#16A34A' : '#DC2626' }}>{fcfa(ts)}</td>
+                            <td style={{ padding: '9px 12px', textAlign: 'right', color: ts > 0 ? '#EA580C' : '#DC2626' }}>{fcfa(ts)}</td>
                             <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111827' }}>{tp} %</td>
                           </tr>
                         );
@@ -843,7 +843,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                             <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: '#111827' }}>{fcfa(ttc)}</td>
                             <td style={{ padding: '9px 12px' }}>
                               <span className="px-2.5 py-1 rounded-full text-[10px] font-bold"
-                                    style={{ background: paid ? '#DCFCE7' : '#FFFBEB', color: paid ? '#15803D' : '#D97706' }}>
+                                    style={{ background: paid ? '#FFF0DF' : '#FFFBEB', color: paid ? '#C2410C' : '#D97706' }}>
                                 {paid ? 'PAYÉE' : 'EN ATTENTE'}
                               </span>
                             </td>
@@ -914,6 +914,7 @@ export default function B2BDashboard() {
   const cached = readCache(uid);
 
   const [tab, setTab]               = useState('overview');
+  const [settingsTab, setSettingsTab] = useState('profil');
   const [sideOpen, setSideOpen]     = useState(false);
   const [dashboard, setDashboard]   = useState(cached?.dashboard || null);
   const [compte, setCompte]         = useState(cached?.compte || null);
@@ -1464,7 +1465,7 @@ export default function B2BDashboard() {
             <div className="mb-4 flex items-center gap-3 px-5 py-4 rounded-2xl border"
               style={{
                 background: paymentBanner.type === 'success' ? GREEN_L : AMBER_L,
-                borderColor: paymentBanner.type === 'success' ? '#BBF7D0' : '#FDE68A',
+                borderColor: paymentBanner.type === 'success' ? '#FFE4CC' : '#FDE68A',
               }}>
               <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
                 style={{ background: paymentBanner.type === 'success' ? GREEN : AMBER }}>
@@ -1480,7 +1481,7 @@ export default function B2BDashboard() {
                     : 'Paiement annulé — la facture reste en attente'}
                 </p>
                 <p className="text-[11px] mt-0.5"
-                  style={{ color: paymentBanner.type === 'success' ? '#15803D' : '#92400E' }}>
+                  style={{ color: paymentBanner.type === 'success' ? '#C2410C' : '#92400E' }}>
                   {paymentBanner.type === 'success'
                     ? 'Le reçu PDF est maintenant disponible en téléchargement'
                     : 'Vous pouvez réessayer le paiement depuis l\'onglet Facturation'}
@@ -1578,7 +1579,7 @@ export default function B2BDashboard() {
                     <div className="flex flex-wrap gap-3">
                       <span className="px-3 py-1.5 rounded-full text-[11px] font-bold"
                         style={{
-                          background: budgetPct > 85 ? RED_L : budgetPct > 65 ? ORANGE_L : '#DCFCE7',
+                          background: budgetPct > 85 ? RED_L : budgetPct > 65 ? ORANGE_L : '#FFF0DF',
                           color: budgetPct > 85 ? RED : budgetPct > 65 ? ORANGE_D : GREEN,
                         }}>
                         Budget utilisé : {budgetPct}%
@@ -1610,7 +1611,7 @@ export default function B2BDashboard() {
                                 ? 'linear-gradient(90deg,#EF4444,#F87171)'
                                 : budgetPct > 65
                                   ? `linear-gradient(90deg,${ORANGE},#FFA040)`
-                                  : 'linear-gradient(90deg,#16A34A,#4ADE80)',
+                                  : 'linear-gradient(90deg,#EA580C,#F59E0B)',
                             }} />
                         </div>
                       </div>
@@ -2461,7 +2462,7 @@ export default function B2BDashboard() {
                             onClick={() => setViewingFacture(f)}
                             className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[12px] font-semibold transition hover:opacity-80"
                             style={{
-                              borderColor: isPaid ? '#BBF7D0' : BORDER,
+                              borderColor: isPaid ? '#FFE4CC' : BORDER,
                               background: isPaid ? GREEN_L : BG,
                               color: isPaid ? GREEN : MUTED,
                             }}
@@ -2695,7 +2696,7 @@ export default function B2BDashboard() {
           {tab === 'settings' && (
             <div className="space-y-6 max-w-4xl">
 
-              {/* ── En-tête */}
+              {/* En-tête */}
               <div className="flex items-center justify-between gap-4">
                 <div>
                   <h2 className="text-xl font-bold" style={{ color: TEXT }}>Paramètres</h2>
@@ -2708,79 +2709,98 @@ export default function B2BDashboard() {
                 </button>
               </div>
 
-              <div className="grid gap-5 lg:grid-cols-[1.5fr_1fr]">
+              {/* Sidebar + contenu */}
+              <div className="flex gap-5 items-start">
 
-                {/* ── Colonne gauche */}
-                <div className="space-y-5">
-
-                  {/* Profil */}
-                  <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
-                    <div className="flex items-center gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
-                      <Avatar name={user?.nom || 'B2B'} size={52} />
-                      <div>
-                        <p className="text-base font-bold" style={{ color: TEXT }}>{user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (user?.nom || 'Gestionnaire')}</p>
-                        <p className="text-[12px] mt-0.5" style={{ color: FAINT }}>{user?.email || ''}</p>
-                        <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
-                          style={{ background: `${ORANGE}18`, color: ORANGE }}>
-                          Gestionnaire B2B
-                        </span>
-                      </div>
-                    </div>
-                    <form onSubmit={handleProfileSave} className="p-6 space-y-4">
-                      <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: FAINT }}>Informations personnelles</p>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {[
-                          { k: 'prenom',    label: 'Prénom',     type: 'text'  },
-                          { k: 'nom',       label: 'Nom',        type: 'text'  },
-                          { k: 'email',     label: 'Email',      type: 'email' },
-                          { k: 'telephone', label: 'Téléphone',  type: 'tel'   },
-                        ].map(f => (
-                          <div key={f.k} className={f.k === 'email' ? 'sm:col-span-2' : ''}>
-                            <label className="block text-[11px] font-bold mb-1.5" style={{ color: MUTED }}>{f.label}</label>
-                            <input value={profileForm[f.k] || ''} type={f.type}
-                              onChange={e => setProfileForm(p => ({ ...p, [f.k]: e.target.value }))}
-                              className="w-full rounded-xl px-3.5 py-3 text-sm outline-none transition"
-                              style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }} />
-                          </div>
-                        ))}
-                      </div>
-                      {profileMsg && (
-                        <div className="flex items-center gap-2 px-4 py-3 rounded-xl"
-                          style={{ background: profileMsg.includes('Erreur') ? RED_L : GREEN_L, border: `1px solid ${profileMsg.includes('Erreur') ? '#FECACA' : '#BBF7D0'}` }}>
-                          {profileMsg.includes('Erreur')
-                            ? <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: RED }} />
-                            : <CheckCircle className="w-3.5 h-3.5 shrink-0" style={{ color: GREEN }} />}
-                          <p className="text-xs font-semibold" style={{ color: profileMsg.includes('Erreur') ? RED : GREEN }}>{profileMsg}</p>
-                        </div>
-                      )}
-                      <button type="submit"
-                        className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
-                        style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, boxShadow: `0 2px 8px ${ORANGE}40` }}>
-                        Enregistrer les modifications
+                {/* Sidebar 160px */}
+                <div className="shrink-0 rounded-2xl overflow-hidden" style={{ width: 160, background: '#F4FBF7', border: `1px solid ${BORDER}` }}>
+                  {[
+                    { id: 'profil',     label: 'Profil',      icon: '👤' },
+                    { id: 'entreprise', label: 'Entreprise',  icon: '🏢' },
+                    { id: 'securite',   label: 'Sécurité',    icon: '🔒' },
+                    { id: 'rapports',   label: 'Rapports',    icon: '📊' },
+                  ].map(t => {
+                    const isActive = settingsTab === t.id;
+                    return (
+                      <button key={t.id} onClick={() => setSettingsTab(t.id)}
+                        className="w-full flex items-center gap-2 px-3 py-3 text-left text-[12px] font-semibold transition-colors"
+                        style={{
+                          background: isActive ? '#E6F5EE' : 'transparent',
+                          color: isActive ? NAVY : MUTED,
+                          borderLeft: isActive ? `3px solid ${NAVY}` : '3px solid transparent',
+                        }}>
+                        <span>{t.icon}</span> {t.label}
                       </button>
-                    </form>
-                  </div>
-
-                  {/* Sécurité */}
-                  <SecurityPanel user={user} accentColor={ORANGE} />
+                    );
+                  })}
                 </div>
 
-                {/* ── Colonne droite */}
-                <div className="space-y-5">
+                {/* Panneau de contenu */}
+                <div className="flex-1 min-w-0">
 
-                  {/* Entreprise */}
-                  {compte && (
+                  {/* Onglet Profil */}
+                  {settingsTab === 'profil' && (
+                    <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+                      <div className="flex items-center gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
+                        <Avatar name={user?.nom || 'B2B'} size={52} />
+                        <div>
+                          <p className="text-base font-bold" style={{ color: TEXT }}>{user?.prenom ? `${user.prenom} ${user.nom || ''}`.trim() : (user?.nom || 'Gestionnaire')}</p>
+                          <p className="text-[12px] mt-0.5" style={{ color: FAINT }}>{user?.email || ''}</p>
+                          <span className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold"
+                            style={{ background: `${ORANGE}18`, color: ORANGE }}>
+                            Gestionnaire B2B
+                          </span>
+                        </div>
+                      </div>
+                      <form onSubmit={handleProfileSave} className="p-6 space-y-4">
+                        <p className="text-[11px] font-bold uppercase tracking-widest" style={{ color: FAINT }}>Informations personnelles</p>
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          {[
+                            { k: 'prenom',    label: 'Prénom',     type: 'text'  },
+                            { k: 'nom',       label: 'Nom',        type: 'text'  },
+                            { k: 'email',     label: 'Email',      type: 'email' },
+                            { k: 'telephone', label: 'Téléphone',  type: 'tel'   },
+                          ].map(f => (
+                            <div key={f.k} className={f.k === 'email' ? 'sm:col-span-2' : ''}>
+                              <label className="block text-[11px] font-bold mb-1.5" style={{ color: MUTED }}>{f.label}</label>
+                              <input value={profileForm[f.k] || ''} type={f.type}
+                                onChange={e => setProfileForm(p => ({ ...p, [f.k]: e.target.value }))}
+                                className="w-full rounded-xl px-3.5 py-3 text-sm outline-none transition"
+                                style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }} />
+                            </div>
+                          ))}
+                        </div>
+                        {profileMsg && (
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl"
+                            style={{ background: profileMsg.includes('Erreur') ? RED_L : GREEN_L, border: `1px solid ${profileMsg.includes('Erreur') ? '#FECACA' : '#FFE4CC'}` }}>
+                            {profileMsg.includes('Erreur')
+                              ? <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: RED }} />
+                              : <CheckCircle className="w-3.5 h-3.5 shrink-0" style={{ color: GREEN }} />}
+                            <p className="text-xs font-semibold" style={{ color: profileMsg.includes('Erreur') ? RED : GREEN }}>{profileMsg}</p>
+                          </div>
+                        )}
+                        <button type="submit"
+                          className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                          style={{ background: `linear-gradient(135deg, ${NAVY}, ${NAVY2})`, boxShadow: `0 2px 8px ${NAVY}40` }}>
+                          Enregistrer les modifications
+                        </button>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Onglet Entreprise */}
+                  {settingsTab === 'entreprise' && compte && (
                     <div className="rounded-2xl p-6" style={{ background: CARD, boxShadow: SH2 }}>
-                      <p className="text-[11px] font-bold uppercase tracking-widest mb-4" style={{ color: FAINT }}>Entreprise</p>
+                      <p className="text-[11px] font-bold uppercase tracking-widest mb-4" style={{ color: FAINT }}>Informations entreprise</p>
                       {[
                         { label: 'Raison sociale', value: compte.raisonSociale },
-                        { label: 'Secteur', value: compte.secteurActivite },
-                        { label: 'RCCM', value: compte.numeroRCCM },
-                        { label: 'NIF', value: compte.numeroContribuable },
-                        { label: 'Budget mensuel', value: formatFCFA(compte.budgetMensuel || 0) },
-                        { label: 'Collaborateurs', value: collabs.length ? `${collabs.length} membre${collabs.length > 1 ? 's' : ''}` : null },
+                        { label: 'Secteur',         value: compte.secteurActivite },
+                        { label: 'RCCM',            value: compte.numeroRCCM },
+                        { label: 'NIF',             value: compte.numeroContribuable },
+                        { label: 'Budget mensuel',  value: formatFCFA(compte.budgetMensuel || 0) },
+                        { label: 'Collaborateurs',  value: collabs.length ? `${collabs.length} membre${collabs.length > 1 ? 's' : ''}` : null },
                       ].filter(r => r.value).map(r => (
-                        <div key={r.label} className="flex items-center justify-between py-2.5"
+                        <div key={r.label} className="flex items-center justify-between py-3"
                           style={{ borderBottom: `1px solid ${BORDER}` }}>
                           <p className="text-[12px]" style={{ color: MUTED }}>{r.label}</p>
                           <p className="text-[13px] font-semibold" style={{ color: TEXT }}>{r.value}</p>
@@ -2788,47 +2808,55 @@ export default function B2BDashboard() {
                       ))}
                     </div>
                   )}
-
-                  {/* Rapport SYSCOHADA */}
-                  <div className="rounded-2xl p-6" style={{ background: CARD, boxShadow: SH2 }}>
-                    <div className="flex items-center gap-3 mb-4">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_L }}>
-                        <FileText className="w-5 h-5" style={{ color: GREEN }} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-bold" style={{ color: TEXT }}>Rapport SYSCOHADA</p>
-                        <p className="text-[11px]" style={{ color: FAINT }}>TVA 18% · Norme OHADA · Côte d'Ivoire</p>
-                      </div>
+                  {settingsTab === 'entreprise' && !compte && (
+                    <div className="rounded-2xl p-6 text-center" style={{ background: CARD, boxShadow: SH2 }}>
+                      <p className="text-sm" style={{ color: FAINT }}>Aucune information entreprise disponible.</p>
                     </div>
+                  )}
 
-                    {/* Voir — toujours disponible */}
-                    <button onClick={() => setViewingSyscohada(true)}
-                      className="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition hover:opacity-80 mb-3"
-                      style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }}>
-                      <Eye className="w-4 h-4" /> Consulter le rapport
-                    </button>
+                  {/* Onglet Sécurité */}
+                  {settingsTab === 'securite' && (
+                    <SecurityPanel user={user} accentColor={NAVY} />
+                  )}
 
-                    {/* Télécharger — fin de mois uniquement */}
-                    {isLastDayOfMonth ? (
-                      <button onClick={downloadSyscohadaReport} disabled={downloading}
-                        className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
-                        style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, opacity: downloading ? 0.7 : 1 }}>
-                        {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                        {downloading ? 'Génération…' : 'Télécharger (PDF)'}
-                      </button>
-                    ) : (
-                      <div className="rounded-xl p-3.5 flex items-center gap-3"
-                        style={{ background: AMBER_L, border: `1px solid #FDE68A` }}>
-                        <Clock className="w-4 h-4 shrink-0" style={{ color: AMBER }} />
+                  {/* Onglet Rapports */}
+                  {settingsTab === 'rapports' && (
+                    <div className="rounded-2xl p-6" style={{ background: CARD, boxShadow: SH2 }}>
+                      <div className="flex items-center gap-3 mb-5">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_L }}>
+                          <FileText className="w-5 h-5" style={{ color: GREEN }} />
+                        </div>
                         <div>
-                          <p className="text-[12px] font-bold" style={{ color: AMBER }}>Téléchargement le {lastDayDisplay}</p>
-                          <p className="text-[11px]" style={{ color: '#92400E' }}>
-                            {daysUntilExport > 1 ? `encore ${daysUntilExport} jours` : 'disponible demain'} · Format PDF OHADA
-                          </p>
+                          <p className="text-sm font-bold" style={{ color: TEXT }}>Rapport SYSCOHADA</p>
+                          <p className="text-[11px]" style={{ color: FAINT }}>TVA 18% · Norme OHADA · Côte d'Ivoire</p>
                         </div>
                       </div>
-                    )}
-                  </div>
+                      <button onClick={() => setViewingSyscohada(true)}
+                        className="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition hover:opacity-80 mb-3"
+                        style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }}>
+                        <Eye className="w-4 h-4" /> Consulter le rapport
+                      </button>
+                      {isLastDayOfMonth ? (
+                        <button onClick={downloadSyscohadaReport} disabled={downloading}
+                          className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
+                          style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, opacity: downloading ? 0.7 : 1 }}>
+                          {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                          {downloading ? 'Génération…' : 'Télécharger (PDF)'}
+                        </button>
+                      ) : (
+                        <div className="rounded-xl p-3.5 flex items-center gap-3"
+                          style={{ background: AMBER_L, border: `1px solid #FDE68A` }}>
+                          <Clock className="w-4 h-4 shrink-0" style={{ color: AMBER }} />
+                          <div>
+                            <p className="text-[12px] font-bold" style={{ color: AMBER }}>Téléchargement le {lastDayDisplay}</p>
+                            <p className="text-[11px]" style={{ color: '#92400E' }}>
+                              {daysUntilExport > 1 ? `encore ${daysUntilExport} jours` : 'disponible demain'} · Format PDF OHADA
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                 </div>
               </div>

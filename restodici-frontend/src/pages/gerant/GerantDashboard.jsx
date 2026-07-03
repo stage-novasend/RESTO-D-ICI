@@ -3164,7 +3164,7 @@ function SettingsTab({ restaurantId, user }) {
         <div className="xl:col-span-2 space-y-6">
 
           {/* Profil */}
-          <div id="sec-profil" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+          <div id="sec-profil" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-profil' ? '' : 'none' }}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#FF8C00' }}>Identité</p>
               <h3 className="mt-1 text-base font-bold text-[#0F172A]">Profil du restaurant</h3>
@@ -3236,7 +3236,7 @@ function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* Horaires */}
-          <div id="sec-horaires" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+          <div id="sec-horaires" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-horaires' ? '' : 'none' }}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#FF8C00' }}>Disponibilité</p>
               <h3 className="mt-1 text-base font-bold text-[#0F172A]">Horaires d'ouverture</h3>
@@ -3264,7 +3264,7 @@ function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* Zones de livraison */}
-          <div id="sec-livraison" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+          <div id="sec-livraison" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-livraison' ? '' : 'none' }}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#FF8C00' }}>Logistique</p>
               <h3 className="mt-1 text-base font-bold text-[#0F172A]">Zones de livraison</h3>
@@ -3315,7 +3315,7 @@ function SettingsTab({ restaurantId, user }) {
         <div className="space-y-5">
 
           {/* Apparence */}
-          <div id="sec-apparence" className="rounded-2xl border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+          <div id="sec-apparence" className="rounded-2xl border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-apparence' ? '' : 'none' }}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: '#FF8C00' }}>Interface</p>
@@ -3331,7 +3331,7 @@ function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* Comptes staff */}
-          <div id="sec-staff" className="rounded-2xl border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+          <div id="sec-staff" className="rounded-2xl border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-staff' ? '' : 'none' }}>
             <div className="mb-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#FF8C00' }}>Équipe</p>
               <h3 className="mt-1 text-sm font-bold text-[#0F172A]">Comptes staff</h3>
@@ -3425,7 +3425,7 @@ function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* Sécurité */}
-          <div id="sec-securite" className="rounded-2xl border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+          <div id="sec-securite" className="rounded-2xl border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: (activeSection === 'sec-securite' || activeSection === 'sec-qr') ? '' : 'none' }}>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#FF8C00' }}>Sécurité</p>
               <h3 className="mt-1 text-sm font-bold text-[#0F172A]">Authentification & Protection</h3>
@@ -3581,7 +3581,7 @@ function SettingsTab({ restaurantId, user }) {
             </div>
 
             {/* ── QR Codes Tables ── */}
-            <div id="sec-qr" className="rounded-2xl border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+            <div id="sec-qr" className="rounded-2xl border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-qr' ? '' : 'none' }}>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <QrCode className="h-4 w-4" style={{ color: '#FF8C00' }} />

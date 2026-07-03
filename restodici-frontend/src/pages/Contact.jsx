@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UtensilsCrossed, Mail, Phone, MapPin, ArrowRight, Send, CheckCircle } from 'lucide-react';
+import MiniFooter from '../components/shared/MiniFooter';
 
 const T = { accent: '#EA580C', accentD: '#C2410C', bg: '#FFFAF3', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
 const serif = "'Playfair Display', Georgia, serif";
@@ -21,19 +22,6 @@ function MiniNav() {
         </Link>
       </div>
     </nav>
-  );
-}
-
-function MiniFooter() {
-  return (
-    <footer style={{ background: '#0A0F1E', padding: '28px 32px', textAlign: 'center' }}>
-      <p style={{ fontFamily: sans, fontSize: 12, color: 'rgba(255,255,255,0.25)', margin: 0 }}>
-        © 2026 Resto d'ici · Abidjan, Côte d'Ivoire ·{' '}
-        <Link to="/legal" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>Mentions légales</Link>
-        {' · '}
-        <Link to="/privacy" style={{ color: 'rgba(255,255,255,0.35)', textDecoration: 'none' }}>Confidentialité</Link>
-      </p>
-    </footer>
   );
 }
 

@@ -200,7 +200,7 @@ function Nav() {
         </div>
         <div style={{ display:"flex",gap:10,alignItems:"center" }}>
           <a href="/login" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:scrolled?T.accent:"#fff", background:"transparent", border:`1.5px solid ${scrolled?T.accent:"rgba(255,255,255,0.55)"}` }}>Connexion</a>
-          <a href="/register" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:scrolled?T.accent:"#fff", background:"transparent", border:`1.5px solid ${scrolled?T.accent:"rgba(255,255,255,0.55)"}` }}>S'inscrire</a>
+          <a href="/register" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:"#fff", background:"#16A34A", border:"1.5px solid #16A34A", boxShadow:"0 4px 14px rgba(22,163,74,0.35)" }}>S'inscrire</a>
         </div>
       </div>
     </nav>
@@ -849,73 +849,145 @@ function Testimonials() {
   const items=[
     {
       q:"J'habite à Riviera 2 et je commandais toujours par téléphone — souvent le plat était épuisé. Avec RestoDici je vois en direct ce qui est dispo. Mon attiéké poisson braisé du vendredi arrive toujours chaud.",
-      name:"Rosine Akissi N'Dri", role:"Cliente — Riviera 2, Cocody", ini:"RA", c:T.accent, stars:5,
-      badge:"Client régulier", via:"Orange Money",
+      name:"Rosine Akissi N'Dri", role:"Cliente · Riviera 2, Cocody", ini:"RA", c:T.accent, stars:5,
+      badge:"Client régulier", via:"Orange Money", featured:true,
     },
     {
-      q:"On gère les repas de 60 commerciaux en déplacement. Avant c'était un chaos de tickets et de remboursements. Aujourd'hui le service comptabilité reçoit une facture consolidée chaque fin de mois. Conforme SYSCOHADA, enfin.",
-      name:"Kouadio Serge Brou", role:"DAF — Groupe Palmafrique, Plateau", ini:"KS", c:T.yellow, stars:5,
-      badge:"Compte Entreprise", via:"Virement mensuel",
+      q:"On gère les repas de 60 commerciaux en déplacement. Avant c'était un chaos de tickets et de remboursements. Aujourd'hui la compta reçoit une facture consolidée chaque mois. Conforme SYSCOHADA, enfin.",
+      name:"Kouadio Serge Brou", role:"DAF · Groupe Palmafrique, Plateau", ini:"KS", c:T.yellow, stars:5,
+      badge:"Compte Entreprise", via:"Virement mensuel", featured:false,
     },
     {
-      q:"Mon restaurant est devenu rentable depuis qu'on a activé le QR code. Les clients commandent eux-mêmes, les erreurs ont chuté. En 2 mois : +18% de ticket moyen et 0 facture d'imprimante pour les menus.",
-      name:"Patricia Adjoumani", role:"Gérante — Chez Patricia, Treichville", ini:"PA", c:T.accent, stars:5,
-      badge:"Partenaire Restaurateur", via:"Dashboard gérant",
+      q:"Mon restaurant est devenu rentable depuis qu'on a activé le QR code. Les clients commandent eux-mêmes, les erreurs ont chuté. En 2 mois : +18 % de ticket moyen et zéro imprimante de menus.",
+      name:"Patricia Adjoumani", role:"Gérante · Chez Patricia, Treichville", ini:"PA", c:T.accent, stars:5,
+      badge:"Partenaire Restaurateur", via:"Dashboard gérant", featured:false,
     },
     {
       q:"Je teste toujours avec Wave. Ici le paiement passe en 10 secondes, sans coupure, sans OTP foireux. Mon garba du midi est toujours là à l'heure. Les gars d'Abobo vous remercient.",
-      name:"Thierry Dié", role:"Chauffeur VTC — Abobo", ini:"TD", c:T.yellow, stars:5,
-      badge:"Client depuis le lancement", via:"Wave",
+      name:"Thierry Dié", role:"Chauffeur VTC · Abobo", ini:"TD", c:T.yellow, stars:5,
+      badge:"Client depuis le lancement", via:"Wave", featured:false,
     },
   ];
+
+  /* grande guillemet décorative */
+  const BigQuote = ({ color }) => (
+    <svg width="42" height="32" viewBox="0 0 42 32" fill="none" style={{ opacity:0.18, flexShrink:0 }}>
+      <path d="M0 32V19.2C0 8.53 6.4 2.13 19.2 0L21.3 3.84C15.57 5.33 12.27 8.53 11.4 13.44H18V32H0ZM23.7 32V19.2C23.7 8.53 30.1 2.13 42.9 0L45 3.84C39.27 5.33 35.97 8.53 35.1 13.44H41.7V32H23.7Z" fill={color}/>
+    </svg>
+  );
+
   return (
-    <section style={{ background:T.bg,padding:"120px 0" }}>
-      <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 48px" }}>
+    <section style={{ background:"#fff", padding:"120px 0", position:"relative", overflow:"hidden" }}>
+      {/* Fond décoratif subtil */}
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:4, background:`linear-gradient(90deg,${T.accent},${T.yellow},${T.accent})` }} />
+
+      <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 48px" }}>
+
+        {/* ─ En-tête ─ */}
         <Reveal>
-          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-end",marginBottom:60,flexWrap:"wrap",gap:20 }}>
+          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:64, flexWrap:"wrap", gap:20 }}>
             <div>
               <Chip color={T.accent}>Avis vérifiés</Chip>
-              <h2 style={{ fontFamily:serif,fontSize:"clamp(34px,4vw,52px)",color:T.dark,fontWeight:900,lineHeight:1.08,margin:0,letterSpacing:"-0.025em" }}>
-                Ils l'utilisent au <em style={{ color:T.accent }}>quotidien.</em>
+              <h2 style={{ fontFamily:serif, fontSize:"clamp(32px,4vw,52px)", color:T.dark, fontWeight:900, lineHeight:1.08, margin:"8px 0 0", letterSpacing:"-0.025em" }}>
+                Ils l'utilisent au <em style={{ color:T.accent, fontStyle:"italic" }}>quotidien.</em>
               </h2>
             </div>
-            <div style={{ textAlign:"right" }}>
-              <div style={{ display:"flex",gap:3,justifyContent:"flex-end",marginBottom:4 }}><Stars n={5}/></div>
-              <p style={{ fontFamily:sans,fontSize:16,fontWeight:700,color:T.dark,margin:"0 0 2px" }}>4.9 / 5</p>
-              <p style={{ fontFamily:sans,fontSize:12,color:T.mutedL,margin:0 }}>2 400+ avis vérifiés</p>
+            {/* Score global */}
+            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
+              <div style={{ display:"flex", gap:4 }}>
+                {Array.from({length:5}).map((_,i)=>(
+                  <svg key={i} width="22" height="22" viewBox="0 0 24 24" fill={T.yellow}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                ))}
+              </div>
+              <p style={{ fontFamily:sans, fontSize:22, fontWeight:900, color:T.dark, margin:0, letterSpacing:"-0.02em" }}>4,9 <span style={{ fontSize:14, fontWeight:500, color:T.mutedL }}>/&nbsp;5</span></p>
+              <p style={{ fontFamily:sans, fontSize:12, color:T.mutedL, margin:0 }}>2 400+ avis vérifiés</p>
             </div>
           </div>
         </Reveal>
-        <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:22 }}>
+
+        {/* ─ Grille ─ */}
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:24 }}>
           {items.map((t,i)=>(
-            <Reveal key={t.name} delay={i*80}>
-              <div className="rd-feat-card" style={{ background:T.card,border:`1px solid ${T.line}`,borderTop:`3px solid ${t.c}`,borderRadius:20,padding:"32px 30px",display:"flex",flexDirection:"column",boxShadow:T.shadowS,transition:"all .35s",height:"100%" }}>
-                {/* Header: badge + via */}
-                <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:18 }}>
-                  <span style={{ fontFamily:sans,fontSize:10,fontWeight:800,letterSpacing:"0.10em",textTransform:"uppercase",color:t.c,background:`${t.c}14`,padding:"4px 10px",borderRadius:6 }}>{t.badge}</span>
-                  <span style={{ fontFamily:sans,fontSize:11,color:T.mutedL,fontWeight:500 }}>via {t.via}</span>
+            <Reveal key={t.name} delay={i*90}>
+              <div className="rd-feat-card" style={{
+                background:"#fff",
+                border:`1px solid rgba(0,0,0,0.07)`,
+                borderRadius:24,
+                padding:"36px 32px 28px",
+                display:"flex", flexDirection:"column",
+                boxShadow:"0 2px 16px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04)",
+                transition:"all .3s",
+                height:"100%",
+                position:"relative",
+                overflow:"hidden",
+              }}>
+                {/* Barre couleur top */}
+                <div style={{ position:"absolute", top:0, left:0, right:0, height:3, background:t.c, borderRadius:"24px 24px 0 0" }} />
+
+                {/* Ligne supérieure : badge + guillemet */}
+                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
+                  <span style={{
+                    fontFamily:sans, fontSize:9, fontWeight:800, letterSpacing:"0.12em",
+                    textTransform:"uppercase", color:t.c,
+                    background:`${t.c}12`, padding:"5px 11px", borderRadius:99,
+                    border:`1px solid ${t.c}22`,
+                  }}>{t.badge}</span>
+                  <BigQuote color={t.c} />
                 </div>
-                {/* Stars */}
-                <div style={{ display:"flex",gap:3,marginBottom:14 }}><Stars n={t.stars}/></div>
-                {/* Quote */}
-                <p style={{ fontFamily:serif,fontSize:16,color:T.text,lineHeight:1.75,fontStyle:"italic",margin:"0 0 auto",fontWeight:400 }}>"{t.q}"</p>
-                {/* Author */}
-                <div style={{ display:"flex",alignItems:"center",gap:14,paddingTop:22,marginTop:22,borderTop:`1px solid ${T.line}` }}>
-                  <div style={{ width:44,height:44,borderRadius:"50%",background:`${t.c}18`,border:`2px solid ${t.c}30`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
-                    <span style={{ fontFamily:sans,fontSize:13,fontWeight:800,color:t.c }}>{t.ini}</span>
+
+                {/* Étoiles */}
+                <div style={{ display:"flex", gap:3, marginBottom:16 }}>
+                  {Array.from({length:t.stars}).map((_,si)=>(
+                    <svg key={si} width="16" height="16" viewBox="0 0 24 24" fill={T.yellow}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+                  ))}
+                </div>
+
+                {/* Citation */}
+                <p style={{
+                  fontFamily:serif, fontSize:15.5, color:"#2D2D2D",
+                  lineHeight:1.78, fontStyle:"italic", margin:"0 0 auto",
+                  fontWeight:400, flex:1,
+                }}>
+                  &ldquo;{t.q}&rdquo;
+                </p>
+
+                {/* Auteur */}
+                <div style={{ display:"flex", alignItems:"center", gap:14, paddingTop:24, marginTop:24, borderTop:`1px solid rgba(0,0,0,0.06)` }}>
+                  {/* Avatar */}
+                  <div style={{
+                    width:48, height:48, borderRadius:"50%", flexShrink:0,
+                    background:`linear-gradient(135deg, ${t.c}, ${t.c}BB)`,
+                    display:"flex", alignItems:"center", justifyContent:"center",
+                    boxShadow:`0 4px 12px ${t.c}44`,
+                  }}>
+                    <span style={{ fontFamily:sans, fontSize:15, fontWeight:900, color:"#fff", letterSpacing:"-0.02em" }}>{t.ini}</span>
                   </div>
-                  <div>
-                    <p style={{ fontFamily:sans,fontSize:14,fontWeight:700,color:T.dark,margin:"0 0 2px" }}>{t.name}</p>
-                    <p style={{ fontFamily:sans,fontSize:12,color:T.mutedL,margin:0 }}>{t.role}</p>
+                  <div style={{ flex:1 }}>
+                    <p style={{ fontFamily:sans, fontSize:14, fontWeight:800, color:T.dark, margin:"0 0 2px", letterSpacing:"-0.01em" }}>{t.name}</p>
+                    <p style={{ fontFamily:sans, fontSize:11, color:T.mutedL, margin:0, fontWeight:500 }}>{t.role}</p>
                   </div>
-                  <div style={{ marginLeft:"auto" }}>
-                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 0C4.48 0 0 4.48 0 10s4.48 10 10 10 10-4.48 10-10S15.52 0 10 0zm-1 14.5l-3.5-3.5 1.41-1.41L9 11.67l5.09-5.08 1.41 1.41L9 14.5z" fill={t.c} opacity="0.6"/></svg>
-                  </div>
+                  {/* Via */}
+                  <span style={{ fontFamily:sans, fontSize:10, fontWeight:700, color:"#fff", background:t.c, padding:"4px 10px", borderRadius:99, whiteSpace:"nowrap", flexShrink:0 }}>
+                    {t.via}
+                  </span>
                 </div>
               </div>
             </Reveal>
           ))}
         </div>
+
+        {/* ─ CTA bas ─ */}
+        <Reveal delay={200}>
+          <div style={{ textAlign:"center", marginTop:56 }}>
+            <p style={{ fontFamily:sans, fontSize:14, color:T.mutedL, margin:"0 0 16px" }}>
+              Rejoignez <strong style={{ color:T.dark }}>12 000+</strong> clients satisfaits
+            </p>
+            <a href="/register" style={{ display:"inline-flex", alignItems:"center", gap:8, fontFamily:sans, fontSize:14, fontWeight:700, color:"#fff", background:`linear-gradient(135deg,${T.accent},${T.accentD})`, padding:"13px 36px", borderRadius:50, textDecoration:"none", boxShadow:`0 8px 28px ${T.accent}44`, transition:"all .2s" }}>
+              Commencer gratuitement <ArrowRight size={15} />
+            </a>
+          </div>
+        </Reveal>
+
       </div>
     </section>
   );
@@ -1062,7 +1134,7 @@ function NewsletterSection() {
               <button
                 type="submit"
                 disabled={state === "loading"}
-                style={{ background: T.dark, color: "#fff", fontFamily: sans, fontSize: 13, fontWeight: 700, border: "none", cursor: state === "loading" ? "wait" : "pointer", padding: "0 28px", borderRadius: "0 50px 50px 0", whiteSpace: "nowrap", opacity: state === "loading" ? 0.7 : 1 }}
+                style={{ background: "#16A34A", color: "#fff", fontFamily: sans, fontSize: 13, fontWeight: 700, border: "none", cursor: state === "loading" ? "wait" : "pointer", padding: "0 28px", borderRadius: "0 50px 50px 0", whiteSpace: "nowrap", opacity: state === "loading" ? 0.7 : 1 }}
               >
                 {state === "loading" ? "…" : "S'inscrire"}
               </button>
@@ -1241,7 +1313,7 @@ function Footer() {
                   style={{ border:"none",outline:"none",background:"transparent",fontFamily:sans,fontSize:13,color:"#fff",width:200,padding:"12px 0" }}
                 />
               </div>
-              <button type="submit" style={{ background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",padding:"0 22px",whiteSpace:"nowrap" }}>
+              <button type="submit" style={{ background:"#16A34A",color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",padding:"0 22px",whiteSpace:"nowrap" }}>
                 S'inscrire
               </button>
             </form>
