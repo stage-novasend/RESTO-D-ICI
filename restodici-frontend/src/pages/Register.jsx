@@ -118,7 +118,7 @@ export default function Register() {
     : "Créer un compte";
 
   return (
-    <div className="min-h-screen min-h-dvh flex" style={{ background: '#F8FAFC' }}>
+    <div className="min-h-screen min-h-dvh flex" style={{ background: '#FFFFFF' }}>
 
       {/* ── Formulaire d'inscription — côté gauche ── */}
       <div className="flex-1 flex flex-col justify-center px-8 py-10 sm:px-12 lg:px-16 xl:px-24 overflow-y-auto">

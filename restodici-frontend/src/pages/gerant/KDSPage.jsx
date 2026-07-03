@@ -239,7 +239,7 @@ export default function KDSPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-amber-200 border-t-amber-600 rounded-full animate-spin" />
           <p className="text-slate-600 font-medium">Chargement du KDS...</p>
@@ -249,7 +249,7 @@ export default function KDSPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-6">
+    <div className="min-h-screen bg-white p-4 md:p-6">
       {/* Enhanced Header */}
       <header className="mb-8">
         <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">

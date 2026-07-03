@@ -124,11 +124,11 @@ html {
   scroll-behavior: smooth;           /* défilement fluide au clic sur ancre */
   text-size-adjust: 100%;            /* empêche iOS de grossir le texte à tort */
   -webkit-text-size-adjust: 100%;
-  background-color: #F2F3F7;         /* fond unifié — évite le flash blanc entre routes */
+  background-color: #FFFFFF;
 }
 
 body {
-  background-color: #F2F3F7;         /* idem — jamais de blanc nu entre navigations */
+  background-color: #FFFFFF;
   color: var(--color-text);
   font-family: 'Manrope', 'Inter', system-ui, sans-serif;
   font-weight: 600;

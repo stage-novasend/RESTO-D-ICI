@@ -17,7 +17,7 @@ import { getArticleImage } from '../utils/articleImage';
 
 /* ── Design tokens ── */
 const C = {
-  bg:     '#FFFAF3',
+  bg:     '#FFFFFF',
   card:   '#FFFFFF',
   accent: '#FF8C00',
   aD:     '#E07A00',

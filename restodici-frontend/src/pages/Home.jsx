@@ -10,7 +10,7 @@ import { menuAPI, newsletterAPI, api } from "../services/api";
 
 /* ─── Palette de couleurs ─── */
 const T = {
-  bg:      "#FFFAF3",
+  bg:      "#FFFFFF",
   bgAlt:   "#FFF5E8",
   surface: "#FFEFD8",
   dark:    "#1A0C00",

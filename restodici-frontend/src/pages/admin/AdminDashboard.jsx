@@ -3165,7 +3165,7 @@ export default function AdminDashboard() {
   const goTab = (id) => navigate(id === 'overview' ? '/admin' : `/admin?tab=${id}`);
 
   return (
-    <div style={{ background: '#F7F8FA', minHeight: '100vh', padding: '24px 16px' }}>
+    <div style={{ background: '#FFFFFF', minHeight: '100vh', padding: '24px 16px' }}>
     <div style={{ maxWidth: 1300, margin: '0 auto' }}>
 
       {/* Header */}

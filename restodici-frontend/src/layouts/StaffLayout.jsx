@@ -28,7 +28,7 @@ const OG_G   = 'linear-gradient(135deg, #FF8C00 0%, #E07A00 100%)';
 const OG_L   = 'rgba(255,140,0,0.12)';
 const OG_L2  = 'rgba(255,140,0,0.08)';
 
-const PAGE_BG = '#F4F5F7';
+const PAGE_BG = '#FFFFFF';
 const CARD    = '#FFFFFF';
 const NAVY    = '#111827';
 const BORDER  = '#E5E7EB';

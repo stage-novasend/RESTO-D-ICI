@@ -46,7 +46,7 @@ export default function AcceptInvitation() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#F9F7F5' }}>
+    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: '#FFFFFF' }}>
       <div className="w-full max-w-md">
 
         {/* Logo */}

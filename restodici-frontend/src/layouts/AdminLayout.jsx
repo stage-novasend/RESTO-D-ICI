@@ -133,7 +133,7 @@ export default function AdminLayout() {
   const handleMouseLeave = useCallback(() => setMouseY(null), []);
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#EEF2F7' }}>
+    <div style={{ minHeight: '100dvh', background: '#FFFFFF' }}>
 
       <style>{`
         @keyframes dockIn {
