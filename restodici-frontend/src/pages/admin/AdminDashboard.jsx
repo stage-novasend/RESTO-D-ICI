@@ -1775,14 +1775,14 @@ function ConfigTab() {
           <div>
             <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 18px' }}>Identité légale</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              <Field label="Nom commercial"><Inp k="platform_nom" placeholder="Resto d'ici" /></Field>
-              <Field label="Adresse siège"><Inp k="platform_adresse" placeholder="Abidjan, Côte d'Ivoire" /></Field>
-              <Field label="NIF"><Inp k="platform_nif" placeholder="NIF : CI-ABJ-XXXX-XXX" /></Field>
-              <Field label="RCCM"><Inp k="platform_rccm" placeholder="RCCM : CI-ABJ-XXXX-X-XXX" /></Field>
+              {Field({ label: 'Nom commercial', children: Inp({ k: 'platform_nom', placeholder: "Resto d'ici" }) })}
+              {Field({ label: 'Adresse siège', children: Inp({ k: 'platform_adresse', placeholder: "Abidjan, Côte d'Ivoire" }) })}
+              {Field({ label: 'NIF', children: Inp({ k: 'platform_nif', placeholder: 'NIF : CI-ABJ-XXXX-XXX' }) })}
+              {Field({ label: 'RCCM', children: Inp({ k: 'platform_rccm', placeholder: 'RCCM : CI-ABJ-XXXX-X-XXX' }) })}
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              <Field label="Fuseau horaire"><Inp k="timezone" placeholder="Africa/Abidjan" /></Field>
-              <Field label="Devise"><Inp k="currency" placeholder="FCFA" /></Field>
+              {Field({ label: 'Fuseau horaire', children: Inp({ k: 'timezone', placeholder: 'Africa/Abidjan' }) })}
+              {Field({ label: 'Devise', children: Inp({ k: 'currency', placeholder: 'FCFA' }) })}
             </div>
             <SaveBtn onClick={saveSecurityFields} loading={saving.security} label="Enregistrer" />
           </div>
@@ -1793,11 +1793,11 @@ function ConfigTab() {
           <div>
             <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 18px' }}>Politiques d'accès</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              <Field label="JWT TTL"><Inp k="jwt_ttl_hours" type="number" placeholder="24" suffix="heures" /></Field>
-              <Field label="Coût bcrypt"><Inp k="bcrypt_cost" type="number" placeholder="12" /></Field>
-              <Field label="Rate limit /auth"><Inp k="rate_limit_auth" type="number" placeholder="10" suffix="req/min" /></Field>
-              <Field label="Rate limit global"><Inp k="rate_limit_global" type="number" placeholder="100" suffix="req/min" /></Field>
-              <Field label="Rétention backups"><Inp k="backup_retention_days" type="number" placeholder="90" suffix="jours" /></Field>
+              {Field({ label: 'JWT TTL', children: Inp({ k: 'jwt_ttl_hours', type: 'number', placeholder: '24', suffix: 'heures' }) })}
+              {Field({ label: 'Coût bcrypt', children: Inp({ k: 'bcrypt_cost', type: 'number', placeholder: '12' }) })}
+              {Field({ label: 'Rate limit /auth', children: Inp({ k: 'rate_limit_auth', type: 'number', placeholder: '10', suffix: 'req/min' }) })}
+              {Field({ label: 'Rate limit global', children: Inp({ k: 'rate_limit_global', type: 'number', placeholder: '100', suffix: 'req/min' }) })}
+              {Field({ label: 'Rétention backups', children: Inp({ k: 'backup_retention_days', type: 'number', placeholder: '90', suffix: 'jours' }) })}
             </div>
             <SaveBtn onClick={saveSecurityFields} loading={saving.security} label="Enregistrer" />
           </div>
@@ -1851,22 +1851,22 @@ function ConfigTab() {
         {cfgTab === 'compte' && (
           <div>
             <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 18px' }}>Mot de passe</p>
-            <Field label="Mot de passe actuel">
+            {Field({ label: 'Mot de passe actuel', children: (
               <input type="password" placeholder="••••••••" value={pwForm.current}
                 onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))}
                 style={{ ...inputStyle, color: '#0F172A', fontWeight: 500 }} />
-            </Field>
+            ) })}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              <Field label="Nouveau mot de passe">
+              {Field({ label: 'Nouveau mot de passe', children: (
                 <input type="password" placeholder="Min. 8 caractères" value={pwForm.next}
                   onChange={e => setPwForm(p => ({ ...p, next: e.target.value }))}
                   style={{ ...inputStyle, color: '#0F172A', fontWeight: 500 }} />
-              </Field>
-              <Field label="Confirmer">
+              ) })}
+              {Field({ label: 'Confirmer', children: (
                 <input type="password" placeholder="••••••••" value={pwForm.confirm}
                   onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))}
                   style={{ ...inputStyle, color: '#0F172A', fontWeight: 500 }} />
-              </Field>
+              ) })}
             </div>
             {pwMsg && (
               <div style={{ padding: '8px 12px', borderRadius: 8, background: pwMsg.ok ? '#DCFCE7' : '#FEE2E2', color: pwMsg.ok ? '#166534' : '#991B1B', fontSize: 12, fontWeight: 700, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1908,11 +1908,11 @@ function ConfigTab() {
                 <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#FFF5EB', border: '1px solid rgba(234,88,12,0.2)', borderRadius: 6, padding: '6px 10px', marginBottom: 12, wordBreak: 'break-all', color: '#EA580C', letterSpacing: '0.1em' }}>
                   {twoFAData.secret}
                 </div>
-                <Field label="Code de vérification">
+                {Field({ label: 'Code de vérification', children: (
                   <input type="text" inputMode="numeric" maxLength={6} placeholder="000000" value={twoFACode}
                     onChange={e => setTwoFACode(e.target.value.replace(/\D/g, ''))}
                     style={{ ...inputStyle, letterSpacing: '0.4em', fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#0F172A' }} />
-                </Field>
+                ) })}
                 <button onClick={handleEnable2FA} disabled={twoFASaving || twoFACode.length !== 6}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: (twoFASaving || twoFACode.length !== 6) ? 0.55 : 1 }}>
                   <Check style={{ width: 13, height: 13 }} />
@@ -2502,15 +2502,15 @@ function FournisseursTab() {
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 20, height: 20 }} /></button>
             </div>
             <div style={{ padding: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-              <Field label="Nom *" field="nom" placeholder="SYSCO Abidjan" />
-              <Field label="Contact" field="contact" placeholder="Jean Kouassi" />
-              <Field label="Téléphone" field="telephone" placeholder="+225 07 00 00 00" />
-              <Field label="Email" field="email" type="email" placeholder="fournisseur@email.com" />
+              {Field({ label: 'Nom *', field: 'nom', placeholder: 'SYSCO Abidjan' })}
+              {Field({ label: 'Contact', field: 'contact', placeholder: 'Jean Kouassi' })}
+              {Field({ label: 'Téléphone', field: 'telephone', placeholder: '+225 07 00 00 00' })}
+              {Field({ label: 'Email', field: 'email', type: 'email', placeholder: 'fournisseur@email.com' })}
               <div style={{ gridColumn: '1 / -1' }}>
-                <Field label="Adresse" field="adresse" placeholder="Zone Industrielle Vridi, Abidjan" />
+                {Field({ label: 'Adresse', field: 'adresse', placeholder: 'Zone Industrielle Vridi, Abidjan' })}
               </div>
-              <Field label="Délai livraison (jours)" field="delaiLivraison" type="number" placeholder="3" />
-              <Field label="Articles de référence" field="articlesRef" placeholder="Poulet, riz, légumes..." />
+              {Field({ label: 'Délai livraison (jours)', field: 'delaiLivraison', type: 'number', placeholder: '3' })}
+              {Field({ label: 'Articles de référence', field: 'articlesRef', placeholder: 'Poulet, riz, légumes...' })}
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Notes</label>
                 <textarea
@@ -3046,7 +3046,7 @@ function LivraisonsExtTab() {
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 20, height: 20 }} /></button>
             </div>
             <div style={{ padding: '24px 28px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
-              <Field label="Nom *" field="nom" placeholder="Yango Livraison" />
+              {Field({ label: 'Nom *', field: 'nom', placeholder: 'Yango Livraison' })}
               <div>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>Type *</label>
                 <select
@@ -3057,8 +3057,8 @@ function LivraisonsExtTab() {
                   {TYPE_LIVRAISON.map(t => <option key={t} value={t}>{t}</option>)}
                 </select>
               </div>
-              <Field label="URL API dispatch" field="apiUrl" placeholder="https://api.yango.com/v1" full />
-              <Field label="URL recherche livreurs" field="rechercheUrl" placeholder="https://api.dobi.ci/v1/drivers/available (optionnel)" full />
+              {Field({ label: 'URL API dispatch', field: 'apiUrl', placeholder: 'https://api.yango.com/v1', full: true })}
+              {Field({ label: 'URL recherche livreurs', field: 'rechercheUrl', placeholder: 'https://api.dobi.ci/v1/drivers/available (optionnel)', full: true })}
               <div style={{ gridColumn: '1 / -1' }}>
                 <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 6 }}>
                   Clé API {modal !== 'create' && <span style={{ color: '#94A3B8', fontWeight: 400 }}>(laisser vide pour conserver)</span>}
@@ -3080,7 +3080,7 @@ function LivraisonsExtTab() {
                   </button>
                 </div>
               </div>
-              <Field label="URL callback webhook" field="webhookCallbackUrl" placeholder="https://restodici.ci/livraisons-externes/webhook/..." full />
+              {Field({ label: 'URL callback webhook', field: 'webhookCallbackUrl', placeholder: 'https://restodici.ci/livraisons-externes/webhook/...', full: true })}
 
               {/* ── Endpoints plug-and-play ── */}
               <div style={{ gridColumn: '1 / -1', borderTop: '1px solid #F1F5F9', paddingTop: 16, marginTop: 4 }}>
@@ -3117,7 +3117,7 @@ function LivraisonsExtTab() {
                 <p style={{ fontSize: 11, color: '#94A3B8', margin: '4px 0 0' }}>Clés RESTODICI : livraisonId, commandeId, deliveryAddress, pickupAddress, clientNom, clientTelephone, montantTotal. Notation pointée supportée : <code>customer.name</code></p>
               </div>
 
-              <Field label="Frais par défaut (FCFA)" field="fraisLivraisonDefaut" type="number" placeholder="1500" />
+              {Field({ label: 'Frais par défaut (FCFA)', field: 'fraisLivraisonDefaut', type: 'number', placeholder: '1500' })}
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 8 }}>
                 <input
                   type="checkbox"
