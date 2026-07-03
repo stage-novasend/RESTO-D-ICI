@@ -1408,7 +1408,7 @@ export default function B2BDashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/* Top bar — blanc */}
-        <header className="shrink-0" style={{ background: '#FFFFFF', borderBottom: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+        <header className="shrink-0" style={{ background: '#FFF4ED', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${ORANGE} 0%, #FFB800 50%, ${ORANGE} 100%)`, pointerEvents: 'none' }} />
           <div className="h-16 px-4 lg:px-6 flex items-center gap-4">
             {/* Hamburger mobile */}

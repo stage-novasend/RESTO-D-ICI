@@ -1065,7 +1065,7 @@ export default function StaffDashboard() {
         {/* Top bar */}
         <div
           className="sticky top-0 z-30 flex items-center justify-between px-5 py-3"
-          style={{ background: '#FFFFFF', borderBottom: `1px solid ${BORDER}`, boxShadow: '0 1px 6px rgba(0,0,0,0.05)' }}
+          style={{ background: '#FFF4ED', borderBottom: `1px solid ${BORDER}` }}
         >
           {/* Left */}
           <div className="flex items-center gap-3">
