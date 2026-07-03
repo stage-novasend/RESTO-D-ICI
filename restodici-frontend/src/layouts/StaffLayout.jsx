@@ -371,7 +371,7 @@ export default function StaffLayout() {
   const currentPage = NAV.find(n => n.exact ? location.pathname === n.to : location.pathname.startsWith(n.to + '/') || location.pathname === n.to)?.label || '';
 
   return (
-    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', background: PAGE_BG, fontFamily: "'Manrope', Inter, system-ui, sans-serif" }}>
+    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', background: '#FFF4ED', fontFamily: "'Manrope', Inter, system-ui, sans-serif" }}>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }

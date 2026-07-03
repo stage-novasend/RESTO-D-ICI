@@ -14,7 +14,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { getArticleImage } from '../../utils/articleImage';
 
 /* ── Design system — miroir exact StaffDashboard ── */
-const BG               = '#F2F3F7';
+const BG               = '#FFF4ED';
 const SIDEBAR_BG       = '#111111';
 const SURFACE          = '#FFFFFF';
 const SURFACE_ELEVATED = '#F5F5F8';

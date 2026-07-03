@@ -71,7 +71,7 @@ export default function GerantLayout() {
   };
 
   return (
-    <div className={`flex min-h-screen ${darkMode ? 'bg-[#0C1220]' : 'bg-white'}`}>
+    <div className={`flex min-h-screen ${darkMode ? 'bg-[#0C1220]' : 'bg-[#FFF4ED]'}`}>
       {/* ── Styles dynamiques : corrections mode sombre ── */}
       <style>{`
         .gerant-theme-dark [class*='bg-white'] { background: rgba(139,110,80,0.88) !important; color: #e2e8f0; }

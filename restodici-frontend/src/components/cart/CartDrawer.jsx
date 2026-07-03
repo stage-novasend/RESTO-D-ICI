@@ -16,7 +16,7 @@ import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
 const NAVY   = '#1A0C00';
 const ORANGE = '#EA580C';
-const BG     = '#FFFFFF';
+const BG     = '#FFF4ED';
 const LINE   = 'rgba(89,67,42,0.12)';
 
 const KENTE = ['#EA580C', '#EA580C', '#1A0C00', '#C2410C'];

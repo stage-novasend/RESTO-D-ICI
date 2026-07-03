@@ -853,7 +853,7 @@ export default function MenuPage() {
 
   /* ── RENDU ── */
   return (
-    <div style={{ background: C.bg, minHeight: '100dvh', fontFamily: sans }}>
+    <div style={{ background: '#FFF4ED', minHeight: '100dvh', fontFamily: sans }}>
       <style>{CSS}</style>
 
       {/* ═══ Mode découverte ═══ */}

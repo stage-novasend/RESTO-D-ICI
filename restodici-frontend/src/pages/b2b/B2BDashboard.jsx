@@ -18,7 +18,7 @@ import OnboardingTour from '../../components/onboarding/OnboardingTour';
 import { buildSyscohadaBlob, buildFactureBlob } from '../../utils/syscohada-pdf';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const BG       = '#FFFFFF';      // fond principal — crème chaude
+const BG       = '#FFF4ED';      // fond principal — crème chaude
 const CARD     = '#FFFFFF';
 const NAVY     = '#3D1500';      // sidebar — brun chocolat/café (chaud, appétissant)
 const NAVY2    = '#5C2400';      // hover sidebar

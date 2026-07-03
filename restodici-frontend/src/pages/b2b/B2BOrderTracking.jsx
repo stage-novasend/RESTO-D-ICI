@@ -132,7 +132,7 @@ export default function B2BOrderTracking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#FFF4ED] flex items-center justify-center">
         <div className="w-10 h-10 border-[3px] border-t-transparent rounded-full animate-spin" style={{ borderColor: A }} />
       </div>
     );
@@ -140,7 +140,7 @@ export default function B2BOrderTracking() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FFF4ED] flex flex-col items-center justify-center p-6">
         <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center border shadow" style={{ borderColor: BD }}>
           <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-4" />
           <p className="font-bold text-[#1A0C00] mb-2">Commande introuvable</p>
@@ -161,7 +161,7 @@ export default function B2BOrderTracking() {
   const total = order.totalEstime || order.lignes?.reduce((s, l) => s + l.quantite * Number(l.prixUnitaire || 0), 0) || 0;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FFF4ED]">
 
       {/* Header */}
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b shadow-sm" style={{ borderColor: BD }}>

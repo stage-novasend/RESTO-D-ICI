@@ -11,7 +11,7 @@ import { formatFCFA } from '../utils/formatters';
 const ORANGE   = '#EA580C';
 const ORANGE_D = '#C2410C';
 const NAVY     = '#1A0C00';
-const BG       = '#FFFFFF';
+const BG       = '#FFF4ED';
 const BORDER   = 'rgba(255,140,0,0.14)';
 const MUTED    = '#9E8B7A';
 

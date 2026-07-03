@@ -206,7 +206,7 @@ export default function OrderTrackingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-[#FFF4ED] flex items-center justify-center">
         <div className="w-10 h-10 border-[3px] border-[#EA580C] border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -214,7 +214,7 @@ export default function OrderTrackingPage() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[#FFF4ED] flex flex-col items-center justify-center p-6">
         <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center border border-[rgba(89,67,42,0.10)] shadow">
           <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-4" />
           <p className="font-bold text-[#1A0C00] mb-2">Commande introuvable</p>
@@ -234,7 +234,7 @@ export default function OrderTrackingPage() {
   const isPaid = order.estPaye;
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-[#FFF4ED]">
       {/* Payment failure banner */}
       {paymentFailed && !isPaid && (
         <div className="sticky top-0 z-40 bg-red-600 text-white px-4 py-3 flex items-center gap-3">

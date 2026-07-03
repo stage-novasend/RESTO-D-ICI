@@ -24,7 +24,7 @@ import DispatchModal from '../../components/livraison/DispatchModal';
 import EconomicReconciliation from '../../components/staff/EconomicReconciliation';
 
 // ─── Palette — Pro dark sidebar + orange accent ───────────────────────────────
-const BG             = '#F2F3F7';
+const BG             = '#FFF4ED';
 const SIDEBAR_BG     = '#111111';
 const SIDEBAR_BORDER = 'rgba(255,255,255,0.07)';
 const SURFACE        = '#FFFFFF';

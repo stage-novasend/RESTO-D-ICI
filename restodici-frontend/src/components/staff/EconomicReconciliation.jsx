@@ -7,7 +7,7 @@ import { useMemo, useState } from 'react';
 import { X, TrendingDown, Download, Info, DollarSign, Wallet, CreditCard, Smartphone, Banknote } from 'lucide-react';
 
 /* ── Tokens visuels (alignés CaissePage) ──────────────────────────── */
-const BG    = '#F8FAFC';
+const BG    = '#FFF4ED';
 const CARD  = '#FFFFFF';
 const NAVY  = '#1A0C00';
 const MUTED = '#8B6E50';

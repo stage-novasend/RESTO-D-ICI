@@ -15,7 +15,7 @@ import { useAuth } from '../../hooks/useAuth';
 import DispatchModal from '../../components/livraison/DispatchModal';
 
 /* ── Palette — miroir StaffDashboard ── */
-const BG     = '#F2F3F7';
+const BG     = '#FFF4ED';
 const CARD   = '#FFFFFF';
 const NAVY   = '#1A0C00';
 const BORDER = 'rgba(0,0,0,0.08)';

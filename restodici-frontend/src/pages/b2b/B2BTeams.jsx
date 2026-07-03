@@ -5,7 +5,7 @@ import { b2bAPI } from '../../services/api';
 import { formatFCFA } from '../../utils/formatters';
 
 // ── Design tokens ──────────────────────────────────────────────────────────────
-const BG     = '#F8FAFC';
+const BG     = '#FFF4ED';
 const CARD   = '#FFFFFF';
 const TEXT   = '#1A0C00';
 const MUTED  = '#8B6E50';

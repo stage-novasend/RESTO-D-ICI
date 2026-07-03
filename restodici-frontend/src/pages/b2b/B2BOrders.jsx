@@ -5,7 +5,7 @@ import { b2bAPI } from '../../services/api';
 import { commandesService } from '../../services/commandes.service';
 import { formatFCFA } from '../../utils/formatters';
 
-const BG = '#FFFFFF'; const CARD = '#FFFFFF'; const TEXT = '#1A0C00';
+const BG = '#FFF4ED'; const CARD = '#FFFFFF'; const TEXT = '#1A0C00';
 const MUTED = '#8B6E50'; const FAINT = '#8B6E50'; const BORDER = 'rgba(0,0,0,0.07)';
 const ACC = '#EA580C'; const ACL = '#FFF0DF';
 const SH = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';

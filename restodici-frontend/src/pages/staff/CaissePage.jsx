@@ -12,7 +12,7 @@ import moovMoneyLogo from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
 // ── Tokens — miroir StaffDashboard (orange pro) ──────────────────────────────
-const BG      = '#F2F3F7';
+const BG      = '#FFF4ED';
 const CARD    = '#FFFFFF';
 const NAVY    = '#1A0C00';
 const BORDER  = 'rgba(0,0,0,0.08)';

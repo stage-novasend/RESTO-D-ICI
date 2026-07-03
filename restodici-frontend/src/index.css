@@ -24,16 +24,16 @@
   --color-primary-glow:  rgba(255,140,0,0.3);
 
   /* ── Surfaces ─────────────────────────────────────────── */
-  --surface-base:    #FFFAF3;
+  --surface-base:    #FFF4ED;
   --surface-card:    #FFFFFF;
   --surface-raised:  #FFFFFF;
   --surface-overlay: rgba(61,21,0,0.45);
 
   /* ── Light mode surfaces (backward compat) ───────────── */
-  --color-bg:            #FFFAF3;
-  --color-bg-alt:        #FFF5E6;
+  --color-bg:            #FFF4ED;
+  --color-bg-alt:        #FFEBDD;
   --color-surface:       #FFFFFF;
-  --color-surface-alt:   #FFFAF3;
+  --color-surface-alt:   #FFF4ED;
 
   /* ── Dark mode surfaces (used when .dark class present) ── */
   --color-dark-bg:       #1A0C00;
@@ -124,11 +124,11 @@ html {
   scroll-behavior: smooth;           /* défilement fluide au clic sur ancre */
   text-size-adjust: 100%;            /* empêche iOS de grossir le texte à tort */
   -webkit-text-size-adjust: 100%;
-  background-color: #FFFFFF;
+  background-color: #FFF4ED;
 }
 
 body {
-  background-color: #FFFFFF;
+  background-color: #FFF4ED;
   color: var(--color-text);
   font-family: 'Manrope', 'Inter', system-ui, sans-serif;
   font-weight: 600;
