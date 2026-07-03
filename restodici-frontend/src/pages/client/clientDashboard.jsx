@@ -45,7 +45,7 @@ const BORDER       = 'rgba(0,0,0,0.08)';
 const DARK         = '#111827';
 const NAVY         = '#1A0C00';
 const NAVY2        = '#374151';
-const BG           = '#FFFFFF';
+const BG           = '#FFF4ED';
 
 const ORDER_STATUS = {
   RECUE:        { label: 'Reçue',          bg: '#FFFBEB', color: '#D97706' },
@@ -500,32 +500,33 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
     <div className="space-y-6">
 
       {/* ── Hero ── */}
-      <div className="rounded-3xl overflow-hidden" style={{ background: ACCENT, boxShadow: `0 6px 24px ${ACCENT}44` }}>
+      <div className="rounded-3xl overflow-hidden bg-white" style={{ border: `1.5px solid ${ACCENT}22`, boxShadow: `0 4px 20px ${ACCENT}18` }}>
         <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl bg-white/20 border-2 border-white/30 flex items-center justify-center font-extrabold text-2xl text-white shrink-0">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center font-extrabold text-2xl text-white shrink-0"
+            style={{ background: ACCENT }}>
             {initials}
           </div>
           <div className="flex-1">
-            <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">{greeting}</p>
-            <h2 className="text-white font-extrabold text-2xl leading-tight">{firstName} !</h2>
-            <p className="text-white/60 text-sm mt-1">Commandez, suivez, savourez.</p>
+            <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: ACCENT }}>{greeting}</p>
+            <h2 className="font-extrabold text-2xl leading-tight" style={{ color: '#111827' }}>{firstName} !</h2>
+            <p className="text-sm mt-1 text-[#9CA3AF]">Commandez, suivez, savourez.</p>
           </div>
           <Link to="/menu"
-            className="shrink-0 flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-sm"
-            style={{ background: '#fff', color: ACCENT_DARK, textDecoration: 'none' }}>
+            className="shrink-0 flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-sm text-white"
+            style={{ background: ACCENT, textDecoration: 'none' }}>
             <ChefHat className="w-4 h-4" /> Commander
           </Link>
         </div>
-        <div className="grid grid-cols-3" style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}>
+        <div className="grid grid-cols-3" style={{ borderTop: `1px solid ${ACCENT}18` }}>
           {[
             { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length },
             { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length },
             { label: 'Dépensé',  value: loadingOrders ? '—' : formatFCFA(totalSpent) },
           ].map((s, i) => (
             <div key={i} className="py-4 text-center"
-              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
-              <p className="text-white font-extrabold text-xl">{s.value}</p>
-              <p className="text-white/50 text-xs mt-0.5">{s.label}</p>
+              style={{ borderRight: i < 2 ? `1px solid ${ACCENT}18` : 'none' }}>
+              <p className="font-extrabold text-xl" style={{ color: ACCENT }}>{s.value}</p>
+              <p className="text-xs mt-0.5 text-[#9CA3AF]">{s.label}</p>
             </div>
           ))}
         </div>
@@ -1620,9 +1621,9 @@ export default function ClientDashboard() {
     ...(clientModules.messaging?.enabled ? [{ key: 'messaging', label: 'Messages',  icon: MessageSquare }] : []),
   ];
 
-  /* ── Sidebar nav component — fond blanc, accent vert ── */
+  /* ── Sidebar nav component — fond orange clair ── */
   const Sidebar = ({ mobile = false }) => (
-    <div className="flex flex-col h-full" style={{ background: '#fff', borderRight: '1px solid rgba(0,0,0,0.08)' }}>
+    <div className="flex flex-col h-full" style={{ background: BG, borderRight: `1px solid ${ACCENT}18` }}>
       {/* Brand */}
       <div className="px-5 py-5" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
         <div className="flex items-center gap-2.5">
@@ -1729,12 +1730,12 @@ export default function ClientDashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/* Top bar — profile button + notifications only */}
-        <header className="shrink-0 bg-white flex items-center justify-between px-4 sm:px-6 h-14"
-          style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
+        <header className="shrink-0 flex items-center justify-between px-4 sm:px-6 h-14"
+          style={{ background: BG, borderBottom: `1px solid ${ACCENT}20` }}>
           <div className="flex items-center gap-3">
             {/* Mobile menu toggle */}
             <button className="lg:hidden w-8 h-8 rounded-lg flex items-center justify-center"
-              style={{ background: '#F1F5F9' }}
+              style={{ background: 'rgba(255,255,255,0.7)', border: `1px solid ${ACCENT}20` }}
               onClick={() => setSideOpen(true)}>
               <MenuIcon className="w-4 h-4 text-gray-500" />
             </button>
@@ -1754,7 +1755,7 @@ export default function ClientDashboard() {
         </header>
 
         {/* Scrollable content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto" style={{ background: BG }}>
           <div className="w-full px-4 sm:px-6 py-6">
 
             {ordersError && (
