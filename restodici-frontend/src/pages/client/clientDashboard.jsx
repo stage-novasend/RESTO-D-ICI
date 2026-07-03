@@ -506,121 +506,78 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
 
       {/* ── Hero Banner ─────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl"
-        style={{ background: `linear-gradient(135deg, ${DARK} 0%, #1F2937 100%)`, boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}>
+        style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, #9A3412 100%)`, boxShadow: `0 8px 32px ${ORANGE}44` }}>
+        {/* Cercle décoratif — discret */}
+        <div style={{ position: 'absolute', top: -60, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -40, right: 80, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
 
-        {/* Accents décoratifs colorés */}
-        <div style={{ position: 'absolute', top: -50, right: -30, width: 220, height: 220, borderRadius: '50%', background: `${ORANGE}18`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -40, left: 60, width: 180, height: 180, borderRadius: '50%', background: `${ACCENT}14`, pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 30, right: 140, width: 60, height: 60, borderRadius: '50%', background: `${YELLOW}22`, pointerEvents: 'none' }} />
-        {/* Barre de couleur en haut */}
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${ORANGE}, ${YELLOW}, ${ACCENT})` }} />
-
-        <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          {/* Avatar avec anneau vert */}
+        <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          {/* Avatar */}
           <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white font-extrabold text-3xl"
-              style={{ background: `linear-gradient(135deg, ${ORANGE}44, ${ACCENT}44)`, border: `3px solid rgba(255,255,255,0.15)`, backdropFilter: 'blur(8px)' }}>
+            <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center font-extrabold text-2xl text-white border-2 border-white/30">
               {initials}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#1F2937]" style={{ background: ACCENT }} />
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-orange-700" style={{ background: ACCENT }} />
           </div>
 
-          {/* Text */}
-          <div className="flex-1">
-            <p className="text-sm font-semibold uppercase tracking-widest mb-1" style={{ color: YELLOW }}>{greeting} ✨</p>
-            <h2 className="text-white font-extrabold text-2xl sm:text-3xl mb-2" style={{ letterSpacing: '-0.02em' }}>
+          <div className="flex-1 min-w-0">
+            <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">{greeting}</p>
+            <h2 className="text-white font-extrabold text-2xl sm:text-3xl leading-tight" style={{ letterSpacing: '-0.02em' }}>
               {firstName} !
             </h2>
-            <p className="text-sm max-w-md" style={{ color: 'rgba(255,255,255,0.6)' }}>
-              Vos plats préférés à portée de main — commandez, suivez, savourez.
+            <p className="text-white/65 text-sm mt-1.5">
+              Vos plats préférés, livrés chez vous — rapide et simple.
             </p>
           </div>
 
-          {/* CTA orange — énergie / action */}
           <Link to="/menu"
-            className="shrink-0 flex items-center gap-2 rounded-2xl px-6 py-3 font-extrabold text-sm text-white transition hover:opacity-90"
-            style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, textDecoration: 'none', boxShadow: `0 6px 20px ${ORANGE}55` }}>
+            className="shrink-0 flex items-center gap-2 rounded-2xl px-5 py-3 font-bold text-sm transition hover:scale-105"
+            style={{ background: '#fff', color: ORANGE_D, textDecoration: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}>
             <ChefHat className="w-4 h-4" /> Commander
           </Link>
         </div>
 
-        {/* Stats strip — chaque stat a sa couleur */}
-        <div className="relative grid grid-cols-3"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        {/* Stats strip — blanc uniforme, sobre */}
+        <div className="grid grid-cols-3" style={{ borderTop: '1px solid rgba(255,255,255,0.15)' }}>
           {[
-            { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length,               icon: Clock,        color: ORANGE },
-            { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length,                   icon: CheckCircle,  color: ACCENT },
-            { label: 'Dépensé',  value: loadingOrders ? '—' : formatFCFA(totalSpent),             icon: Wallet,       color: YELLOW },
+            { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length,     icon: Clock       },
+            { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length,         icon: CheckCircle },
+            { label: 'Dépensé',  value: loadingOrders ? '—' : formatFCFA(totalSpent),   icon: Wallet      },
           ].map((s, i) => (
-            <div key={i} className="px-4 sm:px-6 py-4 flex flex-col items-center text-center"
-              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}>
-              <s.icon className="w-4 h-4 mb-1.5" style={{ color: s.color }} />
-              <p className="font-extrabold text-xl sm:text-2xl leading-none" style={{ color: s.color }}>
-                {s.value}
-              </p>
-              <p className="text-xs mt-1 font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</p>
+            <div key={i} className="py-4 flex flex-col items-center text-center"
+              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.15)' : 'none' }}>
+              <s.icon className="w-3.5 h-3.5 text-white/50 mb-1" />
+              <p className="text-white font-extrabold text-lg sm:text-xl leading-none">{s.value}</p>
+              <p className="text-white/50 text-[11px] mt-1 font-medium">{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── KPI Cards — chaque couleur a un sens ─────────────────────── */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* ── KPI Cards — minimalistes, propres ────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          {
-            label: 'En cours',
-            value: loadingOrders ? '—' : activeOrders.length,
-            sub: activeOrders.length > 0 ? 'En cours de traitement' : 'Aucune active',
-            icon: Clock, iconBg: ORANGE_L, iconColor: ORANGE,
-            accent: activeOrders.length > 0 ? ORANGE : '#9CA3AF',
-            topBar: ORANGE,
-          },
-          {
-            label: 'Total dépensé',
-            value: loadingOrders ? '—' : formatFCFA(totalSpent),
-            sub: avgOrder > 0 ? `Moy. ${formatFCFA(avgOrder)}` : 'Aucun achat encore',
-            icon: TrendingUp, iconBg: ACCENT_LIGHT, iconColor: ACCENT,
-            accent: ACCENT,
-            topBar: ACCENT,
-          },
-          {
-            label: 'Livrées',
-            value: loadingOrders ? '—' : delivered.length,
-            sub: `${orders.length} commande${orders.length !== 1 ? 's' : ''} au total`,
-            icon: CheckCircle, iconBg: ACCENT_LIGHT, iconColor: ACCENT_DARK,
-            accent: ACCENT_DARK,
-            topBar: ACCENT_DARK,
-          },
-          {
-            label: 'Avis en attente',
-            value: loadingOrders ? '—' : pendingAvis.length,
-            sub: pendingAvis.length > 0 ? 'Partagez votre expérience' : 'Aucun avis requis',
-            icon: Star, iconBg: YELLOW_L, iconColor: YELLOW,
-            accent: YELLOW,
-            topBar: YELLOW,
-          },
+          { label: 'Commandes actives', value: loadingOrders ? '—' : activeOrders.length,
+            sub: activeOrders.length > 0 ? 'En traitement' : 'Aucune active',
+            icon: Clock, color: ORANGE, bg: ORANGE_L },
+          { label: 'Total dépensé',     value: loadingOrders ? '—' : formatFCFA(totalSpent),
+            sub: avgOrder > 0 ? `Moy. ${formatFCFA(avgOrder)}` : 'Premier achat ?',
+            icon: TrendingUp, color: ACCENT, bg: ACCENT_LIGHT },
+          { label: 'Livrées',           value: loadingOrders ? '—' : delivered.length,
+            sub: `sur ${orders.length} commande${orders.length !== 1 ? 's' : ''}`,
+            icon: CheckCircle, color: ACCENT_DARK, bg: ACCENT_LIGHT },
+          { label: 'Avis à donner',     value: loadingOrders ? '—' : pendingAvis.length,
+            sub: pendingAvis.length > 0 ? 'Votre avis compte' : 'Tout à jour !',
+            icon: Star, color: YELLOW, bg: YELLOW_L },
         ].map((kpi, i) => (
-          <div key={i} className="bg-white rounded-2xl overflow-hidden border"
-            style={{ borderColor: BORDER, boxShadow: '0 2px 14px rgba(0,0,0,0.06)' }}>
-            {/* Barre colorée en haut */}
-            <div style={{ height: 3, background: kpi.topBar }} />
-            <div className="p-5">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center"
-                  style={{ background: kpi.iconBg }}>
-                  <kpi.icon className="w-5 h-5" style={{ color: kpi.iconColor }} />
-                </div>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
-                  style={{ background: kpi.iconBg, color: kpi.accent }}>
-                  {i === 0 ? 'ACTIF' : i === 3 ? 'À FAIRE' : ''}
-                </span>
-              </div>
-              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-1">{kpi.label}</p>
-              <p className="text-2xl font-extrabold leading-tight mb-1" style={{ color: DARK, letterSpacing: '-0.02em' }}>
-                {kpi.value}
-              </p>
-              <p className="text-xs font-medium" style={{ color: kpi.accent }}>{kpi.sub}</p>
+          <div key={i} className="bg-white rounded-2xl p-4 border"
+            style={{ borderColor: BORDER, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: kpi.bg }}>
+              <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} />
             </div>
+            <p className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-0.5">{kpi.label}</p>
+            <p className="text-xl font-extrabold mb-0.5" style={{ color: DARK, letterSpacing: '-0.02em' }}>{kpi.value}</p>
+            <p className="text-[11px] font-medium" style={{ color: kpi.color }}>{kpi.sub}</p>
           </div>
         ))}
       </div>
