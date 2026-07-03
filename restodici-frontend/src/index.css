@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════════════════
    index.css — Feuille de styles globale de l'application Restodici
-   Palette orange #FF8C00 · Police Manrope · Mode responsive complet
+   Palette orange #EA580C · Police Manrope · Mode responsive complet
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Google Fonts — doit précéder @tailwind ── */
@@ -17,11 +17,11 @@
    ═══════════════════════════════════════════════════════════════ */
 :root {
   /* ── Brand colors ─────────────────────────────────────── */
-  --color-primary:       #FF8C00;
-  --color-primary-dark:  #E07A00;
+  --color-primary:       #EA580C;
+  --color-primary-dark:  #C2410C;
   --color-primary-light: #FFF0DF;
-  --color-primary-dim:   rgba(255,140,0,0.12);
-  --color-primary-glow:  rgba(255,140,0,0.3);
+  --color-primary-dim:   rgba(234,88,12,0.12);
+  --color-primary-glow:  rgba(234,88,12,0.3);
 
   /* ── Surfaces ─────────────────────────────────────────── */
   --surface-base:    #F5F6F8;
@@ -57,7 +57,7 @@
   /* ── Borders ──────────────────────────────────────────── */
   --border:         rgba(0,0,0,0.07);
   --border-strong:  rgba(0,0,0,0.14);
-  --border-focus:   rgba(255,140,0,0.4);
+  --border-focus:   rgba(234,88,12,0.4);
 
   /* ── Borders (backward compat) ───────────────────────── */
   --color-border:        rgba(0,0,0,0.07);
@@ -73,13 +73,13 @@
   /* ── Shadows ──────────────────────────────────────────── */
   --shadow-card:    0 1px 8px rgba(0,0,0,0.04);
   --shadow-hover:   0 4px 20px rgba(0,0,0,0.08);
-  --shadow-button:  0 4px 16px rgba(255,140,0,0.3);
+  --shadow-button:  0 4px 16px rgba(234,88,12,0.3);
   --shadow-modal:   0 20px 60px rgba(0,0,0,0.2);
   --shadow-float:   0 -4px 20px rgba(0,0,0,0.08);
 
   /* ── Shadows (backward compat) ───────────────────────── */
   --shadow-card-hover:   0 4px 20px rgba(0,0,0,0.08);
-  --shadow-accent:       0 4px 20px rgba(255,140,0,0.30);
+  --shadow-accent:       0 4px 20px rgba(234,88,12,0.30);
   --shadow-floating:     0 -4px 20px rgba(0,0,0,0.08);
 
   /* ── Radii ────────────────────────────────────────────── */
@@ -95,8 +95,8 @@
   --section-gap: clamp(16px, 3vw, 32px);
 
   /* ── Backward-compat aliases ──────────────────────────── */
-  --color-accent:   #FF8C00;
-  --color-accent-d: #E07A00;
+  --color-accent:   #EA580C;
+  --color-accent-d: #C2410C;
   --color-dark:     #111827;
   --color-muted:    #9CA3AF;
   --color-card:     #FFFFFF;
@@ -169,13 +169,13 @@ button:disabled {
    ═══════════════════════════════════════════════════════════════ */
 ::-webkit-scrollbar         { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track   { background: var(--color-bg-alt); }
-::-webkit-scrollbar-thumb   { background: rgba(255,140,0,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb   { background: rgba(234,88,12,0.35); border-radius: 99px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-accent); }
 
 /* Firefox */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255,140,0,0.35) var(--color-bg-alt);
+  scrollbar-color: rgba(234,88,12,0.35) var(--color-bg-alt);
 }
 
 /* ═══════════════════════════════════════════════════════════════
@@ -319,7 +319,7 @@ button:disabled {
 .btn-primary:hover {
   background-color: var(--color-primary-light);
   transform: translateY(-1px);
-  box-shadow: 0 6px 24px rgba(255, 140, 0, 0.45);
+  box-shadow: 0 6px 24px rgba(234, 88, 12, 0.45);
 }
 .btn-primary:active {
   transform: scale(0.98);
@@ -358,7 +358,7 @@ input:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(255,140,0,0.18);
+  box-shadow: 0 0 0 3px rgba(234,88,12,0.18);
   border-color: var(--color-primary) !important;
 }
 
@@ -381,12 +381,12 @@ select:focus {
   vertical-align: middle;
 }
 .data-table tr:last-child td { border-bottom: none; }
-.data-table tbody tr:hover { background: rgba(255,140,0,0.03); }
+.data-table tbody tr:hover { background: rgba(234,88,12,0.03); }
 
 /* ── Pulse animation pour les indicateurs live ── */
 @keyframes livePulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,140,0,0.4); }
-  50%       { box-shadow: 0 0 0 6px rgba(255,140,0,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234,88,12,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(234,88,12,0); }
 }
 .live-dot {
   width: 8px; height: 8px;

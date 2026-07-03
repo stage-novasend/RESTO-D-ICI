@@ -8,7 +8,7 @@ function PanelAlert({ type, msg }) {
   const isErr = type === 'error';
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 9, background: '#FFF0DF', border: `1px solid ${isErr ? '#E8906A' : '#86EFAC'}`, marginBottom: 12 }}>
-      <span style={{ fontFamily: 'sans-serif', fontSize: 13, color: isErr ? '#FF8C00' : '#166534' }}>{msg}</span>
+      <span style={{ fontFamily: 'sans-serif', fontSize: 13, color: isErr ? '#EA580C' : '#166534' }}>{msg}</span>
     </div>
   );
 }
@@ -16,7 +16,7 @@ function PanelAlert({ type, msg }) {
 function StrengthBar({ password }) {
   if (!password) return null;
   const score = Math.min(Math.floor(password.length / 3), 4);
-  const color = password.length < 6 ? '#EF4444' : password.length < 9 ? '#FF8C00' : password.length < 12 ? '#F59E0B' : '#16A34A';
+  const color = password.length < 6 ? '#EF4444' : password.length < 9 ? '#EA580C' : password.length < 12 ? '#F59E0B' : '#16A34A';
   return (
     <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
       {[1,2,3,4].map(i => (
@@ -26,7 +26,7 @@ function StrengthBar({ password }) {
   );
 }
 
-export default function SecurityPanel({ user, accentColor = '#FF8C00' }) {
+export default function SecurityPanel({ user, accentColor = '#EA580C' }) {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [pwd,      setPwd]      = useState({ current: '', next: '', confirm: '' });
   const [showPwd,  setShowPwd]  = useState({ current: false, next: false, confirm: false });
@@ -105,7 +105,7 @@ export default function SecurityPanel({ user, accentColor = '#FF8C00' }) {
       <div style={s.card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={s.iconBox}><Mail style={{ width: 16, height: 16, color: '#E07A00' }} /></div>
+            <div style={s.iconBox}><Mail style={{ width: 16, height: 16, color: '#C2410C' }} /></div>
             <div>
               <p style={s.label}>Vérification email</p>
               <p style={s.sub}>{user?.email || '—'}</p>

@@ -1,13 +1,13 @@
 import { Link } from 'react-router-dom';
 import { UtensilsCrossed, Shield, Eye, Trash2, Download, Lock } from 'lucide-react';
 
-const T = { accent: '#FF8C00', bg: '#FFFAF3', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
+const T = { accent: '#EA580C', bg: '#FFFAF3', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
 const serif = "'Playfair Display', Georgia, serif";
 const sans  = "'Manrope', system-ui, sans-serif";
 
 function MiniNav() {
   return (
-    <nav style={{ background: '#fff', borderBottom: '1px solid rgba(255,140,0,0.12)', position: 'sticky', top: 0, zIndex: 50 }}>
+    <nav style={{ background: '#fff', borderBottom: '1px solid rgba(234,88,12,0.12)', position: 'sticky', top: 0, zIndex: 50 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
           <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${T.accent}, #FFB800)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 12px ${T.accent}40` }}>

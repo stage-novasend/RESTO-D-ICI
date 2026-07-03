@@ -8,7 +8,7 @@ import {
 } from 'lucide-react';
 import { authAPI } from '../../services/api';
 
-const A  = '#FF8C00';
+const A  = '#EA580C';
 const AL = '#FFF0DF';
 const SF = '#F9F7F5';
 const BD = 'rgba(89,67,42,0.10)';
@@ -104,7 +104,7 @@ export default function ClientOnboardingWizard() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${A}, #E07A00)`, boxShadow: `0 4px 16px ${A}40` }}>
+            style={{ background: `linear-gradient(135deg, ${A}, #C2410C)`, boxShadow: `0 4px 16px ${A}40` }}>
             <UtensilsCrossed className="w-7 h-7 text-white" />
           </div>
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: A }}>Resto d'ici</p>

@@ -7,14 +7,14 @@ export default {
       colors: {
         // Brand orange — primary accent
         primary: {
-          DEFAULT: '#FF8C00',
+          DEFAULT: '#EA580C',
           50:  '#FFF5E6',
           100: '#FFE5BF',
           200: '#FFCF8A',
           300: '#FFB855',
           400: '#FFA330',
-          500: '#FF8C00',   // ← main brand
-          600: '#E07A00',
+          500: '#EA580C',   // ← main brand
+          600: '#C2410C',
           700: '#C06800',
           800: '#9A5200',
           900: '#6B3800',
@@ -44,7 +44,7 @@ export default {
         danger:   { DEFAULT: '#EF4444', light: '#FEE2E2', dark: '#DC2626' },
         info:     { DEFAULT: '#3B82F6', light: '#DBEAFE', dark: '#2563EB' },
         // Keep existing semantic aliases for backward compat
-        accent: '#FF8C00',
+        accent: '#EA580C',
       },
       fontFamily: {
         headline: ['Montserrat', 'sans-serif'],
@@ -54,8 +54,8 @@ export default {
       },
       boxShadow: {
         'card':     '0 2px 14px rgba(0,0,0,0.07)',
-        'card-hover':'0 18px 48px rgba(255,140,0,0.2)',
-        'button':   '0 6px 22px rgba(255,140,0,0.44)',
+        'card-hover':'0 18px 48px rgba(234,88,12,0.2)',
+        'button':   '0 6px 22px rgba(234,88,12,0.44)',
         'floating': '0 -4px 20px rgba(0,0,0,0.08)',
       },
       borderRadius: {

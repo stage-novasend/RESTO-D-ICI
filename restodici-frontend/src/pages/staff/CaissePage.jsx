@@ -18,8 +18,8 @@ const NAVY    = '#111827';
 const BORDER  = 'rgba(0,0,0,0.08)';
 const MUTED   = '#6B7280';
 const FAINT   = '#9CA3AF';
-const PRIMARY = '#FF8C00';
-const PRIMARY_CONTAINER = '#E07A00';
+const PRIMARY = '#EA580C';
+const PRIMARY_CONTAINER = '#C2410C';
 const PRIMARY_LIGHT = '#FFF5E8';
 const GREEN   = '#16A34A';
 const GREEN_L = '#DCFCE7';
@@ -335,7 +335,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
           {/* ── FORMULAIRE ── */}
           {step === 'form' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-              <div style={{ background: 'rgba(255,140,0,0.06)', border: '1px solid rgba(255,140,0,0.18)', borderRadius: 14, padding: '13px 16px', fontSize: 13, color: NAVY, lineHeight: 1.6 }}>
+              <div style={{ background: 'rgba(234,88,12,0.06)', border: '1px solid rgba(234,88,12,0.18)', borderRadius: 14, padding: '13px 16px', fontSize: 13, color: NAVY, lineHeight: 1.6 }}>
                 {isCard
                   ? 'NovaSend génère un lien de paiement sécurisé par carte. Le client scanne le QR ou ouvre le lien pour saisir ses données carte.'
                   : `Saisissez le numéro ${mode?.label} du client. Une invitation de confirmation sera envoyée sur son téléphone.`
@@ -379,7 +379,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
               )}
 
               <button onClick={handleSubmit}
-                style={{ width: '100%', padding: '15px', borderRadius: 99, border: 'none', background: TER_G, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 6px 20px rgba(255,140,0,0.25)', fontFamily: 'inherit' }}>
+                style={{ width: '100%', padding: '15px', borderRadius: 99, border: 'none', background: TER_G, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 6px 20px rgba(234,88,12,0.25)', fontFamily: 'inherit' }}>
                 <QrCode size={15} />
                 {isCard ? 'Générer le lien paiement carte' : `Envoyer l'invitation ${mode?.label}`}
               </button>
@@ -400,7 +400,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
             <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
 
               {/* Bloc "en attente du PIN" */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', background: '#FFF8F0', border: '1px solid rgba(255,140,0,0.22)', borderRadius: 18 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 16, padding: '18px 20px', background: '#FFF8F0', border: '1px solid rgba(234,88,12,0.22)', borderRadius: 18 }}>
                 <CountdownRing total={COUNTDOWN_SECS} current={countdown} />
                 <div style={{ flex: 1 }}>
                   <p style={{ margin: '0 0 5px', fontSize: 14, fontWeight: 800, color: NAVY }}>
@@ -447,7 +447,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: BG, borderRadius: 12, padding: '9px 13px', border: `1px solid ${BORDER}` }}>
                     <Link2 size={12} color={MUTED} style={{ flexShrink: 0 }} />
                     <span style={{ fontSize: 11, color: MUTED, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>{paymentUrl}</span>
-                    <button onClick={() => window.open(paymentUrl, '_blank')} style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 7, border: `1px solid ${TER}`, background: 'rgba(255,140,0,0.08)', color: TER, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <button onClick={() => window.open(paymentUrl, '_blank')} style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 7, border: `1px solid ${TER}`, background: 'rgba(234,88,12,0.08)', color: TER, fontSize: 11, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit' }}>
                       Ouvrir
                     </button>
                   </div>
@@ -457,7 +457,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
               {/* Bouton retry après expiration */}
               {canRetry && (
                 <button onClick={handleRetry}
-                  style={{ width: '100%', padding: '13px', borderRadius: 12, border: `1.5px solid ${TER}`, background: 'rgba(255,140,0,0.06)', color: TER, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }}>
+                  style={{ width: '100%', padding: '13px', borderRadius: 12, border: `1.5px solid ${TER}`, background: 'rgba(234,88,12,0.06)', color: TER, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit' }}>
                   <AlertCircle size={14} />
                   Aucune invite reçue — réessayer
                 </button>
@@ -466,7 +466,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
               {/* Simulation (dev) */}
               {simulated && !canRetry && (
                 <button onClick={handleSimulate} disabled={simulating}
-                  style={{ width: '100%', padding: '12px', borderRadius: 12, border: `2px dashed ${TER}`, background: 'rgba(255,140,0,0.06)', color: TER, fontSize: 13, fontWeight: 700, cursor: simulating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', opacity: simulating ? 0.65 : 1 }}>
+                  style={{ width: '100%', padding: '12px', borderRadius: 12, border: `2px dashed ${TER}`, background: 'rgba(234,88,12,0.06)', color: TER, fontSize: 13, fontWeight: 700, cursor: simulating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontFamily: 'inherit', opacity: simulating ? 0.65 : 1 }}>
                   <CheckCircle2 size={14} />
                   {simulating ? 'Simulation…' : 'Simuler la confirmation du paiement'}
                 </button>
@@ -494,7 +494,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
                 </p>
               </div>
               <button onClick={handleRetry}
-                style={{ width: '100%', padding: '14px', borderRadius: 99, border: 'none', background: TER_G, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 6px 20px rgba(255,140,0,0.25)', fontFamily: 'inherit' }}>
+                style={{ width: '100%', padding: '14px', borderRadius: 99, border: 'none', background: TER_G, color: '#fff', fontSize: 14, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 6px 20px rgba(234,88,12,0.25)', fontFamily: 'inherit' }}>
                 <QrCode size={15} />
                 Réessayer avec un autre numéro
               </button>
@@ -807,10 +807,10 @@ export default function CaissePage() {
                       style={{
                         flex: 1, padding: '12px 6px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
                         background: sel ? PRIMARY_LIGHT : CARD,
-                        border: `1.5px solid ${sel ? 'rgba(255,140,0,0.35)' : BORDER}`,
+                        border: `1.5px solid ${sel ? 'rgba(234,88,12,0.35)' : BORDER}`,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
                         transition: 'all 0.14s',
-                        boxShadow: sel ? `0 2px 10px rgba(255,140,0,0.18)` : 'none',
+                        boxShadow: sel ? `0 2px 10px rgba(234,88,12,0.18)` : 'none',
                       }}
                     >
                       <m.Icon size={18} color={sel ? PRIMARY : MUTED} />

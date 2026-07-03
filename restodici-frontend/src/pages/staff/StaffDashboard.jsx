@@ -34,9 +34,9 @@ const BORDER_STRONG  = 'rgba(0,0,0,0.12)';
 const TEXT           = '#111827';
 const TEXT_MUTED     = '#6B7280';
 const TEXT_LIGHT     = '#9CA3AF';
-const ORANGE         = '#FF8C00';
-const ORANGE_DARK    = '#E07A00';
-const ORANGE_GLOW    = 'rgba(255,140,0,0.12)';
+const ORANGE         = '#EA580C';
+const ORANGE_DARK    = '#C2410C';
+const ORANGE_GLOW    = 'rgba(234,88,12,0.12)';
 const ORANGE_LIGHT   = '#FFF5E8';
 const GREEN          = '#16A34A';
 const GREEN_LIGHT    = '#22C55E';
@@ -386,7 +386,7 @@ function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDr
         <div className="flex gap-2 mt-2">
           {nextStatuses.map((ns, i) => {
             const btnStyle = ns === 'CONFIRMEE' || ns === 'EN_PREP'
-              ? { background: ORANGE_DARK, color: '#FFF', boxShadow: '0 4px 12px rgba(255,140,0,0.3)' }
+              ? { background: ORANGE_DARK, color: '#FFF', boxShadow: '0 4px 12px rgba(234,88,12,0.3)' }
               : ns === 'PRETE'
               ? { background: '#CCA72F', color: '#4E3D00', boxShadow: '0 4px 12px rgba(204,167,47,0.3)' }
               : ns === 'LIVREE' || ns === 'EN_LIVRAISON'
@@ -515,7 +515,7 @@ function B2BOrderCard({ order, onAction, saving }) {
               className="flex-1 py-2 px-3 rounded-lg text-xs font-black transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={
                 i === 0
-                  ? { background: ORANGE_DARK, color: '#FFF', boxShadow: `0 4px 12px rgba(255,140,0,0.3)` }
+                  ? { background: ORANGE_DARK, color: '#FFF', boxShadow: `0 4px 12px rgba(234,88,12,0.3)` }
                   : { background: '#FEF3C7', color: '#92400E', border: `1px solid #FCD34D` }
               }
             >
@@ -619,7 +619,7 @@ function WeeklySchedule({ openingTime, closingTime }) {
             <div
               key={i}
               className="flex items-center gap-3 p-2 rounded-xl transition-colors"
-              style={isToday ? { background: ORANGE_LIGHT, border: `1px solid rgba(255,140,0,0.25)` } : { border: `1px solid transparent` }}
+              style={isToday ? { background: ORANGE_LIGHT, border: `1px solid rgba(234,88,12,0.25)` } : { border: `1px solid transparent` }}
             >
               <div
                 className="w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-black flex-shrink-0"
@@ -969,9 +969,9 @@ export default function StaffDashboard() {
                 style={{
                   padding: '0.625rem 0.875rem',
                   borderRadius: 10,
-                  background: isActive ? 'rgba(255,140,0,0.14)' : 'transparent',
+                  background: isActive ? 'rgba(234,88,12,0.14)' : 'transparent',
                   color: isActive ? ORANGE : 'rgba(255,255,255,0.55)',
-                  border: isActive ? `1px solid rgba(255,140,0,0.2)` : '1px solid transparent',
+                  border: isActive ? `1px solid rgba(234,88,12,0.2)` : '1px solid transparent',
                 }}
                 onMouseEnter={e => { if (!isActive) { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.85)'; } }}
                 onMouseLeave={e => { if (!isActive) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.55)'; } }}
@@ -1252,7 +1252,7 @@ export default function StaffDashboard() {
                         <button
                           onClick={() => setShowNewOrder(true)}
                           className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-black text-white transition-all hover:scale-105"
-                          style={{ background: ORANGE, borderRadius: '999px', boxShadow: '0 4px 12px rgba(255,140,0,0.3)' }}
+                          style={{ background: ORANGE, borderRadius: '999px', boxShadow: '0 4px 12px rgba(234,88,12,0.3)' }}
                         >
                           <Plus className="w-4 h-4" /> Nouvelle commande
                         </button>
@@ -1405,7 +1405,7 @@ export default function StaffDashboard() {
                     className="px-4 py-2 rounded-xl text-sm font-black transition-all"
                     style={
                       orderFilter === id
-                        ? { background: ORANGE, color: '#FFF', boxShadow: '0 4px 12px rgba(255,140,0,0.3)' }
+                        ? { background: ORANGE, color: '#FFF', boxShadow: '0 4px 12px rgba(234,88,12,0.3)' }
                         : { background: '#FFFFFF', color: TEXT_MUTED, border: `1px solid ${BORDER}` }
                     }
                   >
@@ -1714,7 +1714,7 @@ export default function StaffDashboard() {
                   type="submit"
                   disabled={savingProfile}
                   className="w-full py-3 text-sm font-black text-white transition-all hover:scale-[1.02] disabled:opacity-60 disabled:scale-100 flex items-center justify-center gap-2"
-                  style={{ background: ORANGE, borderRadius: '999px', boxShadow: '0 4px 12px rgba(255,140,0,0.3)' }}
+                  style={{ background: ORANGE, borderRadius: '999px', boxShadow: '0 4px 12px rgba(234,88,12,0.3)' }}
                 >
                   {savingProfile ? <><Spinner size={16} /> Enregistrement...</> : <><Save className="w-4 h-4" /> Enregistrer</>}
                 </button>

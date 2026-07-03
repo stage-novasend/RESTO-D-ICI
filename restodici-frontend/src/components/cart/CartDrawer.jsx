@@ -15,11 +15,11 @@ import moovMoneyLogo     from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
 const NAVY   = '#0F172A';
-const ORANGE = '#FF8C00';
+const ORANGE = '#EA580C';
 const BG     = '#FFFFFF';
 const LINE   = 'rgba(89,67,42,0.12)';
 
-const KENTE = ['#FF8C00', '#FF8C00', '#0F172A', '#E07A00'];
+const KENTE = ['#EA580C', '#EA580C', '#0F172A', '#C2410C'];
 
 const MODES = [
   { id: 'SUR_PLACE', label: 'Sur place',  icon: Store },
@@ -351,7 +351,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
               <div style={{ display: 'flex', gap: 8 }}>
                 {items.length > 0 && (
                   <button onClick={clearCart}
-                    style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,140,0,0.15)', border: '1px solid rgba(255,140,0,0.25)', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', color: '#FFDCAA', fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
+                    style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(234,88,12,0.15)', border: '1px solid rgba(234,88,12,0.25)', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', color: '#FFDCAA', fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
                     <Trash2 style={{ width: 12, height: 12 }} /> Vider
                   </button>
                 )}
@@ -443,7 +443,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                   </div>
                   <button onClick={handleContinue}
                     style={{ background: ORANGE, color: '#fff', border: 'none', borderRadius: 14, padding: '14px 24px', fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 24px rgba(224,78,26,0.35)', letterSpacing: '-0.01em', transition: 'background 0.2s' }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#E07A00'}
+                    onMouseEnter={e => e.currentTarget.style.background = '#C2410C'}
                     onMouseLeave={e => e.currentTarget.style.background = ORANGE}>
                     Continuer →
                   </button>
@@ -504,7 +504,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
 
                   {/* Prix estimé */}
                   {zone && (
-                    <div style={{ background: '#FFF4EE', border: `1px solid rgba(255,140,0,0.25)`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ background: '#FFF4EE', border: `1px solid rgba(234,88,12,0.25)`, borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span style={{ fontSize: 12, fontWeight: 600, color: '#9E8B7A' }}>Frais de livraison estimés</span>
                       <span style={{ fontSize: 16, fontWeight: 900, color: ORANGE }}>{formatFCFA(deliveryFee)}</span>
                     </div>
@@ -532,7 +532,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                   {driverStatus === 'found' && driver && (
                     <div style={{ background: '#F0FDF4', border: '1.5px solid #86EFAC', borderRadius: 12, padding: '12px 14px' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${ORANGE},#E07A00)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <div style={{ width: 44, height: 44, borderRadius: '50%', background: `linear-gradient(135deg,${ORANGE},#C2410C)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <User style={{ width: 20, height: 20, color: '#fff' }} />
                         </div>
                         <div style={{ flex: 1 }}>
@@ -560,9 +560,9 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                   )}
 
                   {driverStatus === 'error' && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF4EE', border: '1px solid rgba(255,140,0,0.3)', borderRadius: 10, padding: '10px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF4EE', border: '1px solid rgba(234,88,12,0.3)', borderRadius: 10, padding: '10px 14px' }}>
                       <AlertCircle style={{ width: 14, height: 14, color: ORANGE, flexShrink: 0 }} />
-                      <span style={{ fontSize: 12, color: '#E07A00', fontWeight: 600 }}>Aucun livreur disponible. Réessayez dans quelques instants.</span>
+                      <span style={{ fontSize: 12, color: '#C2410C', fontWeight: 600 }}>Aucun livreur disponible. Réessayez dans quelques instants.</span>
                     </div>
                   )}
                 </div>
@@ -601,7 +601,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                       </button>
                     </div>
                     {promoError && (
-                      <p style={{ fontSize: 11, color: '#E07A00', margin: '8px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <p style={{ fontSize: 11, color: '#C2410C', margin: '8px 0 0', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
                         <AlertCircle style={{ width: 12, height: 12 }} />{promoError}
                       </p>
                     )}
@@ -724,7 +724,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
                   boxShadow: canPay ? '0 6px 24px rgba(224,78,26,0.35)' : 'none',
                   transition: 'all 0.2s', letterSpacing: '-0.01em',
                 }}
-                onMouseEnter={e => { if (canPay) e.currentTarget.style.background = '#E07A00'; }}
+                onMouseEnter={e => { if (canPay) e.currentTarget.style.background = '#C2410C'; }}
                 onMouseLeave={e => { if (canPay) e.currentTarget.style.background = ORANGE; }}
               >
                 {canPay

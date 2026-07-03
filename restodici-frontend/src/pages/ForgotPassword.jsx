@@ -29,11 +29,11 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FF8C00] p-4 lg:p-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#EA580C] p-4 lg:p-8">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
 
         {/* Header bar */}
-        <div className="bg-[#FF8C00] px-8 pt-8 pb-10">
+        <div className="bg-[#EA580C] px-8 pt-8 pb-10">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/30">
               <UtensilsCrossed className="w-4.5 h-4.5 text-white" />
@@ -60,7 +60,7 @@ export default function ForgotPassword() {
               <p className="text-[#6B7280] text-sm mb-1">Un lien de réinitialisation a été envoyé si un compte existe avec cet email.</p>
               <p className="text-[#6B7280]/70 text-xs mb-8">Vérifiez aussi vos spams.</p>
               <Link to="/login"
-                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#FF8C00] hover:bg-[#E07A00] transition-colors text-sm shadow-sm">
+                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#EA580C] hover:bg-[#C2410C] transition-colors text-sm shadow-sm">
                 Retour à la connexion
               </Link>
             </div>
@@ -69,18 +69,18 @@ export default function ForgotPassword() {
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-[#1A1A1A]">Adresse email</label>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF8C00]/60" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#EA580C]/60" />
                   <input
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     type="email" placeholder="votre@email.com"
-                    className={`w-full pl-10 pr-4 py-3.5 bg-[#FFF0DF] border-0 rounded-2xl text-[#1A1A1A] placeholder-[#6B7280]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF8C00]/40 transition-all${error ? ' ring-2 ring-red-400' : ''}`}
+                    className={`w-full pl-10 pr-4 py-3.5 bg-[#FFF0DF] border-0 rounded-2xl text-[#1A1A1A] placeholder-[#6B7280]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40 transition-all${error ? ' ring-2 ring-red-400' : ''}`}
                   />
                 </div>
                 {error && <p className="text-red-500 text-xs">{error}</p>}
               </div>
 
               <button type="submit" disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#FF8C00] hover:bg-[#E07A00] active:scale-[0.98] transition-all shadow-sm disabled:opacity-60 text-sm">
+                className="w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#EA580C] hover:bg-[#C2410C] active:scale-[0.98] transition-all shadow-sm disabled:opacity-60 text-sm">
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -90,7 +90,7 @@ export default function ForgotPassword() {
               </button>
 
               <div className="pt-2">
-                <Link to="/login" className="flex items-center gap-2 text-[#6B7280] hover:text-[#FF8C00] text-sm font-medium transition-colors">
+                <Link to="/login" className="flex items-center gap-2 text-[#6B7280] hover:text-[#EA580C] text-sm font-medium transition-colors">
                   <ArrowLeft className="w-4 h-4" />
                   Retour à la connexion
                 </Link>

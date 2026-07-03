@@ -9,7 +9,7 @@ import { menuAPI, commandesService } from '../../services/api';
 import { formatFCFA } from '../../utils/formatters';
 import { getArticleImage } from '../../utils/articleImage';
 
-const ACCENT  = '#FF8C00';
+const ACCENT  = '#EA580C';
 const ACCENT_D= '#CC7000';
 const SURFACE = '#F9F7F5';
 const BORDER  = '#E8E2D9';

@@ -30,8 +30,8 @@ import moovMoneyLogo    from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
 /* ── Palette — alignée sur Home.jsx ── */
-const ACCENT       = '#FF8C00';
-const ACCENT_DARK  = '#E07A00';
+const ACCENT       = '#EA580C';
+const ACCENT_DARK  = '#C2410C';
 const ACCENT_LIGHT = '#FFF5E8';
 const SURFACE      = '#FFFFFF';
 const BORDER       = 'rgba(0,0,0,0.09)';

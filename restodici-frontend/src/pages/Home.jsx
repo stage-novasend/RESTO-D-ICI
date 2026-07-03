@@ -18,17 +18,17 @@ const T = {
   muted:   "#7A5E3A",
   mutedL:  "#B09070",
   card:    "#FFFFFF",
-  accent:  "#FF8C00",
-  accentD: "#E07A00",
+  accent:  "#EA580C",
+  accentD: "#C2410C",
   accentL: "#FFAD40",
   yellow:  "#FFB800",
   yellowL: "#FFD166",
   red:     "#FF3B30",
-  line:    "rgba(255,140,0,0.14)",
-  shadow:  "0 6px 28px rgba(255,140,0,0.14)",
+  line:    "rgba(234,88,12,0.14)",
+  shadow:  "0 6px 28px rgba(234,88,12,0.14)",
   shadowS: "0 2px 14px rgba(0,0,0,0.07)",
 };
-const KENTE = ["#FF8C00","#FFB800","#1A0C00","#E07A00"];
+const KENTE = ["#EA580C","#FFB800","#1A0C00","#C2410C"];
 const serif = "'Playfair Display', Georgia, serif";
 const sans  = "'Manrope', system-ui, sans-serif";
 
@@ -45,9 +45,9 @@ const CSS = `
 @keyframes kfglowpulse { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:0.9;transform:scale(1.08)} }
 @keyframes kftagpop    { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
 .rd-nav-link:hover     { color:${T.accent} !important; }
-.rd-btn-cta:hover      { transform:translateY(-2px) !important; box-shadow:0 16px 40px rgba(255,140,0,0.5) !important; }
+.rd-btn-cta:hover      { transform:translateY(-2px) !important; box-shadow:0 16px 40px rgba(234,88,12,0.5) !important; }
 .rd-btn-outline:hover  { background:${T.accent} !important; color:#fff !important; }
-.rd-card:hover         { transform:translateY(-6px) !important; box-shadow:0 18px 48px rgba(255,140,0,0.2) !important; }
+.rd-card:hover         { transform:translateY(-6px) !important; box-shadow:0 18px 48px rgba(234,88,12,0.2) !important; }
 .rd-feat-card:hover    { transform:translateY(-5px) !important; box-shadow:0 14px 36px rgba(0,0,0,0.1) !important; }
 .rd-foot-link:hover    { color:${T.accent} !important; }
 `;
@@ -184,7 +184,7 @@ function Nav() {
   },[]);
   const links=[["Fonctionnalités","#fonctionnalites"],["Processus","#processus"],["Offres","#offres"],["Entreprises","/register?type=b2b"]];
   return (
-    <nav style={{ position:"fixed",top:0,left:0,right:0,zIndex:1000, background:scrolled?"rgba(255,250,243,0.95)":"transparent", backdropFilter:scrolled?"blur(20px)":"none", boxShadow:scrolled?"0 2px 24px rgba(255,140,0,0.1)":"none", transition:"all 0.35s cubic-bezier(.22,1,.36,1)" }}>
+    <nav style={{ position:"fixed",top:0,left:0,right:0,zIndex:1000, background:scrolled?"rgba(255,250,243,0.95)":"transparent", backdropFilter:scrolled?"blur(20px)":"none", boxShadow:scrolled?"0 2px 24px rgba(234,88,12,0.1)":"none", transition:"all 0.35s cubic-bezier(.22,1,.36,1)" }}>
       <KS h={3} />
       <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 40px",height:70,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
         <a href="/" style={{ display:"flex",alignItems:"center",gap:10,textDecoration:"none" }}>
@@ -388,14 +388,14 @@ function Marquee() {
     "Orange Money","MTN MoMo","Wave","Moov Money",
   ];
 
-  const DOT = <span style={{ display:"inline-block", width:4, height:4, borderRadius:"50%", background:"#FF8C00", margin:"0 22px", verticalAlign:"middle", opacity:0.7, flexShrink:0 }} />;
-  const DIAMOND = <span style={{ color:"#FF8C00", margin:"0 18px", opacity:0.5, fontSize:8 }}>◆</span>;
+  const DOT = <span style={{ display:"inline-block", width:4, height:4, borderRadius:"50%", background:"#EA580C", margin:"0 22px", verticalAlign:"middle", opacity:0.7, flexShrink:0 }} />;
+  const DIAMOND = <span style={{ color:"#EA580C", margin:"0 18px", opacity:0.5, fontSize:8 }}>◆</span>;
 
   return (
     <div style={{ background:"#0E0600", overflow:"hidden", position:"relative", padding:"20px 0" }}>
 
       {/* Ligne top orange — fixe, fine */}
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#FF8C00 30%,#FFB800 50%,#FF8C00 70%,transparent)" }} />
+      <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#EA580C 30%,#FFB800 50%,#EA580C 70%,transparent)" }} />
 
       {/* Dégradé de fondu gauche/droite */}
       <div style={{ position:"absolute", left:0, top:0, bottom:0, width:120, background:"linear-gradient(to right,#0E0600,transparent)", zIndex:2, pointerEvents:"none" }} />
@@ -417,7 +417,7 @@ function Marquee() {
       <div style={{ display:"flex", alignItems:"center", width:"max-content", animation:"kfmarqueeR 36s linear infinite" }}>
         {[...infos,...infos,...infos,...infos].map((info,i) => (
           <span key={i} style={{ display:"inline-flex", alignItems:"center" }}>
-            <span style={{ fontFamily:sans, fontSize:11, fontWeight:800, color:"#FF8C00", whiteSpace:"nowrap", letterSpacing:"0.16em", textTransform:"uppercase" }}>
+            <span style={{ fontFamily:sans, fontSize:11, fontWeight:800, color:"#EA580C", whiteSpace:"nowrap", letterSpacing:"0.16em", textTransform:"uppercase" }}>
               {info}
             </span>
             {DIAMOND}
@@ -426,7 +426,7 @@ function Marquee() {
       </div>
 
       {/* Ligne bottom — fixe */}
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#FF8C00 30%,#FFB800 50%,#FF8C00 70%,transparent)" }} />
+      <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#EA580C 30%,#FFB800 50%,#EA580C 70%,transparent)" }} />
     </div>
   );
 }

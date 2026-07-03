@@ -20,17 +20,17 @@ import { buildSyscohadaBlob, buildFactureBlob } from '../../utils/syscohada-pdf'
 // ── Design tokens ──────────────────────────────────────────────────────────────
 const BG       = '#F5F6F8';      // fond principal
 const CARD     = '#FFFFFF';
-const NAVY     = '#0F172A';      // sidebar & header dark
-const NAVY2    = '#1E293B';      // secondary dark
+const NAVY     = '#0B4A33';      // sidebar & header — vert forêt
+const NAVY2    = '#155C40';      // secondary dark green
 const TEXT     = '#111827';
 const MUTED    = '#6B7280';
 const FAINT    = '#6B7280';
 const BORDER   = 'rgba(0,0,0,0.07)';
 
 // Couleurs sémantiques
-const ORANGE   = '#FF8C00';      // CTA principal standard
+const ORANGE   = '#EA580C';      // CTA principal standard
 const ORANGE_L = '#FFF0DF';      // fond orange léger
-const ORANGE_D = '#E07A00';      // orange foncé hover
+const ORANGE_D = '#C2410C';      // orange foncé hover
 
 const GREEN    = '#16A34A';      // exports PDF / succès / confirmé
 const GREEN_L  = '#DCFCE7';      // fond vert léger
@@ -664,9 +664,9 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
 
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 shrink-0"
-             style={{ background: '#0F172A', borderBottom: '2.5px solid #FF8C00' }}>
+             style={{ background: '#0F172A', borderBottom: '2.5px solid #EA580C' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,140,0,0.20)' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(234,88,12,0.20)' }}>
               <FileText className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -701,7 +701,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
         {captureGuard && (
           <div className="absolute inset-0 z-[300] flex flex-col items-center justify-center rounded-2xl"
                style={{ background: 'rgba(15,23,42,0.96)' }}>
-            <Shield className="w-12 h-12 mb-3" style={{ color: '#FF8C00' }} />
+            <Shield className="w-12 h-12 mb-3" style={{ color: '#EA580C' }} />
             <p className="text-white font-bold text-base">Contenu masqué</p>
             <p className="text-sm mt-1" style={{ color: 'rgba(255,255,255,0.5)' }}>
               Cliquez dans la fenêtre pour afficher le rapport
@@ -727,12 +727,12 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
             <div className="rounded-2xl p-5" style={{ background: '#0F172A' }}>
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#FF8C00' }}>Rapport Mensuel SYSCOHADA</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#EA580C' }}>Rapport Mensuel SYSCOHADA</p>
                   <p className="text-white font-bold text-base">Resto d'ici · Plateforme B2B</p>
                   <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>contact@restodici.ci · Abidjan, Côte d'Ivoire</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: '#FF8C00' }}>SYSCOHADA</span>
+                  <span className="px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: '#EA580C' }}>SYSCOHADA</span>
                   <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Période : {mois}</p>
                 </div>
               </div>
@@ -742,7 +742,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                   { title: 'CLIENT', lines: [compte?.raisonSociale || 'Entreprise', `NIF : ${compte?.numeroContribuable || '—'}`, `RCCM : ${compte?.numeroRCCM || '—'}`, compte?.secteurActivite ? `Secteur : ${compte.secteurActivite}` : ''] },
                 ].map(({ title, lines }) => (
                   <div key={title} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#FF8C00' }}>{title}</p>
+                    <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#EA580C' }}>{title}</p>
                     {lines.filter(Boolean).map((l, i) => (
                       <p key={i} className="text-[12px]" style={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)', fontWeight: i === 0 ? 600 : 400 }}>{l}</p>
                     ))}
@@ -881,7 +881,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                       <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111827' }}>{fcfa(totalHT)}</td>
                       <td style={{ padding: '9px 12px', textAlign: 'right', color: '#6B7280' }}>18 %</td>
                       <td style={{ padding: '9px 12px', textAlign: 'right', color: '#111827' }}>{fcfa(totalTVA)}</td>
-                      <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: '#FF8C00' }}>{fcfa(totalTTC)}</td>
+                      <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: '#EA580C' }}>{fcfa(totalTTC)}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -1424,8 +1424,8 @@ export default function B2BDashboard() {
                   className="flex items-center rounded-full transition-all"
                   style={{
                     padding: '4px 10px 4px 4px',
-                    border: `1.5px solid rgba(255,140,0,0.45)`,
-                    background: `rgba(255,140,0,0.12)`,
+                    border: `1.5px solid rgba(234,88,12,0.45)`,
+                    background: `rgba(234,88,12,0.12)`,
                     cursor: 'pointer',
                     gap: 6,
                   }}
@@ -2478,7 +2478,7 @@ export default function B2BDashboard() {
                                 background: isLate
                                   ? `linear-gradient(135deg, ${RED}, #B91C1C)`
                                   : `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`,
-                                boxShadow: `0 2px 8px ${isLate ? '#DC262640' : '#FF8C0040'}`,
+                                boxShadow: `0 2px 8px ${isLate ? '#DC262640' : '#EA580C40'}`,
                               }}>
                               <CreditCard className="w-3.5 h-3.5" />
                               {isLate ? 'Régler !' : 'Payer'}
@@ -3101,7 +3101,7 @@ export default function B2BDashboard() {
         return (
           <OnboardingTour
             steps={B2B_TOUR_STEPS}
-            accentColor="#FF8C00"
+            accentColor="#EA580C"
             storageKey={tourKey}
             onComplete={() => setShowTour(false)}
             onSkip={() => setShowTour(false)}

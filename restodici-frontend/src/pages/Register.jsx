@@ -126,7 +126,7 @@ export default function Register() {
 
           {/* ── Logo ── */}
           <div className="flex items-center gap-2.5 mb-8">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#FF8C00' }}>
+            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#EA580C' }}>
               <UtensilsCrossed style={{ width: 18, height: 18, color: 'white' }} />
             </div>
             <span className="font-bold text-lg" style={{ color: '#0F172A' }}>Resto d'ici</span>
@@ -150,7 +150,7 @@ export default function Register() {
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-semibold transition-all"
                 style={{
                   background: userType === key ? '#FFFFFF' : 'transparent',
-                  color: userType === key ? '#FF8C00' : '#94A3B8',
+                  color: userType === key ? '#EA580C' : '#94A3B8',
                   boxShadow: userType === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 }}>
                 <Icon className="w-3.5 h-3.5" />
@@ -248,7 +248,7 @@ export default function Register() {
 
             <button type="submit" disabled={loading}
               className="w-full py-3 rounded-xl font-semibold text-white text-sm transition disabled:opacity-60 active:scale-[0.99]"
-              style={{ background: '#FF8C00' }}>
+              style={{ background: '#EA580C' }}>
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -264,7 +264,7 @@ export default function Register() {
 
           <p className="mt-5 text-center text-sm" style={{ color: '#94A3B8' }}>
             Déjà un compte ?{' '}
-            <Link to={`/login${location.search}`} className="font-semibold hover:underline" style={{ color: '#FF8C00' }}>
+            <Link to={`/login${location.search}`} className="font-semibold hover:underline" style={{ color: '#EA580C' }}>
               Se connecter
             </Link>
           </p>

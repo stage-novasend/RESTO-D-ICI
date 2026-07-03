@@ -43,11 +43,11 @@ export default function VerifyEmail() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FF8C00] p-4 lg:p-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#EA580C] p-4 lg:p-8">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
 
         {/* Header */}
-        <div className="bg-[#FF8C00] px-8 pt-8 pb-10">
+        <div className="bg-[#EA580C] px-8 pt-8 pb-10">
           <div className="flex items-center gap-2.5 mb-4">
             <div className="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center border border-white/30">
               <UtensilsCrossed className="w-4 h-4 text-white" />
@@ -78,7 +78,7 @@ export default function VerifyEmail() {
               <h2 className="text-xl font-extrabold text-[#1A1A1A] mb-2">Email confirmé !</h2>
               <p className="text-[#6B7280] text-sm mb-8">{message}</p>
               <Link to="/login"
-                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#FF8C00] hover:bg-[#E07A00] transition-colors text-sm shadow-sm">
+                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#EA580C] hover:bg-[#C2410C] transition-colors text-sm shadow-sm">
                 Se connecter
               </Link>
             </div>
@@ -94,15 +94,15 @@ export default function VerifyEmail() {
               <div className="space-y-3 bg-[#FFF0DF] rounded-2xl p-5">
                 <p className="text-sm font-semibold text-[#1A1A1A]">Renvoyer le lien de vérification</p>
                 <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF8C00]/60" />
+                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#EA580C]/60" />
                   <input
                     value={email} onChange={(e) => setEmail(e.target.value)}
                     type="email" placeholder="votre@email.com"
-                    className="w-full pl-10 pr-4 py-3.5 bg-white border-0 rounded-2xl text-[#1A1A1A] placeholder-[#6B7280]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF8C00]/40"
+                    className="w-full pl-10 pr-4 py-3.5 bg-white border-0 rounded-2xl text-[#1A1A1A] placeholder-[#6B7280]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40"
                   />
                 </div>
                 <button type="button" disabled={isResending || !email} onClick={handleResend}
-                  className="w-full py-3 px-4 rounded-2xl font-bold text-white bg-[#FF8C00] hover:bg-[#E07A00] transition-colors disabled:opacity-60 text-sm">
+                  className="w-full py-3 px-4 rounded-2xl font-bold text-white bg-[#EA580C] hover:bg-[#C2410C] transition-colors disabled:opacity-60 text-sm">
                   {isResending ? (
                     <span className="flex items-center justify-center gap-2">
                       <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -113,7 +113,7 @@ export default function VerifyEmail() {
               </div>
 
               <div className="mt-5">
-                <Link to="/login" className="flex items-center gap-2 text-[#6B7280] hover:text-[#FF8C00] text-sm">
+                <Link to="/login" className="flex items-center gap-2 text-[#6B7280] hover:text-[#EA580C] text-sm">
                   <ArrowLeft className="w-4 h-4" />Retour à la connexion
                 </Link>
               </div>

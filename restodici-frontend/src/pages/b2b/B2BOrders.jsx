@@ -7,7 +7,7 @@ import { formatFCFA } from '../../utils/formatters';
 
 const BG = '#F5F6F8'; const CARD = '#FFFFFF'; const TEXT = '#111827';
 const MUTED = '#6B7280'; const FAINT = '#6B7280'; const BORDER = 'rgba(0,0,0,0.07)';
-const ACC = '#FF8C00'; const ACL = '#FFF0DF';
+const ACC = '#EA580C'; const ACL = '#FFF0DF';
 const SH = '0 1px 3px rgba(15,23,42,0.07),0 1px 2px rgba(15,23,42,0.04)';
 
 const STATUS = {
@@ -72,7 +72,7 @@ export default function B2BOrders() {
             <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
           </Link>
           <span style={{ color: 'rgba(0,0,0,0.15)' }}>›</span>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #FF8C00, #E07A00)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #EA580C, #C2410C)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <ShoppingBag className="w-3.5 h-3.5 text-white" />
           </div>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0, flex: 1 }}>Commandes</p>
@@ -91,7 +91,7 @@ export default function B2BOrders() {
               </Link>
               <Link to="/b2b/order?mode=instant"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #FF8C00, #E07A00)', boxShadow: '0 2px 8px rgba(255,140,0,0.40)' }}>
+                style={{ background: 'linear-gradient(135deg, #EA580C, #C2410C)', boxShadow: '0 2px 8px rgba(234,88,12,0.40)' }}>
                 <Plus className="w-3.5 h-3.5" /> Nouvelle commande
               </Link>
             </div>
@@ -123,7 +123,7 @@ export default function B2BOrders() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: 'Total',     value: orders.length, bg: '#111827' },
-            { label: 'En cours',  value: active.length, bg: '#FF8C00' },
+            { label: 'En cours',  value: active.length, bg: '#EA580C' },
             { label: 'Terminées', value: done.length,   bg: '#10B981' },
           ].map(s => (
             <div key={s.label} className="rounded-xl p-4 text-center" style={{ background: s.bg }}>

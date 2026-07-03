@@ -55,7 +55,7 @@ export default function OrdersPage() {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <div className="w-8 h-8 border-4 border-[#FF8C00] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <div className="w-8 h-8 border-4 border-[#EA580C] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-[#737373]">Chargement de vos commandes...</p>
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function OrdersPage() {
             </p>
             <Link
               to="/menu"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-[#FF8C00] text-white rounded-xl font-semibold hover:bg-[#E07A00] transition"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-[#EA580C] text-white rounded-xl font-semibold hover:bg-[#C2410C] transition"
             >
               <Store className="w-5 h-5" />
               Commander maintenant
@@ -116,7 +116,7 @@ export default function OrdersPage() {
                     }
                     {orderStatusConfig[order.status]?.label || order.status}
                   </span>
-                  <p className="text-lg font-bold text-[#FF8C00] mt-1">
+                  <p className="text-lg font-bold text-[#EA580C] mt-1">
                     {formatFCFA(order.total)} FCFA
                   </p>
                 </div>
@@ -154,7 +154,7 @@ export default function OrdersPage() {
               <div className="flex justify-end">
                 <button
                   onClick={() => setActiveOrder(activeOrder === order.id ? null : order.id)}
-                  className="px-4 py-2 text-sm text-[#FF8C00] hover:bg-[#FFF0DF] rounded-lg transition"
+                  className="px-4 py-2 text-sm text-[#EA580C] hover:bg-[#FFF0DF] rounded-lg transition"
                 >
                   {activeOrder === order.id ? 'Masquer les détails' : 'Voir les détails'}
                 </button>

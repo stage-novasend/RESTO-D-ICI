@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, Truck, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import { livraisonsExtAPI, commandesService } from '../../services/api';
 
-const O = '#FF8C00';
+const O = '#EA580C';
 
 export default function DispatchModal({ commande, onClose, onDispatched }) {
   const [fournisseurs,  setFournisseurs]  = useState([]);

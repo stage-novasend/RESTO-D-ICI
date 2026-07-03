@@ -137,7 +137,7 @@ export default function DeliveryMap({ value, onChange, heightClassName = 'h-72',
           onClick={handleLocate}
           disabled={locating}
           title="Utiliser ma position"
-          className="absolute bottom-3 right-3 z-[1000] flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] shadow-md transition hover:bg-[#FFF0DF] hover:text-[#FF8C00] disabled:opacity-50"
+          className="absolute bottom-3 right-3 z-[1000] flex items-center gap-1.5 rounded-xl bg-white px-3 py-2 text-sm font-semibold text-[#0F172A] shadow-md transition hover:bg-[#FFF0DF] hover:text-[#EA580C] disabled:opacity-50"
         >
           <LocateFixed className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} />
           {locating ? 'Localisation…' : 'Ma position'}

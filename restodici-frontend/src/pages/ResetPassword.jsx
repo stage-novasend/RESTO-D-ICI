@@ -4,7 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle, UtensilsCrossed } from 'lucide-react';
 import { authAPI } from '../services/api';
 
-const inputCls = 'w-full pl-10 pr-10 py-3.5 bg-[#FFF0DF] border-0 rounded-2xl text-[#1A1A1A] placeholder-[#6B7280]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#FF8C00]/40 transition-all';
+const inputCls = 'w-full pl-10 pr-10 py-3.5 bg-[#FFF0DF] border-0 rounded-2xl text-[#1A1A1A] placeholder-[#6B7280]/70 text-sm focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40 transition-all';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();
@@ -47,11 +47,11 @@ export default function ResetPassword() {
   );
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#FF8C00] p-4 lg:p-8">
+    <div className="min-h-screen flex items-center justify-center bg-[#EA580C] p-4 lg:p-8">
       <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden">
 
         {/* Header bar */}
-        <div className="bg-[#FF8C00] px-8 pt-8 pb-10">
+        <div className="bg-[#EA580C] px-8 pt-8 pb-10">
           <Logo />
           {success ? (
             <div className="flex items-center justify-center w-14 h-14 rounded-full bg-white/20 mx-auto mt-2">
@@ -76,7 +76,7 @@ export default function ResetPassword() {
               <h2 className="text-xl font-extrabold text-[#1A1A1A] mb-2">Mot de passe mis à jour !</h2>
               <p className="text-[#6B7280] text-sm mb-8">Votre mot de passe a été modifié. Vous pouvez vous connecter.</p>
               <Link to="/login"
-                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#FF8C00] hover:bg-[#E07A00] transition-colors text-sm shadow-sm">
+                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#EA580C] hover:bg-[#C2410C] transition-colors text-sm shadow-sm">
                 Se connecter
               </Link>
             </div>
@@ -85,10 +85,10 @@ export default function ResetPassword() {
               <h2 className="text-xl font-extrabold text-[#1A1A1A] mb-2">Lien invalide</h2>
               <p className="text-[#6B7280] text-sm mb-8">Ce lien est invalide ou a expiré. Demandez-en un nouveau.</p>
               <Link to="/forgot-password"
-                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#FF8C00] hover:bg-[#E07A00] transition-colors text-sm shadow-sm mb-4">
+                className="inline-flex items-center justify-center w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#EA580C] hover:bg-[#C2410C] transition-colors text-sm shadow-sm mb-4">
                 Demander un nouveau lien
               </Link>
-              <Link to="/login" className="flex items-center justify-center gap-2 text-[#6B7280] hover:text-[#FF8C00] text-sm">
+              <Link to="/login" className="flex items-center justify-center gap-2 text-[#6B7280] hover:text-[#EA580C] text-sm">
                 <ArrowLeft className="w-4 h-4" />Retour à la connexion
               </Link>
             </div>
@@ -97,11 +97,11 @@ export default function ResetPassword() {
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-[#1A1A1A]">Nouveau mot de passe</label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF8C00]/60" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#EA580C]/60" />
                   <input value={formData.newPassword} onChange={(e) => setFormData({ ...formData, newPassword: e.target.value })}
                     type={showNew ? 'text' : 'password'} placeholder="••••••••" className={inputCls} />
                   <button type="button" onClick={() => setShowNew(!showNew)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#FF8C00]" tabIndex={-1}>
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#EA580C]" tabIndex={-1}>
                     {showNew ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -111,11 +111,11 @@ export default function ResetPassword() {
               <div className="space-y-1.5">
                 <label className="text-sm font-semibold text-[#1A1A1A]">Confirmer le mot de passe</label>
                 <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#FF8C00]/60" />
+                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#EA580C]/60" />
                   <input value={formData.confirmPassword} onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                     type={showConfirm ? 'text' : 'password'} placeholder="••••••••" className={inputCls} />
                   <button type="button" onClick={() => setShowConfirm(!showConfirm)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#FF8C00]" tabIndex={-1}>
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#EA580C]" tabIndex={-1}>
                     {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
@@ -124,7 +124,7 @@ export default function ResetPassword() {
               {error && <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-2xl text-sm">{error}</div>}
 
               <button type="submit" disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#FF8C00] hover:bg-[#E07A00] active:scale-[0.98] transition-all shadow-sm disabled:opacity-60 text-sm">
+                className="w-full py-3.5 px-4 rounded-2xl font-bold text-white bg-[#EA580C] hover:bg-[#C2410C] active:scale-[0.98] transition-all shadow-sm disabled:opacity-60 text-sm">
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
                     <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -133,7 +133,7 @@ export default function ResetPassword() {
                 ) : 'Réinitialiser le mot de passe'}
               </button>
 
-              <Link to="/login" className="flex items-center gap-2 text-[#6B7280] hover:text-[#FF8C00] text-sm pt-1">
+              <Link to="/login" className="flex items-center gap-2 text-[#6B7280] hover:text-[#EA580C] text-sm pt-1">
                 <ArrowLeft className="w-4 h-4" />Retour à la connexion
               </Link>
             </form>

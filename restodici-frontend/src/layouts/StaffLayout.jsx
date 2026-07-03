@@ -18,15 +18,15 @@ import OnboardingTour from '../components/onboarding/OnboardingTour';
 /* ── Tokens sidebar blanc/orange ── */
 const SIDEBAR_BG   = '#FFFFFF';       /* blanc pur */
 const SIDEBAR_BG2  = '#FFF8F0';       /* orange très clair pour avatar footer */
-const SIDEBAR_BOR  = 'rgba(255,140,0,0.12)';
+const SIDEBAR_BOR  = 'rgba(234,88,12,0.12)';
 const SIDE_TEXT    = '#4B5563';       /* gris foncé — lisible sur fond blanc */
 const SIDE_TEXT_HI = '#111827';       /* texte actif — quasi noir */
 
-const OG     = '#FF8C00';
-const OG_D   = '#E07A00';
-const OG_G   = 'linear-gradient(135deg, #FF8C00 0%, #E07A00 100%)';
-const OG_L   = 'rgba(255,140,0,0.12)';
-const OG_L2  = 'rgba(255,140,0,0.08)';
+const OG     = '#EA580C';
+const OG_D   = '#C2410C';
+const OG_G   = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';
+const OG_L   = 'rgba(234,88,12,0.12)';
+const OG_L2  = 'rgba(234,88,12,0.08)';
 
 const PAGE_BG = '#FFFFFF';
 const CARD    = '#FFFFFF';
@@ -375,9 +375,9 @@ export default function StaffLayout() {
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }
-        .snav-item:hover { background: rgba(255,140,0,0.08) !important; color: #111827 !important; }
+        .snav-item:hover { background: rgba(234,88,12,0.08) !important; color: #111827 !important; }
         .snav-logout:hover { background: rgba(220,38,38,0.07) !important; color: #DC2626 !important; }
-        .snav-bell:hover { background: rgba(255,140,0,0.1) !important; }
+        .snav-bell:hover { background: rgba(234,88,12,0.1) !important; }
       `}</style>
 
       {/* ══════════════════════════════════════
@@ -428,7 +428,7 @@ export default function StaffLayout() {
                 }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                  background: active ? OG_G : 'rgba(255,140,0,0.07)',
+                  background: active ? OG_G : 'rgba(234,88,12,0.07)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.13s',
                   boxShadow: active ? `0 3px 10px ${OG}55` : 'none',
@@ -464,7 +464,7 @@ export default function StaffLayout() {
               color: unreadCount > 0 ? OG : SIDE_TEXT,
               transition: 'all 0.13s',
             }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: notifOpen ? OG_G : 'rgba(255,140,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, boxShadow: notifOpen ? `0 3px 10px ${OG}55` : 'none' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: notifOpen ? OG_G : 'rgba(234,88,12,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, boxShadow: notifOpen ? `0 3px 10px ${OG}55` : 'none' }}>
               <Bell size={14} color={notifOpen ? '#fff' : unreadCount > 0 ? OG : SIDE_TEXT} strokeWidth={1.8} />
               {unreadCount > 0 && (
                 <span style={{ position: 'absolute', top: -3, right: -3, background: RED, color: '#fff', fontSize: 7, fontWeight: 900, width: 14, height: 14, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${SIDEBAR_BG}` }}>

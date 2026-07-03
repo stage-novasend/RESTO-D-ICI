@@ -11,7 +11,7 @@ const TEXT   = '#0F172A';
 const MUTED  = '#64748B';
 const FAINT  = '#94A3B8';
 const BORDER = '#E2E8F0';
-const ORANGE = '#FF8C00';    // CTA — inviter, enregistrer
+const ORANGE = '#EA580C';    // CTA — inviter, enregistrer
 const ORANGE_L = '#FFF3E0';
 const ORANGE_D = '#E07800';
 const GREEN  = '#16A34A';    // succès, invitation envoyée
@@ -180,7 +180,7 @@ export default function B2BTeams() {
             <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
           </Link>
           <span style={{ color: 'rgba(0,0,0,0.15)' }}>›</span>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #FF8C00, #E07A00)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #EA580C, #C2410C)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Users className="w-3.5 h-3.5 text-white" />
           </div>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0, flex: 1 }}>Équipe</p>
@@ -275,7 +275,7 @@ export default function B2BTeams() {
                         value={editingBudget.value}
                         onChange={e => setEditingBudget(p => ({ ...p, value: e.target.value }))}
                         className="w-24 rounded-lg px-2 py-1 text-xs font-medium"
-                        style={{ border: '1.5px solid #FF8C00', outline: 'none', background: '#FFF0DF', color: '#111827' }}
+                        style={{ border: '1.5px solid #EA580C', outline: 'none', background: '#FFF0DF', color: '#111827' }}
                         autoFocus
                       />
                       <button
@@ -296,7 +296,7 @@ export default function B2BTeams() {
                     <button
                       onClick={() => setEditingBudget({ id: c.id, value: String(budget) })}
                       className="text-[10px] font-semibold px-2 py-0.5 rounded-md mt-1 transition hover:opacity-80"
-                      style={{ background: '#FFF0DF', color: '#FF8C00', border: 'none', cursor: 'pointer' }}>
+                      style={{ background: '#FFF0DF', color: '#EA580C', border: 'none', cursor: 'pointer' }}>
                       Modifier budget
                     </button>
                   )}

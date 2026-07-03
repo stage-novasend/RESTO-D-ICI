@@ -1,27 +1,12 @@
 // src/utils/formatters.js
-// Utilitaires de formatage conformes au CDC §10 (Design System)
 
-/**
- * Formate un montant en FCFA selon les standards ivoiriens
- * @param {number} amount - Montant à formater
- * @returns {string} Montant formaté ex: "3 500 FCFA"
- */
+// 10 000 → "10.000 FCFA" (point comme séparateur de milliers)
 export const formatFCFA = (amount) => {
   const n = Number(amount);
   if (isNaN(n)) return '—';
-  return new Intl.NumberFormat('fr-CI', {
-    style: 'currency',
-    currency: 'XOF',
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(n).replace('XOF', 'FCFA').trim();
+  return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' FCFA';
 };
 
-/**
- * Formate une date ISO en format lisible fr-FR
- * @param {string|Date} dateString - Date à formater
- * @returns {string} Date formatée ex: "05 mai 2026, 14:30"
- */
 export const formatDate = (dateString) => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleDateString('fr-FR', {
@@ -33,9 +18,6 @@ export const formatDate = (dateString) => {
   });
 };
 
-/**
- * Labels des statuts de commande (RG-10 - séquentiels)
- */
 export const STATUS_LABELS = {
   RECUE: 'Reçue',
   CONFIRMEE: 'Confirmée',
@@ -46,9 +28,6 @@ export const STATUS_LABELS = {
   ANNULEE: 'Annulée',
 };
 
-/**
- * Classes Tailwind pour les badges de statut (palette Savane Moderne)
- */
 export const STATUS_COLORS = {
   RECUE: 'bg-blue-100 text-blue-700',
   CONFIRMEE: 'bg-indigo-100 text-indigo-700',
@@ -59,9 +38,6 @@ export const STATUS_COLORS = {
   ANNULEE: 'bg-red-100 text-red-700',
 };
 
-/**
- * Formatage des modes de livraison
- */
 export const formatDeliveryMode = (mode) => {
   const modes = {
     SUR_PLACE: 'Sur place',
@@ -71,17 +47,11 @@ export const formatDeliveryMode = (mode) => {
   return modes[mode] || mode;
 };
 
-/**
- * Tronque un texte avec ellipsis pour l'UI mobile
- */
 export const truncate = (text, maxLength = 50) => {
   if (!text) return '';
   return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
 };
 
-/**
- * Calcule le temps écoulé depuis une date (pour le suivi commande US-07)
- */
 export const timeAgo = (dateString) => {
   const now = new Date();
   const date = new Date(dateString);

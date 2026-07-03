@@ -11,7 +11,7 @@ import {
   Truck, BarChart2, Percent, Bell, Activity,
 } from 'lucide-react';
 
-const ACCENT = '#FF8C00';
+const ACCENT = '#EA580C';
 
 const MENU_ITEMS = [
   { id: 'overview',      label: "Vue d'ensemble",  icon: LayoutDashboard, path: '/admin' },
@@ -81,7 +81,7 @@ function DockItem({ item, active, onClick, mouseY }) {
           width: 44, height: 44, borderRadius: 12, border: 'none',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: active
-            ? `linear-gradient(135deg, ${ACCENT}, #E07A00)`
+            ? `linear-gradient(135deg, ${ACCENT}, #C2410C)`
             : 'rgba(0,0,0,0.055)',
           color: active ? '#fff' : '#374151',
           transform: `scale(${scale})`,
@@ -181,9 +181,9 @@ export default function AdminLayout() {
         {/* ── Logo / Icône app ── */}
         <div style={{
           width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-          background: 'linear-gradient(135deg, #FF8C00 0%, #F8A020 100%)',
+          background: 'linear-gradient(135deg, #EA580C 0%, #F8A020 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(255,140,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2)',
+          boxShadow: '0 4px 16px rgba(234,88,12,0.45), inset 0 1px 0 rgba(255,255,255,0.2)',
         }}>
           <UtensilsCrossed style={{ width: 20, height: 20, color: '#fff' }} />
         </div>
@@ -225,7 +225,7 @@ export default function AdminLayout() {
             style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(24px)', borderRight: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #FF8C00, #F8A020)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(255,140,0,0.35)' }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #EA580C, #F8A020)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(234,88,12,0.35)' }}>
                   <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
                 </div>
                 <div>
@@ -253,7 +253,7 @@ export default function AdminLayout() {
                       fontSize: 13, fontWeight: 600,
                       transition: 'all 0.15s',
                     }}>
-                    <span style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(255,255,255,0.22)' : 'rgba(255,140,0,0.1)', color: active ? '#fff' : ACCENT, flexShrink: 0 }}>
+                    <span style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(255,255,255,0.22)' : 'rgba(234,88,12,0.1)', color: active ? '#fff' : ACCENT, flexShrink: 0 }}>
                       <Icon style={{ width: 15, height: 15 }} />
                     </span>
                     {item.label}

@@ -11,7 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { createCommandesSocket } from '../../services/commandes.service';
 import { formatFCFA } from '../../utils/formatters';
 
-const A = '#FF8C00';
+const A = '#EA580C';
 const BD = 'rgba(89,67,42,0.10)';
 
 const safeDate = (d) => {
@@ -256,7 +256,7 @@ export default function B2BOrderTracking() {
                     </div>
                     <div className={`pb-5 ${isLast ? 'pb-0' : ''} flex items-start pt-1.5`}>
                       <div>
-                        <p className={`text-sm font-semibold ${current ? 'text-[#FF8C00]' : done ? 'text-[#0F172A]' : 'text-[#64748B]/40'}`}>
+                        <p className={`text-sm font-semibold ${current ? 'text-[#EA580C]' : done ? 'text-[#0F172A]' : 'text-[#64748B]/40'}`}>
                           {s.label}
                         </p>
                         {current && <p className="text-xs text-[#64748B] mt-0.5 animate-pulse">En cours…</p>}

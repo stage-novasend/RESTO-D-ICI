@@ -20,7 +20,7 @@ export default function ClientLayout() {
       >
         {/* Bande kente */}
         <div style={{ display: 'flex', height: 3 }}>
-          {['#FF8C00', '#FFB800', '#1A0C00', '#E07A00'].map((c, i) => (
+          {['#EA580C', '#FFB800', '#1A0C00', '#C2410C'].map((c, i) => (
             <div key={i} style={{ flex: 1, background: c }} />
           ))}
         </div>
@@ -36,7 +36,7 @@ export default function ClientLayout() {
                 to="/"
                 className="inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-semibold transition"
                 style={{ border: '1px solid var(--color-line)', background: 'var(--color-bg-alt)', color: 'var(--color-muted)' }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#FF8C00'; e.currentTarget.style.color = '#FF8C00'; }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#EA580C'; e.currentTarget.style.color = '#EA580C'; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = 'var(--color-line)'; e.currentTarget.style.color = 'var(--color-muted)'; }}
               >
                 <Home className="w-4 h-4" />
@@ -47,13 +47,13 @@ export default function ClientLayout() {
               <Link
                 to={!user ? '/login' : user.role === 'B2B' ? '/b2b' : '/account'}
                 className="inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-semibold transition"
-                style={{ border: '1px solid var(--color-line)', background: 'var(--color-bg-alt)', color: '#FF8C00' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = '#FF8C00')}
+                style={{ border: '1px solid var(--color-line)', background: 'var(--color-bg-alt)', color: '#EA580C' }}
+                onMouseEnter={e => (e.currentTarget.style.borderColor = '#EA580C')}
                 onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--color-line)')}
               >
                 <span
                   className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
-                  style={{ background: 'linear-gradient(135deg,#FF8C00,#E07A00)' }}
+                  style={{ background: 'linear-gradient(135deg,#EA580C,#C2410C)' }}
                 >
                   {(user?.prenom?.charAt(0) || user?.nom?.charAt(0) || 'P').toUpperCase()}
                 </span>

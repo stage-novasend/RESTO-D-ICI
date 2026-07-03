@@ -13,15 +13,15 @@ import { formatFCFA } from '../../utils/formatters';
 import { getArticleImage } from '../../utils/articleImage';
 import B2BOnboardingWizard from './B2BOnboardingWizard';
 
-const A  = '#FF8C00';
+const A  = '#EA580C';
 const AL = '#FFF0DF';
 const SF = '#F9F7F5';
 const BD = 'rgba(89,67,42,0.10)';
 
 /* ── Tokens visuels partagés avec menu.jsx ─────────────────────────────────── */
 const C = {
-  bg: '#F4F4F4', card: '#FFFFFF', accent: '#FF8C00',
-  aD: '#E07A00', aL: '#FFF3E0', yellow: '#FFB800',
+  bg: '#F4F4F4', card: '#FFFFFF', accent: '#EA580C',
+  aD: '#C2410C', aL: '#FFF3E0', yellow: '#FFB800',
   dark: '#1C1C1E', text: '#3D3D3D', muted: '#8A8A8A',
   faint: '#C5C5C5', line: '#EBEBEB', green: '#22C55E',
   sh: '0 1px 8px rgba(0,0,0,0.07)',
@@ -684,7 +684,7 @@ export default function BulkOrder() {
               </div>
             ) : restaurants.length === 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', background: '#FFF7ED', borderRadius: 16 }}>
-                <UtensilsCrossed size={48} style={{ marginBottom: 12, color: '#FF8C00', opacity: 0.4 }} />
+                <UtensilsCrossed size={48} style={{ marginBottom: 12, color: '#EA580C', opacity: 0.4 }} />
                 <p style={{ fontFamily: sans, fontSize: 15, fontWeight: 700, color: '#0F172A', margin: '0 0 6px' }}>Aucun restaurant disponible</p>
                 <p style={{ fontFamily: sans, fontSize: 13, color: '#94A3B8', margin: 0 }}>Aucun restaurant partenaire n'est disponible pour le moment.</p>
               </div>
@@ -786,7 +786,7 @@ export default function BulkOrder() {
                         </div>
                       ) : filteredProducts.length === 0 ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF7ED', borderRadius: 12 }}>
-                          <ShoppingBag size={48} style={{ marginBottom: 12, color: '#FF8C00', opacity: 0.4 }} />
+                          <ShoppingBag size={48} style={{ marginBottom: 12, color: '#EA580C', opacity: 0.4 }} />
                           <p style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Aucun article disponible</p>
                           <p style={{ fontFamily: sans, fontSize: 12, color: '#94A3B8', margin: 0 }}>Essayez une autre catégorie ou modifiez votre recherche.</p>
                         </div>
@@ -1253,7 +1253,7 @@ export default function BulkOrder() {
           <div className="px-5 py-4" style={{ borderTop: `1px solid ${BD}` }}>
             <button onClick={applyPicker}
               className="w-full py-3 rounded-2xl text-sm font-bold text-white transition hover:opacity-90"
-              style={{ background: totalPickerQty > 0 ? `linear-gradient(135deg, #FF8C00, ${A})` : '#D1D5DB' }}>
+              style={{ background: totalPickerQty > 0 ? `linear-gradient(135deg, #EA580C, ${A})` : '#D1D5DB' }}>
               {totalPickerQty > 0
                 ? `Valider — ${totalPickerQty} portion${totalPickerQty > 1 ? 's' : ''} · ${formatFCFA(totalPickerQty * prix)}`
                 : 'Retirer ce plat du panier'}

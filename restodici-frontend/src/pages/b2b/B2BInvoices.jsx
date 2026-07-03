@@ -11,7 +11,7 @@ const TEXT   = '#0F172A';
 const MUTED  = '#64748B';
 const FAINT  = '#94A3B8';
 const BORDER = '#E2E8F0';
-const ORANGE = '#FF8C00';    // CTA principal
+const ORANGE = '#EA580C';    // CTA principal
 const GREEN  = '#16A34A';    // PDF, payé, succès
 const GREEN_L= '#DCFCE7';
 const GREEN_D= '#15803D';
@@ -172,7 +172,7 @@ export default function B2BInvoices() {
             <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
           </Link>
           <span style={{ color: 'rgba(0,0,0,0.15)' }}>›</span>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #FF8C00, #E07A00)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #EA580C, #C2410C)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <FileText className="w-3.5 h-3.5 text-white" />
           </div>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#111827', margin: 0, flex: 1 }}>Facturation</p>
@@ -431,7 +431,7 @@ export default function B2BInvoices() {
 
             <div className="px-6 py-5 flex items-center gap-3"
               style={{ background: '#FFF0DF', borderBottom: '1px solid rgba(89,67,42,0.08)' }}>
-              <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${ORANGE}, #E07A00)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: `linear-gradient(135deg, ${ORANGE}, #C2410C)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <CreditCard className="w-4 h-4 text-white" />
               </div>
               <div className="flex-1">
@@ -455,7 +455,7 @@ export default function B2BInvoices() {
                   </p>
                   <button onClick={startPayment}
                     className="w-full py-3 rounded-2xl text-white font-bold text-sm mb-3 hover:opacity-90 transition"
-                    style={{ background: `linear-gradient(135deg, ${ORANGE}, #E07A00)`, boxShadow: `0 4px 14px ${ORANGE}50` }}>
+                    style={{ background: `linear-gradient(135deg, ${ORANGE}, #C2410C)`, boxShadow: `0 4px 14px ${ORANGE}50` }}>
                     Procéder au paiement
                   </button>
                   <button onClick={closePayModal}
@@ -489,7 +489,7 @@ export default function B2BInvoices() {
                   {payUrl && (
                     <a href={payUrl} target="_blank" rel="noopener noreferrer"
                       className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-bold text-sm mb-3 hover:opacity-90 transition"
-                      style={{ background: `linear-gradient(135deg, ${ORANGE}, #E07A00)` }}>
+                      style={{ background: `linear-gradient(135deg, ${ORANGE}, #C2410C)` }}>
                       <ExternalLink className="w-4 h-4" />
                       Ouvrir la page de paiement
                     </a>

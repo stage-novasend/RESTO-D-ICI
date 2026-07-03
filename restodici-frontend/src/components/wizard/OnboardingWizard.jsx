@@ -8,7 +8,7 @@ import {
   Shield, LayoutDashboard, Bell,
 } from 'lucide-react';
 
-const ACCENT = '#FF8C00';
+const ACCENT = '#EA580C';
 const DARK   = '#1C1C1E';
 const MUTED  = '#64748B';
 

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { restaurantAPI, menuAPI } from '../../services/api';
 
-const A = '#FF8C00';
+const A = '#EA580C';
 const AL = '#FFF0DF';
 const SF = '#F9F7F5';
 const BD = 'rgba(89,67,42,0.10)';
