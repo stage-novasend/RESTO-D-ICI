@@ -29,25 +29,20 @@ import mtnMomoLogo      from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo    from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
-/* ── Palette espace client — système sémantique multi-couleurs ── */
-// Vert  : succès, livré, confirmé, sidebar active, argent
-const ACCENT       = '#16A34A';
-const ACCENT_DARK  = '#15803D';
-const ACCENT_LIGHT = '#F0FDF4';
-// Orange : actions vives, en cours, CTA "Commander"
+/* ── Palette client — orange + blanc ── */
+const ACCENT       = '#EA580C';
+const ACCENT_DARK  = '#C2410C';
+const ACCENT_LIGHT = '#FFF4ED';
 const ORANGE       = '#EA580C';
 const ORANGE_D     = '#C2410C';
 const ORANGE_L     = '#FFF4ED';
-// Jaune  : étoiles, avis, en attente, highlights
 const YELLOW       = '#F59E0B';
 const YELLOW_L     = '#FFFBEB';
-// Rouge  : annulé, erreurs, alertes
 const RED          = '#EF4444';
 const RED_L        = '#FFF1F2';
-// Structure
 const SURFACE      = '#FFFFFF';
 const BORDER       = 'rgba(0,0,0,0.08)';
-const DARK         = '#111827';   // titres forts
+const DARK         = '#111827';
 const NAVY         = '#1A0C00';
 const NAVY2        = '#374151';
 const BG           = '#FFFFFF';
@@ -504,80 +499,50 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
   return (
     <div className="space-y-6">
 
-      {/* ── Hero Banner ─────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl"
-        style={{ background: `linear-gradient(135deg, ${ORANGE} 0%, #9A3412 100%)`, boxShadow: `0 8px 32px ${ORANGE}44` }}>
-        {/* Cercle décoratif — discret */}
-        <div style={{ position: 'absolute', top: -60, right: -60, width: 260, height: 260, borderRadius: '50%', background: 'rgba(255,255,255,0.07)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -40, right: 80, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
-
-        <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
-          {/* Avatar */}
-          <div className="relative shrink-0">
-            <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center font-extrabold text-2xl text-white border-2 border-white/30">
-              {initials}
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-orange-700" style={{ background: ACCENT }} />
+      {/* ── Hero ── */}
+      <div className="rounded-3xl overflow-hidden" style={{ background: ACCENT, boxShadow: `0 6px 24px ${ACCENT}44` }}>
+        <div className="p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+          <div className="w-14 h-14 rounded-2xl bg-white/20 border-2 border-white/30 flex items-center justify-center font-extrabold text-2xl text-white shrink-0">
+            {initials}
           </div>
-
-          <div className="flex-1 min-w-0">
+          <div className="flex-1">
             <p className="text-white/60 text-xs font-semibold uppercase tracking-widest mb-1">{greeting}</p>
-            <h2 className="text-white font-extrabold text-2xl sm:text-3xl leading-tight" style={{ letterSpacing: '-0.02em' }}>
-              {firstName} !
-            </h2>
-            <p className="text-white/65 text-sm mt-1.5">
-              Vos plats préférés, livrés chez vous — rapide et simple.
-            </p>
+            <h2 className="text-white font-extrabold text-2xl leading-tight">{firstName} !</h2>
+            <p className="text-white/60 text-sm mt-1">Commandez, suivez, savourez.</p>
           </div>
-
           <Link to="/menu"
-            className="shrink-0 flex items-center gap-2 rounded-2xl px-5 py-3 font-bold text-sm transition hover:scale-105"
-            style={{ background: '#fff', color: ORANGE_D, textDecoration: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.18)' }}>
+            className="shrink-0 flex items-center gap-2 rounded-xl px-5 py-3 font-bold text-sm"
+            style={{ background: '#fff', color: ACCENT_DARK, textDecoration: 'none' }}>
             <ChefHat className="w-4 h-4" /> Commander
           </Link>
         </div>
-
-        {/* Stats strip — blanc uniforme, sobre */}
-        <div className="grid grid-cols-3" style={{ borderTop: '1px solid rgba(255,255,255,0.15)' }}>
+        <div className="grid grid-cols-3" style={{ borderTop: '1px solid rgba(255,255,255,0.2)' }}>
           {[
-            { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length,     icon: Clock       },
-            { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length,         icon: CheckCircle },
-            { label: 'Dépensé',  value: loadingOrders ? '—' : formatFCFA(totalSpent),   icon: Wallet      },
+            { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length },
+            { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length },
+            { label: 'Dépensé',  value: loadingOrders ? '—' : formatFCFA(totalSpent) },
           ].map((s, i) => (
-            <div key={i} className="py-4 flex flex-col items-center text-center"
-              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.15)' : 'none' }}>
-              <s.icon className="w-3.5 h-3.5 text-white/50 mb-1" />
-              <p className="text-white font-extrabold text-lg sm:text-xl leading-none">{s.value}</p>
-              <p className="text-white/50 text-[11px] mt-1 font-medium">{s.label}</p>
+            <div key={i} className="py-4 text-center"
+              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.2)' : 'none' }}>
+              <p className="text-white font-extrabold text-xl">{s.value}</p>
+              <p className="text-white/50 text-xs mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── KPI Cards — minimalistes, propres ────────────────────────── */}
+      {/* ── KPI ── */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
-          { label: 'Commandes actives', value: loadingOrders ? '—' : activeOrders.length,
-            sub: activeOrders.length > 0 ? 'En traitement' : 'Aucune active',
-            icon: Clock, color: ORANGE, bg: ORANGE_L },
-          { label: 'Total dépensé',     value: loadingOrders ? '—' : formatFCFA(totalSpent),
-            sub: avgOrder > 0 ? `Moy. ${formatFCFA(avgOrder)}` : 'Premier achat ?',
-            icon: TrendingUp, color: ACCENT, bg: ACCENT_LIGHT },
-          { label: 'Livrées',           value: loadingOrders ? '—' : delivered.length,
-            sub: `sur ${orders.length} commande${orders.length !== 1 ? 's' : ''}`,
-            icon: CheckCircle, color: ACCENT_DARK, bg: ACCENT_LIGHT },
-          { label: 'Avis à donner',     value: loadingOrders ? '—' : pendingAvis.length,
-            sub: pendingAvis.length > 0 ? 'Votre avis compte' : 'Tout à jour !',
-            icon: Star, color: YELLOW, bg: YELLOW_L },
+          { label: 'En cours',    value: loadingOrders ? '—' : activeOrders.length,  sub: 'commandes actives' },
+          { label: 'Dépensé',     value: loadingOrders ? '—' : formatFCFA(totalSpent), sub: avgOrder > 0 ? `moy. ${formatFCFA(avgOrder)}` : '—' },
+          { label: 'Livrées',     value: loadingOrders ? '—' : delivered.length,     sub: `sur ${orders.length} au total` },
+          { label: 'Avis',        value: loadingOrders ? '—' : pendingAvis.length,   sub: 'en attente' },
         ].map((kpi, i) => (
-          <div key={i} className="bg-white rounded-2xl p-4 border"
-            style={{ borderColor: BORDER, boxShadow: '0 1px 8px rgba(0,0,0,0.06)' }}>
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center mb-3" style={{ background: kpi.bg }}>
-              <kpi.icon className="w-4 h-4" style={{ color: kpi.color }} />
-            </div>
-            <p className="text-[11px] font-semibold text-[#9CA3AF] uppercase tracking-wide mb-0.5">{kpi.label}</p>
-            <p className="text-xl font-extrabold mb-0.5" style={{ color: DARK, letterSpacing: '-0.02em' }}>{kpi.value}</p>
-            <p className="text-[11px] font-medium" style={{ color: kpi.color }}>{kpi.sub}</p>
+          <div key={i} className="bg-white rounded-2xl p-5 border" style={{ borderColor: BORDER }}>
+            <p className="text-2xl font-extrabold mb-1" style={{ color: ACCENT }}>{kpi.value}</p>
+            <p className="text-sm font-bold text-[#111827]">{kpi.label}</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">{kpi.sub}</p>
           </div>
         ))}
       </div>
