@@ -1507,35 +1507,6 @@ export default function B2BDashboard() {
           {tab === 'overview' && (
             <div className="space-y-8">
 
-              {/* Welcome bar */}
-              <section className="rounded-3xl overflow-hidden relative"
-                style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: SH }}>
-                <div style={{ height: 3, background: `linear-gradient(90deg, ${ORANGE} 0%, ${ORANGE_D} 55%, transparent 100%)` }} />
-                <div className="flex flex-wrap items-center justify-between gap-4 px-8 py-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0"
-                      style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, boxShadow: `0 4px 16px ${ORANGE}40` }}>
-                      <UtensilsCrossed className="w-7 h-7 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-[0.28em]" style={{ color: ORANGE }}>
-                        TABLEAU DE BORD ENTREPRISE
-                      </p>
-                      <h3 className="text-2xl font-bold mt-1" style={{ color: TEXT }}>
-                        {compte?.raisonSociale
-                          ? compte.raisonSociale
-                          : `Bonjour, ${user?.prenom || user?.nom?.split(' ')[0] || 'Gestionnaire'} 👋`}
-                      </h3>
-                      {compte?.raisonSociale && (
-                        <p className="text-[12px] mt-0.5" style={{ color: MUTED }}>
-                          Bonjour, {user?.prenom || user?.nom?.split(' ')[0] || 'Gestionnaire'} 👋
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
               {/* ── KPI strip ─────────────────────────────────────────────────── */}
               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 {[
