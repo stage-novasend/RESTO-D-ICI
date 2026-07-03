@@ -517,19 +517,6 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
             <ChefHat className="w-4 h-4" /> Commander
           </Link>
         </div>
-        <div className="grid grid-cols-3" style={{ borderTop: `1px solid ${ACCENT}18` }}>
-          {[
-            { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length },
-            { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length },
-            { label: 'Dépensé',  value: loadingOrders ? '—' : formatFCFA(totalSpent) },
-          ].map((s, i) => (
-            <div key={i} className="py-4 text-center"
-              style={{ borderRight: i < 2 ? `1px solid ${ACCENT}18` : 'none' }}>
-              <p className="font-extrabold text-xl" style={{ color: ACCENT }}>{s.value}</p>
-              <p className="text-xs mt-0.5 text-[#9CA3AF]">{s.label}</p>
-            </div>
-          ))}
-        </div>
       </div>
 
       {/* ── KPI ── */}
