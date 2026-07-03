@@ -29,16 +29,28 @@ import mtnMomoLogo      from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo    from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
-/* ── Palette espace client — vert naturel / humain ── */
-const ACCENT       = '#16A34A';   // vert-600 — principal
-const ACCENT_DARK  = '#15803D';   // vert-700 — hover / foncé
-const ACCENT_LIGHT = '#F0FDF4';   // vert-50  — fonds légers
+/* ── Palette espace client — système sémantique multi-couleurs ── */
+// Vert  : succès, livré, confirmé, sidebar active, argent
+const ACCENT       = '#16A34A';
+const ACCENT_DARK  = '#15803D';
+const ACCENT_LIGHT = '#F0FDF4';
+// Orange : actions vives, en cours, CTA "Commander"
+const ORANGE       = '#EA580C';
+const ORANGE_D     = '#C2410C';
+const ORANGE_L     = '#FFF4ED';
+// Jaune  : étoiles, avis, en attente, highlights
+const YELLOW       = '#F59E0B';
+const YELLOW_L     = '#FFFBEB';
+// Rouge  : annulé, erreurs, alertes
+const RED          = '#EF4444';
+const RED_L        = '#FFF1F2';
+// Structure
 const SURFACE      = '#FFFFFF';
 const BORDER       = 'rgba(0,0,0,0.08)';
-const NAVY         = '#052e16';   // vert très sombre — titres
+const DARK         = '#111827';   // titres forts
+const NAVY         = '#1A0C00';
 const NAVY2        = '#374151';
 const BG           = '#FFFFFF';
-const RED          = '#EF4444';
 
 const ORDER_STATUS = {
   RECUE:        { label: 'Reçue',          bg: '#FFFBEB', color: '#D97706' },
@@ -428,25 +440,25 @@ function OrderTrackModal({ order, onClose, onReceipt }) {
                 <div key={step} className="flex items-center gap-3">
                   <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold"
                     style={{
-                      background: active ? ACCENT : done ? '#22C55E' : '#F3F4F6',
+                      background: active ? ORANGE : done ? ACCENT : '#F3F4F6',
                       color: active || done ? '#fff' : '#9CA3AF',
-                      boxShadow: active ? `0 0 0 4px ${ACCENT_LIGHT}` : 'none',
+                      boxShadow: active ? `0 0 0 4px ${ORANGE_L}` : 'none',
                     }}>
                     {done ? <CheckCircle className="w-3.5 h-3.5" /> : i + 1}
                   </div>
                   <p className="text-sm font-medium flex-1"
-                    style={{ color: active ? ACCENT : done ? '#16A34A' : '#9CA3AF' }}>
+                    style={{ color: active ? ORANGE : done ? ACCENT : '#9CA3AF' }}>
                     {ORDER_STATUS[step]?.label || step}
                   </p>
                   {ts && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: done || active ? '#F0FDF4' : '#F3F4F6', color: done ? '#16A34A' : active ? ACCENT : '#9CA3AF' }}>
+                      style={{ background: done ? ACCENT_LIGHT : active ? ORANGE_L : '#F3F4F6', color: done ? ACCENT : active ? ORANGE : '#9CA3AF' }}>
                       {ts}
                     </span>
                   )}
                   {active && !ts && (
                     <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full"
-                      style={{ background: ACCENT_LIGHT, color: ACCENT_DARK }}>
+                      style={{ background: ORANGE_L, color: ORANGE }}>
                       En cours
                     </span>
                   )}
@@ -494,109 +506,121 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
 
       {/* ── Hero Banner ─────────────────────────────────────────────── */}
       <div className="relative overflow-hidden rounded-3xl"
-        style={{ background: `linear-gradient(135deg, #166534 0%, #16A34A 60%, #22C55E 100%)`, boxShadow: `0 8px 40px rgba(22,163,74,0.35)` }}>
+        style={{ background: `linear-gradient(135deg, ${DARK} 0%, #1F2937 100%)`, boxShadow: '0 8px 40px rgba(0,0,0,0.25)' }}>
 
-        {/* Cercles décoratifs — ambiance organique */}
-        <div style={{ position: 'absolute', top: -40, right: -40, width: 200, height: 200, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', bottom: -60, left: -20, width: 240, height: 240, borderRadius: '50%', background: 'rgba(255,255,255,0.04)', pointerEvents: 'none' }} />
-        <div style={{ position: 'absolute', top: 20, right: 100, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', pointerEvents: 'none' }} />
+        {/* Accents décoratifs colorés */}
+        <div style={{ position: 'absolute', top: -50, right: -30, width: 220, height: 220, borderRadius: '50%', background: `${ORANGE}18`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', bottom: -40, left: 60, width: 180, height: 180, borderRadius: '50%', background: `${ACCENT}14`, pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: 30, right: 140, width: 60, height: 60, borderRadius: '50%', background: `${YELLOW}22`, pointerEvents: 'none' }} />
+        {/* Barre de couleur en haut */}
+        <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 3, background: `linear-gradient(90deg, ${ORANGE}, ${YELLOW}, ${ACCENT})` }} />
 
         <div className="relative p-6 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center gap-6">
-          {/* Avatar */}
+          {/* Avatar avec anneau vert */}
           <div className="relative shrink-0">
-            <div className="w-20 h-20 rounded-3xl bg-white/20 flex items-center justify-center text-white font-extrabold text-3xl border-4 border-white/30"
-              style={{ backdropFilter: 'blur(8px)' }}>
+            <div className="w-20 h-20 rounded-3xl flex items-center justify-center text-white font-extrabold text-3xl"
+              style={{ background: `linear-gradient(135deg, ${ORANGE}44, ${ACCENT}44)`, border: `3px solid rgba(255,255,255,0.15)`, backdropFilter: 'blur(8px)' }}>
               {initials}
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-white" style={{ background: '#4ADE80' }} />
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-[#1F2937]" style={{ background: ACCENT }} />
           </div>
 
           {/* Text */}
           <div className="flex-1">
-            <p className="text-white/70 text-sm font-semibold uppercase tracking-widest mb-1">{greeting} 🌿</p>
+            <p className="text-sm font-semibold uppercase tracking-widest mb-1" style={{ color: YELLOW }}>{greeting} ✨</p>
             <h2 className="text-white font-extrabold text-2xl sm:text-3xl mb-2" style={{ letterSpacing: '-0.02em' }}>
               {firstName} !
             </h2>
-            <p className="text-white/75 text-sm max-w-md">
-              Vos plats préférés à portée de main. Commandez, suivez, savourez — simplement.
+            <p className="text-sm max-w-md" style={{ color: 'rgba(255,255,255,0.6)' }}>
+              Vos plats préférés à portée de main — commandez, suivez, savourez.
             </p>
           </div>
 
-          {/* CTA */}
+          {/* CTA orange — énergie / action */}
           <Link to="/menu"
-            className="shrink-0 flex items-center gap-2 rounded-2xl px-6 py-3 font-extrabold text-sm transition hover:shadow-xl"
-            style={{ background: 'rgba(255,255,255,0.95)', color: ACCENT_DARK, textDecoration: 'none', boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
+            className="shrink-0 flex items-center gap-2 rounded-2xl px-6 py-3 font-extrabold text-sm text-white transition hover:opacity-90"
+            style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, textDecoration: 'none', boxShadow: `0 6px 20px ${ORANGE}55` }}>
             <ChefHat className="w-4 h-4" /> Commander
           </Link>
         </div>
 
-        {/* Stats strip */}
+        {/* Stats strip — chaque stat a sa couleur */}
         <div className="relative grid grid-cols-3"
-          style={{ borderTop: '1px solid rgba(255,255,255,0.18)' }}>
+          style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
           {[
-            { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length, icon: Clock },
-            { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length,     icon: CheckCircle },
-            { label: 'Dépensé',  value: loadingOrders ? '—' : `${formatFCFA(totalSpent)}`, icon: Wallet },
+            { label: 'En cours', value: loadingOrders ? '—' : activeOrders.length,               icon: Clock,        color: ORANGE },
+            { label: 'Livrées',  value: loadingOrders ? '—' : delivered.length,                   icon: CheckCircle,  color: ACCENT },
+            { label: 'Dépensé',  value: loadingOrders ? '—' : formatFCFA(totalSpent),             icon: Wallet,       color: YELLOW },
           ].map((s, i) => (
             <div key={i} className="px-4 sm:px-6 py-4 flex flex-col items-center text-center"
-              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.15)' : 'none' }}>
-              <s.icon className="w-4 h-4 text-white/60 mb-1.5" />
-              <p className="text-white font-extrabold text-xl sm:text-2xl leading-none">
+              style={{ borderRight: i < 2 ? '1px solid rgba(255,255,255,0.08)' : 'none' }}>
+              <s.icon className="w-4 h-4 mb-1.5" style={{ color: s.color }} />
+              <p className="font-extrabold text-xl sm:text-2xl leading-none" style={{ color: s.color }}>
                 {s.value}
-                {s.sub && <span className="text-xs font-semibold text-white/60 ml-1">{s.sub}</span>}
               </p>
-              <p className="text-white/60 text-xs mt-1 font-medium">{s.label}</p>
+              <p className="text-xs mt-1 font-medium" style={{ color: 'rgba(255,255,255,0.45)' }}>{s.label}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── KPI Cards ─────────────────────────────────────────────────── */}
+      {/* ── KPI Cards — chaque couleur a un sens ─────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {[
           {
-            label: 'Commandes en cours',
+            label: 'En cours',
             value: loadingOrders ? '—' : activeOrders.length,
             sub: activeOrders.length > 0 ? 'En cours de traitement' : 'Aucune active',
-            icon: Clock, iconBg: ACCENT_LIGHT, iconColor: ACCENT,
-            accent: activeOrders.length > 0 ? ACCENT : '#9CA3AF',
+            icon: Clock, iconBg: ORANGE_L, iconColor: ORANGE,
+            accent: activeOrders.length > 0 ? ORANGE : '#9CA3AF',
+            topBar: ORANGE,
           },
           {
             label: 'Total dépensé',
-            value: loadingOrders ? '—' : `${formatFCFA(totalSpent)}`,
+            value: loadingOrders ? '—' : formatFCFA(totalSpent),
             sub: avgOrder > 0 ? `Moy. ${formatFCFA(avgOrder)}` : 'Aucun achat encore',
-            icon: TrendingUp, iconBg: '#ECFDF5', iconColor: '#10B981',
-            accent: '#10B981',
+            icon: TrendingUp, iconBg: ACCENT_LIGHT, iconColor: ACCENT,
+            accent: ACCENT,
+            topBar: ACCENT,
           },
           {
-            label: 'Commandes livrées',
+            label: 'Livrées',
             value: loadingOrders ? '—' : delivered.length,
-            sub: `${orders.length} au total`,
-            icon: CheckCircle, iconBg: '#EFF6FF', iconColor: '#3B82F6',
-            accent: '#3B82F6',
+            sub: `${orders.length} commande${orders.length !== 1 ? 's' : ''} au total`,
+            icon: CheckCircle, iconBg: ACCENT_LIGHT, iconColor: ACCENT_DARK,
+            accent: ACCENT_DARK,
+            topBar: ACCENT_DARK,
           },
           {
             label: 'Avis en attente',
             value: loadingOrders ? '—' : pendingAvis.length,
             sub: pendingAvis.length > 0 ? 'Partagez votre expérience' : 'Aucun avis requis',
-            icon: Star, iconBg: '#FFFBEB', iconColor: '#F59E0B',
-            accent: '#F59E0B',
+            icon: Star, iconBg: YELLOW_L, iconColor: YELLOW,
+            accent: YELLOW,
+            topBar: YELLOW,
           },
         ].map((kpi, i) => (
-          <div key={i} className="bg-white rounded-2xl p-5 border"
-            style={{ borderColor: BORDER, boxShadow: '0 1px 12px rgba(0,0,0,0.05)' }}>
-            <div className="flex items-start justify-between mb-4">
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center"
-                style={{ background: kpi.iconBg }}>
-                <kpi.icon className="w-5 h-5" style={{ color: kpi.iconColor }} />
+          <div key={i} className="bg-white rounded-2xl overflow-hidden border"
+            style={{ borderColor: BORDER, boxShadow: '0 2px 14px rgba(0,0,0,0.06)' }}>
+            {/* Barre colorée en haut */}
+            <div style={{ height: 3, background: kpi.topBar }} />
+            <div className="p-5">
+              <div className="flex items-start justify-between mb-4">
+                <div className="w-11 h-11 rounded-xl flex items-center justify-center"
+                  style={{ background: kpi.iconBg }}>
+                  <kpi.icon className="w-5 h-5" style={{ color: kpi.iconColor }} />
+                </div>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full"
+                  style={{ background: kpi.iconBg, color: kpi.accent }}>
+                  {i === 0 ? 'ACTIF' : i === 3 ? 'À FAIRE' : ''}
+                </span>
               </div>
-              <div className="w-1.5 h-1.5 rounded-full mt-2" style={{ background: kpi.accent }} />
+              <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-1">{kpi.label}</p>
+              <p className="text-2xl font-extrabold leading-tight mb-1" style={{ color: DARK, letterSpacing: '-0.02em' }}>
+                {kpi.value}
+              </p>
+              <p className="text-xs font-medium" style={{ color: kpi.accent }}>{kpi.sub}</p>
             </div>
-            <p className="text-xs font-semibold text-[#9CA3AF] uppercase tracking-wider mb-1">{kpi.label}</p>
-            <p className="text-2xl font-extrabold text-[#1A0C00] leading-tight mb-1" style={{ letterSpacing: '-0.02em' }}>
-              {kpi.value}
-            </p>
-            <p className="text-xs font-medium" style={{ color: kpi.accent }}>{kpi.sub}</p>
           </div>
         ))}
       </div>
@@ -611,11 +635,11 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
           {!loadingOrders && pendingAvis.length > 0 && (
             <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
               <div className="px-5 py-4 border-b flex items-center gap-2" style={{ borderColor: BORDER }}>
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: '#FFFBEB' }}>
-                  <Star className="w-3.5 h-3.5 text-amber-500" />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: YELLOW_L }}>
+                  <Star className="w-3.5 h-3.5" style={{ color: YELLOW }} />
                 </div>
                 <span className="text-sm font-bold text-[#1A0C00]">Vos avis nous intéressent</span>
-                <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full text-white" style={{ background: ACCENT }}>
+                <span className="ml-auto text-xs font-bold px-2.5 py-1 rounded-full" style={{ background: YELLOW, color: '#fff' }}>
                   {pendingAvis.length} en attente
                 </span>
               </div>
@@ -631,19 +655,19 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
           <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: BORDER }}>
             <div className="px-5 py-4 border-b flex items-center justify-between" style={{ borderColor: BORDER }}>
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: ACCENT_LIGHT }}>
-                  <Package className="w-3.5 h-3.5" style={{ color: ACCENT }} />
+                <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: ORANGE_L }}>
+                  <Package className="w-3.5 h-3.5" style={{ color: ORANGE }} />
                 </div>
                 <span className="text-sm font-bold text-[#1A0C00]">Commandes en cours</span>
                 {activeOrders.length > 0 && (
                   <span className="text-xs font-bold px-2 py-0.5 rounded-full"
-                    style={{ background: ACCENT_LIGHT, color: ACCENT }}>
+                    style={{ background: ORANGE_L, color: ORANGE }}>
                     {activeOrders.length}
                   </span>
                 )}
               </div>
               <button onClick={() => setTab('orders')}
-                className="flex items-center gap-1 text-xs font-semibold" style={{ color: ACCENT }}>
+                className="flex items-center gap-1 text-xs font-semibold" style={{ color: ORANGE }}>
                 Voir tout <ArrowRight className="w-3 h-3" />
               </button>
             </div>
@@ -654,14 +678,14 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
             ) : activeOrders.length === 0 ? (
               <div className="py-14 text-center">
                 <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4"
-                  style={{ background: ACCENT_LIGHT }}>
-                  <ShoppingBag className="w-7 h-7" style={{ color: ACCENT }} />
+                  style={{ background: ORANGE_L }}>
+                  <ShoppingBag className="w-7 h-7" style={{ color: ORANGE }} />
                 </div>
                 <p className="text-sm font-semibold text-[#374151] mb-1">Aucune commande en cours</p>
                 <p className="text-xs text-[#9CA3AF] mb-4">Passez votre première commande !</p>
                 <Link to="/menu"
                   className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-                  style={{ background: ACCENT, textDecoration: 'none' }}>
+                  style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, textDecoration: 'none', boxShadow: `0 4px 14px ${ORANGE}44` }}>
                   <ChefHat className="w-4 h-4" /> Parcourir le menu
                 </Link>
               </div>
@@ -1846,17 +1870,17 @@ export default function ClientDashboard() {
               <div className="space-y-4">
                 <div className="flex gap-2 flex-wrap">
                   {[
-                    { k: 'all',      label: `Toutes (${orders.length})` },
-                    { k: 'actives',  label: `En cours (${activeOrders.length})` },
-                    { k: 'livrees',  label: `Livrées (${delivered.length})` },
-                    { k: 'annulees', label: `Annulées (${cancelled.length})` },
+                    { k: 'all',      label: `Toutes (${orders.length})`,           color: DARK,   bg: DARK },
+                    { k: 'actives',  label: `En cours (${activeOrders.length})`,   color: ORANGE, bg: ORANGE },
+                    { k: 'livrees',  label: `Livrées (${delivered.length})`,        color: ACCENT, bg: ACCENT },
+                    { k: 'annulees', label: `Annulées (${cancelled.length})`,       color: RED,    bg: RED },
                   ].map(f => (
                     <button key={f.k} onClick={() => setOrderFilter(f.k)}
                       className="px-4 py-1.5 rounded-full text-sm font-semibold border transition"
                       style={{
-                        background: orderFilter === f.k ? ACCENT : '#fff',
-                        color: orderFilter === f.k ? '#fff' : '#8B6E50',
-                        borderColor: orderFilter === f.k ? ACCENT : BORDER,
+                        background: orderFilter === f.k ? f.bg : '#fff',
+                        color: orderFilter === f.k ? '#fff' : f.color,
+                        borderColor: orderFilter === f.k ? f.bg : `${f.color}44`,
                       }}>
                       {f.label}
                     </button>
@@ -1871,7 +1895,7 @@ export default function ClientDashboard() {
                         {filteredOrders.length} résultat{filteredOrders.length !== 1 ? 's' : ''}
                       </span>
                     </div>
-                    <Link to="/menu" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: ACCENT }}>
+                    <Link to="/menu" className="flex items-center gap-1.5 text-xs font-semibold" style={{ color: ORANGE }}>
                       <ShoppingBag className="w-3.5 h-3.5" /> Commander
                     </Link>
                   </div>
@@ -1879,18 +1903,18 @@ export default function ClientDashboard() {
                   {loadingOrders ? (
                     <div className="flex justify-center py-12">
                       <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin"
-                        style={{ borderColor: ACCENT, borderTopColor: 'transparent' }} />
+                        style={{ borderColor: ORANGE, borderTopColor: 'transparent' }} />
                     </div>
                   ) : filteredOrders.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-12 text-center" style={{ background: '#FFF7ED' }}>
-                      <ShoppingBag className="w-12 h-12 mb-3" style={{ color: ACCENT, opacity: 0.4 }} />
+                    <div className="flex flex-col items-center justify-center py-12 text-center" style={{ background: ORANGE_L }}>
+                      <ShoppingBag className="w-12 h-12 mb-3" style={{ color: ORANGE, opacity: 0.5 }} />
                       <p className="text-sm font-medium mb-1" style={{ color: '#1A0C00' }}>
                         {orders.length === 0 ? "Vous n'avez pas encore passé de commande" : 'Aucune commande dans cette catégorie'}
                       </p>
                       <p className="text-xs mb-4" style={{ color: '#A89070' }}>Explorez notre menu et passez votre première commande.</p>
                       <Link to="/menu"
                         className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
-                        style={{ background: ACCENT, textDecoration: 'none' }}>
+                        style={{ background: ORANGE, textDecoration: 'none' }}>
                         Commander maintenant
                       </Link>
                     </div>
