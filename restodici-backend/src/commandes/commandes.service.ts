@@ -91,10 +91,15 @@ export class CommandesService {
       const tauxPct = Math.min(5, Math.max(1, Number(restaurant?.tauxCommission ?? 2)));
       const tauxFraction = tauxPct / 100;
 
+      // [PERF] Chargement de tous les articles en une seule requête (audit §4.1)
+      const articleIds = dto.lignes.map((l) => l.articleId);
+      const articles = await manager.find(Article, {
+        where: { id: In(articleIds) },
+      });
+      const articleMap = new Map(articles.map((a) => [a.id, a]));
+
       for (const ligneDto of dto.lignes) {
-        const article = await manager.findOne(Article, {
-          where: { id: ligneDto.articleId },
-        });
+        const article = articleMap.get(ligneDto.articleId);
         if (!article) {
           throw new NotFoundException(
             `Article ${ligneDto.articleId} introuvable`,

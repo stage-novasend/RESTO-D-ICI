@@ -9,6 +9,7 @@ import { Repository } from 'typeorm';
 import { Restaurant } from './entities/restaurant.entity';
 import { User } from '../auth/entities/user.entity';
 import { Role } from '../auth/entities/user.entity';
+import { normalizeDeliveryZones } from '../common/utils/delivery-zones.util';
 import * as bcrypt from 'bcrypt';
 import { CommandesGateway } from '../commandes/commandes.gateway';
 
@@ -20,45 +21,6 @@ export class RestaurantsService {
     @InjectRepository(User) private userRepo: Repository<User>,
     private commandesGateway: CommandesGateway,
   ) {}
-
-  private normalizeDeliveryZones(zones?: unknown) {
-    if (!Array.isArray(zones)) return [];
-
-    return zones
-      .map((zone) => {
-        if (typeof zone === 'string') {
-          const trimmed = zone.trim();
-          return trimmed ? { nom: trimmed, lat: null, lng: null } : null;
-        }
-
-        if (zone && typeof zone === 'object') {
-          const record = zone as Record<string, unknown>;
-          const rawNom =
-            typeof record.nom === 'string'
-              ? record.nom
-              : typeof record.name === 'string'
-                ? record.name
-                : '';
-          const nom = rawNom.trim();
-          if (!nom) return null;
-          const lat = Number(record.lat);
-          const lng = Number(record.lng);
-          return {
-            nom,
-            lat: Number.isFinite(lat) ? lat : null,
-            lng: Number.isFinite(lng) ? lng : null,
-          };
-        }
-
-        return null;
-      })
-      .filter(
-        (
-          zone,
-        ): zone is { nom: string; lat: number | null; lng: number | null } =>
-          zone !== null,
-      );
-  }
 
   async getAllActive(zone?: string, categorie?: string): Promise<Restaurant[]> {
     const query = this.restaurantRepo
@@ -133,7 +95,7 @@ export class RestaurantsService {
     }
 
     if (updateData.deliveryZones !== undefined) {
-      restaurant.deliveryZones = this.normalizeDeliveryZones(
+      restaurant.deliveryZones = normalizeDeliveryZones(
         updateData.deliveryZones,
       );
     }

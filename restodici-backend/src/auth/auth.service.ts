@@ -17,6 +17,7 @@ import { PasswordReset } from './entities/password-reset.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
+import { normalizeDeliveryZones } from '../common/utils/delivery-zones.util';
 import { ConfigService } from '@nestjs/config';
 import {
   generateSecret as otpGenerateSecret,
@@ -50,55 +51,16 @@ export class AuthService {
     };
   }
 
-  private normalizeDeliveryZones(zones?: unknown) {
-    if (!Array.isArray(zones)) return [];
-
-    return zones
-      .map((zone) => {
-        if (typeof zone === 'string') {
-          const trimmed = zone.trim();
-          return trimmed ? { nom: trimmed, lat: null, lng: null } : null;
-        }
-
-        if (zone && typeof zone === 'object') {
-          const record = zone as Record<string, unknown>;
-          const rawNom =
-            typeof record.nom === 'string'
-              ? record.nom
-              : typeof record.name === 'string'
-                ? record.name
-                : '';
-          const nom = rawNom.trim();
-          if (!nom) return null;
-          const lat = Number(record.lat);
-          const lng = Number(record.lng);
-          return {
-            nom,
-            lat: Number.isFinite(lat) ? lat : null,
-            lng: Number.isFinite(lng) ? lng : null,
-          };
-        }
-
-        return null;
-      })
-      .filter(
-        (
-          zone,
-        ): zone is { nom: string; lat: number | null; lng: number | null } =>
-          zone !== null,
-      );
-  }
-
-  private generateRefreshToken(): string {
-    return crypto.randomBytes(48).toString('hex');
-  }
-
+  // [SÉCURITÉ] Format « <sessionId>.<tokenSecret> » : sessionId indexé (lookup direct),
+  // seul le tokenSecret est haché en base (audit §3.4).
   private async attachRefreshToken(user: User): Promise<string> {
-    const token = this.generateRefreshToken();
-    user.refreshToken = await bcrypt.hash(token, 8);
+    const sessionId = crypto.randomUUID();
+    const tokenSecret = crypto.randomBytes(48).toString('hex');
+    user.refreshTokenId = sessionId;
+    user.refreshToken = await bcrypt.hash(tokenSecret, 8);
     user.refreshTokenExpires = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 jours
     await this.userRepository.save(user);
-    return token;
+    return `${sessionId}.${tokenSecret}`;
   }
 
   async refreshAccessToken(refreshToken: string): Promise<{
@@ -110,25 +72,27 @@ export class AuthService {
   }> {
     if (!refreshToken) throw new UnauthorizedException('Token de rafraîchissement manquant');
 
-    const users = await this.userRepository.find({
-      where: { actif: true },
+    // Format attendu : « <sessionId>.<tokenSecret> »
+    const [sessionId, tokenSecret] = refreshToken.split('.');
+    if (!sessionId || !tokenSecret) {
+      throw new UnauthorizedException('Session expirée, veuillez vous reconnecter');
+    }
+
+    // Lookup direct par identifiant de session indexé — plus d'itération sur tous les users
+    const matchedUser = await this.userRepository.findOne({
+      where: { refreshTokenId: sessionId, actif: true },
       relations: ['restaurant'],
     });
 
-    let matchedUser: User | null = null;
-    for (const u of users) {
-      if (
-        u.refreshToken &&
-        u.refreshTokenExpires &&
-        u.refreshTokenExpires > new Date() &&
-        (await bcrypt.compare(refreshToken, u.refreshToken))
-      ) {
-        matchedUser = u;
-        break;
-      }
+    if (
+      !matchedUser ||
+      !matchedUser.refreshToken ||
+      !matchedUser.refreshTokenExpires ||
+      matchedUser.refreshTokenExpires <= new Date() ||
+      !(await bcrypt.compare(tokenSecret, matchedUser.refreshToken))
+    ) {
+      throw new UnauthorizedException('Session expirée, veuillez vous reconnecter');
     }
-
-    if (!matchedUser) throw new UnauthorizedException('Session expirée, veuillez vous reconnecter');
 
     const newRefreshToken = await this.attachRefreshToken(matchedUser);
     const response = await this.buildAuthResponse(matchedUser);
@@ -272,9 +236,9 @@ export class AuthService {
 
     // Utiliser password (envoyé par le frontend)
     const passwordToHash = dto.password;
-    if (!passwordToHash || passwordToHash.length < 6) {
+    if (!passwordToHash || passwordToHash.length < 8) {
       throw new BadRequestException(
-        'Le mot de passe doit contenir au moins 6 caractères',
+        'Le mot de passe doit contenir au moins 8 caractères',
       );
     }
 
@@ -310,7 +274,7 @@ export class AuthService {
         email: dto.restaurantEmail || dto.email,
         openingTime,
         closingTime,
-        deliveryZones: this.normalizeDeliveryZones(dto.zonesLivraison),
+        deliveryZones: normalizeDeliveryZones(dto.zonesLivraison),
       });
       const savedRestaurant =
         await this.restaurantRepository.save(newRestaurant);
@@ -449,9 +413,9 @@ export class AuthService {
 
   // Reset password with token
   async resetPassword(token: string, newPassword: string) {
-    if (!newPassword || newPassword.length < 6) {
+    if (!newPassword || newPassword.length < 8) {
       throw new BadRequestException(
-        'Le mot de passe doit contenir au moins 6 caractères',
+        'Le mot de passe doit contenir au moins 8 caractères',
       );
     }
 
@@ -555,9 +519,9 @@ export class AuthService {
     if (!passwordMatches)
       throw new BadRequestException('Mot de passe actuel incorrect');
 
-    if (!newPassword || newPassword.length < 6)
+    if (!newPassword || newPassword.length < 8)
       throw new BadRequestException(
-        'Le nouveau mot de passe doit contenir au moins 6 caractères',
+        'Le nouveau mot de passe doit contenir au moins 8 caractères',
       );
 
     user.password = await bcrypt.hash(newPassword, 12);
@@ -702,7 +666,11 @@ export class AuthService {
     await this.userRepository
       .createQueryBuilder()
       .update()
-      .set({ refreshToken: undefined, refreshTokenExpires: undefined })
+      .set({
+        refreshToken: undefined,
+        refreshTokenId: undefined,
+        refreshTokenExpires: undefined,
+      })
       .where('refreshTokenExpires IS NOT NULL AND refreshTokenExpires < :now', { now })
       .execute();
   }

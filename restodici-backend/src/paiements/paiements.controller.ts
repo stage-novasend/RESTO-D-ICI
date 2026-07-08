@@ -18,6 +18,8 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { PaiementsService } from './paiements.service';
 import { InitierPaiementDto } from './dto/initier-paiement.dto';
 import { NovaSendProvider } from './novasend.service';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../common/decorators/roles.decorator';
 import * as crypto from 'crypto';
 
 @SkipThrottle()
@@ -44,7 +46,10 @@ export class PaiementsController {
   }
 
   // ── Simulation (dev only) : déclenche la confirmation sans appel API ────────
+  // [SÉCURITÉ] Réservé ADMIN/GERANT authentifiés (audit §3.7)
   @Post('simuler')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('ADMIN', 'GERANT')
   @HttpCode(HttpStatus.OK)
   async simulerConfirmation(
     @Body() body: { commandeId: string; provider: NovaSendProvider },
@@ -67,17 +72,24 @@ export class PaiementsController {
     @Headers('x-signature-value') sigHeader: string,
     @Req() req: any,
   ) {
+    // [SÉCURITÉ] Signature obligatoire — webhook rejeté sans secret ou signature (audit §3.2)
     const secret = this.config.get<string>('NOVASEND_WEBHOOK_SECRET');
-    if (secret && sigHeader) {
-      const raw = req.rawBody?.toString() ?? JSON.stringify(body);
-      const expected = crypto
-        .createHmac('sha256', secret)
-        .update(raw)
-        .digest('hex');
-      if (sigHeader !== expected) {
-        this.logger.warn('Novasend webhook: signature invalide');
-        return { status: 'invalid_signature' };
-      }
+    if (!secret) {
+      this.logger.error('NOVASEND_WEBHOOK_SECRET non configuré — webhook rejeté');
+      return { status: 'misconfigured' };
+    }
+    if (!sigHeader) {
+      this.logger.warn('Novasend webhook: signature absente');
+      return { status: 'invalid_signature' };
+    }
+    const raw = req.rawBody?.toString() ?? JSON.stringify(body);
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(raw)
+      .digest('hex');
+    if (sigHeader !== expected) {
+      this.logger.warn('Novasend webhook: signature invalide');
+      return { status: 'invalid_signature' };
     }
     this.logger.log(`Novasend webhook: ${JSON.stringify(body).slice(0, 200)}`);
     await this.paiementsService.handleNovasendWebhook(body);

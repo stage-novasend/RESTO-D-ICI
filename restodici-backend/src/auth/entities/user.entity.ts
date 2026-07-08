@@ -6,7 +6,8 @@ import {
   UpdateDateColumn,
   ManyToOne,
   ManyToMany,
-  JoinTable, // ← AJOUTER CES IMPORTS
+  JoinTable,
+  Index,
 } from 'typeorm';
 import { Restaurant } from '../../restaurants/entities/restaurant.entity';
 
@@ -99,6 +100,11 @@ export class User {
 
   @Column({ nullable: true })
   refreshToken?: string;
+
+  // [PERF/SÉCURITÉ] Identifiant de session non haché, indexé → lookup direct O(1) (audit §3.4)
+  @Column({ nullable: true, unique: true })
+  @Index()
+  refreshTokenId?: string;
 
   @Column({ nullable: true })
   refreshTokenExpires?: Date;

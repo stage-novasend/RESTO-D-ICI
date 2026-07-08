@@ -40,8 +40,8 @@ export default defineConfig({
   },
 
   build: {
-    // Taille max avant avertissement : on tolère 800kb par chunk après le splitting
-    chunkSizeWarningLimit: 800,
+    // Seuil d'avertissement abaissé à 300 Ko pour révéler les God Components (audit §8.5)
+    chunkSizeWarningLimit: 300,
 
     rollupOptions: {
       output: {

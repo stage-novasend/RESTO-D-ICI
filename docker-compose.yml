@@ -1,16 +1,18 @@
-# docker-compose.yml (extrait)
+# docker-compose.yml
 services:
   db:
     image: postgres:15-alpine
     container_name: restodici-db
     environment:
       POSTGRES_USER: restodici_user
-      POSTGRES_PASSWORD: restodici_pass
+      # Mot de passe lu depuis .env (défaut = valeur historique pour ne pas casser le volume)
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-restodici_pass}
       POSTGRES_DB: restodici_db
     ports:
-      - "5433:5432"  
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U restodici_user -d restodici_db"]
       interval: 10s
@@ -20,8 +22,17 @@ services:
   redis:
     image: redis:7-alpine
     container_name: restodici-redis
+    # [SÉCURITÉ] Mot de passe obligatoire (audit §3.6)
+    command: redis-server --requirepass ${REDIS_PASSWORD}
     ports:
-      - "6379:6379"
+      # [SÉCURITÉ] Lié uniquement à localhost — non exposé sur Internet
+      - "127.0.0.1:6379:6379"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
 volumes:
   pgdata:

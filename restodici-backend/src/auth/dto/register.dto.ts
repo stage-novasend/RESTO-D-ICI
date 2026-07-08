@@ -24,8 +24,8 @@ export class RegisterDto {
   prenom?: string;
 
   @IsString()
-  @MinLength(6)
-  password!: string; // Frontend envoie password (cohérent avec login)
+  @MinLength(8)
+  password!: string; // Min. 8 caractères (audit §3.9, aligné avec validators.js)
 
   @IsString()
   @IsOptional()

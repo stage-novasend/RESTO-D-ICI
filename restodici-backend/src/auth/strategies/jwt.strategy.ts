@@ -40,7 +40,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         },
       ]),
       ignoreExpiration: false,
-      secretOrKey: process.env.JWT_SECRET || 'dev-secret-change-me',
+      // [SÉCURITÉ] Pas de fallback : JWT_SECRET est validé au démarrage (audit §3.1)
+      secretOrKey: process.env.JWT_SECRET as string,
     });
   }
 

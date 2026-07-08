@@ -3,8 +3,14 @@ import 'dotenv/config'; // ← charge .env avant tout le reste
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
+  // [SÉCURITÉ] JWT_SECRET obligatoire — refus de démarrer sans lui (audit §3.1)
+  if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
+    throw new Error('[FATAL] JWT_SECRET est manquant. Arrêt du serveur.');
+  }
+
   const app = await NestFactory.create(AppModule);
 
   // PRÉFIXE GLOBAL OBLIGATOIRE
@@ -50,8 +56,19 @@ async function bootstrap() {
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
+  // Documentation OpenAPI/Swagger — accessible sur /api/docs (audit §7.5)
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle("Resto d'ici API")
+    .setDescription("API de la plateforme de restauration RESTODICI")
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api/docs', app, document);
+
   const port = parseInt(process.env.PORT || '3000', 10);
   await app.listen(port);
   console.log(`API Resto d'ici démarrée sur http://localhost:${port}/api`);
+  console.log(`Documentation Swagger : http://localhost:${port}/api/docs`);
 }
 void bootstrap();

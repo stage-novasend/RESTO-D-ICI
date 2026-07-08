@@ -10,8 +10,10 @@ import {
   Query,
   Param,
   UseGuards,
+  UseInterceptors,
   Req, // <--- AJOUTER CET IMPORT
 } from '@nestjs/common';
+import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { MenuService } from './menu.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { CreateCategorieDto } from './dto/create-categorie.dto';
@@ -40,7 +42,10 @@ export class MenuController {
   }
 
   // GET /menu/restaurants — Liste des restaurants actifs
+  // [PERF] Cache 5 min (audit §4.3)
   @Get('restaurants')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(5 * 60 * 1000)
   getRestaurants() {
     return this.menuService.getRestaurants();
   }
@@ -55,7 +60,10 @@ export class MenuController {
   }
 
   // GET /menu/categories — Liste catégories
+  // [PERF] Cache 5 min (audit §4.3)
   @Get('categories')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(5 * 60 * 1000)
   getCategories(@Query('restaurantId') restaurantId?: string) {
     return this.menuService.getCategories(restaurantId);
   }
@@ -77,7 +85,10 @@ export class MenuController {
   }
 
   // GET /menu/restaurant/:id — Menu d'un restaurant spécifique
+  // [PERF] Cache 2 min (audit §4.3)
   @Get('restaurant/:id')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(2 * 60 * 1000)
   getMenuByRestaurant(
     @Param('id') restaurantId: string,
     @Query('categorie') categorieId?: string,

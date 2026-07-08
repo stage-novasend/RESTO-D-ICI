@@ -411,8 +411,8 @@ export const staffAPI = {
 
 export const fournisseursAPI = {
   getAll:   ()          => api.get("/fournisseurs"),
-  // Filtre côté client — à remplacer par ?actif=true dès que l'endpoint le supporte
-  getActifs:()          => api.get("/fournisseurs").then((r) => ({ ...r, data: r.data.filter((f) => f.actif) })),
+  // Filtrage côté serveur (audit §4.4)
+  getActifs:()          => api.get("/fournisseurs", { params: { actif: true } }),
   create:   (data)      => api.post("/fournisseurs", data),
   update:   (id, data)  => api.patch(`/fournisseurs/${id}`, data),
   toggle:   (id)        => api.patch(`/fournisseurs/${id}/toggle`),

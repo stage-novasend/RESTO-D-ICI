@@ -6,6 +6,7 @@ import {
   Delete,
   Body,
   Param,
+  Query,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -23,8 +24,9 @@ export class FournisseursController {
   // Lecture accessible aux opérationnels pour le sélecteur d'entrée de stock (US-19)
   @Get()
   @Roles('ADMIN', 'GERANT', 'STAFF')
-  findAll() {
-    return this.svc.findAll();
+  findAll(@Query('actif') actif?: string) {
+    // [PERF] Filtrage côté serveur — évite de transférer tous les fournisseurs (audit §4.4)
+    return actif === 'true' ? this.svc.findActifs() : this.svc.findAll();
   }
 
   // Ci-dessous : écriture réservée ADMIN uniquement (US-24 / §4.2 Dossier)
