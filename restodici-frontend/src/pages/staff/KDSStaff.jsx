@@ -14,26 +14,16 @@ import { b2bAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import DispatchModal from '../../components/livraison/DispatchModal';
 
-/* ── Palette — miroir StaffDashboard ── */
-const BG     = '#FFF4ED';
-const CARD   = '#FFFFFF';
-const NAVY   = '#1A0C00';
-const BORDER = 'rgba(0,0,0,0.08)';
-const MUTED  = '#8B6E50';
-const FAINT  = '#9CA3AF';
-
-const OG     = '#EA580C';
-const OG_D   = '#C2410C';
+/* ── Palette — miroir StaffDashboard (couleurs : theme/colors.js) ── */
+import {
+  BG, SURFACE as CARD, NAVY, BORDER, MUTED_WARM as MUTED, TEXT_MUTED as FAINT,
+  ORANGE as OG, ORANGE_DARK as OG_D, BORDER_WARM_09 as OG_L,
+  GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, AMBER, RED_STRONG as RED, RED_SALMON as RED_L,
+  PURPLE, PURPLE as VIO, PURPLE_GLOW as VIO_L, BLUE_BRIGHT as BLUE, BLUE_GLOW as BLUE_L,
+} from '../../theme/colors';
 const OG_G   = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';
-const OG_L   = 'rgba(255,140,0,0.09)';
-const GREEN  = '#16A34A';
 const GREEN_G= 'linear-gradient(135deg,#15803D,#16A34A)';
-const GREEN_L= '#DCFCE7';
-const AMBER  = '#D97706';
 const AMBER_G= 'linear-gradient(135deg,#B45309,#D97706)';
-const RED    = '#DC2626';
-const RED_L  = '#FFDAD6';
-const PURPLE = '#8B5CF6';
 const PURPLE_G='linear-gradient(135deg,#6D28D9,#8B5CF6)';
 
 const NEXT_STATUT = {
@@ -45,11 +35,7 @@ const ACTION_LABELS = {
   PRETE: 'Prête', EN_LIVRAISON: 'En livraison', LIVREE: 'Livré',
 };
 
-const BLUE   = '#3B82F6';
-const BLUE_L = 'rgba(59,130,246,0.09)';
 const BLUE_G = 'linear-gradient(135deg,#1D4ED8,#3B82F6)';
-const VIO    = '#8B5CF6';
-const VIO_L  = 'rgba(139,92,246,0.09)';
 const VIO_G  = 'linear-gradient(135deg,#6D28D9,#8B5CF6)';
 
 const COLS = [

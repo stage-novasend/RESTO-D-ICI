@@ -23,8 +23,8 @@ import {
   Percent, TrendingUp as TrendUp, MessageSquareWarning, UserCheck,
 } from 'lucide-react';
 
-/* ── Palette de couleurs et constantes ── */
-const ACCENT = '#EA580C';
+/* ── Palette (couleurs : theme/colors.js) et constantes ── */
+import { ORANGE as ACCENT } from '../../theme/colors';
 const ROLES  = ['ADMIN', 'GERANT', 'STAFF', 'CLIENT', 'B2B'];
 const ROLE_COLOR = {
   ADMIN:  { bg: 'rgba(99,102,241,0.10)', text: '#6366F1', chart: '#6366F1' },

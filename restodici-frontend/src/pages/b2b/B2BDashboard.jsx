@@ -17,30 +17,14 @@ import B2BOnboardingWizard from './B2BOnboardingWizard';
 import OnboardingTour from '../../components/onboarding/OnboardingTour';
 import { buildSyscohadaBlob, buildFactureBlob } from '../../utils/syscohada-pdf';
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
-const BG       = '#FFF4ED';      // fond principal — crème chaude
-const CARD     = '#FFFFFF';
-const NAVY     = '#3D1500';      // sidebar — brun chocolat/café (chaud, appétissant)
-const NAVY2    = '#5C2400';      // hover sidebar
-const TEXT     = '#1A0C00';      // texte — brun profond
-const MUTED    = '#8B6E50';      // texte secondaire — brun doux
-const FAINT    = '#A89070';      // texte discret
-const BORDER   = 'rgba(255,140,0,0.12)'; // bordures teintées chaud
-
-// Couleurs sémantiques
-const ORANGE   = '#EA580C';      // CTA principal RESTODICI
-const ORANGE_L = '#FFF0DF';      // fond orange léger
-const ORANGE_D = '#C2410C';      // orange foncé hover
-
-const GREEN    = '#16A34A';      // succès / confirmé / livré
-const GREEN_L  = '#DCFCE7';      // fond vert léger
-const GREEN_D  = '#15803D';      // vert foncé hover
-
-const RED      = '#DC2626';      // actions risquées
-const RED_L    = '#FEF2F2';      // fond rouge léger
-
-const AMBER    = '#D97706';      // alertes, en attente
-const AMBER_L  = '#FFFBEB';      // fond ambre léger
+// ── Design tokens (couleurs : theme/colors.js) ──────────────────────────────────
+import {
+  BG, SURFACE as CARD, BROWN_COFFEE as NAVY, BROWN_COFFEE_HOVER as NAVY2,
+  TEXT, MUTED_WARM as MUTED, FAINT_WARM as FAINT, BORDER_WARM as BORDER,
+  ORANGE, ORANGE_PEACH as ORANGE_L, ORANGE_DARK as ORANGE_D,
+  GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, GREEN_FOREST as GREEN_D,
+  RED_STRONG as RED, RED_ROSE as RED_L, AMBER, YELLOW_LIGHT as AMBER_L,
+} from '../../theme/colors';
 
 const SH  = '0 1px 4px rgba(139,110,80,0.10),0 1px 2px rgba(0,0,0,0.04)';
 const SH2 = '0 4px 16px rgba(139,110,80,0.12),0 2px 4px rgba(0,0,0,0.06)';

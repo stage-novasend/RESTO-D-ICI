@@ -6,9 +6,7 @@ import { ArrowRight, ArrowLeft, X, Sparkles } from 'lucide-react';
 
 const PAD   = 12;   // padding autour de l'élément highlighté
 const ANIM  = 260;  // durée transition en ms
-const NAVY  = '#1A0C00';
-const MUTED = '#8B6E50';
-const BORDER= '#E2E8F0';
+import { NAVY, MUTED_WARM as MUTED, BORDER_SLATE as BORDER } from '../../theme/colors';
 
 // ── Spotlight = 4 panneaux sombres autour de l'élément ────────────────────────
 function Spotlight({ rect }) {

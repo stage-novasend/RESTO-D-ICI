@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom';
 
+import { ORANGE as ACCENT } from '../../theme/colors';
 const sans = "'Manrope', system-ui, sans-serif";
-const ACCENT = '#EA580C';
 
 export default function MiniFooter() {
   return (

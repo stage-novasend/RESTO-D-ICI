@@ -23,31 +23,14 @@ import {
 import DispatchModal from '../../components/livraison/DispatchModal';
 import EconomicReconciliation from '../../components/staff/EconomicReconciliation';
 
-// ─── Palette — Pro dark sidebar + orange accent ───────────────────────────────
-const BG             = '#FFF4ED';
-const SIDEBAR_BG     = '#111111';
-const SIDEBAR_BORDER = 'rgba(255,255,255,0.07)';
-const SURFACE        = '#FFFFFF';
-const SURFACE_ELEVATED = '#F5F5F8';
-const BORDER         = 'rgba(0,0,0,0.08)';
-const BORDER_STRONG  = 'rgba(0,0,0,0.12)';
-const TEXT           = '#1A0C00';
-const TEXT_MUTED     = '#8B6E50';
-const TEXT_LIGHT     = '#9CA3AF';
-const ORANGE         = '#EA580C';
-const ORANGE_DARK    = '#C2410C';
-const ORANGE_GLOW    = 'rgba(255,140,0,0.12)';
-const ORANGE_LIGHT   = '#FFF5E8';
-const GREEN          = '#16A34A';
-const GREEN_LIGHT    = '#22C55E';
-const GREEN_BG       = '#DCFCE7';
-const GREEN_BORDER   = '#86EFAC';
-const GREEN_GLOW     = 'rgba(22,163,74,0.12)';
-const DANGER         = '#DC2626';
-const DANGER_GLOW    = 'rgba(220,38,38,0.12)';
-const BLUE           = '#3B82F6';
-const PURPLE         = '#8B5CF6';
-const AMBER          = '#D97706';
+// ─── Palette — Pro dark sidebar + orange accent (couleurs : theme/colors.js) ───
+import {
+  BG, BLACK_SOFT as SIDEBAR_BG, BORDER_WHITE_07 as SIDEBAR_BORDER, SURFACE, SURFACE_ELEVATED,
+  BORDER, BORDER_STRONG, TEXT, MUTED_WARM as TEXT_MUTED, TEXT_MUTED as TEXT_LIGHT,
+  ORANGE, ORANGE_DARK, BORDER_WARM as ORANGE_GLOW, ORANGE_CREAM_2 as ORANGE_LIGHT,
+  GREEN_DARK as GREEN, GREEN_BRIGHT as GREEN_LIGHT, GREEN_MINT as GREEN_BG, GREEN_BORDER,
+  GREEN_GLOW, RED_STRONG as DANGER, DANGER_GLOW, BLUE_BRIGHT as BLUE, PURPLE, AMBER,
+} from '../../theme/colors';
 const SHADOW         = '0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)';
 const SHADOW_MD      = '0 4px 16px rgba(0,0,0,0.10)';
 

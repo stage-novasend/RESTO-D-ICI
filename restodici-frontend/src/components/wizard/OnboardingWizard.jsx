@@ -8,9 +8,7 @@ import {
   Shield, LayoutDashboard, Bell,
 } from 'lucide-react';
 
-const ACCENT = '#EA580C';
-const DARK   = '#1C1C1E';
-const MUTED  = '#8B6E50';
+import { ORANGE as ACCENT, DARK_STONE as DARK, MUTED_WARM as MUTED } from '../../theme/colors';
 
 const STEPS_BY_ROLE = {
   CLIENT: [

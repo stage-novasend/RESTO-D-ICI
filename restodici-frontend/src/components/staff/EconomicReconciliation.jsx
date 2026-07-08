@@ -6,20 +6,12 @@
 import { useMemo, useState } from 'react';
 import { X, TrendingDown, Download, Info, DollarSign, Wallet, CreditCard, Smartphone, Banknote } from 'lucide-react';
 
-/* ── Tokens visuels (alignés CaissePage) ──────────────────────────── */
-const BG    = '#FFF4ED';
-const CARD  = '#FFFFFF';
-const NAVY  = '#1A0C00';
-const MUTED = '#8B6E50';
-const BORDER = '#E2E8F0';
-const O     = '#EA580C';
-const OL    = '#FFF7ED';
-const GREEN = '#16A34A';
-const GL    = '#F0FDF4';
-const RED   = '#DC2626';
-const RL    = '#FEF2F2';
-const AMBER = '#D97706';
-const AL    = '#FFFBEB';
+/* ── Tokens visuels (couleurs : theme/colors.js) ──────────────────────────── */
+import {
+  BG, SURFACE as CARD, NAVY, MUTED_WARM as MUTED, BORDER_SLATE as BORDER,
+  ORANGE as O, ORANGE_TINT as OL, GREEN_DARK as GREEN, GREEN_LIGHT as GL,
+  RED_STRONG as RED, RED_ROSE as RL, AMBER, YELLOW_LIGHT as AL,
+} from '../../theme/colors';
 
 const SH  = '0 1px 3px rgba(139,110,80,0.08)';
 const SH2 = '0 8px 32px rgba(139,110,80,0.12)';

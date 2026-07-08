@@ -11,22 +11,13 @@ import mtnMomoLogo from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
-// ── Tokens — miroir StaffDashboard (orange pro) ──────────────────────────────
-const BG      = '#FFF4ED';
-const CARD    = '#FFFFFF';
-const NAVY    = '#1A0C00';
-const BORDER  = 'rgba(0,0,0,0.08)';
-const MUTED   = '#8B6E50';
-const FAINT   = '#9CA3AF';
-const PRIMARY = '#EA580C';
-const PRIMARY_CONTAINER = '#C2410C';
-const PRIMARY_LIGHT = '#FFF5E8';
-const GREEN   = '#16A34A';
-const GREEN_L = '#DCFCE7';
-const RED     = '#DC2626';
-const RED_L   = '#FFDAD6';
-const AMBER   = '#D97706';
-const AMBER_L = '#FEF3C7';
+// ── Tokens — miroir StaffDashboard (couleurs : theme/colors.js) ──────────────
+import {
+  BG, SURFACE as CARD, NAVY, BORDER, MUTED_WARM as MUTED, TEXT_MUTED as FAINT,
+  ORANGE as PRIMARY, ORANGE_DARK as PRIMARY_CONTAINER, ORANGE_CREAM_2 as PRIMARY_LIGHT,
+  GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, RED_STRONG as RED, RED_SALMON as RED_L,
+  AMBER, AMBER_CREAM as AMBER_L,
+} from '../../theme/colors';
 
 // Legacy aliases for existing code
 const TER    = PRIMARY;

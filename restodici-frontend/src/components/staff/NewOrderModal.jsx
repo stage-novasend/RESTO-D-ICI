@@ -9,12 +9,10 @@ import { menuAPI, commandesService } from '../../services/api';
 import { formatFCFA } from '../../utils/formatters';
 import { getArticleImage } from '../../utils/articleImage';
 
-const ACCENT  = '#EA580C';
-const ACCENT_D= '#C2410C';
-const SURFACE = '#FFFFFF';
-const BORDER  = '#E8E2D9';
-const TEXT    = '#1C1917';
-const MUTED   = '#78716C';
+import {
+  ORANGE as ACCENT, ORANGE_DARK as ACCENT_D, SURFACE,
+  BORDER_SAND as BORDER, TEXT_STONE as TEXT, MUTED_STONE as MUTED,
+} from '../../theme/colors';
 const sans    = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const FOOD_IMGS = [

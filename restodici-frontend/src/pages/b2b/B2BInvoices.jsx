@@ -4,21 +4,12 @@ import { FileText, CheckCircle, Clock, AlertCircle, CreditCard, Download, ArrowL
 import { b2bAPI } from '../../services/api';
 import { formatFCFA } from '../../utils/formatters';
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
-const BG     = '#FFF4ED';
-const CARD   = '#FFFFFF';
-const TEXT   = '#1A0C00';
-const MUTED  = '#8B6E50';
-const FAINT  = '#A89070';
-const BORDER = '#E2E8F0';
-const ORANGE = '#EA580C';    // CTA principal
-const GREEN  = '#16A34A';    // PDF, payé, succès
-const GREEN_L= '#DCFCE7';
-const GREEN_D= '#15803D';
-const RED    = '#DC2626';    // En retard, bloqué, risque
-const RED_L  = '#FEF2F2';
-const AMBER  = '#D97706';    // En attente
-const AMBER_L= '#FFFBEB';
+// ── Design tokens (couleurs : theme/colors.js) ──────────────────────────────────
+import {
+  BG, SURFACE as CARD, TEXT, MUTED_WARM as MUTED, FAINT_WARM as FAINT, BORDER_SLATE as BORDER,
+  ORANGE, GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, GREEN_FOREST as GREEN_D,
+  RED_STRONG as RED, RED_ROSE as RED_L, AMBER, YELLOW_LIGHT as AMBER_L,
+} from '../../theme/colors';
 const SH     = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';
 const SH2    = '0 4px 16px rgba(139,110,80,0.10),0 2px 4px rgba(139,110,80,0.06)';
 

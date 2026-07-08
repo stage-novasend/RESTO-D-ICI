@@ -4,21 +4,13 @@ import { Users, Plus, Trash2, X, Send, CheckCircle, ArrowLeft, RefreshCw, AlertC
 import { b2bAPI } from '../../services/api';
 import { formatFCFA } from '../../utils/formatters';
 
-// ── Design tokens ──────────────────────────────────────────────────────────────
-const BG     = '#FFF4ED';
-const CARD   = '#FFFFFF';
-const TEXT   = '#1A0C00';
-const MUTED  = '#8B6E50';
-const FAINT  = '#A89070';
-const BORDER = '#E2E8F0';
-const ORANGE = '#EA580C';    // CTA — inviter, enregistrer
-const ORANGE_L = '#FFF3E0';
-const ORANGE_D = '#E07800';
-const GREEN  = '#16A34A';    // succès, invitation envoyée
-const GREEN_L= '#DCFCE7';
-const GREEN_D= '#15803D';
-const RED    = '#DC2626';    // supprimer (action risquée)
-const RED_L  = '#FEF2F2';
+// ── Design tokens (couleurs : theme/colors.js) ──────────────────────────────────
+import {
+  BG, SURFACE as CARD, TEXT, MUTED_WARM as MUTED, FAINT_WARM as FAINT, BORDER_SLATE as BORDER,
+  ORANGE, ORANGE_CREAM as ORANGE_L, ORANGE_WARM as ORANGE_D,
+  GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, GREEN_FOREST as GREEN_D,
+  RED_STRONG as RED, RED_ROSE as RED_L,
+} from '../../theme/colors';
 const SH     = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';
 const SH2    = '0 4px 16px rgba(139,110,80,0.10),0 2px 4px rgba(139,110,80,0.06)';
 const SH3    = '0 20px 40px rgba(139,110,80,0.15),0 4px 8px rgba(139,110,80,0.06)';

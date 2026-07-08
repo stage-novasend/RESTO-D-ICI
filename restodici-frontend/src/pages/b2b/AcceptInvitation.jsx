@@ -4,7 +4,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom';
 import { UtensilsCrossed, Eye, EyeOff, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { b2bAPI } from '../../services/api';
 
-const A = '#EA580C';
+import { ORANGE as A } from '../../theme/colors';
 
 export default function AcceptInvitation() {
   const { token } = useParams();

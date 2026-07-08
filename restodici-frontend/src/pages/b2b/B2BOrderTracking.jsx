@@ -11,8 +11,7 @@ import { useAuth } from '../../hooks/useAuth';
 import { createCommandesSocket } from '../../services/commandes.service';
 import { formatFCFA } from '../../utils/formatters';
 
-const A = '#EA580C';
-const BD = 'rgba(89,67,42,0.10)';
+import { ORANGE as A, BORDER_BROWN as BD } from '../../theme/colors';
 
 const safeDate = (d) => {
   if (!d) return '';

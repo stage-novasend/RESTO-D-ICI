@@ -15,28 +15,15 @@ import { authAPI } from '../services/api';
 import SecurityPanel from '../components/security/SecurityPanel';
 import OnboardingTour from '../components/onboarding/OnboardingTour';
 
-/* ── Tokens sidebar blanc/orange ── */
-const SIDEBAR_BG   = '#FFFFFF';       /* blanc pur */
-const SIDEBAR_BG2  = '#FFF8F0';       /* orange très clair pour avatar footer */
-const SIDEBAR_BOR  = 'rgba(255,140,0,0.12)';
-const SIDE_TEXT    = '#4B5563';       /* gris foncé — lisible sur fond blanc */
-const SIDE_TEXT_HI = '#1A0C00';       /* texte actif — quasi noir */
-
-const OG     = '#EA580C';
-const OG_D   = '#C2410C';
+/* ── Tokens sidebar blanc/orange (couleurs : theme/colors.js) ── */
+import {
+  SURFACE as SIDEBAR_BG, ORANGE_TINT_2 as SIDEBAR_BG2, BORDER_WARM as SIDEBAR_BOR,
+  GRAY_SLATE as SIDE_TEXT, NAVY as SIDE_TEXT_HI,
+  ORANGE as OG, ORANGE_DARK as OG_D, BORDER_WARM as OG_L, BORDER_WARM_08 as OG_L2,
+  SURFACE as PAGE_BG, SURFACE as CARD, NAVY, BORDER_GRAY as BORDER,
+  MUTED_WARM as MUTED, MUTED_WARM as FAINT, RED_STRONG as RED, RED_ROSE as RED_L, GREEN_DARK as GREEN,
+} from '../theme/colors';
 const OG_G   = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';
-const OG_L   = 'rgba(255,140,0,0.12)';
-const OG_L2  = 'rgba(255,140,0,0.08)';
-
-const PAGE_BG = '#FFFFFF';
-const CARD    = '#FFFFFF';
-const NAVY    = '#1A0C00';
-const BORDER  = '#E5E7EB';
-const MUTED   = '#8B6E50';
-const FAINT   = '#8B6E50';
-const RED     = '#DC2626';
-const RED_L   = '#FEF2F2';
-const GREEN   = '#16A34A';
 const SH      = '0 1px 4px rgba(0,0,0,0.07)';
 const SH3     = '0 24px 60px rgba(0,0,0,0.22),0 4px 12px rgba(0,0,0,0.08)';
 

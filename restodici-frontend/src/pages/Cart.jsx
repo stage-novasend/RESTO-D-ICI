@@ -6,11 +6,7 @@ import {
   Truck, User,
 } from 'lucide-react';
 import { formatFCFA } from '../utils/formatters';
-import { ORANGE, ORANGE_D, NAVY, BG } from '../theme/colors';
-
-/* ── Nuances spécifiques à cet écran (le reste vient de theme/colors.js) ── */
-const BORDER   = 'rgba(255,140,0,0.14)';
-const MUTED    = '#9E8B7A';
+import { ORANGE, ORANGE_D, NAVY, BG, BORDER_WARM_14 as BORDER, MUTED_TAUPE as MUTED } from '../theme/colors';
 
 const MODE_META = {
   SUR_PLACE: { label: 'Sur place',   Icon: Store,    color: '#059669', bg: '#F0FDF4' },

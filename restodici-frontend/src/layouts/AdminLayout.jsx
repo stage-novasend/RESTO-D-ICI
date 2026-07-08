@@ -10,8 +10,7 @@ import {
   Download, Settings, LogOut, X, Menu,
   Truck, BarChart2, Percent, Bell, Activity,
 } from 'lucide-react';
-
-const ACCENT = '#EA580C';
+import { ORANGE as ACCENT } from '../theme/colors';
 
 const MENU_ITEMS = [
   { id: 'overview',      label: "Vue d'ensemble",  icon: LayoutDashboard, path: '/admin' },

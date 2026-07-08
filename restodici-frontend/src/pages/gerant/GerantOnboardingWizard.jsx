@@ -10,10 +10,7 @@ import {
 import { restaurantAPI, menuAPI } from '../../services/api';
 import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG } from '../../utils/validators';
 
-const A = '#EA580C';
-const AL = '#FFF0DF';
-const SF = '#FFFFFF';
-const BD = 'rgba(89,67,42,0.10)';
+import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
 
 const STEPS = ['Bienvenue', 'Adresse & carte', "Horaires d'ouverture", 'Menu & articles', "C'est parti !"];
 

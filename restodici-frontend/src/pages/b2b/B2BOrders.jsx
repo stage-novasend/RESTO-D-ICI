@@ -5,9 +5,10 @@ import { b2bAPI } from '../../services/api';
 import { commandesService } from '../../services/commandes.service';
 import { formatFCFA } from '../../utils/formatters';
 
-const BG = '#FFF4ED'; const CARD = '#FFFFFF'; const TEXT = '#1A0C00';
-const MUTED = '#8B6E50'; const FAINT = '#8B6E50'; const BORDER = 'rgba(0,0,0,0.07)';
-const ACC = '#EA580C'; const ACL = '#FFF0DF';
+import {
+  BG, SURFACE as CARD, TEXT, MUTED_WARM as MUTED, MUTED_WARM as FAINT, BORDER_SOFT as BORDER,
+  ORANGE as ACC, ORANGE_PEACH as ACL,
+} from '../../theme/colors';
 const SH = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';
 
 const STATUS = {

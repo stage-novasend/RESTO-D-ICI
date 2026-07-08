@@ -13,24 +13,14 @@ import { menuAPI, commandesService } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import { getArticleImage } from '../../utils/articleImage';
 
-/* ── Design system — miroir exact StaffDashboard ── */
-const BG               = '#FFF4ED';
-const SIDEBAR_BG       = '#111111';
-const SURFACE          = '#FFFFFF';
-const SURFACE_ELEVATED = '#F5F5F8';
-const BORDER           = 'rgba(0,0,0,0.08)';
-const TEXT             = '#1A0C00';
-const TEXT_MUTED       = '#8B6E50';
-const TEXT_LIGHT       = '#9CA3AF';
-const ORANGE           = '#EA580C';
-const ORANGE_DARK      = '#C2410C';
-const ORANGE_GLOW      = 'rgba(255,140,0,0.12)';
-const ORANGE_LIGHT     = '#FFF5E8';
-const GREEN            = '#16A34A';
-const GREEN_BG         = '#DCFCE7';
-const GREEN_BORDER     = '#86EFAC';
-const DANGER           = '#DC2626';
-const BLUE             = '#3B82F6';
+/* ── Design system — miroir StaffDashboard (couleurs : theme/colors.js) ── */
+import {
+  BG, BLACK_SOFT as SIDEBAR_BG, SURFACE, SURFACE_ELEVATED, BORDER, TEXT,
+  MUTED_WARM as TEXT_MUTED, TEXT_MUTED as TEXT_LIGHT,
+  ORANGE, ORANGE_DARK, BORDER_WARM as ORANGE_GLOW, ORANGE_CREAM_2 as ORANGE_LIGHT,
+  GREEN_DARK as GREEN, GREEN_MINT as GREEN_BG, GREEN_BORDER,
+  RED_STRONG as DANGER, BLUE_BRIGHT as BLUE,
+} from '../../theme/colors';
 const SHADOW           = '0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)';
 const SHADOW_MD        = '0 4px 16px rgba(0,0,0,0.10)';
 const ORANGE_GRADIENT  = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';

@@ -44,6 +44,70 @@ export const GREEN_LIGHT = '#F0FDF4';
 export const BLUE       = '#2563EB';
 export const BLUE_LIGHT = '#EFF6FF';
 
+/* ═══════════════════════════════════════════════════════════════
+   Nuances conservées — teintes exactes utilisées par certains écrans
+   (drift historique volontairement préservé pour ne rien changer
+   visuellement). Chaque fichier les importe avec un alias.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Neutres chauds (bruns / taupe / pierre) */
+export const MUTED_WARM   = '#8B6E50';
+export const FAINT_WARM   = '#A89070';
+export const MUTED_TAUPE  = '#9E8B7A';
+export const MUTED_STONE  = '#78716C';
+export const TEXT_STONE   = '#1C1917';
+export const DARK_STONE   = '#1C1C1E';
+export const BROWN_COFFEE       = '#3D1500';
+export const BROWN_COFFEE_HOVER = '#5C2400';
+export const GRAY_SLATE   = '#4B5563';
+export const BLACK_SOFT   = '#111111';
+
+/* Bordures */
+export const BORDER_SLATE   = '#E2E8F0';
+export const BORDER_GRAY    = '#E5E7EB';
+export const BORDER_SAND    = '#E8E2D9';
+export const BORDER_STRONG  = 'rgba(0,0,0,0.12)';
+export const BORDER_WARM    = 'rgba(255,140,0,0.12)';
+export const BORDER_WARM_14 = 'rgba(255,140,0,0.14)';
+export const BORDER_WARM_09 = 'rgba(255,140,0,0.09)';
+export const BORDER_WARM_08 = 'rgba(255,140,0,0.08)';
+export const BORDER_BROWN   = 'rgba(89,67,42,0.10)';
+export const LINE_BROWN     = 'rgba(89,67,42,0.12)';
+export const BORDER_WHITE_07 = 'rgba(255,255,255,0.07)';
+
+/* Oranges clairs / dérivés */
+export const ORANGE_PEACH  = '#FFF0DF';
+export const ORANGE_CREAM  = '#FFF3E0';
+export const ORANGE_CREAM_2 = '#FFF5E8';
+export const ORANGE_TINT   = '#FFF7ED';
+export const ORANGE_TINT_2 = '#FFF8F0';
+export const ORANGE_WARM   = '#E07800';
+export const ORANGE_GLOW   = 'rgba(255,140,0,0.12)';
+
+/* Verts */
+export const GREEN_MINT   = '#DCFCE7';
+export const GREEN_FOREST = '#15803D';
+export const GREEN_BORDER = '#86EFAC';
+export const GREEN_GLOW   = 'rgba(22,163,74,0.12)';
+export const GREEN_BRIGHT = '#22C55E';
+
+/* Rouges / ambre */
+export const RED_STRONG  = '#DC2626';
+export const RED_ROSE    = '#FEF2F2';
+export const RED_SALMON  = '#FFDAD6';
+export const DANGER_GLOW = 'rgba(220,38,38,0.12)';
+export const AMBER       = '#D97706';
+export const AMBER_CREAM = '#FEF3C7';
+
+/* Bleu / violet */
+export const BLUE_BRIGHT = '#3B82F6';
+export const BLUE_GLOW   = 'rgba(59,130,246,0.09)';
+export const PURPLE      = '#8B5CF6';
+export const PURPLE_GLOW  = 'rgba(139,92,246,0.09)';
+
+/* Surfaces */
+export const SURFACE_ELEVATED = '#F5F5F8';
+
 /* ── Alias historiques (compat avec le code existant) ── */
 export const ACCENT       = ORANGE;
 export const ACCENT_DARK  = ORANGE_DARK;

@@ -13,10 +13,7 @@ import { formatFCFA } from '../../utils/formatters';
 import { getArticleImage } from '../../utils/articleImage';
 import B2BOnboardingWizard from './B2BOnboardingWizard';
 
-const A  = '#EA580C';
-const AL = '#FFF0DF';
-const SF = '#FFFFFF';
-const BD = 'rgba(89,67,42,0.10)';
+import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
 
 /* ── Tokens visuels partagés avec menu.jsx ─────────────────────────────────── */
 const C = {

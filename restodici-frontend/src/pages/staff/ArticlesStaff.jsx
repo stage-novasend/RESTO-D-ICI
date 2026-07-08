@@ -20,8 +20,7 @@ const T = {
   onSurfaceVariant: '#8B6E50',
 };
 
-const CARD   = '#FFFFFF';
-const BORDER = '#E2E8F0';
+import { SURFACE as CARD, BORDER_SLATE as BORDER } from '../../theme/colors';
 const SH2    = '0 4px 16px rgba(139,110,80,0.10),0 2px 4px rgba(139,110,80,0.06)';
 
 function fmt(n) { return Math.round(Number(n) || 0).toLocaleString('fr-FR'); }

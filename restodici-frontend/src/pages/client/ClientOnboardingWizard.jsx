@@ -9,10 +9,7 @@ import {
 import { authAPI } from '../../services/api';
 import { CI_PHONE_PATTERN, MSG } from '../../utils/validators';
 
-const A  = '#EA580C';
-const AL = '#FFF0DF';
-const SF = '#FFFFFF';
-const BD = 'rgba(89,67,42,0.10)';
+import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
 
 const STEPS = ['Bienvenue', 'Ton profil', 'Adresse', "C'est parti !"];
 

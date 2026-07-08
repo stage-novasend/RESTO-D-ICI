@@ -22,7 +22,7 @@ const SIMULATE_PAYMENT    = true;
 // Flip to false when NovaSend card payment is live in CI
 const NOVASEND_CARD_ENABLED = true;
 
-const ACCENT = '#EA580C';
+import { ORANGE as ACCENT, GREEN_BRIGHT as CLR_TER, YELLOW as CLR_AMBER, RED as CLR_RED } from '../theme/colors';
 
 const MODE_LABELS = {
   SUR_PLACE: 'Sur place', EMPORTER: 'À emporter', LIVRAISON: 'Livraison à domicile',
@@ -51,9 +51,6 @@ const PROVIDER_NOTE = {
 };
 
 const COUNTDOWN_SECS = 90;
-const CLR_TER   = '#22C55E';
-const CLR_AMBER = '#F59E0B';
-const CLR_RED   = '#EF4444';
 
 // Helpers
 const fmtCardNumber = (v) =>
