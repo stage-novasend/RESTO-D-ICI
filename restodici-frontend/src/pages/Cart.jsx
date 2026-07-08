@@ -6,12 +6,9 @@ import {
   Truck, User,
 } from 'lucide-react';
 import { formatFCFA } from '../utils/formatters';
+import { ORANGE, ORANGE_D, NAVY, BG } from '../theme/colors';
 
-/* ── Palette (identique à CartDrawer + Home) ── */
-const ORANGE   = '#EA580C';
-const ORANGE_D = '#C2410C';
-const NAVY     = '#1A0C00';
-const BG       = '#FFF4ED';
+/* ── Nuances spécifiques à cet écran (le reste vient de theme/colors.js) ── */
 const BORDER   = 'rgba(255,140,0,0.14)';
 const MUTED    = '#9E8B7A';
 

@@ -23,6 +23,7 @@ import SecurityPanel from '../../components/security/SecurityPanel';
 import NotificationBell from '../../components/notifications/NotificationBell';
 import { formatFCFA } from '../../utils/formatters';
 import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG } from '../../utils/validators';
+import { KpiCard } from '../../components/ui';
 import OnboardingWizard from '../../components/wizard/OnboardingWizard';
 
 import orangeMoneyLogo  from '../../assets/payments/orange-money.svg';
@@ -30,23 +31,11 @@ import mtnMomoLogo      from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo    from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
-/* ── Palette client — orange + blanc ── */
-const ACCENT       = '#EA580C';
-const ACCENT_DARK  = '#C2410C';
-const ACCENT_LIGHT = '#FFF4ED';
-const ORANGE       = '#EA580C';
-const ORANGE_D     = '#C2410C';
-const ORANGE_L     = '#FFF4ED';
-const YELLOW       = '#F59E0B';
-const YELLOW_L     = '#FFFBEB';
-const RED          = '#EF4444';
-const RED_L        = '#FFF1F2';
-const SURFACE      = '#FFFFFF';
-const BORDER       = 'rgba(0,0,0,0.08)';
-const DARK         = '#111827';
-const NAVY         = '#1A0C00';
-const NAVY2        = '#374151';
-const BG           = '#FFF4ED';
+/* ── Palette : source unique dans theme/colors.js ── */
+import {
+  ACCENT, ACCENT_DARK, ACCENT_LIGHT, ORANGE, ORANGE_D, ORANGE_L,
+  YELLOW, YELLOW_L, RED, RED_L, SURFACE, BORDER, DARK, NAVY, NAVY2, BG,
+} from '../../theme/colors';
 
 const ORDER_STATUS = {
   RECUE:        { label: 'Reçue',          bg: '#FFFBEB', color: '#D97706' },
@@ -528,11 +517,7 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
           { label: 'Livrées',     value: loadingOrders ? '—' : delivered.length,     sub: `sur ${orders.length} au total` },
           { label: 'Avis',        value: loadingOrders ? '—' : pendingAvis.length,   sub: 'en attente' },
         ].map((kpi, i) => (
-          <div key={i} className="bg-white rounded-2xl p-5 border" style={{ borderColor: BORDER }}>
-            <p className="text-2xl font-extrabold mb-1" style={{ color: ACCENT }}>{kpi.value}</p>
-            <p className="text-sm font-bold text-[#111827]">{kpi.label}</p>
-            <p className="text-xs text-[#9CA3AF] mt-0.5">{kpi.sub}</p>
-          </div>
+          <KpiCard key={i} value={kpi.value} label={kpi.label} sub={kpi.sub} />
         ))}
       </div>
 

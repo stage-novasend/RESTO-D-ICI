@@ -13,10 +13,8 @@ import orangeMoneyLogo   from '../../assets/payments/orange-money.svg';
 import mtnMomoLogo       from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo     from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
+import { NAVY, ORANGE, BG } from '../../theme/colors';
 
-const NAVY   = '#1A0C00';
-const ORANGE = '#EA580C';
-const BG     = '#FFF4ED';
 const LINE   = 'rgba(89,67,42,0.12)';
 
 const KENTE = ['#EA580C', '#EA580C', '#1A0C00', '#C2410C'];
