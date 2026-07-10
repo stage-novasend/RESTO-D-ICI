@@ -35,6 +35,43 @@ export function getCorsOrigins(): string[] {
   return [...new Set([...DEV_ORIGINS, ...fromEnv])];
 }
 
+/**
+ * Validation de l'environnement au démarrage.
+ * - Dev : avertit seulement (des valeurs de repli existent).
+ * - Production : refuse de démarrer si une variable critique manque.
+ * (JWT_SECRET est déjà vérifié séparément dans main.ts.)
+ */
+export function validateEnv(): void {
+  const isProd = process.env.NODE_ENV === 'production';
+
+  const recommended = ['DB_HOST', 'DB_DATABASE', 'REDIS_HOST'];
+  const missingRecommended = recommended.filter((k) => !process.env[k]);
+  if (missingRecommended.length) {
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[config] Variables recommandées absentes (valeurs par défaut utilisées) : ${missingRecommended.join(', ')}`,
+    );
+  }
+
+  if (isProd) {
+    const prodCritical: string[] = [];
+    if (!process.env.CORS_ORIGINS && !process.env.FRONTEND_URL) {
+      prodCritical.push('CORS_ORIGINS (ou FRONTEND_URL)');
+    }
+    if (!process.env.NOVASEND_WEBHOOK_SECRET) {
+      prodCritical.push('NOVASEND_WEBHOOK_SECRET');
+    }
+    if (!process.env.REDIS_PASSWORD) {
+      prodCritical.push('REDIS_PASSWORD');
+    }
+    if (prodCritical.length) {
+      throw new Error(
+        `[FATAL] Variables obligatoires en production manquantes : ${prodCritical.join(', ')}`,
+      );
+    }
+  }
+}
+
 /** Base URLs des services externes — surchargées par l'environnement. */
 export const EXTERNAL_URLS = {
   novasend: process.env.NOVASEND_BASE_URL || 'https://business.novasend.app/v1',

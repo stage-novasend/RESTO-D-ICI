@@ -5,13 +5,15 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
-import { getCorsOrigins } from './config/app-config';
+import { getCorsOrigins, validateEnv } from './config/app-config';
 
 async function bootstrap() {
   // [SÉCURITÉ] JWT_SECRET obligatoire — refus de démarrer sans lui.
   if (!process.env.JWT_SECRET || !process.env.JWT_SECRET.trim()) {
     throw new Error('[FATAL] JWT_SECRET est manquant. Arrêt du serveur.');
   }
+  // Vérifie les autres variables (warn en dev, bloque en prod).
+  validateEnv();
 
   // rawBody: true → conserve le corps brut pour vérifier les signatures de webhook.
   const app = await NestFactory.create(AppModule, { rawBody: true });
