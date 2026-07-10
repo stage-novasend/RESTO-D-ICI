@@ -10,6 +10,8 @@ import { SystemConfig } from '../common/entities/system-config.entity';
 import { Integration } from '../common/entities/integration.entity';
 import { AuthModule } from '../auth/auth.module';
 import { BackupService } from './backup.service';
+import { SlaService } from './sla.service';
+import { SlaIncident } from './entities/sla-incident.entity';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 
@@ -24,10 +26,11 @@ import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entit
       Integration,
       CommissionPlateforme,
       FactureMensuelleB2B,
+      SlaIncident,
     ]),
     AuthModule,
   ],
   controllers: [AdminController],
-  providers: [AdminService, BackupService],
+  providers: [AdminService, BackupService, SlaService],
 })
 export class AdminModule {}

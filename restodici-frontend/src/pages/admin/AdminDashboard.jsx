@@ -2208,8 +2208,8 @@ function MetriquesTab() {
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center', color: '#94A3B8' }}>Chargement des métriques…</div>;
 
-  const MONTH_SEC = 30 * 24 * 3600;
-  const uptimePct = metrics ? Math.min(100, (metrics.uptime?.seconds / MONTH_SEC) * 100) : null;
+  // Vrai SLA : disponibilité mesurée côté serveur (heartbeats + incidents, 30 j).
+  const uptimePct = metrics?.sla ? metrics.sla.uptimePct : null;
   const slaColor = uptimePct === null ? '#94A3B8' : uptimePct >= 99.5 ? '#10B981' : uptimePct >= 99 ? '#F59E0B' : '#EF4444';
   const slaLabel = uptimePct === null ? '—' : uptimePct >= 99.5 ? 'SLA respecté' : uptimePct >= 99 ? 'SLA marginal' : 'SLA critique';
   const apiLatencyColor = apiResponseMs === null ? '#94A3B8' : apiResponseMs < 500 ? '#10B981' : apiResponseMs < 1500 ? '#F59E0B' : '#EF4444';

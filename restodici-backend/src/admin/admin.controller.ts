@@ -18,6 +18,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { AdminService } from './admin.service';
 import { BackupService } from './backup.service';
+import { SlaService } from './sla.service';
 import { Role } from '../auth/entities/user.entity';
 import { IntegrationType } from '../common/entities/integration.entity';
 import type { Response } from 'express';
@@ -29,6 +30,7 @@ export class AdminController {
   constructor(
     private readonly adminService: AdminService,
     private readonly backupService: BackupService,
+    private readonly slaService: SlaService,
   ) {}
 
   /* ── Statistiques plateforme ── */
@@ -319,13 +321,18 @@ export class AdminController {
   }
 
   @Get('system-metrics')
-  getSystemMetrics() {
+  async getSystemMetrics() {
     const mem = process.memoryUsage();
     const uptimeSec = process.uptime();
     const h = Math.floor(uptimeSec / 3600);
     const m = Math.floor((uptimeSec % 3600) / 60);
+    // SLA réel (disponibilité mesurée sur 30 j, survit aux redémarrages).
+    const sla = await this.slaService.getSla(30);
     return {
+      // uptime = durée depuis le DERNIER démarrage du process (info brute).
       uptime: { seconds: Math.round(uptimeSec), label: `${h}h ${m}m` },
+      // sla = vraie disponibilité sur la fenêtre glissante.
+      sla,
       memory: {
         rss: Math.round(mem.rss / 1024 / 1024),
         heapUsed: Math.round(mem.heapUsed / 1024 / 1024),
