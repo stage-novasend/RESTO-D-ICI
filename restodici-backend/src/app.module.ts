@@ -1,7 +1,8 @@
 // src/app.module.ts
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
+import { RequestLoggerMiddleware } from './common/middleware/request-logger.middleware';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { dataSourceOptions } from './config/data-source';
@@ -83,4 +84,9 @@ import { LivraisonsExternesModule } from './livraisons-externes/livraisons-exter
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
   ],
 })
-export class AppModule {}
+export class AppModule implements NestModule {
+  configure(consumer: MiddlewareConsumer): void {
+    // Journalisation + correlation ID sur toutes les routes.
+    consumer.apply(RequestLoggerMiddleware).forRoutes('*');
+  }
+}

@@ -55,6 +55,8 @@ export class AllExceptionsFilter implements ExceptionFilter {
       message:
         !isHttp && isProd ? 'Erreur interne du serveur' : message,
       path,
+      // Corrélation avec les logs (cf. RequestLoggerMiddleware).
+      requestId: request?.requestId,
       timestamp: new Date().toISOString(),
     };
 
