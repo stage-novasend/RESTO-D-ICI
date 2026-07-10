@@ -51,8 +51,16 @@ export class AdminController {
     @Query('role') role?: string,
     @Query('search') search?: string,
     @Query('actif') actif?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
   ) {
-    return this.adminService.getUsers({ role, search, actif });
+    return this.adminService.getUsers({
+      role,
+      search,
+      actif,
+      page: page ? parseInt(page, 10) : undefined,
+      limit: limit ? parseInt(limit, 10) : undefined,
+    });
   }
 
   @Post('users')

@@ -339,6 +339,7 @@ export class CommandesService {
       },
       relations: ['lignes', 'lignes.article', 'client'],
       order: { createdAt: 'ASC' },
+      take: 300, // plafond de sécurité (commandes actives d'un restaurant)
     });
 
     for (const order of orders) {

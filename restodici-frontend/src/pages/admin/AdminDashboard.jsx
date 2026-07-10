@@ -565,19 +565,26 @@ function UsersTab() {
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError]   = useState('');
   const [activating, setActivating] = useState(false);
+  const [page, setPage]             = useState(1);
+  const [meta, setMeta]             = useState({ total: 0, totalPages: 1 });
+  const LIMIT = 20;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const params = {};
+      const params = { page, limit: LIMIT };
       if (roleFilter) params.role   = roleFilter;
       if (search)     params.search = search;
       const r = await adminAPI.getUsers(params);
-      setUsers(r.data);
+      // Réponse paginée { items, total, page, limit, totalPages }
+      setUsers(r.data.items ?? r.data);
+      setMeta({ total: r.data.total ?? (r.data.items ?? r.data).length, totalPages: r.data.totalPages ?? 1 });
     } catch { /* ignore */ }
     finally { setLoading(false); }
-  }, [roleFilter, search]);
+  }, [roleFilter, search, page]);
 
+  // Retour à la page 1 quand on change de filtre/recherche.
+  useEffect(() => { setPage(1); }, [roleFilter, search]);
   useEffect(() => { load(); }, [load]);
 
   const toggle = async (id) => { try { await adminAPI.toggleUser(id); load(); } catch { /* ignore */ } };
@@ -707,7 +714,28 @@ function UsersTab() {
           </table>
         </div>
       </div>
-      <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>{users.length} utilisateur{users.length !== 1 ? 's' : ''}</p>
+      {/* Pagination */}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 10 }}>
+        <p style={{ fontSize: 11, color: '#94A3B8', margin: 0 }}>
+          {meta.total} utilisateur{meta.total !== 1 ? 's' : ''} · page {page}/{meta.totalPages}
+        </p>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+            disabled={page <= 1}
+            style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#fff', cursor: page <= 1 ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, color: '#475569', opacity: page <= 1 ? 0.5 : 1 }}
+          >
+            Précédent
+          </button>
+          <button
+            onClick={() => setPage((p) => Math.min(meta.totalPages, p + 1))}
+            disabled={page >= meta.totalPages}
+            style={{ padding: '5px 12px', borderRadius: 8, border: '1px solid #E2E8F0', background: '#fff', cursor: page >= meta.totalPages ? 'not-allowed' : 'pointer', fontSize: 12, fontWeight: 600, color: '#475569', opacity: page >= meta.totalPages ? 0.5 : 1 }}
+          >
+            Suivant
+          </button>
+        </div>
+      </div>
 
       {showModal && (
         <>

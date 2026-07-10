@@ -18,6 +18,7 @@ import {
 } from '../common/entities/integration.entity';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
+import { paginationParams, buildPaginated } from '../common/pagination/pagination';
 
 /* ── Clés de config avec leurs métadonnées ── */
 const CONFIG_DEFAULTS: Array<{
@@ -265,7 +266,13 @@ export class AdminService {
     };
   }
 
-  async getUsers(query: { role?: string; search?: string; actif?: string }) {
+  async getUsers(query: {
+    role?: string;
+    search?: string;
+    actif?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const qb = this.userRepo
       .createQueryBuilder('u')
       .leftJoinAndSelect('u.restaurant', 'r')
@@ -293,7 +300,10 @@ export class AdminService {
       qb.andWhere('u.actif = :actif', { actif: query.actif === 'true' });
     }
 
-    return qb.getMany();
+    // Pagination : plus jamais de dump complet de la table.
+    const { take, skip, page } = paginationParams(query.page, query.limit, 100);
+    const [items, total] = await qb.take(take).skip(skip).getManyAndCount();
+    return buildPaginated(items, total, page, take);
   }
 
   async createUser(dto: {
@@ -394,6 +404,7 @@ export class AdminService {
     return this.restaurantRepo.find({
       relations: ['users'],
       order: { createdAt: 'DESC' },
+      take: 500, // plafond de sécurité — jamais de dump illimité
     });
   }
 

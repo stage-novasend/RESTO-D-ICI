@@ -4,6 +4,7 @@ import { APP_GUARD, APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/filters/all-exceptions.filter';
 import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { dataSourceOptions } from './config/data-source';
 import { CacheModule } from '@nestjs/cache-manager';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
@@ -43,21 +44,14 @@ import { LivraisonsExternesModule } from './livraisons-externes/livraisons-exter
       },
     }),
     TypeOrmModule.forRoot({
-      type: 'postgres',
-      host: process.env.DB_HOST || 'localhost',
-      port: parseInt(process.env.DB_PORT || '5432', 10),
-      username:
-        process.env.DB_USERNAME || process.env.DB_USER || 'restodici_user',
-      password: process.env.DB_PASSWORD || 'restodici_pass',
-      database:
-        process.env.DB_DATABASE || process.env.DB_NAME || 'restodici_db',
-      entities: [__dirname + '/**/*.entity{.ts,.js}'],
+      ...dataSourceOptions,
+      // Dev : synchronisation auto du schéma (sauf DB_SYNC=false).
+      // Production : pas de synchronisation, les migrations sont appliquées au démarrage.
       synchronize:
         process.env.DB_SYNC !== undefined
           ? process.env.DB_SYNC === 'true'
           : process.env.NODE_ENV !== 'production',
-      logging: process.env.DB_LOGGING === 'true' || false,
-      ssl: process.env.DB_SSL === 'true' || false,
+      migrationsRun: process.env.NODE_ENV === 'production',
     }),
     CacheModule.register({
       isGlobal: true,
