@@ -8,6 +8,7 @@ const API_URL = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
 const api = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
+  withCredentials: true, // reçoit/renvoie le cookie HttpOnly du refresh token
 });
 
 // Interceptor pour injecter le token JWT automatiquement

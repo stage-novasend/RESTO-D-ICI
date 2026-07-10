@@ -9,6 +9,8 @@ import { Role } from './entities/user.entity';
 const mockAuthService = {
   login: jest.fn(),
   register: jest.fn(),
+  logout: jest.fn(),
+  refreshAccessToken: jest.fn(),
   getProfile: jest.fn(),
   updateProfile: jest.fn(),
   requestPasswordReset: jest.fn(),
@@ -47,6 +49,10 @@ const tokenResponse = {
   },
 };
 
+// Mocks Express pour les handlers qui posent/lisent des cookies.
+const mockRes = () => ({ cookie: jest.fn(), clearCookie: jest.fn() }) as any;
+const mockReq = (cookies: Record<string, string> = {}) => ({ cookies }) as any;
+
 // ─── login() ──────────────────────────────────────────────────────────────────
 
 describe('AuthController login()', () => {
@@ -64,7 +70,7 @@ describe('AuthController login()', () => {
     const result = await controller.login({
       email: 'client@example.com',
       password: 'CorrectPass1!',
-    });
+    }, mockRes());
 
     expect(mockAuthService.login).toHaveBeenCalledWith({
       email: 'client@example.com',
@@ -223,8 +229,8 @@ describe('AuthController logout()', () => {
     controller = module.get<AuthController>(AuthController);
   });
 
-  it('retourne un message de déconnexion', () => {
-    const result = controller.logout();
+  it('retourne un message de déconnexion', async () => {
+    const result = await controller.logout(mockReq(), mockRes());
     expect(result).toMatchObject({ message: 'Déconnexion réussie' });
   });
 });

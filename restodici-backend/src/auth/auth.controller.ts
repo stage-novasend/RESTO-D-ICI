@@ -17,11 +17,25 @@ import { Throttle } from '@nestjs/throttler';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
-import { Response } from 'express';
+import type { Response, Request } from 'express';
+import { REFRESH_COOKIE, refreshCookieOptions } from '../config/app-config';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  /**
+   * Pose le refresh token dans un cookie HttpOnly (jamais exposé au JS)
+   * et le retire du corps de la réponse. L'access token, lui, reste dans le body.
+   */
+  private issueTokens(res: Response, result: Record<string, any>) {
+    if (result?.refreshToken) {
+      res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions());
+    }
+    const clone = { ...result };
+    delete clone.refreshToken;
+    return clone;
+  }
 
   @Post('register')
   @Throttle({
@@ -30,8 +44,12 @@ export class AuthController {
       ttl: 60000,
     },
   })
-  register(@Body() dto: RegisterDto) {
-    return this.authService.register(dto);
+  async register(
+    @Body() dto: RegisterDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.register(dto);
+    return this.issueTokens(res, result);
   }
 
   @Post('login')
@@ -41,8 +59,12 @@ export class AuthController {
       ttl: 60000,
     },
   })
-  login(@Body() dto: LoginDto) {
-    return this.authService.login(dto);
+  async login(
+    @Body() dto: LoginDto,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.authService.login(dto);
+    return this.issueTokens(res, result);
   }
 
   @Get('me')
@@ -67,14 +89,28 @@ export class AuthController {
   }
 
   @Post('logout')
-  logout() {
+  @HttpCode(HttpStatus.OK)
+  async logout(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = req.cookies?.[REFRESH_COOKIE];
+    await this.authService.logout(token);
+    res.clearCookie(REFRESH_COOKIE, { path: refreshCookieOptions().path });
     return { message: 'Déconnexion réussie' };
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  refresh(@Body('refreshToken') refreshToken: string) {
-    return this.authService.refreshAccessToken(refreshToken);
+  async refresh(
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    // Refresh token lu depuis le cookie HttpOnly (fallback body pour compat).
+    const token: string =
+      req.cookies?.[REFRESH_COOKIE] || (req.body as any)?.refreshToken;
+    const result = await this.authService.refreshAccessToken(token);
+    return this.issueTokens(res, result);
   }
 
   // Password reset routes
@@ -161,7 +197,9 @@ export class AuthController {
   async verifyTwoFactorLogin(
     @Body('tempToken') tempToken: string,
     @Body('code') code: string,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.authService.verifyTwoFactorLogin(tempToken, code);
+    const result = await this.authService.verifyTwoFactorLogin(tempToken, code);
+    return this.issueTokens(res, result);
   }
 }

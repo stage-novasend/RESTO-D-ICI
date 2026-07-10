@@ -11,6 +11,7 @@ export const api = axios.create({
   baseURL: API_URL,
   headers: { "Content-Type": "application/json" },
   timeout: 10000,
+  withCredentials: true, // envoie le cookie HttpOnly du refresh token
 });
 
 api.interceptors.request.use((config) => {
@@ -38,9 +39,9 @@ api.interceptors.response.use(
       !original.url?.includes('/auth/refresh') &&
       !original.url?.includes('/auth/login')
     ) {
-      const storedRefresh = localStorage.getItem('refreshToken');
-      if (!storedRefresh) {
-        localStorage.removeItem('token');
+      // On ne tente le refresh que si une session existait (access token présent).
+      const hadSession = !!localStorage.getItem('token');
+      if (!hadSession) {
         localStorage.removeItem('user');
         if (window.location.pathname !== '/login') window.location.href = '/login';
         return Promise.reject(err);
@@ -59,10 +60,10 @@ api.interceptors.response.use(
       _refreshing = true;
 
       try {
-        const res = await axios.post(`${API_URL}/auth/refresh`, { refreshToken: storedRefresh });
-        const { accessToken, refreshToken: newRefresh } = res.data;
+        // Le refresh token voyage dans le cookie HttpOnly (withCredentials).
+        const res = await axios.post(`${API_URL}/auth/refresh`, {}, { withCredentials: true });
+        const accessToken = res.data.accessToken ?? res.data.access_token ?? res.data.token;
         localStorage.setItem('token', accessToken);
-        if (newRefresh) localStorage.setItem('refreshToken', newRefresh);
         api.defaults.headers.common.Authorization = `Bearer ${accessToken}`;
         original.headers.Authorization = `Bearer ${accessToken}`;
         _flushQueue(accessToken, null);
@@ -70,7 +71,6 @@ api.interceptors.response.use(
       } catch (refreshErr) {
         _flushQueue(null, refreshErr);
         localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
         if (window.location.pathname !== '/login') window.location.href = '/login';
         return Promise.reject(refreshErr);
@@ -264,27 +264,20 @@ export const b2bAPI = {
 // auth
 
 export const authAPI = {
-  login: async (credentials) => {
-    const res = await api.post('/auth/login', credentials);
-    if (res.data?.refreshToken) localStorage.setItem('refreshToken', res.data.refreshToken);
-    return res;
-  },
+  // Le refresh token n'est plus stocké côté JS : il est dans un cookie HttpOnly.
+  login:              (credentials)           => api.post('/auth/login', credentials),
   register:           (data)                  => api.post("/auth/register", data),
   me:                 ()                      => api.get("/auth/me"),
   updateProfile:      (data)                  => api.patch("/auth/me", data),
   logout: async () => {
-    localStorage.removeItem('refreshToken');
+    // /auth/logout efface le cookie HttpOnly côté serveur.
     return api.post('/auth/logout');
   },
   changePassword:     (data)                  => api.patch("/auth/change-password", data),
   setup2FA:           ()                      => api.post("/auth/2fa/setup"),
   enable2FA:          (code)                  => api.post("/auth/2fa/enable", { code }),
   disable2FA:         ()                      => api.post("/auth/2fa/disable"),
-  verify2FALogin: async (tempToken, code) => {
-    const res = await api.post('/auth/2fa/verify-login', { tempToken, code });
-    if (res.data?.refreshToken) localStorage.setItem('refreshToken', res.data.refreshToken);
-    return res;
-  },
+  verify2FALogin:     (tempToken, code)       => api.post('/auth/2fa/verify-login', { tempToken, code }),
   verifyEmail:        (token)                 => api.post("/auth/verify-email", { token }),
   resendVerification: (email)                 => api.post("/auth/resend-verification", { email }),
   forgotPassword:     (email)                 => api.post("/auth/forgot-password", { email }),

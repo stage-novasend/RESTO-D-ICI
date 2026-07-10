@@ -5,6 +5,7 @@ import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 import { getCorsOrigins, validateEnv } from './config/app-config';
 
 async function bootstrap() {
@@ -23,6 +24,9 @@ async function bootstrap() {
 
   // [SÉCURITÉ] En-têtes HTTP durcis (CSP, HSTS, X-Frame-Options…).
   app.use(helmet());
+
+  // Lecture des cookies (refresh token HttpOnly).
+  app.use(cookieParser());
 
   // Validation automatique des DTOs
   app.useGlobalPipes(

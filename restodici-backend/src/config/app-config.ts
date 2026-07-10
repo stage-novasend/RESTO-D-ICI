@@ -72,6 +72,28 @@ export function validateEnv(): void {
   }
 }
 
+/* ── Cookie du refresh token (HttpOnly, anti-XSS) ── */
+export const REFRESH_COOKIE = 'refreshToken';
+export const REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60 * 1000; // 30 jours
+
+/**
+ * Options du cookie de refresh token.
+ * - httpOnly : inaccessible au JavaScript (protège contre le vol par XSS).
+ * - secure   : HTTPS uniquement en production.
+ * - sameSite : 'lax' par défaut (surcharge via COOKIE_SAMESITE pour du cross-site).
+ * - path     : limité aux routes d'auth.
+ */
+export function refreshCookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: (process.env.COOKIE_SAMESITE as 'lax' | 'strict' | 'none') || 'lax',
+    path: '/api/auth',
+    maxAge: REFRESH_COOKIE_MAX_AGE,
+  };
+}
+
 /** Base URLs des services externes — surchargées par l'environnement. */
 export const EXTERNAL_URLS = {
   novasend: process.env.NOVASEND_BASE_URL || 'https://business.novasend.app/v1',

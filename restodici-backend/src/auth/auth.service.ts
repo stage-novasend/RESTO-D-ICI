@@ -99,6 +99,21 @@ export class AuthService {
     return { ...response, refreshToken: newRefreshToken };
   }
 
+  /** Révoque la session de refresh token (déconnexion). */
+  async logout(refreshToken?: string): Promise<void> {
+    if (!refreshToken) return;
+    const [sessionId] = refreshToken.split('.');
+    if (!sessionId) return;
+    await this.userRepository.update(
+      { refreshTokenId: sessionId },
+      {
+        refreshToken: undefined,
+        refreshTokenId: undefined,
+        refreshTokenExpires: undefined,
+      },
+    );
+  }
+
   private async buildAuthResponse(
     user: User,
     message?: string,
