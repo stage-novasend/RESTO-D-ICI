@@ -117,9 +117,25 @@
       "node_modules/(?!(@scure|@noble|@otplib)/)"
     ],
     "collectCoverageFrom": [
-      "**/*.(t|j)s"
+      "**/*.service.ts",
+      "common/**/*.ts",
+      "!**/*.module.ts",
+      "!**/*.entity.ts",
+      "!**/*.dto.ts",
+      "!**/*.spec.ts",
+      "!**/main.ts",
+      "!**/migrations/**",
+      "!**/seed-admin.ts"
     ],
     "coverageDirectory": "../coverage",
+    "coverageThreshold": {
+      "global": {
+        "statements": 27,
+        "branches": 25,
+        "functions": 19,
+        "lines": 27
+      }
+    },
     "testEnvironment": "node"
   }
 }
