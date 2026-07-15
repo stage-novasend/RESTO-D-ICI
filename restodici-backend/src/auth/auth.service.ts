@@ -18,6 +18,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { normalizeDeliveryZones } from '../common/utils/delivery-zones.util';
+import { encryptField, decryptField } from '../common/crypto/field-encryption';
 import { ConfigService } from '@nestjs/config';
 import {
   generateSecret as otpGenerateSecret,
@@ -551,7 +552,8 @@ export class AuthService {
     if (!user) throw new NotFoundException('Utilisateur introuvable');
 
     const secret = otpGenerateSecret();
-    user.twoFactorSecret = secret;
+    // Chiffré au repos ; le secret en clair ne sert qu'au QR code ci-dessous.
+    user.twoFactorSecret = encryptField(secret);
     await this.userRepository.save(user);
 
     const otpAuthUrl = otpGenerateURI({
@@ -574,7 +576,7 @@ export class AuthService {
       throw new BadRequestException("Configurez d'abord la 2FA");
 
     const verifyResult = otpVerifySync({
-      secret: user.twoFactorSecret,
+      secret: decryptField(user.twoFactorSecret) ?? '',
       token: code,
       strategy: 'totp',
     });
@@ -634,7 +636,7 @@ export class AuthService {
     if (
       user.twoFactorSecret &&
       otpVerifySync({
-        secret: user.twoFactorSecret,
+        secret: decryptField(user.twoFactorSecret) ?? '',
         token: code,
         strategy: 'totp',
       }).valid
