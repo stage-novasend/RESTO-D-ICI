@@ -35,6 +35,7 @@ import { CreateCommandeGroupeeDto } from '../dto/create-commande-groupee.dto';
 import * as bcrypt from 'bcrypt';
 import axios from 'axios';
 import { CommandesGateway } from '../../commandes/commandes.gateway';
+import { NotificationsService } from '../../notifications/notifications.service';
 
 const MOIS_FR = [
   'JANVIER',
@@ -85,7 +86,33 @@ export class B2BService {
     private commandesGateway: CommandesGateway,
     private emailService: EmailService,
     private configService: ConfigService,
+    private notificationsService: NotificationsService,
   ) {}
+
+  /**
+   * Crée une notification persistée pour un utilisateur ET la pousse en temps réel.
+   * (source unique — utilisée par les CRON de rappels B2B)
+   */
+  private async notifyUser(
+    userId: string,
+    type: string,
+    title: string,
+    body: string,
+    data?: Record<string, any>,
+  ): Promise<void> {
+    try {
+      const notif = await this.notificationsService.create({
+        userId,
+        type,
+        title,
+        body,
+        data: data ?? null,
+      });
+      this.commandesGateway.emitToClient(userId, 'notification.new', notif);
+    } catch {
+      // une notification ne doit jamais casser un CRON
+    }
+  }
 
   // ============================================================
   // === COMPTE B2B (Company account) ===========================
@@ -1002,7 +1029,7 @@ export class B2BService {
           dateLivraison: Between(from, to),
           statut: In(['EN_ATTENTE', 'CONFIRMEE', 'EN_PREPARATION']),
         },
-        relations: ['compteB2B'],
+        relations: ['compteB2B', 'compteB2B.responsable'],
       });
       for (const cmd of commandes) {
         const payload = {
@@ -1016,6 +1043,7 @@ export class B2BService {
           lieuLivraison: cmd.lieuLivraison,
           urgence: label,
         };
+        // Rappel temps réel (WebSocket, éphémère) — à chaque passage dans la fenêtre.
         if (cmd.restaurantId) {
           this.commandesGateway.emitToKitchen(
             cmd.restaurantId,
@@ -1024,6 +1052,37 @@ export class B2BService {
           );
         }
         this.commandesGateway.emitToManagers('commande.b2b.rappel', payload);
+
+        // Notification PERSISTÉE (cloche) — une seule fois, à l'approche (~2h avant).
+        if (label === '2h' && !cmd.rappelNotifie) {
+          const heure = (cmd.heureLivraison ?? '').toString().trim();
+          const respId = cmd.compteB2B?.responsable?.id;
+          if (respId) {
+            await this.notifyUser(
+              respId,
+              'commande.b2b.rappel',
+              'Livraison imminente',
+              `Votre commande groupée n°${cmd.numero} est prévue ${heure ? 'à ' + heure : 'bientôt'} (dans environ 2h).`,
+              { commandeId: cmd.id, numero: cmd.numero },
+            );
+          }
+          if (cmd.restaurantId) {
+            const gerant = await this.userRepository.findOne({
+              where: { restaurant: { id: cmd.restaurantId }, role: Role.GERANT },
+            });
+            if (gerant) {
+              await this.notifyUser(
+                gerant.id,
+                'commande.b2b.rappel',
+                'Commande B2B à préparer',
+                `La commande groupée n°${cmd.numero} est à livrer dans environ 2h.`,
+                { commandeId: cmd.id, numero: cmd.numero },
+              );
+            }
+          }
+          cmd.rappelNotifie = true;
+          await this.commandeGroupeeRepository.save(cmd);
+        }
       }
     }
   }
@@ -2353,9 +2412,24 @@ export class B2BService {
   @Cron('0 7 * * *')
   async rollerPlansRepas(): Promise<void> {
     const now = new Date();
-    const plans = await this.planRepasRepository.find({ where: { actif: true } });
+    const plans = await this.planRepasRepository.find({
+      where: { actif: true },
+      relations: ['compte', 'compte.responsable'],
+    });
     for (const plan of plans) {
       if (plan.prochaineLivraison && plan.prochaineLivraison <= now) {
+        // Notification persistée au responsable : le plan récurrent est dû aujourd'hui.
+        const respId = plan.compte?.responsable?.id;
+        if (respId) {
+          await this.notifyUser(
+            respId,
+            'plan.repas.du',
+            'Plan repas récurrent',
+            `Votre plan « ${plan.nom} » est prévu aujourd'hui (${plan.nbRepas} repas). Créez la commande groupée pour votre équipe.`,
+            { planId: plan.id, nom: plan.nom, nbRepas: plan.nbRepas },
+          );
+        }
+        // On avance l'échéance au prochain cycle.
         plan.prochaineLivraison = this.computeNextDelivery(plan.frequence);
         await this.planRepasRepository.save(plan);
       }

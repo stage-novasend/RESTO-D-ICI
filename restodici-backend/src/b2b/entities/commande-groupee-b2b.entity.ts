@@ -66,6 +66,10 @@ export class CommandeGroupeeB2B {
   @Column({ default: false })
   estPaye!: boolean;
 
+  // Rappel de livraison imminente déjà notifié (idempotence du CRON)
+  @Column({ default: false })
+  rappelNotifie!: boolean;
+
   // Délai de traitement automatique : 4h après la création (US-35)
   @Column({ nullable: true, type: 'timestamptz' })
   deadlineAt?: Date;

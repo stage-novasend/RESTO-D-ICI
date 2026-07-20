@@ -20,6 +20,7 @@ import { PlanRepasB2B } from './entities/plan-repas-b2b.entity';
 import { Article } from '../menu/entities/article.entity';
 import { SystemConfig } from '../common/entities/system-config.entity';
 import { CommandesModule } from '../commandes/commandes.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { CommandesModule } from '../commandes/commandes.module';
     AuthModule,
     EmailModule,
     CommandesModule,
+    NotificationsModule,
   ],
   controllers: [B2BController, B2BInvitationsController],
   providers: [B2BService],

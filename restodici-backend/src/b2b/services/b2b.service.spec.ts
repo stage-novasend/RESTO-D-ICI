@@ -22,6 +22,7 @@ import { Article } from '../../menu/entities/article.entity';
 import { CommandesGateway } from '../../commandes/commandes.gateway';
 import { EmailService } from '../../email/email.service';
 import { ConfigService } from '@nestjs/config';
+import { NotificationsService } from '../../notifications/notifications.service';
 import { SystemConfig } from '../../common/entities/system-config.entity';
 
 // ─── Shared mock objects ──────────────────────────────────────────────────────
@@ -150,6 +151,10 @@ async function buildModule(): Promise<TestingModule> {
       { provide: CommandesGateway, useValue: commandesGateway },
       { provide: EmailService, useValue: emailService },
       { provide: ConfigService, useValue: configService },
+      {
+        provide: NotificationsService,
+        useValue: { create: jest.fn().mockResolvedValue({}) },
+      },
     ],
   }).compile();
 }
