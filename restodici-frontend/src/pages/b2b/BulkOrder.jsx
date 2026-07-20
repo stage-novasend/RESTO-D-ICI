@@ -354,6 +354,8 @@ export default function BulkOrder() {
     return { dateLivraison: minDate, heureLivraison: minTime, lieuLivraison: '', adresseLivraison: '' };
   });
   const deliveryLabel = getDeliveryLabel(livraison.dateLivraison, livraison.heureLivraison);
+  // Date minimale sélectionnable (aujourd'hui, délai +4h) — utilisée par l'input date.
+  const { minDate } = getMinDatetime();
   const [mapPos, setMapPos] = useState(null);
   const [locating, setLocating] = useState(false);
   const [locError, setLocError] = useState('');
@@ -573,8 +575,10 @@ export default function BulkOrder() {
     try {
       // Mode instant : on recalcule l'heure au tout dernier moment (= heure courante + 4h)
       // pour ne jamais envoyer une valeur périmée. Mode planifié : on garde le créneau choisi.
-      const { dateLivraison, heureLivraison } =
-        mode === 'instant' ? getMinDatetime() : livraison;
+      // getMinDatetime() renvoie { minDate, minTime } → on les mappe sur les bons champs.
+      const fresh = getMinDatetime();
+      const dateLivraison  = mode === 'instant' ? fresh.minDate : livraison.dateLivraison;
+      const heureLivraison = mode === 'instant' ? fresh.minTime : livraison.heureLivraison;
       const result = await b2bAPI.createCommandeGroupee({
         dateLivraison,
         heureLivraison,
