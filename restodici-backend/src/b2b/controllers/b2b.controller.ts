@@ -15,6 +15,7 @@ import { RolesGuard } from '../../auth/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../auth/entities/user.entity';
 import { B2BService } from '../services/b2b.service';
+import { B2bPlansRepasService } from '../services/b2b-plans-repas.service';
 import { CreateTeamDto } from '../dto/create-team.dto';
 import { AddTeamMemberDto } from '../dto/add-team-member.dto';
 import { CreateBulkOrderDto } from '../dto/create-bulk-order.dto';
@@ -31,7 +32,10 @@ interface RequestWithUser extends Request {
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles(Role.B2B)
 export class B2BController {
-  constructor(private b2bService: B2BService) {}
+  constructor(
+    private b2bService: B2BService,
+    private plansRepasService: B2bPlansRepasService,
+  ) {}
 
   // ============================================================
   // === COMPTE B2B =============================================
@@ -390,7 +394,7 @@ export class B2BController {
 
   @Get('plans-repas')
   async getPlansRepas(@Req() req: RequestWithUser) {
-    return this.b2bService.getPlansRepas(req.user.id);
+    return this.plansRepasService.getPlansRepas(req.user.id);
   }
 
   @Post('plans-repas')
@@ -398,16 +402,16 @@ export class B2BController {
     @Req() req: RequestWithUser,
     @Body() body: { nom: string; frequence: string; nbRepas: number; budgetRepas: number; notes?: string },
   ) {
-    return this.b2bService.createPlanRepas(req.user.id, body);
+    return this.plansRepasService.createPlanRepas(req.user.id, body);
   }
 
   @Patch('plans-repas/:id/toggle')
   async togglePlanRepas(@Req() req: RequestWithUser, @Param('id') id: string) {
-    return this.b2bService.togglePlanRepas(id, req.user.id);
+    return this.plansRepasService.togglePlanRepas(id, req.user.id);
   }
 
   @Delete('plans-repas/:id')
   async deletePlanRepas(@Req() req: RequestWithUser, @Param('id') id: string) {
-    return this.b2bService.deletePlanRepas(id, req.user.id);
+    return this.plansRepasService.deletePlanRepas(id, req.user.id);
   }
 }
