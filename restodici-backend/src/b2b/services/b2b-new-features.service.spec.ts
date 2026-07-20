@@ -19,9 +19,15 @@ import { CommandesGateway } from '../../commandes/commandes.gateway';
 import { EmailService } from '../../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { B2bAuditService } from './b2b-audit.service';
 
 const notificationsServiceMock = {
   create: jest.fn().mockResolvedValue({}),
+};
+
+const auditServiceMock = {
+  logAudit: jest.fn().mockResolvedValue(undefined),
+  getAuditLogs: jest.fn().mockResolvedValue([]),
 };
 import { SystemConfig } from '../../common/entities/system-config.entity';
 
@@ -102,6 +108,7 @@ describe('B2BService — contestFacture', () => {
         { provide: EmailService, useValue: emailService },
         { provide: ConfigService, useValue: configService },
         { provide: NotificationsService, useValue: notificationsServiceMock },
+        { provide: B2bAuditService, useValue: auditServiceMock },
       ],
     }).compile();
     service = module.get<B2BService>(B2BService);
@@ -217,6 +224,7 @@ describe('B2BService — exportSyscohadaCsv', () => {
         },
         { provide: ConfigService, useValue: { get: jest.fn() } },
         { provide: NotificationsService, useValue: notificationsServiceMock },
+        { provide: B2bAuditService, useValue: auditServiceMock },
       ],
     }).compile();
     service = module.get<B2BService>(B2BService);
@@ -328,6 +336,7 @@ describe('B2BService — checkOverdueInvoices relances', () => {
         { provide: EmailService, useValue: emailService },
         { provide: ConfigService, useValue: configService },
         { provide: NotificationsService, useValue: notificationsServiceMock },
+        { provide: B2bAuditService, useValue: auditServiceMock },
       ],
     }).compile();
     return module.get<B2BService>(B2BService);

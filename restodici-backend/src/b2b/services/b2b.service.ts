@@ -19,7 +19,6 @@ import { CompteB2B } from '../entities/compte-b2b.entity';
 import { CollaborateurB2B } from '../entities/collaborateur-b2b.entity';
 import { CommandeGroupeeB2B } from '../entities/commande-groupee-b2b.entity';
 import { LigneCommandeGroupeeB2B } from '../entities/ligne-commande-groupee-b2b.entity';
-import { AuditLogB2B, TypeAuditB2B } from '../entities/audit-log-b2b.entity';
 import { FactureMensuelleB2B } from '../entities/facture-mensuelle-b2b.entity';
 import { Article } from '../../menu/entities/article.entity';
 import { SystemConfig } from '../../common/entities/system-config.entity';
@@ -35,6 +34,7 @@ import * as bcrypt from 'bcrypt';
 import axios from 'axios';
 import { CommandesGateway } from '../../commandes/commandes.gateway';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { B2bAuditService } from './b2b-audit.service';
 
 const MOIS_FR = [
   'JANVIER',
@@ -72,8 +72,6 @@ export class B2BService {
     private commandeGroupeeRepository: Repository<CommandeGroupeeB2B>,
     @InjectRepository(LigneCommandeGroupeeB2B)
     private ligneCommandeRepository: Repository<LigneCommandeGroupeeB2B>,
-    @InjectRepository(AuditLogB2B)
-    private auditRepository: Repository<AuditLogB2B>,
     @InjectRepository(FactureMensuelleB2B)
     private factureRepository: Repository<FactureMensuelleB2B>,
     @InjectRepository(Article)
@@ -84,6 +82,7 @@ export class B2BService {
     private emailService: EmailService,
     private configService: ConfigService,
     private notificationsService: NotificationsService,
+    private auditService: B2bAuditService,
   ) {}
 
   /**
@@ -152,7 +151,7 @@ export class B2BService {
     });
 
     const saved = await this.compteB2BRepository.save(compte);
-    await this.logAudit('CONNEXION', saved.id, userId, {
+    await this.auditService.logAudit('CONNEXION', saved.id, userId, {
       action: 'Création compte B2B',
       raisonSociale: dto.raisonSociale,
     });
@@ -273,7 +272,7 @@ export class B2BService {
 
     const saved = await this.collaborateurRepository.save(collaborateur);
 
-    await this.logAudit('CREATION_COLLABORATEUR', compte.id, userId, {
+    await this.auditService.logAudit('CREATION_COLLABORATEUR', compte.id, userId, {
       collaborateurEmail: email,
       limiteBudget,
     });
@@ -383,7 +382,7 @@ export class B2BService {
     if (dto.nom) collab.nom = dto.nom.trim();
 
     const saved = await this.collaborateurRepository.save(collab);
-    await this.logAudit(
+    await this.auditService.logAudit(
       'MODIFICATION_COLLABORATEUR' as any,
       compte.id,
       userId,
@@ -497,7 +496,7 @@ export class B2BService {
     collab.invitationToken = undefined;
     await this.collaborateurRepository.save(collab);
 
-    await this.logAudit('CONNEXION', collab.compteB2BId, user.id, {
+    await this.auditService.logAudit('CONNEXION', collab.compteB2BId, user.id, {
       action: 'Invitation acceptée',
       email: collab.email,
     });
@@ -853,7 +852,7 @@ export class B2BService {
       }
     }
 
-    await this.logAudit('CREATION_COMMANDE_GROUPEE', compte.id, userId, {
+    await this.auditService.logAudit('CREATION_COMMANDE_GROUPEE', compte.id, userId, {
       numero,
       totalEstime,
       nbLignes: lignes.length,
@@ -1190,7 +1189,7 @@ export class B2BService {
     facture.statut = 'PAYEE';
     const saved = await this.factureRepository.save(facture);
 
-    await this.logAudit('PAIEMENT_FACTURE', compte.id, userId, {
+    await this.auditService.logAudit('PAIEMENT_FACTURE', compte.id, userId, {
       factureId,
       montantTTC: Number(facture.montantTTC),
       numeroFacture: facture.numeroFacture,
@@ -1221,7 +1220,7 @@ export class B2BService {
     facture.statut = 'EN_CONTESTATION';
     const saved = await this.factureRepository.save(facture);
 
-    await this.logAudit('PAIEMENT_FACTURE', compte.id, userId, {
+    await this.auditService.logAudit('PAIEMENT_FACTURE', compte.id, userId, {
       action: 'CONTESTATION',
       factureId,
       motif,
@@ -1288,7 +1287,7 @@ export class B2BService {
     const csvRows = rows.map((r) => Object.values(r).join(';'));
     const csv = [headers, ...csvRows].join('\n');
 
-    await this.logAudit('GENERATION_FACTURE', compte.id, userId, {
+    await this.auditService.logAudit('GENERATION_FACTURE', compte.id, userId, {
       action: 'EXPORT_SYSCOHADA',
       factureId,
       numeroFacture: facture.numeroFacture,
@@ -1386,7 +1385,7 @@ export class B2BService {
     });
 
     const saved = await this.factureRepository.save(facture);
-    await this.logAudit('GENERATION_FACTURE', compte.id, 'SYSTEM', {
+    await this.auditService.logAudit('GENERATION_FACTURE', compte.id, 'SYSTEM', {
       numeroFacture,
       montantTTC,
       mois,
@@ -1547,54 +1546,7 @@ export class B2BService {
   // === AUDIT LOG ===============================================
   // ============================================================
 
-  async getAuditLogs(userId: string): Promise<Record<string, any>[]> {
-    const compte = await this.getCompteB2B(userId);
-    if (!compte) return [];
-
-    const logs = await this.auditRepository.find({
-      where: { compteB2B: { id: compte.id } },
-      order: { createdAt: 'DESC' },
-      take: 50,
-    });
-
-    return logs.map((log) => ({
-      id: log.id,
-      type: log.type,
-      actorEmail: log.actorEmail,
-      meta: log.meta,
-      createdAt: log.createdAt,
-    }));
-  }
-
-  private async logAudit(
-    type: TypeAuditB2B,
-    compteB2BId: string,
-    actorUserId: string,
-    meta?: Record<string, unknown>,
-  ): Promise<void> {
-    try {
-      let actorEmail: string | undefined;
-      if (actorUserId !== 'SYSTEM') {
-        const actor = await this.userRepository.findOne({
-          where: { id: actorUserId },
-        });
-        actorEmail = actor?.email;
-      } else {
-        actorEmail = 'system@restodici.ci';
-      }
-
-      const log = this.auditRepository.create({
-        compteB2B: { id: compteB2BId } as CompteB2B,
-        type,
-        actorUserId,
-        actorEmail,
-        meta,
-      });
-      await this.auditRepository.save(log);
-    } catch {
-      // Non-blocking: audit failure should not break business logic
-    }
-  }
+  // Journal d'audit (logAudit + getAuditLogs) → extrait dans B2bAuditService.
 
   // ============================================================
   // === RAPPORTS ================================================
@@ -1635,7 +1587,7 @@ export class B2BService {
       { totalCommandes: 0, totalMontant: 0 },
     );
 
-    const auditLogs = await this.getAuditLogs(userId);
+    const auditLogs = await this.auditService.getAuditLogs(userId);
 
     const platformConfigs = await this.systemConfigRepository.find({
       where: [

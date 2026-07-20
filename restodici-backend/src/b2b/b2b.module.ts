@@ -6,6 +6,7 @@ import { B2BController } from './controllers/b2b.controller';
 import { B2BInvitationsController } from './controllers/b2b-invitations.controller';
 import { B2BService } from './services/b2b.service';
 import { B2bPlansRepasService } from './services/b2b-plans-repas.service';
+import { B2bAuditService } from './services/b2b-audit.service';
 import { Team } from './entities/team.entity';
 import { TeamMember } from './entities/team-member.entity';
 import { BulkOrder } from './entities/bulk-order.entity';
@@ -47,7 +48,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [B2BController, B2BInvitationsController],
-  providers: [B2BService, B2bPlansRepasService],
-  exports: [B2BService, B2bPlansRepasService],
+  providers: [B2BService, B2bPlansRepasService, B2bAuditService],
+  exports: [B2BService, B2bPlansRepasService, B2bAuditService],
 })
 export class B2BModule {}

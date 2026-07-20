@@ -23,6 +23,7 @@ import { CommandesGateway } from '../../commandes/commandes.gateway';
 import { EmailService } from '../../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../../notifications/notifications.service';
+import { B2bAuditService } from './b2b-audit.service';
 import { SystemConfig } from '../../common/entities/system-config.entity';
 
 // ─── Shared mock objects ──────────────────────────────────────────────────────
@@ -154,6 +155,13 @@ async function buildModule(): Promise<TestingModule> {
       {
         provide: NotificationsService,
         useValue: { create: jest.fn().mockResolvedValue({}) },
+      },
+      {
+        provide: B2bAuditService,
+        useValue: {
+          logAudit: jest.fn().mockResolvedValue(undefined),
+          getAuditLogs: jest.fn().mockResolvedValue([]),
+        },
       },
     ],
   }).compile();

@@ -16,6 +16,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { Role } from '../../auth/entities/user.entity';
 import { B2BService } from '../services/b2b.service';
 import { B2bPlansRepasService } from '../services/b2b-plans-repas.service';
+import { B2bAuditService } from '../services/b2b-audit.service';
 import { CreateTeamDto } from '../dto/create-team.dto';
 import { AddTeamMemberDto } from '../dto/add-team-member.dto';
 import { CreateBulkOrderDto } from '../dto/create-bulk-order.dto';
@@ -35,6 +36,7 @@ export class B2BController {
   constructor(
     private b2bService: B2BService,
     private plansRepasService: B2bPlansRepasService,
+    private auditService: B2bAuditService,
   ) {}
 
   // ============================================================
@@ -191,7 +193,7 @@ export class B2BController {
 
   @Get('audit-logs')
   async getAuditLogs(@Req() req: RequestWithUser) {
-    return this.b2bService.getAuditLogs(req.user.id);
+    return this.auditService.getAuditLogs(req.user.id);
   }
 
   // ============================================================
