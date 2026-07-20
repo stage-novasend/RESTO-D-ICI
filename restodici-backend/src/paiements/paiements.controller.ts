@@ -84,7 +84,9 @@ export class PaiementsController {
       .createHmac('sha256', secret)
       .update(raw)
       .digest('hex');
-    if (sigHeader !== expected) {
+    const sigA = Buffer.from(sigHeader);
+    const sigB = Buffer.from(expected);
+    if (sigA.length !== sigB.length || !crypto.timingSafeEqual(sigA, sigB)) {
       this.logger.warn('Novasend webhook: signature invalide');
       return { status: 'invalid_signature' };
     }
@@ -96,7 +98,34 @@ export class PaiementsController {
   // ── Webhook CinetPay (legacy) ────────────────────────────────────────────────
   @Post('webhook/cinetpay')
   @HttpCode(HttpStatus.OK)
-  async cinetpayWebhook(@Body() body: any) {
+  async cinetpayWebhook(
+    @Body() body: any,
+    @Headers('x-token') tokenHeader: string,
+    @Req() req: any,
+  ) {
+    // [SÉCURITÉ] Fail-closed : signature HMAC obligatoire. Sans elle, n'importe qui
+    // pourrait POST {cpm_trans_id, cpm_result:'00'} et valider une commande sans payer.
+    const secret = this.config.get<string>('CINETPAY_WEBHOOK_SECRET');
+    if (!secret) {
+      this.logger.error('CINETPAY_WEBHOOK_SECRET non configuré — webhook rejeté');
+      return { status: 'misconfigured' };
+    }
+    if (!tokenHeader) {
+      this.logger.warn('CinetPay webhook: signature (x-token) absente');
+      return { status: 'invalid_signature' };
+    }
+    const raw = req.rawBody?.toString() ?? JSON.stringify(body);
+    const expected = crypto
+      .createHmac('sha256', secret)
+      .update(raw)
+      .digest('hex');
+    // Comparaison à temps constant pour éviter les attaques temporelles.
+    const a = Buffer.from(tokenHeader);
+    const b = Buffer.from(expected);
+    if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+      this.logger.warn('CinetPay webhook: signature invalide');
+      return { status: 'invalid_signature' };
+    }
     this.logger.log(`CinetPay webhook: ${JSON.stringify(body).slice(0, 200)}`);
     await this.paiementsService.handleCinetpayWebhook(body);
     return { cpm_result: '00' };
