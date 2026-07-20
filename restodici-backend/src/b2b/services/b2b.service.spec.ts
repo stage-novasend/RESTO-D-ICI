@@ -24,6 +24,7 @@ import { EmailService } from '../../email/email.service';
 import { ConfigService } from '@nestjs/config';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { B2bAuditService } from './b2b-audit.service';
+import { B2bFacturationService } from './b2b-facturation.service';
 import { SystemConfig } from '../../common/entities/system-config.entity';
 
 // ─── Shared mock objects ──────────────────────────────────────────────────────
@@ -161,6 +162,15 @@ async function buildModule(): Promise<TestingModule> {
         useValue: {
           logAudit: jest.fn().mockResolvedValue(undefined),
           getAuditLogs: jest.fn().mockResolvedValue([]),
+        },
+      },
+      {
+        provide: B2bFacturationService,
+        useValue: {
+          getFacturesMensuelles: jest.fn().mockResolvedValue([]),
+          getOverdueInvoiceCount: jest.fn().mockResolvedValue(0),
+          getPendingInvoiceEcheance: jest.fn().mockResolvedValue(null),
+          ensureNoBlockedInvoices: jest.fn().mockResolvedValue(undefined),
         },
       },
     ],
@@ -330,157 +340,6 @@ describe('B2BService updateBulkOrderStatus() — validations', () => {
 
     await expect(
       service.updateBulkOrderStatus('bulk-1', 'b2b-1', {} as any),
-    ).rejects.toThrow(BadRequestException);
-  });
-});
-
-// ─── generateFactureForCompte() ───────────────────────────────────────────────
-
-describe('B2BService generateFactureForCompte()', () => {
-  let service: B2BService;
-
-  const mockQB = () => ({
-    select: jest.fn().mockReturnThis(),
-    where: jest.fn().mockReturnThis(),
-    andWhere: jest.fn().mockReturnThis(),
-    getRawOne: jest.fn().mockResolvedValue({ total: '10000' }),
-  });
-
-  beforeEach(async () => {
-    jest.clearAllMocks();
-    const module = await buildModule();
-    service = module.get<B2BService>(B2BService);
-  });
-
-  it('crée une facture mensuelle B2B et envoie l\'email au responsable', async () => {
-    const compte = {
-      id: 'compte-uuid-1',
-      raisonSociale: 'Sankofa SARL',
-      emailProfessionnel: 'compta@sankofa.ci',
-      numeroContribuable: 'NIF12345',
-      numeroRCCM: 'RCCM-CI-ABJ-2025',
-      responsable: { id: 'b2b-user-1' },
-    } as any;
-
-    factureRepository.findOne.mockResolvedValue(null);
-    commandeGroupeeRepository.createQueryBuilder.mockReturnValue(mockQB());
-    bulkOrderRepository.createQueryBuilder.mockReturnValue(mockQB());
-
-    const savedFacture = {
-      id: 'facture-new-1',
-      mois: 'MAI',
-      annee: 2026,
-      montantHT: 20000,
-      tva: 3600,
-      montantTTC: 23600,
-      statut: 'EN_ATTENTE',
-      numeroFacture: 'RDI-B2B-202605-COMPTE',
-    };
-    factureRepository.create.mockReturnValue(savedFacture);
-    factureRepository.save.mockResolvedValue(savedFacture);
-    auditRepository.save.mockResolvedValue(undefined);
-
-    const result = await service.generateFactureForCompte(compte, 'MAI', 2026);
-
-    expect(factureRepository.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        mois: 'MAI',
-        annee: 2026,
-        statut: 'EN_ATTENTE',
-      }),
-    );
-    expect(factureRepository.save).toHaveBeenCalled();
-    expect(result).toMatchObject({ id: 'facture-new-1', statut: 'EN_ATTENTE' });
-  });
-
-  it('retourne la facture existante sans la recréer (idempotence)', async () => {
-    const compte = { id: 'compte-uuid-1', raisonSociale: 'Sankofa SARL' } as any;
-    const existante = { id: 'facture-existante', mois: 'MAI', annee: 2026, statut: 'PAYEE' };
-    factureRepository.findOne.mockResolvedValue(existante);
-
-    const result = await service.generateFactureForCompte(compte, 'MAI', 2026);
-
-    expect(factureRepository.create).not.toHaveBeenCalled();
-    expect(factureRepository.save).not.toHaveBeenCalled();
-    expect(result).toMatchObject({ id: 'facture-existante' });
-  });
-
-  it('retourne null si le montant total du mois est 0', async () => {
-    const compte = { id: 'compte-uuid-2', responsable: { id: 'b2b-2' } } as any;
-    factureRepository.findOne.mockResolvedValue(null);
-
-    const zeroQB = {
-      select: jest.fn().mockReturnThis(),
-      where: jest.fn().mockReturnThis(),
-      andWhere: jest.fn().mockReturnThis(),
-      getRawOne: jest.fn().mockResolvedValue({ total: null }),
-    };
-    commandeGroupeeRepository.createQueryBuilder.mockReturnValue(zeroQB);
-    bulkOrderRepository.createQueryBuilder.mockReturnValue(zeroQB);
-
-    const result = await service.generateFactureForCompte(compte, 'JANVIER', 2026);
-
-    expect(result).toBeNull();
-    expect(factureRepository.save).not.toHaveBeenCalled();
-  });
-});
-
-// ─── payFacture() ─────────────────────────────────────────────────────────────
-
-describe('B2BService payFacture()', () => {
-  let service: B2BService;
-
-  beforeEach(async () => {
-    jest.clearAllMocks();
-    const module = await buildModule();
-    service = module.get<B2BService>(B2BService);
-  });
-
-  it('marque la facture comme PAYEE', async () => {
-    const compte = { id: 'compte-1', raisonSociale: 'Sankofa SARL', numeroContribuable: 'NIF1' };
-    compteB2BRepository.findOne.mockResolvedValue(compte);
-
-    const facture = {
-      id: 'facture-1',
-      statut: 'EN_ATTENTE',
-      montantTTC: 11800,
-      numeroFacture: 'RDI-B2B-202605-AAAA',
-    };
-    factureRepository.findOne.mockResolvedValue(facture);
-    factureRepository.save.mockImplementation(async (f) => ({ ...f, statut: 'PAYEE' }));
-    auditRepository.save.mockResolvedValue(undefined);
-
-    const result = await service.payFacture('facture-1', 'b2b-user-1') as any;
-
-    expect(factureRepository.save).toHaveBeenCalledWith(
-      expect.objectContaining({ statut: 'PAYEE' }),
-    );
-    expect(result.statut).toBe('PAYEE');
-  });
-
-  it('lève NotFoundException si le compte est introuvable', async () => {
-    compteB2BRepository.findOne.mockResolvedValue(null);
-
-    await expect(
-      service.payFacture('facture-1', 'ghost-user'),
-    ).rejects.toThrow(NotFoundException);
-  });
-
-  it('lève NotFoundException si la facture est introuvable', async () => {
-    compteB2BRepository.findOne.mockResolvedValue({ id: 'compte-1' });
-    factureRepository.findOne.mockResolvedValue(null);
-
-    await expect(
-      service.payFacture('ghost-facture', 'b2b-user-1'),
-    ).rejects.toThrow(NotFoundException);
-  });
-
-  it('lève BadRequestException si la facture est déjà payée', async () => {
-    compteB2BRepository.findOne.mockResolvedValue({ id: 'compte-1' });
-    factureRepository.findOne.mockResolvedValue({ id: 'facture-1', statut: 'PAYEE' });
-
-    await expect(
-      service.payFacture('facture-1', 'b2b-user-1'),
     ).rejects.toThrow(BadRequestException);
   });
 });

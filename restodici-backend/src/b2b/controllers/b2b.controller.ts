@@ -18,6 +18,7 @@ import { B2BService } from '../services/b2b.service';
 import { B2bPlansRepasService } from '../services/b2b-plans-repas.service';
 import { B2bAuditService } from '../services/b2b-audit.service';
 import { B2bTeamsService } from '../services/b2b-teams.service';
+import { B2bFacturationService } from '../services/b2b-facturation.service';
 import { CreateTeamDto } from '../dto/create-team.dto';
 import { AddTeamMemberDto } from '../dto/add-team-member.dto';
 import { CreateBulkOrderDto } from '../dto/create-bulk-order.dto';
@@ -39,6 +40,7 @@ export class B2BController {
     private plansRepasService: B2bPlansRepasService,
     private auditService: B2bAuditService,
     private teamsService: B2bTeamsService,
+    private facturationService: B2bFacturationService,
   ) {}
 
   // ============================================================
@@ -147,12 +149,12 @@ export class B2BController {
 
   @Get('factures-mensuelles')
   async getFacturesMensuelles(@Req() req: RequestWithUser) {
-    return this.b2bService.getFacturesMensuelles(req.user.id);
+    return this.facturationService.getFacturesMensuelles(req.user.id);
   }
 
   @Post('factures-mensuelles/:id/payer')
   async payerFacture(@Req() req: RequestWithUser, @Param('id') id: string) {
-    return this.b2bService.payFacture(id, req.user.id);
+    return this.facturationService.payFacture(id, req.user.id);
   }
 
   @Post('factures-mensuelles/:id/initier-paiement')
@@ -160,7 +162,7 @@ export class B2BController {
     @Req() req: RequestWithUser,
     @Param('id') id: string,
   ) {
-    return this.b2bService.initierPaiementFacture(id, req.user.id);
+    return this.facturationService.initierPaiementFacture(id, req.user.id);
   }
 
   @Post('factures-mensuelles/:id/contester')
@@ -169,7 +171,7 @@ export class B2BController {
     @Param('id') id: string,
     @Body() body: { motif: string },
   ) {
-    return this.b2bService.contestFacture(
+    return this.facturationService.contestFacture(
       id,
       req.user.id,
       body.motif || 'Motif non précisé',
@@ -181,12 +183,12 @@ export class B2BController {
     @Req() req: RequestWithUser,
     @Param('id') id: string,
   ) {
-    return this.b2bService.exportSyscohadaCsv(id, req.user.id);
+    return this.facturationService.exportSyscohadaCsv(id, req.user.id);
   }
 
   @Post('factures-mensuelles/test-seed')
   async seedFactureTest(@Req() req: RequestWithUser) {
-    return this.b2bService.createFactureTest(req.user.id);
+    return this.facturationService.createFactureTest(req.user.id);
   }
 
   // ============================================================

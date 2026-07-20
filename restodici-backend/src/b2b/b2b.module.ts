@@ -8,6 +8,7 @@ import { B2BService } from './services/b2b.service';
 import { B2bPlansRepasService } from './services/b2b-plans-repas.service';
 import { B2bAuditService } from './services/b2b-audit.service';
 import { B2bTeamsService } from './services/b2b-teams.service';
+import { B2bFacturationService } from './services/b2b-facturation.service';
 import { Team } from './entities/team.entity';
 import { TeamMember } from './entities/team-member.entity';
 import { BulkOrder } from './entities/bulk-order.entity';
@@ -49,7 +50,19 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [B2BController, B2BInvitationsController],
-  providers: [B2BService, B2bPlansRepasService, B2bAuditService, B2bTeamsService],
-  exports: [B2BService, B2bPlansRepasService, B2bAuditService, B2bTeamsService],
+  providers: [
+    B2BService,
+    B2bPlansRepasService,
+    B2bAuditService,
+    B2bTeamsService,
+    B2bFacturationService,
+  ],
+  exports: [
+    B2BService,
+    B2bPlansRepasService,
+    B2bAuditService,
+    B2bTeamsService,
+    B2bFacturationService,
+  ],
 })
 export class B2BModule {}
