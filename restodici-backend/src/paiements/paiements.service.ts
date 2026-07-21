@@ -26,7 +26,6 @@ import {
 } from './novasend.service';
 import { InitierPaiementDto } from './dto/initier-paiement.dto';
 import { PaymentGatewayRegistry } from './gateways/payment-gateway.registry';
-import { NovaSendGateway } from './gateways/novasend.gateway';
 
 // Correspondance provider NovaSend → enum ModePaiementCommande
 // CARTE sera actif dès que NovaSend supportera les paiements carte
@@ -130,18 +129,14 @@ export class PaiementsService {
 
     const result = await gateway.handleWebhook(payload);
 
-    // Enrichir le payload avec les infos normalisées et déléguer au handler interne
+    // Enrichir le payload avec les infos normalisées et déléguer au handler interne.
+    // Le provider vient du résultat normalisé — le contexte reste agnostique.
     const enriched: any = {
       reference: result.transactionId,
       status: result.status === 'SUCCESS' ? 'SUCCESSFUL' : result.status,
       metadata: result.metadata,
+      ...(result.provider ? { _provider: result.provider } : {}),
     };
-
-    // Récupérer le provider tracké si c'est un NovaSendGateway
-    if (gateway instanceof NovaSendGateway) {
-      const tracked = gateway.getTrackedProvider(result.transactionId);
-      if (tracked) enriched._provider = tracked;
-    }
 
     await this.handleNovasendWebhook(enriched);
   }
@@ -280,8 +275,7 @@ export class PaiementsService {
     );
   }
 
-  // ── Méthodes de paiement disponibles (pour le frontend) ──────────────────
-  // Lues en base (plus de liste codée en dur) : seuls les moyens ACTIVÉS par
+
   // l'admin ET dont la gateway est configurée sont proposés au client.
   async getPaymentMethods(): Promise<{ methods: { id: string; label: string; provider: string; gateway: string; needsPhone: boolean }[]; configured: boolean }> {
     await ensurePaymentMethodsSeeded(this.paymentMethodRepo);

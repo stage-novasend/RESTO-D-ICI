@@ -18,9 +18,14 @@ export interface PaymentGateway {
   readonly name: string;
   initiate(options: InitiatePaymentOptions): Promise<PaymentGatewayResult>;
   verifyWebhook(payload: any, signature?: string): boolean;
-  handleWebhook(payload: any): Promise<{
-    transactionId: string;
-    status: 'SUCCESS' | 'FAILED' | 'PENDING';
-    metadata?: any;
-  }>;
+  handleWebhook(payload: any): Promise<PaymentWebhookResult>;
+}
+
+export interface PaymentWebhookResult {
+  transactionId: string;
+  status: 'SUCCESS' | 'FAILED' | 'PENDING';
+  // Sous-provider résolu par la stratégie (ex. 'WAVE', 'ORANGE'), si elle sait
+  // le déterminer. Évite au contexte de connaître le détail des stratégies.
+  provider?: string;
+  metadata?: any;
 }

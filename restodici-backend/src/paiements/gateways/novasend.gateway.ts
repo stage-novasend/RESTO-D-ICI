@@ -7,6 +7,7 @@ import {
   PaymentGateway,
   InitiatePaymentOptions,
   PaymentGatewayResult,
+  PaymentWebhookResult,
 } from './payment-gateway.interface';
 import { EXTERNAL_URLS } from '../../config/app-config';
 
@@ -26,10 +27,6 @@ export class NovaSendGateway implements PaymentGateway {
   private readonly pendingMap = new Map<string, string>();
 
   constructor(private readonly integration: Integration) {}
-
-  getTrackedProvider(reference: string): string | undefined {
-    return this.pendingMap.get(reference);
-  }
 
   async initiate(options: InitiatePaymentOptions): Promise<PaymentGatewayResult> {
     const reference = options.metadata?.reference ?? randomUUID();
@@ -51,11 +48,7 @@ export class NovaSendGateway implements PaymentGateway {
     return signature === expected;
   }
 
-  async handleWebhook(payload: any): Promise<{
-    transactionId: string;
-    status: 'SUCCESS' | 'FAILED' | 'PENDING';
-    metadata?: any;
-  }> {
+  async handleWebhook(payload: any): Promise<PaymentWebhookResult> {
     const { reference, status, metadata } = payload;
 
     const FAILED_STATUSES = ['FAILED', 'EXPIRED', 'CANCELLED', 'failed', 'expired', 'cancelled'];
@@ -68,6 +61,9 @@ export class NovaSendGateway implements PaymentGateway {
     return {
       transactionId: reference,
       status: normalizedStatus,
+      // Le provider est résolu par la stratégie elle-même (référence trackée à
+      // l'initiation) → le contexte n'a pas à connaître NovaSend.
+      provider: this.pendingMap.get(reference),
       metadata,
     };
   }
