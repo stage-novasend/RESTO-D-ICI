@@ -8,6 +8,7 @@ import { Commande } from '../commandes/entities/commande.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 import { Integration } from '../common/entities/integration.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
+import { Payment } from './entities/payment.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { CommandesModule } from '../commandes/commandes.module';
 import { ReceiptQueueModule } from '../receipt-queue/receipt-queue.module';
@@ -19,6 +20,7 @@ import { ReceiptQueueModule } from '../receipt-queue/receipt-queue.module';
       FactureMensuelleB2B,
       Integration,
       PaymentMethod,
+      Payment,
     ]),
     NotificationsModule,
     CommandesModule,

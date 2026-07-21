@@ -15,6 +15,7 @@ import {
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
 import { ensurePaymentMethodsSeeded } from './payment-methods.seed';
+import { Payment, PaymentStatus } from './entities/payment.entity';
 import { CommandesGateway } from '../commandes/commandes.gateway';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
@@ -49,6 +50,8 @@ export class PaiementsService {
     private factureRepo: Repository<FactureMensuelleB2B>,
     @InjectRepository(PaymentMethod)
     private paymentMethodRepo: Repository<PaymentMethod>,
+    @InjectRepository(Payment)
+    private paymentRepo: Repository<Payment>,
     @InjectQueue(RECEIPT_QUEUE)
     private receiptQueue: Queue,
     private commandesGateway: CommandesGateway,
@@ -81,10 +84,12 @@ export class PaiementsService {
       );
     }
 
+    let result: InitiatePaymentResult;
+
     // Si une intégration est spécifiée, passer par le registry (Strategy pattern)
     if (dto.integrationName) {
       const gateway = await this.gatewayRegistry.getGateway(dto.integrationName);
-      const result = await gateway.initiate({
+      const gwResult = await gateway.initiate({
         amount: montant,
         provider: dto.provider,
         phone: dto.telephone,
@@ -95,23 +100,81 @@ export class PaiementsService {
           otp: dto.otp,
         },
       });
-      // Adapter le résultat au format InitiatePaymentResult attendu par le controller existant
-      return {
-        sessionId: result.transactionId,
-        paymentUrl: result.paymentUrl,
-        simulated: result.transactionId.startsWith('sim_'),
+      result = {
+        sessionId: gwResult.transactionId,
+        paymentUrl: gwResult.paymentUrl,
+        simulated: gwResult.transactionId.startsWith('sim_'),
       };
+    } else {
+      // Comportement par défaut : NovaSendService direct (rétrocompatibilité)
+      result = await this.novaSend.initiate({
+        reference: dto.commandeId,
+        amount: montant,
+        customerName: dto.customerName || commande.client?.nom || 'Client',
+        telephone: dto.telephone,
+        provider: dto.provider,
+        otp: dto.otp,
+      });
     }
 
-    // Comportement par défaut : NovaSendService direct (rétrocompatibilité)
-    return this.novaSend.initiate({
-      reference: dto.commandeId,
-      amount: montant,
-      customerName: dto.customerName || commande.client?.nom || 'Client',
-      telephone: dto.telephone,
-      provider: dto.provider,
-      otp: dto.otp,
-    });
+    // Trace transactionnelle (PENDING) — non bloquant.
+    await this.recordPayment(dto, commande, montant, result);
+
+    return result;
+  }
+
+  /** Historise un paiement initié (statut PENDING). Ne casse jamais le flux. */
+  private async recordPayment(
+    dto: InitierPaiementDto,
+    commande: Commande,
+    montant: number,
+    result: InitiatePaymentResult,
+  ): Promise<void> {
+    try {
+      const payment = this.paymentRepo.create({
+        reference: dto.commandeId,
+        provider: dto.provider,
+        amount: montant,
+        currency: 'XOF',
+        status: PaymentStatus.PENDING,
+        externalTransactionId: result.sessionId,
+        paymentUrl: result.paymentUrl,
+        customerName: dto.customerName || commande.client?.nom || 'Client',
+        customerPhone: dto.telephone,
+        customerEmail: commande.client?.email,
+        metadata: { simulated: result.simulated, provider: dto.provider },
+        commandeId: commande.id,
+        userId: commande.client?.id,
+      });
+      await this.paymentRepo.save(payment);
+    } catch (e) {
+      this.logger.error(
+        `Échec enregistrement Payment (CMD ${commande.numero}): ${(e as Error).message}`,
+      );
+    }
+  }
+
+  /** Met à jour la dernière trace de paiement d'une référence. Non bloquant. */
+  private async updatePaymentStatus(
+    reference: string,
+    status: PaymentStatus,
+    externalTransactionId?: string,
+  ): Promise<void> {
+    try {
+      const payment = await this.paymentRepo.findOne({
+        where: { reference },
+        order: { createdAt: 'DESC' },
+      });
+      if (!payment) return; // ex: facture B2B ou simulation sans trace — on ignore
+      payment.status = status;
+      if (externalTransactionId)
+        payment.externalTransactionId = externalTransactionId;
+      await this.paymentRepo.save(payment);
+    } catch (e) {
+      this.logger.error(
+        `Échec MAJ statut Payment (ref ${reference}): ${(e as Error).message}`,
+      );
+    }
   }
 
   // ── Simulation : déclenche le webhook en interne (dev uniquement) ──────────
@@ -176,6 +239,7 @@ export class PaiementsService {
         this.commandesGateway.emitToClient(commande.client.id, 'commande.paiement.echec', payload);
       }
       this.logger.warn(`Paiement échoué: CMD ${commandeId} — statut ${status}`);
+      await this.updatePaymentStatus(reference, PaymentStatus.FAILED);
       return;
     }
 
@@ -233,6 +297,7 @@ export class PaiementsService {
       payeAt,
       modePaiement,
     });
+    await this.updatePaymentStatus(reference, PaymentStatus.SUCCESS);
 
     const paymentPayload = {
       id: commandeId,

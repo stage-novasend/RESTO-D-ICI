@@ -7,6 +7,7 @@ import { NovaSendService } from './novasend.service';
 import { Commande, ModePaiementCommande } from '../commandes/entities/commande.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
+import { Payment } from './entities/payment.entity';
 import { CommandesGateway } from '../commandes/commandes.gateway';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
@@ -23,6 +24,12 @@ const mockCommandeRepo = {
 const mockFactureRepo = {
   findOne: jest.fn(),
   save: jest.fn(),
+};
+
+const mockPaymentRepo = {
+  create: jest.fn((x) => x),
+  save: jest.fn().mockResolvedValue({}),
+  findOne: jest.fn().mockResolvedValue(null),
 };
 
 const mockReceiptQueue = {
@@ -94,6 +101,7 @@ async function buildModule(): Promise<TestingModule> {
           create: jest.fn((x) => x),
         },
       },
+      { provide: getRepositoryToken(Payment), useValue: mockPaymentRepo },
       { provide: getQueueToken(RECEIPT_QUEUE), useValue: mockReceiptQueue },
       { provide: CommandesGateway, useValue: mockCommandesGateway },
       { provide: SmsService, useValue: mockSmsService },
@@ -147,6 +155,15 @@ describe('PaiementsService initiatePayment()', () => {
     );
     expect(result).toHaveProperty('sessionId');
     expect(result).toHaveProperty('paymentUrl');
+    // Trace transactionnelle Payment enregistrée (PENDING) à l'initiation
+    expect(mockPaymentRepo.save).toHaveBeenCalledWith(
+      expect.objectContaining({
+        reference: 'cmd-uuid-1',
+        provider: 'WAVE',
+        amount: 5000,
+        status: 'PENDING',
+      }),
+    );
   });
 
   it('utilise le nom du client comme customerName quand non fourni dans le DTO', async () => {
