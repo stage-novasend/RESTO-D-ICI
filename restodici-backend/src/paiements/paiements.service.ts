@@ -69,11 +69,23 @@ export class PaiementsService {
     if (!commande) throw new NotFoundException('Commande introuvable');
     if (commande.estPaye) throw new BadRequestException('Commande déjà payée');
 
+    // [SÉCURITÉ] Le montant fait autorité côté serveur : on ne facture JAMAIS le
+    // montant envoyé par le client. On charge le total réel de la commande.
+    const montant = Number(commande.montantTotal);
+    if (!(montant > 0)) {
+      throw new BadRequestException('Montant de commande invalide');
+    }
+    if (dto.montant !== montant) {
+      this.logger.warn(
+        `Montant client (${dto.montant}) ≠ total commande ${commande.numero} (${montant}) — total serveur retenu`,
+      );
+    }
+
     // Si une intégration est spécifiée, passer par le registry (Strategy pattern)
     if (dto.integrationName) {
       const gateway = await this.gatewayRegistry.getGateway(dto.integrationName);
       const result = await gateway.initiate({
-        amount: dto.montant,
+        amount: montant,
         provider: dto.provider,
         phone: dto.telephone,
         metadata: {
@@ -94,7 +106,7 @@ export class PaiementsService {
     // Comportement par défaut : NovaSendService direct (rétrocompatibilité)
     return this.novaSend.initiate({
       reference: dto.commandeId,
-      amount: dto.montant,
+      amount: montant,
       customerName: dto.customerName || commande.client?.nom || 'Client',
       telephone: dto.telephone,
       provider: dto.provider,
