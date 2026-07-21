@@ -1293,17 +1293,29 @@ export class B2BService {
     return savedOrder;
   }
 
-  async getBulkOrdersByUser(userId: string): Promise<BulkOrder[]> {
+  async getBulkOrdersByUser(
+    userId: string,
+    limit?: number,
+  ): Promise<BulkOrder[]> {
     return this.bulkOrderRepository.find({
       where: { createdByUserId: userId },
       order: { createdAt: 'DESC' },
+      take: limit,
     });
   }
 
-  async getOrdersByUser(userId: string): Promise<Record<string, any>[]> {
+  async getOrdersByUser(
+    userId: string,
+    opts?: { limit?: number },
+  ): Promise<Record<string, any>[]> {
+    // Fusion de deux sources (bulk + groupées) triées en mémoire : on borne
+    // chaque source à `cap` pour ne jamais tout charger. Comme chaque source est
+    // triée par date DESC, le top-`cap` global est bien dans le top-`cap` de
+    // chacune.
+    const cap = Math.min(Math.max(opts?.limit ?? 100, 1), 200);
     const [bulkOrders, groupedOrders] = await Promise.all([
-      this.getBulkOrdersByUser(userId),
-      this.getCommandesGroupees(userId),
+      this.getBulkOrdersByUser(userId, cap),
+      this.getCommandesGroupees(userId, { limit: cap }),
     ]);
 
     const fromBulk = bulkOrders.map((order) => this.toOrderResponse(order));
@@ -1319,11 +1331,13 @@ export class B2BService {
       nbLignes: cmd.nbLignes,
     }));
 
-    return [...fromGrouped, ...fromBulk].sort(
-      (a, b) =>
-        new Date(b.dateLivraison ?? 0).getTime() -
-        new Date(a.dateLivraison ?? 0).getTime(),
-    );
+    return [...fromGrouped, ...fromBulk]
+      .sort(
+        (a, b) =>
+          new Date(b.dateLivraison ?? 0).getTime() -
+          new Date(a.dateLivraison ?? 0).getTime(),
+      )
+      .slice(0, cap);
   }
 
   async getOrdersForManagement(userId: string): Promise<Record<string, any>[]> {
@@ -1454,7 +1468,7 @@ export class B2BService {
       (f) => f.statut === 'EN_ATTENTE' || f.statut === 'RETARDEE',
     ).length;
 
-    const recentOrders = await this.getOrdersByUser(userId);
+    const recentOrders = await this.getOrdersByUser(userId, { limit: 5 });
 
     return {
       compte: compte

@@ -306,8 +306,13 @@ export class B2BController {
   }
 
   @Get('orders')
-  async getOrders(@Req() req: RequestWithUser) {
-    return this.b2bService.getOrdersByUser(req.user.id);
+  async getOrders(
+    @Req() req: RequestWithUser,
+    @Query('limit') limit?: string,
+  ) {
+    return this.b2bService.getOrdersByUser(req.user.id, {
+      limit: limit ? parseInt(limit, 10) : 100,
+    });
   }
 
   @Put('bulk-orders/:orderId/status')
