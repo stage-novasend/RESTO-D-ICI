@@ -159,7 +159,16 @@ export class PromosService {
   }
 
   async apply(promoId: string): Promise<void> {
-    await this.promoRepo.increment({ id: promoId }, 'usedCount', 1);
+    // Incrément atomique BORNÉ : n'incrémente que si la limite n'est pas déjà
+    // atteinte. Ferme la race TOCTOU entre validateCode (lecture) et apply :
+    // deux commandes concurrentes ne peuvent pas dépasser maxUses.
+    await this.promoRepo
+      .createQueryBuilder()
+      .update(PromoCode)
+      .set({ usedCount: () => '"usedCount" + 1' })
+      .where('id = :id', { id: promoId })
+      .andWhere('("maxUses" IS NULL OR "usedCount" < "maxUses")')
+      .execute();
   }
 
   private async getOwned(id: string, restaurantId: string): Promise<PromoCode> {

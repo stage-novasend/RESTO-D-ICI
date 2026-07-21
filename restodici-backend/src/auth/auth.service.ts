@@ -264,8 +264,11 @@ export class AuthService {
     let role = Role.CLIENT;
     let restaurant: Restaurant | null = null;
 
-    // Si le champ role est fourni (pour tests et compatibilité), l'utiliser directement
-    if (dto.role) {
+    // [SÉCURITÉ] Le rôle n'est JAMAIS choisi par le client en dehors des tests :
+    // sinon n'importe qui s'inscrirait ADMIN via /auth/register (endpoint public).
+    // En dev/prod, le rôle découle exclusivement du `type`. Les rôles privilégiés
+    // (ADMIN, STAFF) se créent via le seed ou les endpoints admin/gérant.
+    if (dto.role && process.env.NODE_ENV === 'test') {
       role = dto.role;
     } else if (dto.type === 'RESTAURANT') {
       role = Role.GERANT;
@@ -297,8 +300,7 @@ export class AuthService {
       restaurant = savedRestaurant;
     } else if (dto.type === 'BUSINESS_CLIENT') {
       role = Role.B2B;
-    } else if (!dto.role) {
-      // Seulement si role n'a pas été défini manuellement
+    } else {
       role = Role.CLIENT;
     }
 

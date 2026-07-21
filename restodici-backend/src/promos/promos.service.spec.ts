@@ -7,6 +7,14 @@ import { Commande } from '../commandes/entities/commande.entity';
 
 const mockCommandeRepo = { find: jest.fn(), findOne: jest.fn() };
 
+const mockUpdateQb = {
+  update: jest.fn().mockReturnThis(),
+  set: jest.fn().mockReturnThis(),
+  where: jest.fn().mockReturnThis(),
+  andWhere: jest.fn().mockReturnThis(),
+  execute: jest.fn().mockResolvedValue({ affected: 1 }),
+};
+
 const mockPromoRepo = {
   findOne: jest.fn(),
   find: jest.fn(),
@@ -14,6 +22,7 @@ const mockPromoRepo = {
   save: jest.fn(),
   remove: jest.fn(),
   increment: jest.fn(),
+  createQueryBuilder: jest.fn(() => mockUpdateQb),
 };
 
 function makePromo(overrides: Partial<PromoCode> = {}): PromoCode {
@@ -142,16 +151,17 @@ describe('PromosService', () => {
   // ─── apply() ───────────────────────────────────────────────────────────────
 
   describe('apply()', () => {
-    it('increments usedCount by 1 for the given promoId', async () => {
-      mockPromoRepo.increment.mockResolvedValue(undefined);
-
+    it('incrémente usedCount de façon atomique et bornée (anti double-usage)', async () => {
       await service.apply('promo-uuid-1');
 
-      expect(mockPromoRepo.increment).toHaveBeenCalledWith(
-        { id: 'promo-uuid-1' },
-        'usedCount',
-        1,
+      // Incrément conditionnel : SET usedCount+1 WHERE id ET usedCount < maxUses
+      expect(mockUpdateQb.where).toHaveBeenCalledWith('id = :id', {
+        id: 'promo-uuid-1',
+      });
+      expect(mockUpdateQb.andWhere).toHaveBeenCalledWith(
+        expect.stringContaining('maxUses'),
       );
+      expect(mockUpdateQb.execute).toHaveBeenCalled();
     });
   });
 });
