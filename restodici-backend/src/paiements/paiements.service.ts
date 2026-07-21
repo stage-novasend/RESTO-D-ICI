@@ -13,6 +13,8 @@ import {
   ModePaiementCommande,
 } from '../commandes/entities/commande.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
+import { PaymentMethod } from './entities/payment-method.entity';
+import { ensurePaymentMethodsSeeded } from './payment-methods.seed';
 import { CommandesGateway } from '../commandes/commandes.gateway';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
@@ -46,6 +48,8 @@ export class PaiementsService {
     private commandeRepo: Repository<Commande>,
     @InjectRepository(FactureMensuelleB2B)
     private factureRepo: Repository<FactureMensuelleB2B>,
+    @InjectRepository(PaymentMethod)
+    private paymentMethodRepo: Repository<PaymentMethod>,
     @InjectQueue(RECEIPT_QUEUE)
     private receiptQueue: Queue,
     private commandesGateway: CommandesGateway,
@@ -277,25 +281,28 @@ export class PaiementsService {
   }
 
   // ── Méthodes de paiement disponibles (pour le frontend) ──────────────────
+  // Lues en base (plus de liste codée en dur) : seuls les moyens ACTIVÉS par
+  // l'admin ET dont la gateway est configurée sont proposés au client.
   async getPaymentMethods(): Promise<{ methods: { id: string; label: string; provider: string; gateway: string; needsPhone: boolean }[]; configured: boolean }> {
-    const gateways = await this.gatewayRegistry.getEnabledPaymentGateways();
-    const methods: { id: string; label: string; provider: string; gateway: string; needsPhone: boolean }[] = [];
+    await ensurePaymentMethodsSeeded(this.paymentMethodRepo);
 
-    for (const gw of gateways) {
-      switch (gw.name) {
-        case 'novasend':
-          methods.push(
-            { id: 'orange_money', label: 'Orange Money',  provider: 'ORANGE', gateway: 'novasend', needsPhone: true  },
-            { id: 'mtn_momo',     label: 'MTN MoMo',      provider: 'MOMO',   gateway: 'novasend', needsPhone: true  },
-            { id: 'moov_money',   label: 'Moov Money',    provider: 'MOOV',   gateway: 'novasend', needsPhone: true  },
-            { id: 'wave',         label: 'Wave',           provider: 'WAVE',   gateway: 'novasend', needsPhone: false },
-            { id: 'card',         label: 'Carte Bancaire', provider: 'CARTE',  gateway: 'novasend', needsPhone: false },
-          );
-          break;
-        // Ajouter ici d'autres gateways (cinetpay, stripe, monetbil…)
-        // case 'cinetpay': methods.push({ id: 'cinetpay', ... }); break;
-      }
-    }
+    const gateways = await this.gatewayRegistry.getEnabledPaymentGateways();
+    const enabledGatewayNames = new Set(gateways.map((gw) => gw.name));
+
+    const rows = await this.paymentMethodRepo.find({
+      where: { enabled: true },
+      order: { ordre: 'ASC' },
+    });
+
+    const methods = rows
+      .filter((m) => enabledGatewayNames.has(m.gateway))
+      .map((m) => ({
+        id: m.code,
+        label: m.label,
+        provider: m.provider,
+        gateway: m.gateway,
+        needsPhone: m.needsPhone,
+      }));
 
     return { methods, configured: gateways.length > 0 };
   }

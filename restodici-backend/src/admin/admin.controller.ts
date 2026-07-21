@@ -247,6 +247,19 @@ export class AdminController {
     return this.adminService.setConfig(key, value, req.user.id);
   }
 
+  /* ── Moyens de paiement (activation/désactivation) ── */
+
+  @Get('payment-methods')
+  getPaymentMethods() {
+    return this.adminService.getPaymentMethods();
+  }
+
+  @Patch('payment-methods/:id/toggle')
+  @HttpCode(HttpStatus.OK)
+  togglePaymentMethod(@Param('id') id: string) {
+    return this.adminService.togglePaymentMethod(id);
+  }
+
   @Patch('change-password')
   @HttpCode(HttpStatus.OK)
   changePassword(

@@ -1614,6 +1614,8 @@ function ConfigTab() {
   const [pwSaving, setPwSaving]       = useState(false);
   const [secEdits, setSecEdits]       = useState({});
   const [integrations, setIntegrations] = useState([]);
+  const [payMethods, setPayMethods]   = useState([]);
+  const [payToggling, setPayToggling] = useState({});
   const [modal, setModal]             = useState(null); // null | {} | {id,…}
   const [testResults, setTestResults] = useState({});
   const [testing, setTesting]         = useState({});
@@ -1627,9 +1629,14 @@ function ConfigTab() {
   const loadConfig = useCallback(async () => {
     setLoading(true);
     try {
-      const [cfgRes, intRes] = await Promise.all([adminAPI.getConfig(), adminAPI.getIntegrations()]);
+      const [cfgRes, intRes, payRes] = await Promise.all([
+        adminAPI.getConfig(),
+        adminAPI.getIntegrations(),
+        adminAPI.getPaymentMethods(),
+      ]);
       setConfigs(cfgRes.data);
       setIntegrations(intRes.data);
+      setPayMethods(payRes.data);
       const initial = {};
       cfgRes.data.forEach(c => { initial[c.key] = c.value ?? ''; });
       setSecEdits(initial);
@@ -1689,6 +1696,15 @@ function ConfigTab() {
     if (!window.confirm('Supprimer cette intégration ?')) return;
     await adminAPI.deleteIntegration(id);
     setIntegrations(prev => prev.filter(i => i.id !== id));
+  };
+
+  const togglePayMethod = async (m) => {
+    setPayToggling(t => ({ ...t, [m.id]: true }));
+    try {
+      const res = await adminAPI.togglePaymentMethod(m.id);
+      setPayMethods(prev => prev.map(p => p.id === m.id ? { ...p, enabled: res.data.enabled } : p));
+    } catch { /* ignore */ }
+    finally { setPayToggling(t => ({ ...t, [m.id]: false })); }
   };
 
   const testIntegration = async (id) => {
@@ -1751,6 +1767,7 @@ function ConfigTab() {
     { id: 'plateforme',   label: 'Plateforme',    icon: Building2 },
     { id: 'securite',     label: 'Sécurité',      icon: Lock },
     { id: 'integrations', label: 'Intégrations',  icon: Zap },
+    { id: 'paiements',    label: 'Paiements',     icon: CreditCard },
     { id: 'compte',       label: 'Compte admin',  icon: Shield },
   ];
 
@@ -1873,6 +1890,49 @@ function ConfigTab() {
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#475569', margin: 0 }}>Aucune intégration</p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── PAIEMENTS ── */}
+        {cfgTab === 'paiements' && (
+          <div>
+            <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 6px' }}>Moyens de paiement</p>
+            <p style={{ fontSize: 12, color: '#64748B', margin: '0 0 18px' }}>
+              Activez ou désactivez les moyens proposés au client au moment du paiement. Un moyen désactivé disparaît du checkout.
+            </p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {payMethods.map(m => {
+                const on = m.enabled;
+                const busy = !!payToggling[m.id];
+                return (
+                  <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 14px', border: '1px solid #E2E8F0', borderRadius: 10, background: on ? '#fff' : '#F8FAFC' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 8, background: on ? '#FFF7ED' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <CreditCard style={{ width: 16, height: 16, color: on ? ACCENT : '#94A3B8' }} />
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <p style={{ fontSize: 13, fontWeight: 700, color: on ? '#0F172A' : '#64748B', margin: 0 }}>{m.label}</p>
+                        <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>{m.provider} · {m.gateway}{m.needsPhone ? ' · téléphone requis' : ''}</p>
+                      </div>
+                    </div>
+                    <button onClick={() => togglePayMethod(m)} disabled={busy}
+                      title={on ? 'Désactiver' : 'Activer'}
+                      style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', border: 'none', cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.5 : 1, flexShrink: 0 }}>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: on ? '#16A34A' : '#94A3B8' }}>{on ? 'Activé' : 'Désactivé'}</span>
+                      {on
+                        ? <ToggleRight style={{ width: 30, height: 30, color: '#16A34A' }} />
+                        : <ToggleLeft style={{ width: 30, height: 30, color: '#CBD5E1' }} />}
+                    </button>
+                  </div>
+                );
+              })}
+              {payMethods.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px 20px', color: '#94A3B8' }}>
+                  <CreditCard style={{ width: 32, height: 32, margin: '0 auto 10px', display: 'block', opacity: 0.3 }} />
+                  <p style={{ fontSize: 13, fontWeight: 600, color: '#475569', margin: 0 }}>Aucun moyen de paiement</p>
+                </div>
+              )}
+            </div>
           </div>
         )}
 

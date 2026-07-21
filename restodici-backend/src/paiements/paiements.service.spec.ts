@@ -6,6 +6,7 @@ import { PaiementsService } from './paiements.service';
 import { NovaSendService } from './novasend.service';
 import { Commande, ModePaiementCommande } from '../commandes/entities/commande.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
+import { PaymentMethod } from './entities/payment-method.entity';
 import { CommandesGateway } from '../commandes/commandes.gateway';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
@@ -85,6 +86,14 @@ async function buildModule(): Promise<TestingModule> {
       PaiementsService,
       { provide: getRepositoryToken(Commande), useValue: mockCommandeRepo },
       { provide: getRepositoryToken(FactureMensuelleB2B), useValue: mockFactureRepo },
+      {
+        provide: getRepositoryToken(PaymentMethod),
+        useValue: {
+          find: jest.fn().mockResolvedValue([]),
+          save: jest.fn(),
+          create: jest.fn((x) => x),
+        },
+      },
       { provide: getQueueToken(RECEIPT_QUEUE), useValue: mockReceiptQueue },
       { provide: CommandesGateway, useValue: mockCommandesGateway },
       { provide: SmsService, useValue: mockSmsService },

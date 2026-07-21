@@ -14,6 +14,7 @@ import { SlaService } from './sla.service';
 import { SlaIncident } from './entities/sla-incident.entity';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
+import { PaymentMethod } from '../paiements/entities/payment-method.entity';
 
 @Module({
   imports: [
@@ -27,6 +28,7 @@ import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entit
       CommissionPlateforme,
       FactureMensuelleB2B,
       SlaIncident,
+      PaymentMethod,
     ]),
     AuthModule,
   ],

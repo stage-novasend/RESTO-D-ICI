@@ -18,6 +18,8 @@ import {
 } from '../common/entities/integration.entity';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
+import { PaymentMethod } from '../paiements/entities/payment-method.entity';
+import { ensurePaymentMethodsSeeded } from '../paiements/payment-methods.seed';
 import { paginationParams, buildPaginated } from '../common/pagination/pagination';
 
 /* ── Clés de config avec leurs métadonnées ── */
@@ -224,6 +226,8 @@ export class AdminService {
     private commissionRepo: Repository<CommissionPlateforme>,
     @InjectRepository(FactureMensuelleB2B)
     private factureRepo: Repository<FactureMensuelleB2B>,
+    @InjectRepository(PaymentMethod)
+    private paymentMethodRepo: Repository<PaymentMethod>,
   ) {}
 
   async getStats() {
@@ -708,6 +712,47 @@ export class AdminService {
     entry.updatedBy = adminId;
     const saved = await this.configRepo.save(entry);
     return { key: saved.key, updatedAt: saved.updatedAt };
+  }
+
+  // ── Moyens de paiement (activation/désactivation) ──────────────────────────
+
+  async getPaymentMethods(): Promise<
+    Array<{
+      id: string;
+      code: string;
+      label: string;
+      provider: string;
+      gateway: string;
+      needsPhone: boolean;
+      enabled: boolean;
+      ordre: number;
+    }>
+  > {
+    await ensurePaymentMethodsSeeded(this.paymentMethodRepo);
+    const methods = await this.paymentMethodRepo.find({
+      order: { ordre: 'ASC' },
+    });
+    return methods.map((m) => ({
+      id: m.id,
+      code: m.code,
+      label: m.label,
+      provider: m.provider,
+      gateway: m.gateway,
+      needsPhone: m.needsPhone,
+      enabled: m.enabled,
+      ordre: m.ordre,
+    }));
+  }
+
+  async togglePaymentMethod(
+    id: string,
+  ): Promise<{ id: string; enabled: boolean }> {
+    const method = await this.paymentMethodRepo.findOne({ where: { id } });
+    if (!method)
+      throw new NotFoundException('Moyen de paiement introuvable');
+    method.enabled = !method.enabled;
+    const saved = await this.paymentMethodRepo.save(method);
+    return { id: saved.id, enabled: saved.enabled };
   }
 
   async changeAdminPassword(

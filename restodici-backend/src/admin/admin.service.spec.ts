@@ -15,6 +15,7 @@ import { SystemConfig } from '../common/entities/system-config.entity';
 import { Integration } from '../common/entities/integration.entity';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
+import { PaymentMethod } from '../paiements/entities/payment-method.entity';
 
 describe('AdminService', () => {
   let service: AdminService;
@@ -25,6 +26,7 @@ describe('AdminService', () => {
   const configRepo: any = {};
   const integRepo: any = {};
   const factureRepo: any = {};
+  const paymentRepo: any = {};
 
   beforeEach(async () => {
     Object.assign(userRepo, {
@@ -60,6 +62,12 @@ describe('AdminService', () => {
       findOne: jest.fn(),
       save: jest.fn((f) => Promise.resolve(f)),
     });
+    Object.assign(paymentRepo, {
+      find: jest.fn().mockResolvedValue([]),
+      findOne: jest.fn(),
+      create: jest.fn((m) => m),
+      save: jest.fn((m) => Promise.resolve(m)),
+    });
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -72,6 +80,7 @@ describe('AdminService', () => {
         { provide: getRepositoryToken(Integration), useValue: integRepo },
         { provide: getRepositoryToken(CommissionPlateforme), useValue: {} },
         { provide: getRepositoryToken(FactureMensuelleB2B), useValue: factureRepo },
+        { provide: getRepositoryToken(PaymentMethod), useValue: paymentRepo },
       ],
     }).compile();
     service = module.get(AdminService);
@@ -220,6 +229,52 @@ describe('AdminService', () => {
     it('deleteIntegration supprime', async () => {
       integRepo.findOne.mockResolvedValue({ id: 'i1' });
       expect(await service.deleteIntegration('i1')).toEqual({ deleted: 'i1' });
+    });
+  });
+
+  describe('moyens de paiement', () => {
+    it('getPaymentMethods sème les défauts si la table est vide', async () => {
+      paymentRepo.find
+        .mockResolvedValueOnce([]) // ensurePaymentMethodsSeeded: rien en base
+        .mockResolvedValueOnce([
+          {
+            id: 'pm1',
+            code: 'wave',
+            label: 'Wave',
+            provider: 'WAVE',
+            gateway: 'novasend',
+            needsPhone: false,
+            enabled: true,
+            ordre: 4,
+          },
+        ]);
+
+      const result = await service.getPaymentMethods();
+
+      expect(paymentRepo.save).toHaveBeenCalled(); // seed déclenché
+      expect(result).toEqual([
+        expect.objectContaining({ code: 'wave', enabled: true }),
+      ]);
+    });
+
+    it('togglePaymentMethod inverse enabled', async () => {
+      paymentRepo.find.mockResolvedValue([{ code: 'wave' }]); // seed no-op
+      paymentRepo.findOne.mockResolvedValue({ id: 'pm1', enabled: true });
+
+      const result = await service.togglePaymentMethod('pm1');
+
+      expect(result).toEqual({ id: 'pm1', enabled: false });
+      expect(paymentRepo.save).toHaveBeenCalledWith(
+        expect.objectContaining({ enabled: false }),
+      );
+    });
+
+    it('togglePaymentMethod 404 si introuvable', async () => {
+      paymentRepo.find.mockResolvedValue([{ code: 'wave' }]);
+      paymentRepo.findOne.mockResolvedValue(null);
+      await expect(service.togglePaymentMethod('ghost')).rejects.toThrow(
+        NotFoundException,
+      );
     });
   });
 });
