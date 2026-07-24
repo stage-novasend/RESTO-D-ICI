@@ -22,7 +22,7 @@ import { Article } from '../../menu/entities/article.entity';
 import { CommandesGateway } from '../../commandes/commandes.gateway';
 import { EmailService } from '../../email/email.service';
 import { ConfigService } from '@nestjs/config';
-import { NotificationsService } from '../../notifications/notifications.service';
+import { B2bNotifyService } from './b2b-notify.service';
 import { B2bAuditService } from './b2b-audit.service';
 import { B2bFacturationService } from './b2b-facturation.service';
 import { SystemConfig } from '../../common/entities/system-config.entity';
@@ -154,8 +154,8 @@ async function buildModule(): Promise<TestingModule> {
       { provide: EmailService, useValue: emailService },
       { provide: ConfigService, useValue: configService },
       {
-        provide: NotificationsService,
-        useValue: { create: jest.fn().mockResolvedValue({}) },
+        provide: B2bNotifyService,
+        useValue: { notifyUser: jest.fn().mockResolvedValue(undefined) },
       },
       {
         provide: B2bAuditService,

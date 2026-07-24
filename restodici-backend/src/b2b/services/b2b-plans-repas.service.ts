@@ -11,8 +11,7 @@ import {
   FrequencePlan,
 } from '../entities/plan-repas-b2b.entity';
 import { CompteB2B } from '../entities/compte-b2b.entity';
-import { NotificationsService } from '../../notifications/notifications.service';
-import { CommandesGateway } from '../../commandes/commandes.gateway';
+import { B2bNotifyService } from './b2b-notify.service';
 
 /**
  * Plans repas récurrents B2B (abonnements). Domaine extrait de B2BService
@@ -25,31 +24,8 @@ export class B2bPlansRepasService {
     private planRepasRepository: Repository<PlanRepasB2B>,
     @InjectRepository(CompteB2B)
     private compteB2BRepository: Repository<CompteB2B>,
-    private notificationsService: NotificationsService,
-    private commandesGateway: CommandesGateway,
+    private notifyService: B2bNotifyService,
   ) {}
-
-  // Notification persistée + push temps réel (ne casse jamais un CRON).
-  private async notifyUser(
-    userId: string,
-    type: string,
-    title: string,
-    body: string,
-    data?: Record<string, any>,
-  ): Promise<void> {
-    try {
-      const notif = await this.notificationsService.create({
-        userId,
-        type,
-        title,
-        body,
-        data: data ?? null,
-      });
-      this.commandesGateway.emitToClient(userId, 'notification.new', notif);
-    } catch {
-      // silencieux : une notification ne doit jamais interrompre un flux
-    }
-  }
 
   // Calcule la prochaine échéance selon la fréquence du plan.
   private computeNextDelivery(frequence: FrequencePlan): Date {
@@ -154,7 +130,7 @@ export class B2bPlansRepasService {
       if (plan.prochaineLivraison && plan.prochaineLivraison <= now) {
         const respId = plan.compte?.responsable?.id;
         if (respId) {
-          await this.notifyUser(
+          await this.notifyService.notifyUser(
             respId,
             'plan.repas.du',
             'Plan repas récurrent',

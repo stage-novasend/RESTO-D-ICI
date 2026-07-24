@@ -28,7 +28,7 @@ import { CreateCollaborateurB2BDto } from '../dto/create-collaborateur-b2b.dto';
 import { CreateCommandeGroupeeDto } from '../dto/create-commande-groupee.dto';
 import * as bcrypt from 'bcrypt';
 import { CommandesGateway } from '../../commandes/commandes.gateway';
-import { NotificationsService } from '../../notifications/notifications.service';
+import { B2bNotifyService } from './b2b-notify.service';
 import { B2bAuditService } from './b2b-audit.service';
 import { B2bFacturationService } from './b2b-facturation.service';
 
@@ -75,35 +75,12 @@ export class B2BService {
     private commandesGateway: CommandesGateway,
     private emailService: EmailService,
     private configService: ConfigService,
-    private notificationsService: NotificationsService,
+    private notifyService: B2bNotifyService,
     private auditService: B2bAuditService,
     private facturationService: B2bFacturationService,
   ) {}
 
-  /**
-   * Crée une notification persistée pour un utilisateur ET la pousse en temps réel.
-   * (source unique — utilisée par les CRON de rappels B2B)
-   */
-  private async notifyUser(
-    userId: string,
-    type: string,
-    title: string,
-    body: string,
-    data?: Record<string, any>,
-  ): Promise<void> {
-    try {
-      const notif = await this.notificationsService.create({
-        userId,
-        type,
-        title,
-        body,
-        data: data ?? null,
-      });
-      this.commandesGateway.emitToClient(userId, 'notification.new', notif);
-    } catch {
-      // une notification ne doit jamais casser un CRON
-    }
-  }
+  // notifyUser → extrait dans B2bNotifyService (partagé).
 
   // ============================================================
   // === COMPTE B2B (Company account) ===========================
@@ -1024,7 +1001,7 @@ export class B2BService {
           const heure = (cmd.heureLivraison ?? '').toString().trim();
           const respId = cmd.compteB2B?.responsable?.id;
           if (respId) {
-            await this.notifyUser(
+            await this.notifyService.notifyUser(
               respId,
               'commande.b2b.rappel',
               'Livraison imminente',
@@ -1037,7 +1014,7 @@ export class B2BService {
               where: { restaurant: { id: cmd.restaurantId }, role: Role.GERANT },
             });
             if (gerant) {
-              await this.notifyUser(
+              await this.notifyService.notifyUser(
                 gerant.id,
                 'commande.b2b.rappel',
                 'Commande B2B à préparer',
