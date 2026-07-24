@@ -1,14 +1,14 @@
 // Menu.jsx — Catalogue restaurants + menu par restaurant
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, X, UtensilsCrossed, Star, Clock, Heart, ArrowLeft,
   ShoppingCart, Plus, Minus, Store, AlertCircle, MapPin, ChevronRight,
-  Truck, Package, Navigation, SlidersHorizontal, Trash2,
+  Truck, Package, Navigation, Trash2,
 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
-import { menuAPI, promosAPI, publicConfigAPI } from '../services/api';
+import { menuAPI, promosAPI } from '../services/api';
 import ProductCustomizationModal from '../components/menu/ProductCustomizationModal';
 import CartDrawer from '../components/cart/CartDrawer';
 import DeliveryMap from '../components/maps/DeliveryMap';
@@ -65,12 +65,12 @@ const CSS = `
 @keyframes bannerMarquee  { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 @keyframes bannerMarqueeR { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
 .cat-scroll::-webkit-scrollbar{display:none}
-.prod-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+.prod-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:20px; }
 .cart-panel{ display:flex; flex-direction:column; }
 .cart-mobile-bar{ display:none; }
 @media(max-width:900px){
   .cart-panel{ display:none !important; }
-  .prod-grid{ grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:10px; }
+  .prod-grid{ grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
   .cart-mobile-bar{ display:block; }
 }
 `;
@@ -283,15 +283,14 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
 }
 
 /* ── Carte restaurant ── */
-function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav }) {
+function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav, matched }) {
   const [hov, setHov] = useState(false);
   const img = restaurant.logo || restaurant.coverImage || restaurant.photoUrl || fallback(idx, 480);
   const rating = (Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne) : 0).toFixed(1);
   const time   = restaurant.deliveryTime || (20 + (idx % 4) * 5) + '–' + (30 + (idx % 4) * 5) + ' min';
   const isFav  = favorites?.includes(restaurant.id);
   const isOpen = restaurant.isOpen !== false;
-  const BADGE_LABELS = ['⭐ Populaire', '🔥 Tendance', '✨ Nouveau', '🎯 Top'];
-  const badge = idx < 4 ? BADGE_LABELS[idx] : null;
+  const badge = Number(restaurant.noteMoyenne) >= 4.5 ? '★ Bien noté' : null;
 
   return (
     <div
@@ -332,10 +331,24 @@ function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav }) {
       <div style={{ padding: '14px 14px 16px' }}>
         <p style={{ margin: '0 0 3px', fontFamily: sans, fontSize: 15, fontWeight: 800, color: C.dark, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurant.nom}</p>
         <p style={{ margin: '0 0 10px', fontFamily: sans, fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurant.adresse || restaurant.ville || restaurant.description || 'Restaurant partenaire'}</p>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-          {(restaurant.cuisines || restaurant.tags || []).slice(0, 3).map((t, i) => <span key={i} style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: C.aL, color: C.aD, borderRadius: 99, padding: '3px 8px' }}>{t}</span>)}
-          {restaurant.fraisLivraison != null && <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: '#F0FFF4', color: C.green, borderRadius: 99, padding: '3px 8px' }}>{restaurant.fraisLivraison === 0 ? '🚴 Livraison offerte' : '🚴 ' + formatFCFA(restaurant.fraisLivraison)}</span>}
-        </div>
+        {matched && matched.length > 0 ? (
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ margin: '0 0 6px', fontFamily: sans, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.accent }}>Propose votre recherche</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {matched.map((d, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, background: C.aL, border: '1px solid ' + C.line, borderRadius: 8, padding: '5px 9px' }}>
+                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nom}</span>
+                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{formatFCFA(d.prixClient ?? d.prix)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {(restaurant.cuisines || restaurant.tags || []).slice(0, 3).map((t, i) => <span key={i} style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: C.aL, color: C.aD, borderRadius: 99, padding: '3px 8px' }}>{t}</span>)}
+            {restaurant.fraisLivraison != null && <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: '#F0FFF4', color: C.green, borderRadius: 99, padding: '3px 8px' }}>{restaurant.fraisLivraison === 0 ? '🚴 Livraison offerte' : '🚴 ' + formatFCFA(restaurant.fraisLivraison)}</span>}
+          </div>
+        )}
         <button onClick={e => { if (!isOpen) return; e.stopPropagation(); onSelect(restaurant); }} disabled={!isOpen} style={{ width: '100%', padding: '10px', borderRadius: 12, border: 'none', background: isOpen ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isOpen ? '#fff' : C.muted, fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: isOpen ? 'pointer' : 'not-allowed', boxShadow: isOpen ? '0 4px 14px #EA580C44' : 'none', transition: 'all 0.15s' }}>
           {isOpen ? 'Voir le menu →' : 'Restaurant fermé'}
         </button>
@@ -345,91 +358,77 @@ function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav }) {
 }
 
 /* ── Carte produit — grille verticale ── */
+/* Carte plat — style Yango Food : dimensions fixes, imposante, image dominante,
+   prix en gras, gros bouton d'ajout. Clic sur la carte = personnaliser. */
 function ProductCard({ product, qty, onAdd, onRemove, onCustomize, idx, isFav, onToggleFav }) {
-  const img = getArticleImage(product) || fallback(idx, 300);
+  const img = getArticleImage(product) || fallback(idx, 400);
   const isAvail = product.disponible !== false;
   const [hov, setHov] = useState(false);
+  const price = product.prixClient ?? product.prix;
+  const openDetail = () => { if (isAvail && onCustomize) onCustomize(product); };
 
   return (
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
+      onClick={openDetail}
       style={{
-        background: C.card, borderRadius: 18, overflow: 'hidden',
+        background: C.card, borderRadius: 20, overflow: 'hidden',
+        border: `1px solid ${C.line}`,
         boxShadow: hov && isAvail ? C.shM : C.sh,
-        transform: hov && isAvail ? 'translateY(-3px)' : 'none',
+        transform: hov && isAvail ? 'translateY(-4px)' : 'none',
         transition: 'all 0.22s cubic-bezier(.4,0,.2,1)',
         opacity: isAvail ? 1 : 0.6,
         display: 'flex', flexDirection: 'column',
+        height: 340,                                  /* dimension fixe */
+        cursor: isAvail && onCustomize ? 'pointer' : 'default',
         animation: 'fadeUp 0.3s ease both',
       }}
     >
-      <div style={{ position: 'relative', height: 170, flexShrink: 0, overflow: 'hidden' }}>
-        <img src={img} alt={product.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transform: hov ? 'scale(1.06)' : 'scale(1)', transition: 'transform 0.4s ease' }} onError={e => { e.target.src = fallback(idx, 300); }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.52) 0%, transparent 55%)' }} />
-        <span style={{ position: 'absolute', bottom: 8, left: 10, fontFamily: sans, fontSize: 15, fontWeight: 900, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-          {formatFCFA(product.prixClient ?? product.prix)}
-        </span>
+      {/* Image imposante */}
+      <div style={{ position: 'relative', height: 196, flexShrink: 0, overflow: 'hidden' }}>
+        <img src={img} alt={product.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transform: hov ? 'scale(1.06)' : 'scale(1)', transition: 'transform 0.45s ease' }} onError={e => { e.target.src = fallback(idx, 400); }} />
         {!isAvail && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(0,0,0,0.72)', padding: '4px 10px', borderRadius: 99 }}>Rupture</span>
+            <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, color: '#fff', background: 'rgba(0,0,0,0.72)', padding: '5px 12px', borderRadius: 99 }}>Rupture</span>
           </div>
         )}
-        {/* Bouton favori fonctionnel */}
+        {/* Bouton favori */}
         <button
           onClick={e => { e.stopPropagation(); onToggleFav?.(product.id); }}
           style={{
-            position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: '50%',
+            position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: '50%',
             border: 'none', cursor: 'pointer',
-            background: isFav ? C.red : 'rgba(255,255,255,0.92)',
+            background: isFav ? C.red : 'rgba(255,255,255,0.94)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
             transition: 'background 0.2s, transform 0.15s',
             transform: isFav ? 'scale(1.15)' : 'scale(1)',
           }}
         >
-          <Heart size={13} color={isFav ? '#fff' : C.red} fill={isFav ? '#fff' : 'none'} strokeWidth={2} />
+          <Heart size={15} color={isFav ? '#fff' : C.red} fill={isFav ? '#fff' : 'none'} strokeWidth={2} />
         </button>
       </div>
 
-      <div style={{ flex: 1, padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <p style={{ margin: 0, fontFamily: sans, fontSize: 13, fontWeight: 800, color: C.dark, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.nom}</p>
-        {product.description && (
-          <p style={{ margin: 0, fontFamily: sans, fontSize: 11, color: C.muted, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: isAvail ? C.green : C.faint, flexShrink: 0 }} />
-          <span style={{ fontFamily: sans, fontSize: 10, color: C.muted, fontWeight: 600 }}>{isAvail ? 'Disponible · 15 min' : 'Indisponible'}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 8, gap: 6 }}>
-          {/* Bouton Personnaliser */}
-          {onCustomize && isAvail ? (
-            <button
-              onClick={e => { e.stopPropagation(); onCustomize(product); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                fontFamily: sans, fontSize: 11, fontWeight: 700, color: C.accent,
-                background: C.aL, border: `1px solid ${C.accent}30`,
-                borderRadius: 99, padding: '5px 10px',
-                cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = `${C.accent}22`; e.currentTarget.style.borderColor = `${C.accent}60`; }}
-              onMouseLeave={e => { e.currentTarget.style.background = C.aL; e.currentTarget.style.borderColor = `${C.accent}30`; }}
-            >
-              <SlidersHorizontal size={11} />
-              Personnaliser
-            </button>
-          ) : <span />}
-          {/* Bouton ajouter */}
+      {/* Corps */}
+      <div style={{ flex: 1, padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <p style={{ margin: 0, fontFamily: sans, fontSize: 15, fontWeight: 800, color: C.dark, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.nom}</p>
+        <p style={{ margin: '4px 0 0', fontFamily: sans, fontSize: 12, color: C.muted, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {product.description || (isAvail ? 'Prêt en ~15 min' : 'Indisponible')}
+        </p>
+
+        {/* Pied : prix + ajout */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 10, gap: 8 }}>
+          <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, color: C.dark }}>{formatFCFA(price)}</span>
           {qty > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', background: C.accent, borderRadius: 99, overflow: 'hidden', boxShadow: '0 3px 12px #EA580C55' }}>
-              <button onClick={e => { e.stopPropagation(); onRemove(product); }} style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={11} /></button>
-              <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: '#fff', minWidth: 18, textAlign: 'center' }}>{qty}</span>
-              <button onClick={e => { e.stopPropagation(); onAdd(product); }} style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', background: C.accent, borderRadius: 99, overflow: 'hidden', boxShadow: '0 4px 14px #EA580C55' }}>
+              <button onClick={e => { e.stopPropagation(); onRemove(product); }} style={{ width: 34, height: 34, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} /></button>
+              <span style={{ fontFamily: sans, fontSize: 15, fontWeight: 800, color: '#fff', minWidth: 20, textAlign: 'center' }}>{qty}</span>
+              <button onClick={e => { e.stopPropagation(); onAdd(product); }} style={{ width: 34, height: 34, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} /></button>
             </div>
           ) : (
-            <button onClick={e => { e.stopPropagation(); if (isAvail) onAdd(product); }} disabled={!isAvail} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: isAvail ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isAvail ? '#fff' : C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isAvail ? 'pointer' : 'not-allowed', boxShadow: isAvail ? '0 3px 12px #EA580C55' : 'none', flexShrink: 0, transition: 'all 0.15s' }}>
-              <Plus size={15} />
+            <button onClick={e => { e.stopPropagation(); if (isAvail) onAdd(product); }} disabled={!isAvail} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: isAvail ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isAvail ? '#fff' : C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isAvail ? 'pointer' : 'not-allowed', boxShadow: isAvail ? '0 4px 14px #EA580C55' : 'none', flexShrink: 0, transition: 'all 0.15s' }}>
+              <Plus size={19} />
             </button>
           )}
         </div>
@@ -618,8 +617,12 @@ function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMo
 
 export default function MenuPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  /* Plat pré-sélectionné depuis l'accueil (?plat=…) — appliqué après chargement du menu */
+  const pendingPlatRef = useRef(searchParams.get('plat') || null);
 
   const [restaurants,     setRestaurants]     = useState([]);
+  const [dishesByResto,   setDishesByResto]   = useState({});
   const [selectedResto,   setSelectedResto]   = useState(null);
   const [menuData,        setMenuData]        = useState([]);
   const [categories,      setCategories]      = useState([]);
@@ -635,7 +638,6 @@ export default function MenuPage() {
   const [customModal,     setCustomModal]     = useState({ open: false, product: null });
   const [error,           setError]           = useState(null);
   const [mapOpen,         setMapOpen]         = useState(false);
-  const [bannerMessages,  setBannerMessages]  = useState([]);
 
   /* Bannière défilante — noms réels des restaurants */
   const bannerItems = restaurants.length > 0
@@ -682,13 +684,29 @@ export default function MenuPage() {
   useEffect(() => {
     setLoading(true);
     menuAPI.getRestaurants()
-      .then(r => setRestaurants(r.data || []))
+      .then(r => {
+        const list = r.data || [];
+        setRestaurants(list);
+        /* Ouverture directe d'un restaurant depuis l'accueil (?resto=…) */
+        const restoId = searchParams.get('resto');
+        if (restoId) {
+          const target = list.find(x => String(x.id) === String(restoId));
+          if (target) setSelectedResto(target);
+        }
+        /* Menus chargés en arrière-plan → catégories réelles + recherche par plat */
+        Promise.all(list.map(rr =>
+          menuAPI.getByRestaurant(rr.id)
+            .then(mr => {
+              const raw = mr.data;
+              const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
+              return [rr.id, plats.filter(p => p.disponible !== false)];
+            })
+            .catch(() => [rr.id, []])
+        )).then(entries => setDishesByResto(Object.fromEntries(entries)));
+      })
       .catch(() => setError('Impossible de charger les restaurants.'))
       .finally(() => setLoading(false));
-    publicConfigAPI.getBannerMessages()
-      .then(res => { if (Array.isArray(res.data?.messages) && res.data.messages.length > 0) setBannerMessages(res.data.messages); })
-      .catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!selectedResto) { setPromos([]); return; }
@@ -705,10 +723,16 @@ export default function MenuPage() {
         setMenuData(mr.data || []);
         setCategories(cr.data || []);
         setPromos(pr.data || []);
+        /* Applique le plat recherché depuis l'accueil, puis nettoie l'URL */
+        if (pendingPlatRef.current) {
+          setSearch(pendingPlatRef.current);
+          pendingPlatRef.current = null;
+          setSearchParams({}, { replace: true });
+        }
       })
       .catch(() => setError('Impossible de charger le menu.'))
       .finally(() => setMenuLoading(false));
-  }, [selectedResto]);
+  }, [selectedResto]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const map = {};
@@ -769,20 +793,27 @@ export default function MenuPage() {
     navigate('/checkout');
   }, [navigate, deliveryMode, deliveryAddress, selectedResto, items, total]);
 
+  /* Catégories dérivées des vrais plats de tous les restaurants */
   const discoCats = useMemo(() => {
     const names = new Set();
-    restaurants.forEach(r => (r.cuisines || r.tags || []).forEach(t => names.add(t)));
-    return [{ id: '__all__', nom: 'Tous' }, ...[...names].map((n, i) => ({ id: String(i), nom: n }))];
-  }, [restaurants]);
+    Object.values(dishesByResto).forEach(dishes => dishes.forEach(d => { const n = d.categorie?.nom; if (n) names.add(n); }));
+    const sorted = [...names].sort((a, b) => a.localeCompare(b, 'fr'));
+    return [{ id: '__all__', nom: 'Tous' }, ...sorted.map(n => ({ id: n, nom: n }))];
+  }, [dishesByResto]);
 
+  /* Filtre par catégorie (plats) + recherche restaurant OU plat */
   const filteredRestaurants = useMemo(() => {
-    const catName = discoCat !== '__all__' ? (discoCats.find(c => c.id === discoCat)?.nom || '') : '';
-    return restaurants.filter(r => {
-      const matchSearch = !discoSearch || r.nom.toLowerCase().includes(discoSearch.toLowerCase()) || (r.adresse || '').toLowerCase().includes(discoSearch.toLowerCase());
-      const matchCat = discoCat === '__all__' || (r.cuisines || r.tags || []).includes(catName);
-      return matchSearch && matchCat;
-    });
-  }, [restaurants, discoSearch, discoCat, discoCats]);
+    const q = discoSearch.trim().toLowerCase();
+    return restaurants.map(r => {
+      const dishes = dishesByResto[r.id] || [];
+      if (discoCat !== '__all__' && !dishes.some(d => d.categorie?.nom === discoCat)) return null;
+      if (!q) return { restaurant: r, matched: null };
+      const nameMatch = r.nom.toLowerCase().includes(q) || (r.adresse || '').toLowerCase().includes(q);
+      const matchedDishes = dishes.filter(d => d.nom?.toLowerCase().includes(q) || d.categorie?.nom?.toLowerCase().includes(q));
+      if (!nameMatch && matchedDishes.length === 0) return null;
+      return { restaurant: r, matched: matchedDishes.slice(0, 3) };
+    }).filter(Boolean);
+  }, [restaurants, dishesByResto, discoSearch, discoCat]);
 
   const menuCats = useMemo(() => buildDynCats(menuData, categories), [menuData, categories]);
 
@@ -808,10 +839,10 @@ export default function MenuPage() {
     if (menuLoading) return (
       <div className="prod-grid">
         {[...Array(8)].map((_, i) => (
-          <div key={i} style={{ background: C.card, borderRadius: 18, overflow: 'hidden', boxShadow: C.sh }}>
-            <SK w="100%" h={170} r={0} />
-            <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <SK w="70%" h={13} /><SK w="90%" h={11} /><SK w="40%" h={11} />
+          <div key={i} style={{ background: C.card, borderRadius: 20, overflow: 'hidden', boxShadow: C.sh, border: `1px solid ${C.line}`, height: 340 }}>
+            <SK w="100%" h={196} r={0} />
+            <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <SK w="70%" h={15} /><SK w="90%" h={12} /><SK w="45%" h={18} />
             </div>
           </div>
         ))}
@@ -864,7 +895,7 @@ export default function MenuPage() {
               <Logo />
               <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 12, padding: '0 12px', height: 38, maxWidth: 520 }}>
                 <Search size={14} color={C.muted} />
-                <input type="text" placeholder="Rechercher un restaurant…" value={discoSearch} onChange={e => setDiscoSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13, color: C.dark, background: 'transparent' }} />
+                <input type="text" placeholder="Rechercher un plat ou un restaurant…" value={discoSearch} onChange={e => setDiscoSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13, color: C.dark, background: 'transparent' }} />
                 {discoSearch && <button onClick={() => setDiscoSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={13} color={C.muted} /></button>}
               </div>
               <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 12, padding: '7px 14px', fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 3px 12px #EA580C44' : 'none', transition: 'all 0.2s' }}>
@@ -875,11 +906,9 @@ export default function MenuPage() {
           </div>
 
           <div style={{ padding: 'clamp(16px,3vw,24px) clamp(12px,4vw,28px) 40px' }}>
-            {/* Hero — bannière défilante sombre */}
-            <div style={{ background: '#0E0600', borderRadius: 18, marginBottom: 24, overflow: 'hidden', position: 'relative', boxShadow: '0 8px 32px rgba(0,0,0,0.28)' }}>
-              {/* Barre orange top */}
+            {/* Bannière défilante — restaurants disponibles */}
+            <div style={{ background: '#0E0600', borderRadius: 18, marginBottom: 22, overflow: 'hidden', position: 'relative', boxShadow: '0 8px 32px rgba(0,0,0,0.28)' }}>
               <div style={{ height: 3, background: 'linear-gradient(90deg, #EA580C, #FFB800, #EA580C)' }} />
-              {/* Titre + compteur */}
               <div style={{ padding: 'clamp(14px,3vw,20px) clamp(14px,4vw,24px) 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ margin: 0, fontFamily: sans, fontSize: 'clamp(13px,3vw,15px)', fontWeight: 800, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                   Restaurants disponibles
@@ -890,7 +919,6 @@ export default function MenuPage() {
                   </span>
                 )}
               </div>
-              {/* Bande défilante */}
               <div style={{ overflow: 'hidden', paddingBottom: 'clamp(14px,3vw,20px)', maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', width: 'max-content', animation: `bannerMarquee ${Math.max(18, bannerItems.length * 3)}s linear infinite` }}>
                   {[...bannerItems, ...bannerItems, ...bannerItems].map((nom, i) => (
@@ -903,19 +931,21 @@ export default function MenuPage() {
               </div>
             </div>
 
+            {/* Filtre par catégorie de plats */}
             {discoCats.length > 1 && (
-              <div style={{ marginBottom: 20 }}>
+              <div style={{ marginBottom: 22 }}>
+                <p style={{ margin: '0 0 10px', fontFamily: sans, fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase', color: C.muted }}>Catégories</p>
                 <div className="cat-scroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
                   {discoCats.map(cat => {
                     const isA = cat.id === discoCat;
-                    return <button key={cat.id} onClick={() => setDiscoCat(cat.id)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 99, border: 'none', background: isA ? C.accent : C.card, color: isA ? '#fff' : C.text, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: C.sh, transition: 'all 0.15s' }}>{cat.id !== '__all__' && catEmoji(cat.nom)} {cat.nom}</button>;
+                    return <button key={cat.id} onClick={() => setDiscoCat(cat.id)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '9px 17px', borderRadius: 99, border: `1.5px solid ${isA ? C.accent : C.line}`, background: isA ? C.accent : C.card, color: isA ? '#fff' : C.text, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: C.sh, transition: 'all 0.15s' }}>{cat.id !== '__all__' && catEmoji(cat.nom)} {cat.nom}</button>;
                   })}
                 </div>
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontFamily: sans, fontSize: 18, fontWeight: 900, color: C.dark, letterSpacing: '-0.03em' }}>{discoCat === '__all__' ? 'Tous les restaurants' : discoCats.find(c => c.id === discoCat)?.nom || 'Restaurants'}</h2>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+              <h2 style={{ margin: 0, fontFamily: sans, fontSize: 18, fontWeight: 900, color: C.dark, letterSpacing: '-0.03em' }}>{discoSearch.trim() ? `Résultats pour « ${discoSearch.trim()} »` : discoCat === '__all__' ? 'Tous les restaurants' : discoCats.find(c => c.id === discoCat)?.nom || 'Restaurants'}</h2>
               <span style={{ fontFamily: sans, fontSize: 13, color: C.muted, fontWeight: 600 }}>{filteredRestaurants.length} résultat{filteredRestaurants.length !== 1 ? 's' : ''}</span>
             </div>
 
@@ -940,8 +970,10 @@ export default function MenuPage() {
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-                {filteredRestaurants.map((r, i) => (
-                  <RestaurantCard key={r.id} restaurant={r} idx={i} onSelect={setSelectedResto} favorites={restoFavs} onFav={toggleRestoFav} />
+                {filteredRestaurants.map(({ restaurant, matched }, i) => (
+                  <RestaurantCard key={restaurant.id} restaurant={restaurant} idx={i} matched={matched}
+                    onSelect={(r) => { if (matched && matched.length) pendingPlatRef.current = discoSearch.trim(); setSelectedResto(r); }}
+                    favorites={restoFavs} onFav={toggleRestoFav} />
                 ))}
               </div>
             ))}
