@@ -578,6 +578,33 @@ export class B2BService {
     return parseFloat(result?.total ?? '0');
   }
 
+  /**
+   * Dépense mensuelle déjà engagée pour un lot de collaborateurs, en UNE seule
+   * requête (GROUP BY) → évite le N+1 lors de la validation d'une commande
+   * groupée portant sur plusieurs collaborateurs.
+   */
+  private async getDepensesMensuellesCollaborateurs(
+    collaborateurIds: string[],
+    from: Date,
+    to: Date,
+  ): Promise<Map<string, number>> {
+    if (collaborateurIds.length === 0) return new Map();
+    const rows = await this.ligneCommandeRepository
+      .createQueryBuilder('ligne')
+      .innerJoin('ligne.commandeGroupee', 'cmd')
+      .select('ligne.collaborateurB2BId', 'collaborateurId')
+      .addSelect('SUM(ligne.quantite * ligne.prixUnitaire)', 'total')
+      .where('ligne.collaborateurB2BId IN (:...ids)', { ids: collaborateurIds })
+      .andWhere('cmd.createdAt >= :from', { from })
+      .andWhere('cmd.createdAt < :to', { to })
+      .andWhere('cmd.statut != :annulee', { annulee: 'ANNULEE' })
+      .groupBy('ligne.collaborateurB2BId')
+      .getRawMany();
+    return new Map(
+      rows.map((r) => [r.collaborateurId, parseFloat(r.total ?? '0')]),
+    );
+  }
+
   private formatCollaborateurResponse(
     collab: CollaborateurB2B,
     depenseActuelle: number,
@@ -702,23 +729,40 @@ export class B2BService {
       0,
     );
 
+    // Validation budgétaire par collaborateur, sans N+1 et cumulative sur la
+    // commande : on additionne d'abord les lignes de CETTE commande par
+    // collaborateur (deux lignes séparées ne doivent pas contourner la limite),
+    // puis on charge collaborateurs et dépenses du mois en 2 requêtes au total.
+    const totauxParCollaborateur = new Map<string, number>();
     for (const ligne of dto.lignes) {
-      if (ligne.collaborateurId) {
-        const collab = await this.collaborateurRepository.findOne({
-          where: { id: ligne.collaborateurId, compteB2BId: compte.id },
-        });
-        if (collab) {
-          const depense = await this.getDepenseMensuelleCollaborateur(
-            collab.id,
-            firstOfMonth,
-            firstOfNext,
+      if (!ligne.collaborateurId) continue;
+      const cumul = totauxParCollaborateur.get(ligne.collaborateurId) ?? 0;
+      totauxParCollaborateur.set(
+        ligne.collaborateurId,
+        cumul + ligne.quantite * ligne.prixUnitaire,
+      );
+    }
+
+    if (totauxParCollaborateur.size > 0) {
+      const collaborateurIds = [...totauxParCollaborateur.keys()];
+      const collaborateurs = await this.collaborateurRepository.find({
+        where: { id: In(collaborateurIds), compteB2BId: compte.id },
+      });
+      const collabParId = new Map(collaborateurs.map((c) => [c.id, c]));
+      const depensesParId = await this.getDepensesMensuellesCollaborateurs(
+        collaborateurIds,
+        firstOfMonth,
+        firstOfNext,
+      );
+
+      for (const [collabId, ligneTotal] of totauxParCollaborateur) {
+        const collab = collabParId.get(collabId);
+        if (!collab) continue; // collaborateur inconnu/hors compte → ignoré (comportement inchangé)
+        const depense = depensesParId.get(collabId) ?? 0;
+        if (depense + ligneTotal > Number(collab.limiteBudget)) {
+          throw new BadRequestException(
+            `Budget dépassé pour ${collab.nom}: ${Math.round(depense + ligneTotal).toLocaleString()} FCFA > limite de ${Number(collab.limiteBudget).toLocaleString()} FCFA`,
           );
-          const ligneTotal = ligne.quantite * ligne.prixUnitaire;
-          if (depense + ligneTotal > Number(collab.limiteBudget)) {
-            throw new BadRequestException(
-              `Budget dépassé pour ${collab.nom}: ${Math.round(depense + ligneTotal).toLocaleString()} FCFA > limite de ${Number(collab.limiteBudget).toLocaleString()} FCFA`,
-            );
-          }
         }
       }
     }
