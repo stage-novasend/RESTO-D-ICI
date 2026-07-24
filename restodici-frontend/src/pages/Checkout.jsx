@@ -237,6 +237,19 @@ export default function CheckoutPage() {
     if (user?.telephone && !phone) setPhone(user.telephone);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* Paiement rapide : pré-sélectionne le moyen configuré dans l'espace client
+     (sauf si le panier a déjà imposé un moyen de paiement). */
+  useEffect(() => {
+    if (!user?.id || pendingOrder?.paymentMethod) return;
+    try {
+      const qp = JSON.parse(localStorage.getItem(`quick_pay:${user.id}`) || 'null');
+      if (qp?.enabled && qp.method) {
+        setSelectedMethod(qp.method);
+        if (qp.phone && !phone) setPhone(qp.phone);
+      }
+    } catch { /* config absente ou invalide — ignore */ }
+  }, [user, pendingOrder]); // eslint-disable-line react-hooks/exhaustive-deps
+
   /* Chargement dynamique des méthodes depuis l'API */
   useEffect(() => {
     paiementsAPI.getMethods()

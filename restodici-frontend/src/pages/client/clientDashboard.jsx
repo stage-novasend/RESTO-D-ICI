@@ -81,6 +81,19 @@ const mapApiMethodToType = (m) => {
 
 function pmKey(uid)              { return uid ? `saved_pm:${uid}` : 'saved_pm'; }
 function loadSavedPM(uid)        { try { return JSON.parse(localStorage.getItem(pmKey(uid)) || '[]'); } catch { return []; } }
+
+/* ── Paiement rapide : mémorise le moyen par défaut au format Checkout ── */
+const PM_TYPE_TO_CHECKOUT = {
+  ORANGE_MONEY: 'orange_money', ORANGE: 'orange_money',
+  MTN_MONEY:    'mtn_momo',     MOMO:   'mtn_momo',
+  WAVE:         'wave',
+  MOOV_MONEY:   'moov_money',   MOOV:   'moov_money',
+  CARTE_BANCAIRE: 'card',       CARTE:  'card',
+};
+const toCheckoutMethod = (type) => PM_TYPE_TO_CHECKOUT[type] || 'orange_money';
+function quickPayKey(uid)        { return uid ? `quick_pay:${uid}` : 'quick_pay'; }
+function loadQuickPay(uid)       { try { return JSON.parse(localStorage.getItem(quickPayKey(uid)) || 'null') || { enabled: false }; } catch { return { enabled: false }; } }
+function saveQuickPay(uid, cfg)  { localStorage.setItem(quickPayKey(uid), JSON.stringify(cfg)); }
 function savePM(uid, list)       { localStorage.setItem(pmKey(uid), JSON.stringify(list)); }
 
 
@@ -109,19 +122,31 @@ function saveAvisGiven(uid, set) {
 /* ── Modal reçu ── */
 function ReceiptModal({ order, onClose, onDownload }) {
   const printRef = useRef(null);
-  const date  = new Date(order.createdAt).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const date  = new Date(order.createdAt || order.payeAt || Date.now()).toLocaleString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
   const total = order.total || order.montantTotal || 0;
+  const totalHT = total / 1.18;
+  const tva = total - totalHT;
+  const restoNom = order.restaurant?.nom || 'Resto d\'ici';
+  const paye = ['PAYEE', 'LIVREE', 'RECUE', 'CONFIRMEE', 'PREPARATION', 'PRETE'].includes(order.statut) || !!order.payeAt;
+  const modePaiement = order.modePaiement || order.paiement?.provider || null;
 
   const handlePrint = () => {
     const content = printRef.current?.innerHTML;
     if (!content) return;
     const win = window.open('', '_blank');
     win.document.write(`<html><head><title>Reçu ${order.numero}</title><style>
-      body{font-family:sans-serif;max-width:360px;margin:20px auto;color:#1a1a1a}
-      h2{margin:0 0 4px}p{margin:2px 0;font-size:13px;color:#555}
-      .divider{border:none;border-top:1px dashed #ccc;margin:12px 0}
-      .row{display:flex;justify-content:space-between;font-size:13px;margin:4px 0}
-      .total{font-size:16px;font-weight:bold;color:${ACCENT}}
+      *{box-sizing:border-box}
+      body{font-family:'Manrope',system-ui,sans-serif;max-width:400px;margin:24px auto;color:#1A0C00;padding:0 16px}
+      .rc-brand{font-size:20px;font-weight:800;margin:0}
+      .rc-sub{font-size:12px;color:#8A8A8A;margin:2px 0 0}
+      .rc-pill{display:inline-block;font-size:11px;font-weight:800;color:#16A34A;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:99px;padding:3px 10px;margin:10px 0}
+      .rc-meta{display:flex;justify-content:space-between;font-size:12px;color:#555;margin:3px 0}
+      .rc-meta b{color:#1A0C00;font-weight:700}
+      .rc-divider{border:none;border-top:1px dashed #D9CFC6;margin:12px 0}
+      .rc-row{display:flex;justify-content:space-between;font-size:13px;margin:5px 0}
+      .rc-tot{display:flex;justify-content:space-between;font-size:12px;color:#64574A;margin:3px 0}
+      .rc-ttc{display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:${ACCENT};margin-top:6px}
+      .rc-foot{font-size:10px;color:#9CA3AF;text-align:center;margin-top:16px;line-height:1.5}
     </style></head><body>${content}</body></html>`);
     win.document.close(); win.print();
   };
@@ -134,33 +159,69 @@ function ReceiptModal({ order, onClose, onDownload }) {
       <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: 16, pointerEvents: 'none' }}>
       <div className="bg-white rounded-3xl w-full max-w-sm shadow-2xl overflow-hidden"
         style={{ animation: 'slideInUp 0.28s cubic-bezier(0.32,0.72,0,1)', pointerEvents: 'auto' }}>
-        <div className="px-6 py-4 flex items-center justify-between" style={{ background: ACCENT }}>
+        <div className="px-6 py-4 flex items-center justify-between" style={{ background: `linear-gradient(135deg, ${ACCENT}, ${ACCENT_DARK})` }}>
           <div>
             <h3 className="text-white font-extrabold flex items-center gap-2">
-              <Receipt className="w-4 h-4" /> Reçu de commande
+              <Receipt className="w-4 h-4" /> Reçu de paiement
             </h3>
-            <p className="text-white/70 text-xs">#{order.numero}</p>
+            <p className="text-white/70 text-xs">N° {order.numero}</p>
           </div>
           <button onClick={onClose} className="text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
         </div>
         <div className="p-5 max-h-[70vh] overflow-y-auto">
           <div ref={printRef}>
-            <h2 style={{ margin: '0 0 4px', fontSize: 18 }}>RestoDici</h2>
-            <p style={{ margin: '0 0 2px', fontSize: 13, color: '#555' }}>{date}</p>
-            <p style={{ margin: '0 0 12px', fontSize: 13, color: '#555' }}>
-              {MODE_LABELS[order.modeLivraison] || order.modeLivraison} · #{order.numero}
-            </p>
-            <hr style={{ borderTop: '1px dashed #ccc', margin: '8px 0' }} />
-            {(order.lignes || []).map((l, i) => (
-              <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, margin: '4px 0' }}>
-                <span>{l.quantite}× {l.article?.nom || l.nom}</span>
-                <span>{formatFCFA((l.prixUnitaire || l.prix || 0) * l.quantite)}</span>
+            {/* En-tête */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+              <div>
+                <p className="rc-brand" style={{ margin: 0, fontSize: 20, fontWeight: 800, color: '#1A0C00' }}>{restoNom}</p>
+                <p className="rc-sub" style={{ margin: '2px 0 0', fontSize: 12, color: '#8A8A8A' }}>Reçu de paiement · Resto d'ici</p>
+              </div>
+              {paye && (
+                <span className="rc-pill" style={{ display: 'inline-block', fontSize: 11, fontWeight: 800, color: '#16A34A', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 99, padding: '3px 10px', whiteSpace: 'nowrap' }}>✓ Payé</span>
+              )}
+            </div>
+
+            <hr className="rc-divider" style={{ border: 'none', borderTop: '1px dashed #D9CFC6', margin: '12px 0' }} />
+
+            {/* Méta */}
+            {[
+              ['Date', date],
+              ['Reçu N°', order.numero],
+              ['Mode', MODE_LABELS[order.modeLivraison] || order.modeLivraison || 'Sur place'],
+              ...(modePaiement ? [['Paiement', modePaiement]] : []),
+            ].map(([k, v]) => (
+              <div key={k} className="rc-meta" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#555', margin: '3px 0' }}>
+                <span>{k}</span><b style={{ color: '#1A0C00', fontWeight: 700 }}>{v}</b>
               </div>
             ))}
-            <hr style={{ borderTop: '1px dashed #ccc', margin: '8px 0' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 'bold', color: ACCENT }}>
-              <span>Total</span><span>{formatFCFA(total)}</span>
+
+            <hr className="rc-divider" style={{ border: 'none', borderTop: '1px dashed #D9CFC6', margin: '12px 0' }} />
+
+            {/* Articles */}
+            {(order.lignes || []).map((l, i) => (
+              <div key={i} className="rc-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, margin: '5px 0' }}>
+                <span style={{ color: '#3D3D3D' }}>{l.quantite}× {l.article?.nom || l.nom}</span>
+                <span style={{ fontWeight: 600 }}>{formatFCFA((l.prixUnitaire || l.prix || 0) * l.quantite)}</span>
+              </div>
+            ))}
+
+            <hr className="rc-divider" style={{ border: 'none', borderTop: '1px dashed #D9CFC6', margin: '12px 0' }} />
+
+            {/* Totaux HT / TVA / TTC */}
+            <div className="rc-tot" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64574A', margin: '3px 0' }}>
+              <span>Sous-total HT</span><span>{formatFCFA(totalHT)}</span>
             </div>
+            <div className="rc-tot" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64574A', margin: '3px 0' }}>
+              <span>TVA (18%)</span><span>{formatFCFA(tva)}</span>
+            </div>
+            <div className="rc-ttc" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 800, color: ACCENT, marginTop: 6 }}>
+              <span>Total TTC</span><span>{formatFCFA(total)}</span>
+            </div>
+
+            <p className="rc-foot" style={{ fontSize: 10, color: '#9CA3AF', textAlign: 'center', marginTop: 16, lineHeight: 1.5 }}>
+              Merci pour votre confiance — {restoNom}<br />
+              Ce document tient lieu de reçu · TVA 18 % · SYSCOHADA révisé
+            </p>
           </div>
         </div>
         <div className="px-5 pb-5 flex gap-2">
@@ -934,40 +995,111 @@ function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfi
 /* ════════════════════════════════════════════════════════════════
    ──  PAYMENT TAB  ───────────────────────────────────────────────
    ════════════════════════════════════════════════════════════════ */
-function PaymentTab({ savedPM, setSavedPM, pmForm, setPmForm, pmMsg, setPmMsg, addPM, removePM, setDefaultPM, userId, paymentTypes }) {
+function PaymentTab({ savedPM, setSavedPM, pmForm, setPmForm, pmMsg, setPmMsg, addPM, removePM, setDefaultPM, userId, paymentTypes, quickPay, toggleQuickPay }) {
   const PAYMENT_TYPES = paymentTypes || PAYMENT_TYPES_FALLBACK;
   const currentType = PAYMENT_TYPES.find(t => t.id === pmForm.type) || PAYMENT_TYPES[0];
+  const defaultPM   = savedPM.find(m => m.isDefault) || savedPM[0] || null;
+  const qpOn        = !!quickPay?.enabled && !!defaultPM;
+
+  const dType = defaultPM ? (PAYMENT_TYPES.find(t => t.id === defaultPM.type) || PAYMENT_TYPES[0]) : null;
+  const cardGlow = dType?.color || ACCENT;
 
   return (
     <div className="space-y-6">
 
-      {/* ── Header ───────────────────────────────────────────────────── */}
-      <div className="relative overflow-hidden rounded-3xl p-6 sm:p-8"
-        style={{ background: `linear-gradient(135deg, #1A1A2E 0%, #16213E 60%, #0F3460 100%)` }}>
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
-          <div className="w-14 h-14 rounded-2xl flex items-center justify-center"
-            style={{ background: 'rgba(255,255,255,0.1)', backdropFilter: 'blur(8px)' }}>
-            <CreditCard className="w-7 h-7 text-white" />
-          </div>
-          <div>
-            <h2 className="text-xl font-extrabold text-white">Moyens de paiement</h2>
-            <p className="text-white/60 text-sm mt-1">
-              {savedPM.length} moyen{savedPM.length !== 1 ? 's' : ''} enregistré{savedPM.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-          <div className="sm:ml-auto flex items-center gap-2 px-4 py-2 rounded-xl"
-            style={{ background: 'rgba(255,255,255,0.1)' }}>
-            <div className="w-2 h-2 rounded-full bg-green-400" />
-            <span className="text-white/80 text-xs font-semibold">Stockage local sécurisé</span>
+      {/* ── Titre ────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-2xl font-extrabold text-[#1A0C00] tracking-tight">Portefeuille</h2>
+          <p className="text-sm text-[#8A8A8A] mt-0.5">
+            {savedPM.length} moyen{savedPM.length !== 1 ? 's' : ''} · payez en un geste
+          </p>
+        </div>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{ background: '#F0FDF4', border: '1px solid #BBF7D0' }}>
+          <Shield className="w-3.5 h-3.5" style={{ color: '#16A34A' }} />
+          <span className="text-[11px] font-bold" style={{ color: '#16A34A' }}>Sécurisé</span>
+        </div>
+      </div>
+
+      {/* ── Carte vedette (style Yango) ──────────────────────────────── */}
+      <div className="relative mx-auto w-full" style={{ maxWidth: 440 }}>
+        <div className="relative overflow-hidden text-white"
+          style={{
+            aspectRatio: '1.62 / 1', borderRadius: 24,
+            background: 'linear-gradient(135deg, #16161F 0%, #20202E 55%, #2A2033 100%)',
+            boxShadow: `0 24px 60px -18px ${cardGlow}66, 0 8px 24px rgba(0,0,0,0.35)`,
+            padding: '22px 24px',
+          }}>
+          {/* Halo coloré */}
+          <div className="absolute pointer-events-none" style={{ top: -80, right: -60, width: 240, height: 240, borderRadius: '50%', background: cardGlow, filter: 'blur(70px)', opacity: 0.5 }} />
+          <div className="absolute pointer-events-none" style={{ bottom: -100, left: -50, width: 200, height: 200, borderRadius: '50%', background: cardGlow, filter: 'blur(80px)', opacity: 0.22 }} />
+
+          <div className="relative h-full flex flex-col justify-between">
+            {/* Haut : marque + pill paiement rapide */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="rounded-xl flex items-center justify-center overflow-hidden shrink-0"
+                  style={{ width: 44, height: 44, background: 'rgba(255,255,255,0.12)', backdropFilter: 'blur(6px)' }}>
+                  {dType?.logo
+                    ? <img src={dType.logo} alt={dType.label} className="w-8 h-8 object-contain" />
+                    : <CreditCard className="w-6 h-6 text-white" />}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-semibold text-white/50 uppercase tracking-wider">Moyen par défaut</p>
+                  <p className="text-sm font-extrabold truncate">{dType?.label || 'Aucun moyen'}</p>
+                </div>
+              </div>
+
+              {/* Pill Paiement rapide + toggle */}
+              <button type="button" onClick={toggleQuickPay} disabled={!defaultPM}
+                role="switch" aria-checked={qpOn} aria-label="Activer le paiement rapide"
+                className="flex items-center gap-2 rounded-full shrink-0 transition"
+                style={{ padding: '6px 8px 6px 12px', background: qpOn ? cardGlow : 'rgba(255,255,255,0.12)', opacity: defaultPM ? 1 : 0.45, cursor: defaultPM ? 'pointer' : 'not-allowed' }}>
+                <Zap className="w-3.5 h-3.5" style={{ color: '#fff' }} fill={qpOn ? '#fff' : 'none'} />
+                <span className="text-[11px] font-extrabold">Rapide</span>
+                <span className="relative rounded-full transition-all" style={{ width: 30, height: 18, background: qpOn ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.25)' }}>
+                  <span className="absolute rounded-full bg-white transition-all" style={{ width: 14, height: 14, top: 2, left: qpOn ? 14 : 2 }} />
+                </span>
+              </button>
+            </div>
+
+            {/* Puce EMV + numéro */}
+            <div>
+              <div className="rounded-md mb-3" style={{ width: 42, height: 30, background: 'linear-gradient(135deg,#F5D488,#C9A24B)', boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.25)' }} />
+              <p className="font-mono tracking-[0.18em]" style={{ fontSize: 19, fontWeight: 700 }}>
+                {defaultPM?.numero
+                  ? <>•••• •••• {defaultPM.numero.slice(-4).padStart(4, '•')}</>
+                  : '•••• •••• •••• ••••'}
+              </p>
+            </div>
+
+            {/* Bas : libellé + statut rapide */}
+            <div className="flex items-end justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-white/45 uppercase tracking-wider">Libellé</p>
+                <p className="text-sm font-bold truncate">{defaultPM?.label || 'À configurer'}</p>
+              </div>
+              <span className="text-[10px] font-extrabold px-2.5 py-1 rounded-full shrink-0"
+                style={{ background: qpOn ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.12)', color: qpOn ? '#16161F' : 'rgba(255,255,255,0.6)' }}>
+                {qpOn ? '⚡ Paiement rapide actif' : 'Rapide désactivé'}
+              </span>
+            </div>
           </div>
         </div>
+
+        {/* Légende sous la carte */}
+        <p className="text-xs text-[#8A8A8A] text-center mt-3 px-4 leading-relaxed">
+          {defaultPM
+            ? <>Ce moyen sera pré-sélectionné au paiement. Changez-le via <span className="font-semibold text-[#4B5563]">Défaut</span> ci-dessous.</>
+            : <>Ajoutez un moyen ci-dessous, puis activez le paiement rapide.</>}
+        </p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
         {/* ── Cartes enregistrées ────────────────────────────────────── */}
         <div className="space-y-4">
-          <h3 className="text-base font-extrabold text-[#1A0C00]">Cartes & comptes enregistrés</h3>
+          <h3 className="text-base font-extrabold text-[#1A0C00]">Mes moyens enregistrés</h3>
 
           {savedPM.length === 0 ? (
             <div className="bg-white rounded-2xl border-2 border-dashed p-10 text-center"
@@ -1403,6 +1535,7 @@ export default function ClientDashboard() {
   const [savedPM, setSavedPM]               = useState(() => loadSavedPM(user?.id));
   const [pmForm, setPmForm]                 = useState({ type: 'ORANGE_MONEY', label: '', numero: '' });
   const [pmMsg, setPmMsg]                   = useState('');
+  const [quickPay, setQuickPay]             = useState(() => loadQuickPay(user?.id));
   // Adresses depuis la BD (user.adressesSauvegardees, sync via refreshProfile)
   const [savedAddresses, setSavedAddresses] = useState(() => user?.adressesSauvegardees || []);
   const [addrForm, setAddrForm]             = useState({ label: '', adresse: '' });
@@ -1534,6 +1667,16 @@ export default function ClientDashboard() {
     navigate('/checkout');
   };
 
+  /* Recalcule la config de paiement rapide à partir du moyen par défaut courant */
+  const applyQuickPay = useCallback((enabled, list) => {
+    const def = list.find(m => m.isDefault) || list[0];
+    const cfg = def && enabled
+      ? { enabled: true, method: toCheckoutMethod(def.type), phone: def.numero || '', label: def.label }
+      : { enabled: false };
+    setQuickPay(cfg);
+    saveQuickPay(userId, cfg);
+  }, [userId]);
+
   const addPM = (e) => {
     e.preventDefault();
     if (!pmForm.label.trim()) { setPmMsg('Ajoutez un libellé.'); return; }
@@ -1541,6 +1684,7 @@ export default function ClientDashboard() {
     const next  = [...savedPM, entry];
     setSavedPM(next);
     savePM(userId, next);
+    applyQuickPay(quickPay.enabled, next);
     setPmForm({ type: 'ORANGE_MONEY', label: '', numero: '' });
     setPmMsg('Moyen de paiement ajouté !');
     setTimeout(() => setPmMsg(''), 3000);
@@ -1550,13 +1694,17 @@ export default function ClientDashboard() {
     const next = savedPM.filter(m => m.id !== id);
     setSavedPM(next);
     savePM(userId, next);
+    applyQuickPay(quickPay.enabled, next);
   };
 
   const setDefaultPM = (id) => {
     const next = savedPM.map(m => ({ ...m, isDefault: m.id === id }));
     setSavedPM(next);
     savePM(userId, next);
+    applyQuickPay(quickPay.enabled, next);
   };
+
+  const toggleQuickPay = () => applyQuickPay(!quickPay.enabled, savedPM);
 
   const addAddress = async (e) => {
     e.preventDefault();
@@ -1843,6 +1991,7 @@ export default function ClientDashboard() {
                 addPM={addPM} removePM={removePM} setDefaultPM={setDefaultPM}
                 userId={userId}
                 paymentTypes={paymentTypes}
+                quickPay={quickPay} toggleQuickPay={toggleQuickPay}
               />
             )}
 
