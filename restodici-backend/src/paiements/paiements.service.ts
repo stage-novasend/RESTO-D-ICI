@@ -109,40 +109,28 @@ export class PaiementsService implements OnModuleInit {
     }
 
     try {
-      let result: InitiatePaymentResult;
-
-      // Si une intégration est spécifiée, passer par le registry (Strategy pattern)
-      if (dto.integrationName) {
-        const gateway = await this.gatewayRegistry.getGateway(
-          dto.integrationName,
-        );
-        const gwResult = await gateway.initiate({
-          amount: montant,
-          provider: dto.provider,
-          phone: dto.telephone,
-          metadata: {
-            reference: dto.commandeId,
-            commandeId: dto.commandeId,
-            customerName: dto.customerName || commande.client?.nom || 'Client',
-            otp: dto.otp,
-          },
-        });
-        result = {
-          sessionId: gwResult.transactionId,
-          paymentUrl: gwResult.paymentUrl,
-          simulated: gwResult.transactionId.startsWith('sim_'),
-        };
-      } else {
-        // Comportement par défaut : NovaSendService direct (rétrocompatibilité)
-        result = await this.novaSend.initiate({
+      // Chemin UNIQUE (Strategy pattern) : on passe toujours par le registry.
+      // Provider par défaut « novasend » ; le registry construit sa config
+      // depuis la base ou, à défaut, depuis l'environnement.
+      const gateway = await this.gatewayRegistry.getGateway(
+        dto.integrationName || 'novasend',
+      );
+      const gwResult = await gateway.initiate({
+        amount: montant,
+        provider: dto.provider,
+        phone: dto.telephone,
+        metadata: {
           reference: dto.commandeId,
-          amount: montant,
+          commandeId: dto.commandeId,
           customerName: dto.customerName || commande.client?.nom || 'Client',
-          telephone: dto.telephone,
-          provider: dto.provider,
           otp: dto.otp,
-        });
-      }
+        },
+      });
+      const result: InitiatePaymentResult = {
+        sessionId: gwResult.transactionId,
+        paymentUrl: gwResult.paymentUrl,
+        simulated: gwResult.transactionId.startsWith('sim_'),
+      };
 
       // Trace transactionnelle (PENDING) — non bloquant.
       await this.recordPayment(dto, commande, montant, result);
@@ -319,12 +307,20 @@ export class PaiementsService implements OnModuleInit {
       return;
     }
 
-    // Résoudre le mode de paiement (simulation → _provider, réel → Map pendingMap)
+    // Résoudre le mode de paiement : provider du webhook, sinon la trace Payment
+    // (persistante, fiable quel que soit le chemin d'initiation), sinon la map
+    // en mémoire (legacy). Ferme la régression possible en unifiant les chemins.
+    const paymentRow = await this.paymentRepo.findOne({
+      where: { reference },
+      order: { createdAt: 'DESC' },
+    });
     const provider: NovaSendProvider | undefined =
-      _provider ?? this.novaSend.getProvider(reference);
-    const modePaiement: ModePaiementCommande = provider
-      ? PROVIDER_TO_MODE[provider]
-      : ModePaiementCommande.ORANGE_MONEY;
+      _provider ??
+      (paymentRow?.provider as NovaSendProvider | undefined) ??
+      this.novaSend.getProvider(reference);
+    const modePaiement: ModePaiementCommande =
+      (provider && PROVIDER_TO_MODE[provider]) ||
+      ModePaiementCommande.ORANGE_MONEY;
 
     const payeAt = new Date();
     await this.commandeRepo.update(commandeId, {

@@ -63,12 +63,15 @@ const mockNovaSend = {
   getProvider: jest.fn(),
 };
 
+const mockGateway = {
+  initiate: jest.fn(),
+  verifyWebhook: jest.fn().mockReturnValue(true),
+  handleWebhook: jest
+    .fn()
+    .mockResolvedValue({ transactionId: 'txn-1', status: 'SUCCESS' }),
+};
 const mockGatewayRegistry = {
-  getGateway: jest.fn().mockResolvedValue({
-    initiate: jest.fn(),
-    verifyWebhook: jest.fn().mockReturnValue(true),
-    handleWebhook: jest.fn().mockResolvedValue({ transactionId: 'txn-1', status: 'SUCCESS' }),
-  }),
+  getGateway: jest.fn().mockResolvedValue(mockGateway),
   getEnabledPaymentGateways: jest.fn().mockResolvedValue([]),
 };
 
@@ -135,10 +138,10 @@ describe('PaiementsService initiatePayment()', () => {
   it('retourne le résultat NovaSend quand la commande existe et n\'est pas payée', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockNovaSend.initiate.mockResolvedValue({
-      sessionId: 'sim_abc12345',
+    mockGateway.initiate.mockResolvedValue({
+      transactionId: 'sim_abc12345',
       paymentUrl: 'http://localhost:5173/paiement/preview?ref=cmd-uuid-1',
-      simulated: true,
+      status: 'PENDING',
     });
 
     const dto = {
@@ -155,15 +158,18 @@ describe('PaiementsService initiatePayment()', () => {
       where: { id: 'cmd-uuid-1' },
       relations: ['client'],
     });
-    expect(mockNovaSend.initiate).toHaveBeenCalledWith(
+    // Chemin unique : passe par le registry (Strategy pattern), pas le direct.
+    expect(mockGatewayRegistry.getGateway).toHaveBeenCalledWith('novasend');
+    expect(mockGateway.initiate).toHaveBeenCalledWith(
       expect.objectContaining({
-        reference: 'cmd-uuid-1',
         amount: 5000,
         provider: 'WAVE',
+        metadata: expect.objectContaining({ reference: 'cmd-uuid-1' }),
       }),
     );
-    expect(result).toHaveProperty('sessionId');
+    expect(result).toHaveProperty('sessionId', 'sim_abc12345');
     expect(result).toHaveProperty('paymentUrl');
+    expect(result).toHaveProperty('simulated', true);
     // Trace transactionnelle Payment enregistrée (PENDING) à l'initiation
     expect(mockPaymentRepo.save).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -178,7 +184,10 @@ describe('PaiementsService initiatePayment()', () => {
   it('utilise le nom du client comme customerName quand non fourni dans le DTO', async () => {
     const commande = makeCommande({ client: { id: 'c-1', nom: 'Traoré' } as any });
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockNovaSend.initiate.mockResolvedValue({ sessionId: 'sim_xyz', simulated: true });
+    mockGateway.initiate.mockResolvedValue({
+      transactionId: 'sim_xyz',
+      status: 'PENDING',
+    });
 
     await service.initiatePayment({
       commandeId: 'cmd-uuid-1',
@@ -187,8 +196,10 @@ describe('PaiementsService initiatePayment()', () => {
       provider: 'ORANGE' as const,
     } as any);
 
-    expect(mockNovaSend.initiate).toHaveBeenCalledWith(
-      expect.objectContaining({ customerName: 'Traoré' }),
+    expect(mockGateway.initiate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({ customerName: 'Traoré' }),
+      }),
     );
   });
 
@@ -276,6 +287,32 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
       'client-1',
       'commande.paiement',
       expect.objectContaining({ id: 'cmd-uuid-1' }),
+    );
+  });
+
+  it('résout le mode de paiement depuis la trace Payment (chemin unifié, sans _provider ni map RAM)', async () => {
+    const commande = makeCommande();
+    mockCommandeRepo.findOne.mockResolvedValue(commande);
+    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockNovaSend.getProvider.mockReturnValue(undefined); // map RAM vide (nouveau chemin)
+    mockPaymentRepo.findOne.mockResolvedValue({
+      reference: 'cmd-uuid-1',
+      provider: 'WAVE',
+      status: 'PENDING',
+    });
+
+    // Webhook réel NovaSend : PAS de _provider dans le corps.
+    await service.handleNovasendWebhook({
+      reference: 'cmd-uuid-1',
+      status: 'SUCCESSFUL',
+    });
+
+    expect(mockCommandeRepo.update).toHaveBeenCalledWith(
+      'cmd-uuid-1',
+      expect.objectContaining({
+        estPaye: true,
+        modePaiement: ModePaiementCommande.WAVE,
+      }),
     );
   });
 

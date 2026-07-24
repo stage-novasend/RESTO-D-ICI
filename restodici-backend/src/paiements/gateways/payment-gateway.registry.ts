@@ -47,20 +47,48 @@ export class PaymentGatewayRegistry {
       where: { name, type: IntegrationType.PAYMENT, enabled: true },
     });
 
-    if (!integration) {
-      // Fallback : essayer sans la contrainte enabled pour un meilleur message d'erreur
-      const exists = await this.integrationRepo.findOne({ where: { name } });
-      if (exists) {
-        throw new NotFoundException(
-          `L'intégration de paiement "${name}" existe mais n'est pas activée`,
-        );
-      }
+    if (integration) return this.buildGateway(integration);
+
+    // Pas de config en base : pour un provider connu, on construit une config
+    // par défaut depuis l'environnement. Rétrocompatibilité avec l'ancien
+    // chemin direct (NovaSendService) : l'initiation fonctionne sans setup DB,
+    // et simule quand aucune clé n'est fournie.
+    const envIntegration = this.buildEnvIntegration(name);
+    if (envIntegration) return this.buildGateway(envIntegration);
+
+    // Provider inconnu → message d'erreur explicite.
+    const exists = await this.integrationRepo.findOne({ where: { name } });
+    if (exists) {
       throw new NotFoundException(
-        `Aucune intégration de paiement "${name}" trouvée`,
+        `L'intégration de paiement "${name}" existe mais n'est pas activée`,
       );
     }
+    throw new NotFoundException(
+      `Aucune intégration de paiement "${name}" trouvée`,
+    );
+  }
 
-    return this.buildGateway(integration);
+  /**
+   * Construit une Integration « par défaut » depuis l'environnement pour un
+   * provider connu sans config en base. Reproduit exactement la config de
+   * l'ancien NovaSendService (clés env, APP_URL, webhook secret).
+   */
+  private buildEnvIntegration(name: string): Integration | null {
+    const key = name.toLowerCase().trim();
+    if (!this.factories.has(key)) return null;
+    if (key === 'novasend') {
+      const apiKey = process.env.NOVASEND_API_KEY;
+      const apiSecret = process.env.NOVASEND_API_SECRET;
+      return {
+        name: 'novasend',
+        type: IntegrationType.PAYMENT,
+        enabled: true,
+        baseUrl: process.env.APP_URL || 'http://localhost:5173',
+        apiKey: apiKey && apiSecret ? `${apiKey}:${apiSecret}` : null,
+        webhookSecret: process.env.NOVASEND_WEBHOOK_SECRET ?? null,
+      } as Integration;
+    }
+    return null;
   }
 
   /**
