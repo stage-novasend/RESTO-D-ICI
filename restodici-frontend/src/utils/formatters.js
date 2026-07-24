@@ -2,6 +2,9 @@
 
 // 10 000 → "10.000 FCFA" (point comme séparateur de milliers)
 export const formatFCFA = (amount) => {
+  // Montant absent → placeholder (jamais "0 FCFA" : Number(null) === 0 masquerait
+  // une donnée manquante en la faisant passer pour un montant nul réel).
+  if (amount === null || amount === undefined || amount === '') return '—';
   const n = Number(amount);
   if (isNaN(n)) return '—';
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' FCFA';

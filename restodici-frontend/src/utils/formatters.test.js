@@ -25,12 +25,12 @@ test('formatFCFA formate zéro avec CFA', () => {
   assert.ok(result.includes('CFA'), 'zéro doit aussi afficher "CFA"');
 });
 
-test('formatFCFA retourne "-" pour null', () => {
-  assert.equal(formatFCFA(null), '-');
+test('formatFCFA retourne le placeholder pour null', () => {
+  assert.equal(formatFCFA(null), '—');
 });
 
-test('formatFCFA retourne "-" pour undefined', () => {
-  assert.equal(formatFCFA(undefined), '-');
+test('formatFCFA retourne le placeholder pour undefined', () => {
+  assert.equal(formatFCFA(undefined), '—');
 });
 
 test('formatFCFA ne contient pas "XOF" brut', () => {
