@@ -8,7 +8,7 @@ import {
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { formatFCFA } from '../utils/formatters';
-import { CI_PHONE_PATTERN, MSG, isValidCIPhone } from '../utils/validators';
+import { CI_PHONE_PATTERN, MSG, isValidCIPhone, phoneMatchesOperator, OPERATOR_LABEL, CI_OPERATOR_PREFIXES } from '../utils/validators';
 import { commandesService, createCommandesSocket } from '../services/commandes.service';
 import { paiementsAPI, promosAPI } from '../services/api';
 import orangeMoneyLogo from '../assets/payments/orange-money.svg';
@@ -38,7 +38,7 @@ const METHOD_VISUAL_MAP = {
   orange_money: { provider: 'ORANGE', name: 'Orange Money',   shortName: 'Orange',   logo: orangeMoneyLogo,   accent: '#FF7900', accentLight: '#FFF3E0', borderActive: 'border-orange-400', bgActive: 'bg-orange-50',  phoneRequired: true,  otpRequired: true  },
   mtn_momo:     { provider: 'MOMO',   name: 'MTN Mobile Money',shortName: 'MTN MoMo', logo: mtnMomoLogo,       accent: '#FFCC00', accentLight: '#FFFDE7', borderActive: 'border-yellow-400', bgActive: 'bg-yellow-50',  phoneRequired: true,  otpRequired: false },
   moov_money:   { provider: 'MOOV',   name: 'Moov Money',     shortName: 'Moov',     logo: moovMoneyLogo,     accent: '#0066CC', accentLight: '#E3F0FF', borderActive: 'border-blue-400',   bgActive: 'bg-blue-50',    phoneRequired: true,  otpRequired: false },
-  wave:         { provider: 'WAVE',   name: 'Wave',           shortName: 'Wave',     logo: null,              accent: '#1DA1F2', accentLight: '#E8F5FD', borderActive: 'border-sky-400',    bgActive: 'bg-sky-50',     phoneRequired: false, otpRequired: false },
+  wave:         { provider: 'WAVE',   name: 'Wave',           shortName: 'Wave',     logo: null,              accent: '#1DA1F2', accentLight: '#E8F5FD', borderActive: 'border-sky-400',    bgActive: 'bg-sky-50',     phoneRequired: true,  otpRequired: false },
   card:         { provider: 'CARTE',  name: 'Carte Bancaire', shortName: 'Carte',    logo: carteBancaireLogo, accent: '#1A0C00', accentLight: '#F5F0FF', borderActive: 'border-slate-500',  bgActive: 'bg-slate-50',   phoneRequired: false, otpRequired: false },
 };
 
@@ -444,8 +444,16 @@ export default function CheckoutPage() {
   const effectiveTotal = Math.max(0, total - (promoResult?.remise ?? 0));
   const isOpen         = modalState !== 'idle';
 
+  // Mobile Money : le numéro doit correspondre à l'opérateur choisi (Orange/MTN/Moov)
+  const requiresOperatorMatch = ['ORANGE', 'MOMO', 'MOOV'].includes(method?.provider);
+  const phoneOperatorError =
+    requiresOperatorMatch && isValidCIPhone(phone) && !phoneMatchesOperator(phone, method.provider)
+      ? `Ce numéro n'est pas un numéro ${OPERATOR_LABEL[method.provider]} (préfixe attendu : ${CI_OPERATOR_PREFIXES[method.provider].join(', ')}).`
+      : '';
+
   const canSubmit = isB2B || (() => {
     if (method?.phoneRequired && !isValidCIPhone(phone)) return false;
+    if (requiresOperatorMatch && !phoneMatchesOperator(phone, method.provider)) return false;
     if (method?.otpRequired && otp.length < 4) return false;
     if (selectedMethod === 'card') {
       if (cardNumber.replace(/\s/g, '').length < 16) return false;
@@ -826,9 +834,14 @@ export default function CheckoutPage() {
                 marginBottom: 16,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
               }}>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1A0C00', letterSpacing: '-0.02em', margin: '0 0 16px' }}>
-                  Méthode de paiement
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', margin: '0 0 16px' }}>
+                  <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1A0C00', letterSpacing: '-0.02em', margin: 0 }}>
+                    Méthode de paiement
+                  </h2>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#16A34A', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 99, padding: '4px 10px' }}>
+                    <Lock size={12} /> Paiement sécurisé
+                  </span>
+                </div>
 
                 {/* Method selector — premium cards */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -935,7 +948,7 @@ export default function CheckoutPage() {
                         width: '100%',
                         boxSizing: 'border-box',
                         borderRadius: 14,
-                        border: '1.5px solid #E8E0D5',
+                        border: '1.5px solid ' + (phoneOperatorError ? '#EF4444' : '#E8E0D5'),
                         background: '#FFFFFF',
                         padding: '13px 16px',
                         fontSize: 14,
@@ -946,6 +959,11 @@ export default function CheckoutPage() {
                         transition: 'all 0.2s',
                       }}
                     />
+                    {phoneOperatorError && (
+                      <p style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: '#DC2626', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                        <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} /> {phoneOperatorError}
+                      </p>
+                    )}
                   </div>
                 )}
 
@@ -1290,17 +1308,19 @@ export default function CheckoutPage() {
                   <CountdownRing total={COUNTDOWN_SECS} current={countdown} />
 
                   <p style={{ fontWeight: 800, color: '#1A0C00', fontSize: 16, margin: '14px 0 6px', letterSpacing: '-0.02em' }}>
-                    {selectedMethod === 'card' ? 'Traitement en cours…' : 'En attente de confirmation'}
+                    {selectedMethod === 'card' ? 'Traitement en cours…' : paymentUrl ? 'Finalisez votre paiement' : 'En attente de confirmation'}
                   </p>
 
                   {phone.trim() && method?.phoneRequired && (
                     <p style={{ fontSize: 13, color: '#9E8B7A', fontWeight: 600, margin: '0 0 6px' }}>
-                      Demande envoyée au <strong style={{ color: '#1A0C00' }}>{phone}</strong>
+                      Numéro : <strong style={{ color: '#1A0C00' }}>{phone}</strong>
                     </p>
                   )}
 
                   <p style={{ fontSize: 12, color: '#9E8B7A', lineHeight: 1.6, margin: '0 0 18px', padding: '0 8px', fontWeight: 600 }}>
-                    {PROVIDER_NOTE[method?.provider] || 'Confirmez le paiement sur votre téléphone.'}
+                    {paymentUrl
+                      ? `Cliquez ci-dessous pour ouvrir la page ${method?.shortName || 'de paiement'} et finaliser. Cette fenêtre se mettra à jour automatiquement.`
+                      : (PROVIDER_NOTE[method?.provider] || 'Une demande de paiement a été envoyée sur votre téléphone — validez-la pour confirmer.')}
                   </p>
 
                   {paymentUrl && (
@@ -1311,18 +1331,22 @@ export default function CheckoutPage() {
                       style={{
                         display: 'inline-flex',
                         alignItems: 'center',
+                        justifyContent: 'center',
                         gap: 8,
-                        padding: '12px 22px',
+                        width: '100%',
+                        boxSizing: 'border-box',
+                        padding: '15px 22px',
                         borderRadius: 14,
-                        background: method?.accent ?? ACCENT,
+                        background: `linear-gradient(135deg, ${ACCENT}, #C2410C)`,
                         color: 'white',
-                        fontSize: 13,
+                        fontSize: 15,
                         fontWeight: 800,
                         textDecoration: 'none',
                         marginBottom: 18,
+                        boxShadow: `0 8px 24px ${ACCENT}55`,
                       }}>
-                      <ExternalLink size={15} />
-                      Ouvrir Wave pour payer
+                      <ExternalLink size={17} />
+                      Ouvrir {method?.shortName || 'la page'} pour payer
                     </a>
                   )}
 

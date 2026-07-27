@@ -29,6 +29,29 @@ export const formatCIPhone = (v) => {
   return '+225 ' + groups.join(' ');
 };
 
+/* ── Opérateurs mobiles Côte d'Ivoire (préfixe = 2 premiers chiffres) ──
+   Plan ARTCI 2021 : Moov 01/02/03 · MTN 04/05/06 · Orange 07/08/09. */
+export const CI_OPERATOR_PREFIXES = {
+  ORANGE: ['07', '08', '09'],
+  MOMO:   ['04', '05', '06'],
+  MOOV:   ['01', '02', '03'],
+};
+export const OPERATOR_LABEL = { ORANGE: 'Orange Money', MOMO: 'MTN MoMo', MOOV: 'Moov Money' };
+
+// Numéro national à 10 chiffres (retire +225 / 225 et séparateurs)
+export const toCINationalNumber = (v) => normalizePhone(v).replace(/^\+?225/, '');
+
+// Détecte l'opérateur ('ORANGE' | 'MOMO' | 'MOOV') d'un numéro, ou null
+export const detectCIOperator = (v) => {
+  const n = toCINationalNumber(v);
+  if (!/^0\d{9}$/.test(n)) return null;
+  const p = n.slice(0, 2);
+  return Object.keys(CI_OPERATOR_PREFIXES).find(op => CI_OPERATOR_PREFIXES[op].includes(p)) || null;
+};
+
+// Vrai si le numéro correspond bien à l'opérateur attendu
+export const phoneMatchesOperator = (v, expected) => detectCIOperator(v) === expected;
+
 /* ── Validateurs (retournent true / false) ─────────────────── */
 export const isValidEmail   = (v) => EMAIL_REGEX.test(String(v ?? '').trim());
 export const isValidCIPhone = (v) => CI_PHONE_REGEX.test(normalizePhone(v));
