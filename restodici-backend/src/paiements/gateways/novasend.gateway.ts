@@ -10,6 +10,14 @@ import {
   PaymentWebhookResult,
 } from './payment-gateway.interface';
 import { EXTERNAL_URLS } from '../../config/app-config';
+import { normalizeCiNumber } from '../phone.util';
+
+/** Formate un numéro CI au format international attendu par NovaSend (+225XXXXXXXXXX). */
+function toInternationalCiMsisdn(phone?: string): string | undefined {
+  if (!phone) return undefined;
+  const national = normalizeCiNumber(phone); // 0XXXXXXXXX
+  return /^0\d{9}$/.test(national) ? `+225${national}` : phone;
+}
 
 /**
  * Wrapper NovaSend implementant PaymentGateway.
@@ -60,12 +68,13 @@ export class NovaSendGateway implements PaymentGateway {
   async handleWebhook(payload: any): Promise<PaymentWebhookResult> {
     const { reference, status, metadata } = payload;
 
-    const FAILED_STATUSES = ['FAILED', 'EXPIRED', 'CANCELLED', 'failed', 'expired', 'cancelled'];
-    const SUCCESS_STATUSES = ['SUCCESSFUL', 'success'];
+    const s = String(status ?? '').toLowerCase();
+    const FAILED_STATUSES = ['failed', 'expired', 'cancelled', 'declined'];
+    const SUCCESS_STATUSES = ['successful', 'success', 'succeeded', 'completed'];
 
     let normalizedStatus: 'SUCCESS' | 'FAILED' | 'PENDING' = 'PENDING';
-    if (SUCCESS_STATUSES.includes(status)) normalizedStatus = 'SUCCESS';
-    else if (FAILED_STATUSES.includes(status)) normalizedStatus = 'FAILED';
+    if (SUCCESS_STATUSES.includes(s)) normalizedStatus = 'SUCCESS';
+    else if (FAILED_STATUSES.includes(s)) normalizedStatus = 'FAILED';
 
     return {
       transactionId: reference,
@@ -96,24 +105,44 @@ export class NovaSendGateway implements PaymentGateway {
     reference: string,
     options: InitiatePaymentOptions,
   ): Promise<PaymentGatewayResult> {
-    const payload: Record<string, any> = {
-      reference,
-      customerName: options.metadata?.customerName || 'Client',
-      payin: {
-        amount: options.amount,
-        provider: options.provider,
-        country: options.currency || 'CI',
-        ...(options.phone ? { msisdn: options.phone } : {}),
-        ...(options.metadata?.otp ? { otp: options.metadata.otp } : {}),
-      },
-      action: {
-        successUrl: options.returnUrl || `${this.appUrl}/paiement/success`,
-        failureUrl: `${this.appUrl}/paiement/failure`,
-      },
+    // Deux flux selon l'opérateur (le msisdn doit être en +225XXXXXXXXXX) :
+    //  - MTN / Moov / Orange → payin DIRECT : demande d'approbation (USSD) sur le téléphone.
+    //  - Wave → SESSION de paiement (lien) : le payin direct échoue pour Wave
+    //    (« Transaction failed ») ; la session renvoie un `paymentUrl` (page/QR).
+    const msisdn = toInternationalCiMsisdn(options.phone);
+    const action = {
+      successUrl: options.returnUrl || `${this.appUrl}/paiement/success`,
+      failureUrl: `${this.appUrl}/paiement/failure`,
     };
+    const isLinkFlow = options.provider === 'WAVE';
+
+    const url = isLinkFlow
+      ? `${this.BASE}/payin/sessions`
+      : `${this.BASE}/direct/payin`;
+    const payload: Record<string, any> = isLinkFlow
+      ? {
+          reference,
+          amount: options.amount,
+          country: 'CI',
+          customerName: options.metadata?.customerName || 'Client',
+          ...(msisdn ? { msisdn } : {}),
+          action,
+        }
+      : {
+          reference,
+          customerName: options.metadata?.customerName || 'Client',
+          payin: {
+            amount: options.amount,
+            provider: options.provider,
+            country: 'CI',
+            ...(msisdn ? { msisdn } : {}),
+            ...(options.metadata?.otp ? { otp: options.metadata.otp } : {}),
+          },
+          action,
+        };
 
     try {
-      const { data } = await axios.post(`${this.BASE}/direct/payin`, payload, {
+      const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${this.credentials}`,
           'X-Idempotency-Key': randomUUID(),

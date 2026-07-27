@@ -29,6 +29,7 @@ import {
   InitiatePaymentResult,
 } from './novasend.service';
 import { InitierPaiementDto } from './dto/initier-paiement.dto';
+import { checkPhoneForOperator, isValidCiMobile, normalizeCiNumber } from './phone.util';
 import { PaymentGatewayRegistry } from './gateways/payment-gateway.registry';
 
 // Correspondance provider NovaSend → enum ModePaiementCommande
@@ -98,6 +99,29 @@ export class PaiementsService implements OnModuleInit {
       );
     }
 
+    // [VALIDATION] Mobile Money : le numéro doit correspondre à l'opérateur choisi
+    // (préfixe Orange/MTN/Moov). On reconnaît et retire l'indicatif pays (+225),
+    // puis on envoie le numéro national normalisé à NovaSend comme msisdn.
+    let msisdn = dto.telephone;
+    if (
+      dto.provider === 'ORANGE' ||
+      dto.provider === 'MOMO' ||
+      dto.provider === 'MOOV'
+    ) {
+      // Le numéro doit correspondre à l'opérateur choisi.
+      const check = checkPhoneForOperator(dto.telephone, dto.provider);
+      if (!check.ok) throw new BadRequestException(check.reason);
+      msisdn = check.normalized;
+    } else if (dto.provider === 'WAVE' || dto.provider === 'NOVASEND') {
+      // Wave fonctionne sur tout numéro : on exige un mobile CI valide (tous opérateurs).
+      if (!isValidCiMobile(dto.telephone)) {
+        throw new BadRequestException(
+          'Numéro Mobile Money invalide (ex. 07 XX XX XX XX).',
+        );
+      }
+      msisdn = normalizeCiNumber(dto.telephone);
+    }
+
     // [SÉCURITÉ] Verrou distribué anti-double-paiement : bloque une seconde
     // initiation concurrente pour la même commande. Gardé en cas de succès
     // (fenêtre de paiement), libéré si l'initiation échoue ou au webhook.
@@ -118,7 +142,7 @@ export class PaiementsService implements OnModuleInit {
       const gwResult = await gateway.initiate({
         amount: montant,
         provider: dto.provider,
-        phone: dto.telephone,
+        phone: msisdn,
         metadata: {
           reference: dto.commandeId,
           commandeId: dto.commandeId,
@@ -241,11 +265,13 @@ export class PaiementsService implements OnModuleInit {
   async handleNovasendWebhook(body: any): Promise<void> {
     const { reference, status, metadata, _provider } = body;
 
-    const FAILED_STATUSES  = ['FAILED', 'EXPIRED', 'CANCELLED', 'failed', 'expired', 'cancelled'];
-    const SUCCESS_STATUSES = ['SUCCESSFUL', 'success'];
+    // NovaSend renvoie les statuts en minuscules (ex. "successful", "failed").
+    const s = String(status ?? '').toLowerCase();
+    const FAILED_STATUSES  = ['failed', 'expired', 'cancelled', 'declined'];
+    const SUCCESS_STATUSES = ['successful', 'success', 'succeeded', 'completed'];
 
     // Paiement échoué / expiré → notifier via WebSocket sans valider la commande
-    if (FAILED_STATUSES.includes(status)) {
+    if (FAILED_STATUSES.includes(s)) {
       const commandeId = metadata?.commandeId || reference;
       if (!commandeId) return;
       const commande = await this.commandeRepo.findOne({
@@ -266,7 +292,7 @@ export class PaiementsService implements OnModuleInit {
       return;
     }
 
-    if (!SUCCESS_STATUSES.includes(status)) return;
+    if (!SUCCESS_STATUSES.includes(s)) return;
 
     // ── Facture mensuelle B2B ──────────────────────────────────────────────
     const isB2BFacture = String(reference).startsWith('b2b-facture-');
