@@ -8,6 +8,7 @@ RESTODICI permet à des restaurants d'accepter des commandes en ligne, de gérer
 
 ## Table des matières
 
+
 1. [Aperçu fonctionnel](#aperçu-fonctionnel)
 2. [Architecture technique](#architecture-technique)
 3. [Structure du projet](#structure-du-projet)

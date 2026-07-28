@@ -140,6 +140,97 @@ function OtpInput({ value, onChange }) {
   );
 }
 
+// Payment method selector subcomponent
+function PaymentMethodSelector({ paymentMethods, selectedMethod, onSelectMethod }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {paymentMethods.map(m => {
+        const active = selectedMethod === m.id;
+        return (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onSelectMethod(m.id)}
+            className="method-card"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '14px 16px',
+              borderRadius: 16,
+              border: active ? '2px solid #EA580C' : '2px solid #F0EDE8',
+              background: active ? '#FFF8F0' : 'white',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s',
+              boxShadow: active ? '0 4px 16px rgba(234,88,12,0.14)' : '0 1px 4px rgba(0,0,0,0.03)',
+              width: '100%',
+            }}>
+            {/* Logo container */}
+            <div style={{
+              width: 48,
+              height: 40,
+              borderRadius: 12,
+              background: active ? m.accentLight : '#F5F5F7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              overflow: 'hidden',
+              transition: 'background 0.2s',
+            }}>
+              {m.logo ? (
+                <img src={m.logo} alt={m.name} style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
+              ) : m.id === 'wave' ? (
+                <div style={{
+                  width: 36,
+                  height: 28,
+                  borderRadius: 8,
+                  background: 'linear-gradient(135deg, #1DA1F2 0%, #0EA5E9 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 15, fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.03em' }}>W</span>
+                </div>
+              ) : (
+                <CreditCard size={22} color={m.accent} />
+              )}
+            </div>
+
+            {/* Name + subtitle */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 800, color: active ? '#EA580C' : '#1A0C00', margin: 0, letterSpacing: '-0.02em' }}>
+                {m.name}
+              </p>
+              {m.phoneRequired && (
+                <p style={{ fontSize: 11, color: '#9E8B7A', fontWeight: 600, margin: '2px 0 0' }}>Numéro requis</p>
+              )}
+            </div>
+
+            {/* Styled radio */}
+            <div style={{
+              width: 20,
+              height: 20,
+              borderRadius: '50%',
+              border: active ? '2px solid #EA580C' : '2px solid #CBD5E1',
+              background: active ? '#EA580C' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'all 0.2s',
+            }}>
+              {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'white' }} />}
+            </div>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 // Inline styles injected once
 const GLOBAL_STYLES = `
   @keyframes fadeUp {
@@ -194,6 +285,9 @@ export default function CheckoutPage() {
   const [pendingOrder, setPendingOrder]     = useState(null);
   const [phone, setPhone]                   = useState('');
   const [otp, setOtp]                       = useState('');
+  // Flux OTP en 2 étapes (Orange) : on saisit le numéro puis on « initie », et le
+  // champ OTP n'apparaît qu'ensuite.
+  const [otpStep, setOtpStep]               = useState(false);
 
   // Card fields
   const [cardNumber, setCardNumber]   = useState('');
@@ -236,6 +330,9 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (user?.telephone && !phone) setPhone(user.telephone);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Repart de l'étape « numéro » à chaque changement de moyen.
+  useEffect(() => { setOtpStep(false); setOtp(''); }, [selectedMethod]);
 
   /* Paiement rapide : pré-sélectionne le moyen configuré dans l'espace client
      (sauf si le panier a déjà imposé un moyen de paiement). */
@@ -462,6 +559,17 @@ export default function CheckoutPage() {
     }
     return true;
   })();
+
+  // Étape 1 du flux OTP (Orange) : on « initie » (révèle le champ OTP) avant de payer.
+  const otpStepPending = !isB2B && method?.otpRequired && !otpStep;
+  const numeroReady = isValidCIPhone(phone) && !phoneOperatorError;
+  const primaryEnabled = otpStepPending ? numeroReady : canSubmit;
+  const primaryOnClick = otpStepPending ? () => { if (numeroReady) setOtpStep(true); } : handlePay;
+  const primaryLabel = isB2B
+    ? `Confirmer la commande · ${formatFCFA(effectiveTotal)}`
+    : otpStepPending
+      ? 'Initier le paiement'
+      : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -844,91 +952,11 @@ export default function CheckoutPage() {
                 </div>
 
                 {/* Method selector — premium cards */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {paymentMethods.map(m => {
-                    const active = selectedMethod === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => { setSelectedMethod(m.id); setOtp(''); }}
-                        className="method-card"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 14,
-                          padding: '14px 16px',
-                          borderRadius: 16,
-                          border: active ? `2px solid #EA580C` : '2px solid #F0EDE8',
-                          background: active ? '#FFF8F0' : 'white',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.2s',
-                          boxShadow: active ? '0 4px 16px rgba(234,88,12,0.14)' : '0 1px 4px rgba(0,0,0,0.03)',
-                          width: '100%',
-                        }}>
-                        {/* Logo container */}
-                        <div style={{
-                          width: 48,
-                          height: 40,
-                          borderRadius: 12,
-                          background: active ? m.accentLight : '#F5F5F7',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          overflow: 'hidden',
-                          transition: 'background 0.2s',
-                        }}>
-                          {m.logo ? (
-                            <img src={m.logo} alt={m.name} style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
-                          ) : m.id === 'wave' ? (
-                            <div style={{
-                              width: 36,
-                              height: 28,
-                              borderRadius: 8,
-                              background: 'linear-gradient(135deg, #1DA1F2 0%, #0EA5E9 100%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                              <span style={{ fontSize: 15, fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.03em' }}>W</span>
-                            </div>
-                          ) : (
-                            <CreditCard size={22} color={m.accent} />
-                          )}
-                        </div>
-
-                        {/* Name + subtitle */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 14, fontWeight: 800, color: active ? '#EA580C' : '#1A0C00', margin: 0, letterSpacing: '-0.02em' }}>
-                            {m.name}
-                          </p>
-                          {m.phoneRequired && (
-                            <p style={{ fontSize: 11, color: '#9E8B7A', fontWeight: 600, margin: '2px 0 0' }}>Numéro requis</p>
-                          )}
-                        </div>
-
-                        {/* Styled radio */}
-                        <div style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          border: active ? '2px solid #EA580C' : '2px solid #CBD5E1',
-                          background: active ? '#EA580C' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          transition: 'all 0.2s',
-                        }}>
-                          {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'white' }} />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <PaymentMethodSelector
+                  paymentMethods={paymentMethods}
+                  selectedMethod={selectedMethod}
+                  onSelectMethod={(id) => { setSelectedMethod(id); setOtp(''); }}
+                />
 
                 {/* Phone field */}
                 {method?.phoneRequired && (
@@ -967,15 +995,15 @@ export default function CheckoutPage() {
                   </div>
                 )}
 
-                {/* Orange Money OTP */}
-                {method?.otpRequired && (
+                {/* Orange Money OTP — étape 2, après « Initier le paiement » */}
+                {method?.otpRequired && otpStep && (
                   <div style={{ marginTop: 16, borderRadius: 16, border: '1.5px solid #FFD199', background: '#FFF8F0', padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <div style={{ width: 28, height: 28, borderRadius: 9, background: '#FFF3E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔐</div>
                       <p style={{ fontSize: 13, fontWeight: 800, color: '#1A0C00', margin: 0 }}>Code OTP Orange *</p>
                     </div>
                     <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.55, margin: '0 0 14px', fontWeight: 600 }}>
-                      Composez <strong>#144*82#</strong> depuis votre téléphone Orange pour recevoir votre code à 4 chiffres.
+                      Composez <strong>#144*82#</strong> depuis votre téléphone Orange pour recevoir votre code à 4 chiffres, puis saisissez-le ci-dessous.
                     </p>
                     <OtpInput value={otp} onChange={setOtp} />
                     {otp.length > 0 && otp.length < 4 && (
@@ -1110,23 +1138,23 @@ export default function CheckoutPage() {
             {/* ── CTA Button (desktop — inside flow) ──────────────────────── */}
             <div className="hidden md:block" style={{ paddingBottom: 40 }}>
               <button
-                onClick={handlePay}
-                disabled={!canSubmit}
+                onClick={primaryOnClick}
+                disabled={!primaryEnabled}
                 className="checkout-cta"
                 style={{
                   width: '100%',
                   height: 58,
                   borderRadius: 16,
                   border: 'none',
-                  background: canSubmit
+                  background: primaryEnabled
                     ? 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)'
                     : 'linear-gradient(135deg, #D4C4B0 0%, #C4B4A0 100%)',
                   color: 'white',
                   fontSize: 16,
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
-                  cursor: canSubmit ? 'pointer' : 'not-allowed',
-                  boxShadow: canSubmit ? '0 8px 32px rgba(234,88,12,0.40)' : 'none',
+                  cursor: primaryEnabled ? 'pointer' : 'not-allowed',
+                  boxShadow: primaryEnabled ? '0 8px 32px rgba(234,88,12,0.40)' : 'none',
                   transition: 'all 0.2s',
                   fontFamily: 'Manrope, sans-serif',
                   display: 'flex',
@@ -1134,10 +1162,8 @@ export default function CheckoutPage() {
                   justifyContent: 'center',
                   gap: 8,
                 }}>
-                {canSubmit && <Lock size={15} style={{ opacity: 0.85 }} />}
-                {isB2B
-                  ? `Confirmer la commande · ${formatFCFA(effectiveTotal)}`
-                  : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`}
+                {primaryEnabled && !otpStepPending && <Lock size={15} style={{ opacity: 0.85 }} />}
+                {primaryLabel}
               </button>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
                 <ShieldCheck size={12} color="#C4B5A5" />

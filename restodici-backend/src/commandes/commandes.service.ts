@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DataSource, In } from 'typeorm';
@@ -46,6 +47,7 @@ const STATUT_LABELS: Record<string, string> = {
 
 @Injectable()
 export class CommandesService {
+  private readonly logger = new Logger(CommandesService.name);
   constructor(
     @InjectRepository(Commande) private commandeRepo: Repository<Commande>,
     @InjectRepository(LigneCommande)
@@ -87,9 +89,21 @@ export class CommandesService {
         data: data ?? null,
       });
       this.commandesGateway.emitToClient(clientId, 'notification.new', notif);
-    } catch {
+    } catch (err) {
+      this.logger.warn(
+        `Failed to notify client ${clientId}: ${(err as Error)?.message || err}`,
+      );
       // La notification ne doit jamais casser le flux métier.
     }
+  }
+
+  private generateOrderNumber(): string {
+    const year = new Date().getFullYear();
+    const ts = Date.now().toString(36).toUpperCase().slice(-5);
+    const rand = Math.floor(Math.random() * 1000)
+      .toString()
+      .padStart(3, '0');
+    return `CMD-${year}-${ts}${rand}`;
   }
 
   async createCommande(
@@ -110,12 +124,7 @@ export class CommandesService {
       throw new BadRequestException('Adresse obligatoire en mode livraison');
     }
 
-    const year = new Date().getFullYear();
-    const ts = Date.now().toString(36).toUpperCase().slice(-5);
-    const rand = Math.floor(Math.random() * 1000)
-      .toString()
-      .padStart(3, '0');
-    const numero = `CMD-${year}-${ts}${rand}`;
+    const numero = this.generateOrderNumber();
 
     const commande = await this.dataSource.transaction(async (manager) => {
       const ligneEntities: LigneCommande[] = [];
@@ -872,9 +881,9 @@ export class CommandesService {
   }
 
   async rembourser(id: string, motif: string, restaurantId?: string) {
-    const commande = await this.commandeRepo.findOne({ where: { id }, relations: ['client'] });
+    const commande = await this.commandeRepo.findOne({ where: { id }, relations: ['client', 'restaurant'] });
     if (!commande) throw new NotFoundException('Commande introuvable');
-    if (restaurantId && (commande as any).restaurantId !== restaurantId)
+    if (restaurantId && commande.restaurant?.id !== restaurantId)
       throw new ForbiddenException();
     if (commande.rembourse) throw new BadRequestException('Déjà remboursée');
 
