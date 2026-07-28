@@ -15,8 +15,10 @@ export const PAYMENT_METHOD_DEFAULTS: Array<
   { code: 'orange_money', label: 'Orange Money',   provider: 'ORANGE', gateway: 'novasend', needsPhone: true,  ordre: 1 },
   { code: 'mtn_momo',     label: 'MTN MoMo',        provider: 'MOMO',   gateway: 'novasend', needsPhone: true,  ordre: 2 },
   { code: 'moov_money',   label: 'Moov Money',      provider: 'MOOV',   gateway: 'novasend', needsPhone: true,  ordre: 3 },
-  { code: 'wave',         label: 'Wave',            provider: 'WAVE',   gateway: 'novasend', needsPhone: false, ordre: 4 },
+  { code: 'wave',         label: 'Wave',            provider: 'WAVE',   gateway: 'novasend', needsPhone: true,  ordre: 4 },
   { code: 'card',         label: 'Carte Bancaire',  provider: 'CARTE',  gateway: 'novasend', needsPhone: false, ordre: 5 },
+  // NB : provider 'NOVASEND' (wallet) pas encore implémenté côté API NovaSend
+  // (« Processor novasend is not implemented yet ») → non proposé pour l'instant.
 ];
 
 /**

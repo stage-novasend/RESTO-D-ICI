@@ -79,7 +79,8 @@ export class PaiementsController {
   @HttpCode(HttpStatus.OK)
   async novasendWebhook(
     @Body() body: any,
-    @Headers('x-signature-value') sigHeader: string,
+    // NovaSend envoie la signature HMAC-SHA256 dans l'en-tête X-Webhook-Signature.
+    @Headers('x-webhook-signature') sigHeader: string,
     @Req() req: any,
   ) {
     // [SÉCURITÉ] Signature obligatoire — webhook rejeté sans secret ou signature (audit §3.2)

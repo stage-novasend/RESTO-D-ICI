@@ -192,7 +192,7 @@ describe('PaiementsService initiatePayment()', () => {
     await service.initiatePayment({
       commandeId: 'cmd-uuid-1',
       montant: 3000,
-      telephone: '0606060606',
+      telephone: '0707070707',
       provider: 'ORANGE' as const,
     } as any);
 
@@ -211,6 +211,7 @@ describe('PaiementsService initiatePayment()', () => {
       service.initiatePayment({
         commandeId: 'cmd-uuid-1',
         montant: 5000,
+        telephone: '0707070707',
         provider: 'WAVE',
       } as any),
     ).rejects.toThrow('Un paiement est déjà en cours');

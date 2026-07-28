@@ -1,12 +1,23 @@
 /* ═══════════════════════════════════════════════════════════════
-   Home.jsx — Page d'accueil publique
-   Contient : hero, plats populaires, catégories, avantages, témoignages,
-              newsletter, footer — entièrement responsive
+   Home.jsx — Page d'accueil = catalogue restaurants
+   Hero avec grande image aux bordures arrondies (border-radius)
+   + Sidebar dynamique Yango Deli pour le filtrage
+   + Grille des restaurants + Footer.
    ═══════════════════════════════════════════════════════════════ */
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { UtensilsCrossed, ArrowRight, Check, Star, Search, ShoppingBag, Truck, Clock, Heart, Mail } from "lucide-react";
-import { menuAPI, newsletterAPI, api } from "../services/api";
+import {
+  UtensilsCrossed, ArrowRight, Check, Star, Search, Truck, Clock,
+  Mail, X, Zap, Smartphone, ShieldCheck, SlidersHorizontal, RotateCcw
+} from "lucide-react";
+import { menuAPI, newsletterAPI } from "../services/api";
+import FilterSidebar from "../components/menu/FilterSidebar";
+import LanguageSwitcher from "../components/shared/LanguageSwitcher";
+import orangeMoneyLogo   from "../assets/payments/orange-money.svg";
+import mtnMomoLogo       from "../assets/payments/mtn-momo.svg";
+import moovMoneyLogo     from "../assets/payments/moov-money.svg";
+import waveLogo          from "../assets/payments/wave.svg";
+import carteBancaireLogo from "../assets/payments/carte-bancaire.svg";
 
 /* ─── Palette de couleurs ─── */
 const T = {
@@ -24,6 +35,7 @@ const T = {
   yellow:  "#FFB800",
   yellowL: "#FFD166",
   red:     "#FF3B30",
+  green:   "#16A34A",
   line:    "rgba(234,88,12,0.14)",
   shadow:  "0 6px 28px rgba(234,88,12,0.14)",
   shadowS: "0 2px 14px rgba(0,0,0,0.07)",
@@ -33,26 +45,23 @@ const serif = "'Playfair Display', Georgia, serif";
 const sans  = "'Manrope', system-ui, sans-serif";
 
 const CSS = `
-@keyframes kfmarquee   { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
-@keyframes kfmarqueeR  { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
-@keyframes kfbadge     { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
-@keyframes kfpulse     { 0%,100%{opacity:1} 50%{opacity:0.55} }
-@keyframes kfspin      { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
-@keyframes kfzoomin    { from{transform:scale(1)} to{transform:scale(1.07)} }
-@keyframes kfbounce    { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-6px)} }
-@keyframes kfskeleton  { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-@keyframes kfshine     { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-@keyframes kfglowpulse { 0%,100%{opacity:0.4;transform:scale(1)} 50%{opacity:0.9;transform:scale(1.08)} }
-@keyframes kftagpop    { 0%,100%{transform:scale(1)} 50%{transform:scale(1.06)} }
-.rd-nav-link:hover     { color:${T.accent} !important; }
-.rd-btn-cta:hover      { transform:translateY(-2px) !important; box-shadow:0 16px 40px rgba(234,88,12,0.5) !important; }
-.rd-btn-outline:hover  { background:${T.accent} !important; color:#fff !important; }
-.rd-card:hover         { transform:translateY(-6px) !important; box-shadow:0 18px 48px rgba(234,88,12,0.2) !important; }
-.rd-feat-card:hover    { transform:translateY(-5px) !important; box-shadow:0 14px 36px rgba(0,0,0,0.1) !important; }
-.rd-foot-link:hover    { color:${T.accent} !important; }
+@keyframes kfpulse    { 0%,100%{opacity:1} 50%{opacity:0.55} }
+@keyframes kfskeleton { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+@keyframes slideInLeft { from{transform:translateX(-100%)} to{transform:translateX(0)} }
+.rd-nav-link:hover  { color:${T.accent} !important; }
+.rd-btn-cta:hover   { transform:translateY(-2px) !important; box-shadow:0 16px 40px rgba(234,88,12,0.5) !important; }
+.rd-card:hover      { transform:translateY(-6px) !important; box-shadow:0 18px 48px rgba(234,88,12,0.2) !important; }
+.rd-foot-link:hover { color:${T.accent} !important; }
+@media (max-width: 900px) {
+  .rd-desktop-sidebar { display: none !important; }
+  .rd-mobile-filter-btn { display: flex !important; }
+}
+@media (min-width: 901px) {
+  .rd-mobile-filter-btn { display: none !important; }
+}
 `;
 
-/* ─── Images de substitution pour les plats sans photo ─── */
+/* ─── Images de substitution pour les plats/restaurants sans photo ─── */
 const FOOD_IMGS = [
   "photo-1665332195309-9d75071138f0",
   "photo-1665400808116-f0e6339b7e9a",
@@ -69,11 +78,11 @@ const FOOD_IMGS = [
   "photo-1569058242252-623df46b5025",
   "photo-1665833613236-7c1d087463b1",
 ];
+const fallbackImg = (idx, w = 600) =>
+  `https://images.unsplash.com/${FOOD_IMGS[idx % FOOD_IMGS.length]}?q=80&w=${w}&auto=format&fit=crop`;
 
-function getItemImg(item, idx) {
-  if (item?.photoUrl) return item.photoUrl;
-  if (item?.imageUrl) return item.imageUrl;
-  return `https://images.unsplash.com/${FOOD_IMGS[idx % FOOD_IMGS.length]}?q=80&w=500&auto=format&fit=crop`;
+function restoImg(r, idx) {
+  return r?.logo || r?.coverImage || r?.photoUrl || fallbackImg(idx);
 }
 
 function formatPrix(prix) {
@@ -81,7 +90,28 @@ function formatPrix(prix) {
   return new Intl.NumberFormat("fr-FR").format(prix) + " FCFA";
 }
 
-/* ─── Fonctions utilitaires ─── */
+/* ─── Emoji par type de cuisine ─── */
+const EMOJI_MAP = [
+  { keys:["pizza"],                                    emoji:"🍕" },
+  { keys:["grillade","grillé","bœuf","viande","braisé","steak","brochette"], emoji:"🥩" },
+  { keys:["local","ivoirien","attiéké","alloco","aloko","foutou","placali","garba"], emoji:"🍛" },
+  { keys:["salade","crudité"],                         emoji:"🥗" },
+  { keys:["dessert","pâtisserie","gâteau","sucré"],    emoji:"🍰" },
+  { keys:["boisson","jus","soda","eau","drink","cocktail"], emoji:"🥤" },
+  { keys:["poisson","thon","capitaine","tilapia","sardine"], emoji:"🐟" },
+  { keys:["poulet","volaille","dinde","yassa"],        emoji:"🍗" },
+  { keys:["riz","tchep","cheb"],                       emoji:"🍚" },
+  { keys:["burger","sandwich","wrap"],                 emoji:"🍔" },
+  { keys:["soupe","sauce","bouillon","kandia","graine","mafé"], emoji:"🍲" },
+  { keys:["pâtes","pasta","spaghetti"],                emoji:"🍝" },
+];
+function catEmoji(nom) {
+  const lower = (nom || "").toLowerCase();
+  for (const { keys, emoji } of EMOJI_MAP) if (keys.some(k => lower.includes(k))) return emoji;
+  return "🍽️";
+}
+
+/* ─── Chargement des polices + CSS global ─── */
 function FontLoader() {
   useEffect(() => {
     if (!document.getElementById("rd-fonts")) {
@@ -97,81 +127,8 @@ function FontLoader() {
   return null;
 }
 
-function Reveal({ children, delay=0, dir="up", dist=36 }) {
-  const ref = useRef(null);
-  useEffect(() => {
-    const el = ref.current; if (!el) return;
-    const MAP = { up:`translateY(${dist}px)`, left:`translateX(-${dist}px)`, right:`translateX(${dist}px)` };
-    el.style.opacity="0"; el.style.transform=MAP[dir]||MAP.up;
-    el.style.transition=`opacity .8s cubic-bezier(.22,1,.36,1) ${delay}ms, transform .8s cubic-bezier(.22,1,.36,1) ${delay}ms`;
-    const obs = new IntersectionObserver(([e]) => {
-      if (e.isIntersecting) { el.style.opacity="1"; el.style.transform="none"; obs.disconnect(); }
-    },{ threshold:0.08 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  },[delay,dir,dist]);
-  return <div ref={ref}>{children}</div>;
-}
-
-function Counter({ end, pre="", suf="", ms=1600 }) {
-  const [v, setV] = useState(0);
-  const ref = useRef(null);
-  useEffect(() => {
-    const el=ref.current; if(!el) return;
-    const obs = new IntersectionObserver(([e]) => {
-      if(!e.isIntersecting) return; obs.disconnect();
-      const t0=Date.now();
-      const tick=()=>{ const p=Math.min((Date.now()-t0)/ms,1); const ease=1-Math.pow(1-p,3); setV(Math.floor(ease*end)); if(p<1) requestAnimationFrame(tick); else setV(end); };
-      requestAnimationFrame(tick);
-    },{ threshold:0.3 });
-    obs.observe(el);
-    return () => obs.disconnect();
-  },[end,ms]);
-  return <span ref={ref}>{pre}{v.toLocaleString("fr-FR")}{suf}</span>;
-}
-
 function KS({ h=4 }) {
   return <div style={{display:"flex",height:h}}>{KENTE.map((c,i)=><div key={i} style={{flex:1,background:c}}/>)}</div>;
-}
-
-function Brush({ color=T.accent, opacity=0.18, style={} }) {
-  return (
-    <svg viewBox="0 0 400 120" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ position:"absolute", pointerEvents:"none", ...style }}>
-      <path d="M20 80 Q80 20 200 60 Q320 95 390 40" stroke={color} strokeWidth="60" strokeLinecap="round" strokeLinejoin="round" opacity={opacity} />
-    </svg>
-  );
-}
-
-function Chip({ children, color=T.accent, bg }) {
-  return (
-    <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:bg||`${color}15`, border:`1px solid ${color}28`, borderRadius:100, padding:"7px 18px", marginBottom:20 }}>
-      <div style={{ width:5,height:5,borderRadius:"50%",background:color,animation:"kfpulse 2s ease-in-out infinite" }} />
-      <span style={{ fontFamily:sans,fontSize:11,color,letterSpacing:"0.16em",textTransform:"uppercase",fontWeight:700 }}>{children}</span>
-    </div>
-  );
-}
-
-function Stars({ n=5 }) {
-  return <span>{Array.from({length:5},(_,i)=><Star key={i} size={13} fill={i<n?T.yellow:"#E0D0B8"} color={i<n?T.yellow:"#E0D0B8"} />)}</span>;
-}
-
-/* ─── Carte squelette — état de chargement ─── */
-function SkeletonCard() {
-  const shimmer = {
-    background: `linear-gradient(90deg, ${T.bgAlt} 25%, ${T.surface} 50%, ${T.bgAlt} 75%)`,
-    backgroundSize: "200% 100%",
-    animation: "kfskeleton 1.6s ease-in-out infinite",
-  };
-  return (
-    <div style={{ background:T.card,borderRadius:20,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}` }}>
-      <div style={{ height:200, ...shimmer }} />
-      <div style={{ padding:"20px 22px 24px" }}>
-        <div style={{ height:18,width:"65%",borderRadius:6,marginBottom:10, ...shimmer }} />
-        <div style={{ height:13,width:"45%",borderRadius:6,marginBottom:20, ...shimmer }} />
-        <div style={{ height:44,borderRadius:50, ...shimmer }} />
-      </div>
-    </div>
-  );
 }
 
 /* ─── Barre de navigation ─── */
@@ -182,16 +139,16 @@ function Nav() {
     window.addEventListener("scroll",fn,{passive:true});
     return ()=>window.removeEventListener("scroll",fn);
   },[]);
-  const links=[["Fonctionnalités","#fonctionnalites"],["Processus","#processus"],["Offres","#offres"],["Entreprises","/register?type=b2b"]];
+  const links=[["Restaurants","#catalogue"],["Entreprises","/register?type=b2b"],["Aide","/aide"]];
   return (
-    <nav style={{ position:"fixed",top:0,left:0,right:0,zIndex:1000, background:scrolled?"rgba(255,250,243,0.95)":"transparent", backdropFilter:scrolled?"blur(20px)":"none", boxShadow:scrolled?"0 2px 24px rgba(234,88,12,0.1)":"none", transition:"all 0.35s cubic-bezier(.22,1,.36,1)" }}>
+    <nav style={{ position:"fixed",top:0,left:0,right:0,zIndex:1000, background:scrolled?"rgba(255,250,243,0.95)":"rgba(26,12,0,0.35)", backdropFilter:"blur(20px)", boxShadow:scrolled?"0 2px 24px rgba(234,88,12,0.1)":"none", transition:"all 0.35s cubic-bezier(.22,1,.36,1)" }}>
       <KS h={3} />
       <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 40px",height:70,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
         <a href="/" style={{ display:"flex",alignItems:"center",gap:10,textDecoration:"none" }}>
           <div style={{ width:38,height:38,borderRadius:10,background:`linear-gradient(135deg,${T.accent},${T.yellow})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 4px 16px ${T.accent}44` }}>
             <UtensilsCrossed style={{ width:19,height:19,color:"#fff" }} />
           </div>
-          <span style={{ fontFamily:serif,fontWeight:700,color:T.accent,fontSize:22,letterSpacing:"-0.02em" }}>Resto d'ici</span>
+          <span style={{ fontFamily:serif,fontWeight:700,color:scrolled?T.accent:"#fff",fontSize:22,letterSpacing:"-0.02em" }}>Resto d'ici</span>
         </a>
         <div style={{ display:"flex",gap:34,alignItems:"center" }}>
           {links.map(([l,h])=>(
@@ -199,6 +156,7 @@ function Nav() {
           ))}
         </div>
         <div style={{ display:"flex",gap:10,alignItems:"center" }}>
+          <LanguageSwitcher variant={scrolled ? "light" : "dark"} />
           <a href="/login" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:scrolled?T.accent:"#fff", background:"transparent", border:`1.5px solid ${scrolled?T.accent:"rgba(255,255,255,0.55)"}` }}>Connexion</a>
           <a href="/register" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:"#fff", background:"#16A34A", border:"1.5px solid #16A34A", boxShadow:"0 4px 14px rgba(22,163,74,0.35)" }}>S'inscrire</a>
         </div>
@@ -207,86 +165,107 @@ function Nav() {
   );
 }
 
-/* ─── Section héros — bannière principale ─── */
-function Hero({ search, onSearch, menuRef, restaurantCount = 0 }) {
-  const handleSubmit = () => {
-    if (menuRef?.current) menuRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
-  };
+/* ─── Hero compact avec grande image aux bords arrondis (border-radius) ─── */
+function CatalogHero({ search, onSearch, resultCount, hasQuery }) {
   return (
-    <section style={{ position:"relative", minHeight:"100dvh", display:"flex", flexDirection:"column", justifyContent:"flex-end", overflow:"hidden" }}>
-      {/* Image de fond */}
-      <img
-        src="https://images.unsplash.com/photo-1665400808116-f0e6339b7e9a?q=85&w=1800&auto=format&fit=crop"
-        alt="Plats d'Abidjan"
-        style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 40%", display:"block" }}
-      />
-      {/* Gradient overlay — bas sombre pour lisibilité du texte */}
-      <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(10,5,0,0.28) 0%, rgba(10,5,0,0.55) 45%, rgba(10,5,0,0.88) 100%)" }} />
+    <section style={{ position:"relative", padding:"10px 12px 0", width:"100%", margin:0 }}>
+      {/* Conteneur grand format qui occupe tout l'espace avec 4 angles arrondis (border-radius) */}
+      <div
+        style={{
+          position:"relative",
+          borderRadius:"28px",
+          overflow:"hidden",
+          minHeight:"calc(100vh - 20px)",
+          width:"100%",
+          display:"flex",
+          flexDirection:"column",
+          justifyContent:"center",
+          boxShadow:"0 16px 48px rgba(234,88,12,0.14)"
+        }}
+      >
+        {/* Grande image pleine largeur avec 4 angles arrondis */}
+        <img
+          src="https://images.unsplash.com/photo-1665400808116-f0e6339b7e9a?q=95&w=3200&auto=format&fit=crop"
+          alt="Plats d'Abidjan"
+          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 42%", display:"block" }}
+        />
+        {/* Voile sombre dégradé */}
+        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(10,5,0,0.20) 0%, rgba(10,5,0,0.45) 50%, rgba(10,5,0,0.80) 100%)" }} />
 
-      {/* Contenu centré */}
-      <div style={{ position:"relative", zIndex:2, maxWidth:860, margin:"0 auto", padding:"0 24px 80px", width:"100%", textAlign:"center" }}>
-        <Reveal delay={40}>
-          <p style={{ fontFamily:sans, fontSize:12, fontWeight:700, letterSpacing:"0.18em", textTransform:"uppercase", color:"rgba(255,255,255,0.65)", margin:"0 0 18px" }}>
-            Abidjan · Côte d'Ivoire
-          </p>
-        </Reveal>
-        <Reveal delay={90}>
-          <h1 style={{ fontFamily:serif, fontWeight:900, fontSize:"clamp(42px,7vw,90px)", color:"#fff", lineHeight:1.0, letterSpacing:"-0.03em", margin:"0 0 20px", textShadow:"0 4px 24px rgba(0,0,0,0.4)" }}>
-            Savourez le meilleur<br/>
-            <em style={{ color:T.yellow, fontStyle:"italic" }}>d'ici,</em> livré chez vous.
+        <div style={{ position:"relative", zIndex:2, maxWidth:820, margin:"0 auto", padding:"80px 24px 60px", width:"100%", textAlign:"center" }}>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.15)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:100, padding:"6px 18px", marginBottom:18 }}>
+            <span style={{ width:8, height:8, borderRadius:"50%", background:T.yellow, boxShadow:`0 0 10px ${T.yellow}` }} />
+            <p style={{ fontFamily:sans, fontSize:12, fontWeight:700, letterSpacing:"0.18em", textTransform:"uppercase", color:"#fff", margin:0 }}>
+              Abidjan · Côte d'Ivoire
+            </p>
+          </div>
+
+          <h1 style={{ fontFamily:serif, fontWeight:900, fontSize:"clamp(36px,6vw,72px)", color:"#fff", lineHeight:1.02, letterSpacing:"-0.03em", margin:"0 0 20px", textShadow:"0 4px 28px rgba(0,0,0,0.5)" }}>
+            Trouvez un plat, <em style={{ color:T.yellow, fontStyle:"italic" }}>on trouve</em> le resto.
           </h1>
-        </Reveal>
-        <Reveal delay={150}>
-          <p style={{ fontFamily:sans, fontSize:"clamp(15px,2vw,18px)", color:"rgba(255,255,255,0.72)", lineHeight:1.7, maxWidth:560, margin:"0 auto 40px", fontWeight:300 }}>
-            Livraison ultra-rapide pour vos envies du quotidien et solutions sur-mesure pour vos repas d'entreprise.
+          <p style={{ fontFamily:sans, fontSize:"clamp(14px,2vw,18px)", color:"rgba(255,255,255,0.85)", lineHeight:1.6, maxWidth:560, margin:"0 auto 32px", fontWeight:300 }}>
+            Cherchez par type de cuisine, budget ou nom de plat — les restaurants s'affichent instantanément.
           </p>
-        </Reveal>
 
-        {/* Barre de recherche */}
-        <Reveal delay={200}>
-          <div style={{ display:"flex", gap:0, maxWidth:580, margin:"0 auto 28px", borderRadius:50, overflow:"hidden", boxShadow:"0 12px 48px rgba(0,0,0,0.35)", background:"#fff" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 22px", flex:1 }}>
-              <Search size={18} color={T.mutedL} />
+          {/* Barre de recherche flottante */}
+          <div style={{ display:"flex", gap:0, maxWidth:620, margin:"0 auto", borderRadius:50, overflow:"hidden", boxShadow:"0 16px 48px rgba(0,0,0,0.4)", background:"#fff" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 24px", flex:1 }}>
+              <Search size={20} color={T.accent} />
               <input
                 value={search}
                 onChange={e => onSearch(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleSubmit()}
-                placeholder="Rechercher un plat ou un restaurant…"
-                style={{ border:"none", outline:"none", fontFamily:sans, fontSize:15, color:T.text, background:"transparent", width:"100%", padding:"17px 0" }}
+                placeholder="Ex. : attiéké, garba, pizza, poulet braisé…"
+                style={{ border:"none", outline:"none", fontFamily:sans, fontSize:15, color:T.text, background:"transparent", width:"100%", padding:"20px 0" }}
               />
-              {search && <button onClick={() => onSearch("")} style={{ background:"none", border:"none", cursor:"pointer", color:T.mutedL, fontSize:18, lineHeight:1 }}>×</button>}
+              {search && <button onClick={() => onSearch("")} aria-label="Effacer" style={{ background:"none", border:"none", cursor:"pointer", color:T.mutedL, display:"flex" }}><X size={18} /></button>}
             </div>
-            <button onClick={handleSubmit} style={{ background:`linear-gradient(135deg,${T.accent},${T.accentD})`, color:"#fff", fontFamily:sans, fontSize:14, fontWeight:700, border:"none", cursor:"pointer", padding:"0 32px", borderRadius:"0 50px 50px 0", whiteSpace:"nowrap" }}>
-              Rechercher
-            </button>
+            <div style={{ display:"flex", alignItems:"center", background:`linear-gradient(135deg,${T.accent},${T.accentD})`, color:"#fff", fontFamily:sans, fontSize:14, fontWeight:800, padding:"0 30px", whiteSpace:"nowrap" }}>
+              {hasQuery ? `${resultCount} résultat${resultCount !== 1 ? "s" : ""}` : "Rechercher"}
+            </div>
           </div>
-        </Reveal>
 
-        {/* Boutons CTA */}
-        <Reveal delay={250}>
-          <div style={{ display:"flex", gap:12, justifyContent:"center", flexWrap:"wrap" }}>
-            <a href="/menu" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"13px 32px", background:`linear-gradient(135deg,${T.accent},${T.accentD})`, color:"#fff", fontFamily:sans, fontSize:14, fontWeight:700, textDecoration:"none", borderRadius:50, boxShadow:`0 8px 28px ${T.accent}55`, transition:"all .2s" }}>
-              Commander maintenant <ArrowRight size={15} />
+          {/* Boutons CTA */}
+          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginTop:30 }}>
+            <a href="#catalogue" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"14px 32px", background:`linear-gradient(135deg,${T.accent},${T.accentD})`, color:"#fff", fontFamily:sans, fontSize:14, fontWeight:800, textDecoration:"none", borderRadius:50, boxShadow:`0 10px 30px ${T.accent}66` }}>
+              Je commande <ArrowRight size={16} />
             </a>
-            <a href="/register?type=b2b" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"13px 32px", background:"rgba(255,255,255,0.15)", color:"#fff", fontFamily:sans, fontSize:14, fontWeight:600, textDecoration:"none", borderRadius:50, backdropFilter:"blur(8px)", border:"1px solid rgba(255,255,255,0.3)", transition:"all .2s" }}>
-              Business Portal
+            <a href="/register?type=b2b" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"14px 32px", background:"rgba(255,255,255,0.16)", color:"#fff", fontFamily:sans, fontSize:14, fontWeight:700, textDecoration:"none", borderRadius:50, backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.35)" }}>
+              Espace Entreprise
             </a>
           </div>
-        </Reveal>
+        </div>
       </div>
+    </section>
+  );
+}
 
-      {/* Stats flottantes bas */}
-      <div style={{ position:"relative", zIndex:2, background:"rgba(255,255,255,0.96)", backdropFilter:"blur(12px)", borderTop:"1px solid rgba(255,255,255,0.3)" }}>
-        <div style={{ maxWidth:860, margin:"0 auto", padding:"18px 24px", display:"flex", justifyContent:"center", gap:0 }}>
-          {[
-            { n: restaurantCount > 0 ? String(restaurantCount) : '…', l: 'Restaurants partenaires' },
-            { n:"98%",     l:"Livraisons réussies" },
-            { n:"30 min",  l:"Délai moyen" },
-            { n:"3 clics", l:"Pour commander" },
-          ].map(({n,l},i,arr) => (
-            <div key={l} style={{ flex:1, textAlign:"center", paddingLeft:i>0?16:0, paddingRight:i<arr.length-1?16:0, borderRight:i<arr.length-1?`1px solid ${T.line}`:"none" }}>
-              <p style={{ fontFamily:serif, fontSize:"clamp(18px,2vw,24px)", color:T.dark, fontWeight:900, margin:"0 0 2px", lineHeight:1 }}>{n}</p>
-              <p style={{ fontFamily:sans, fontSize:10, color:T.mutedL, margin:0, textTransform:"uppercase", letterSpacing:"0.08em", fontWeight:600 }}>{l}</p>
+/* ─── Trois piliers de confiance ─── */
+function Pillars() {
+  const items = [
+    { Icon: Zap,         title: "Livraison rapide",   text: "Vos plats chauds livrés en moins de 30 minutes, à la maison comme au bureau." },
+    { Icon: UtensilsCrossed, title: "Cuisine d'ici",  text: "Attiéké, garba, alloco, kedjenou… le meilleur des restaurants d'Abidjan, à portée de clic." },
+    { Icon: Smartphone,  title: "Paiement mobile",    text: "Orange Money, MTN MoMo, Wave ou carte — réglez en toute sécurité, en un geste." },
+  ];
+  return (
+    <section style={{ background:"#fff", padding:"54px 0", borderBottom:`1px solid ${T.line}` }}>
+      <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
+        <div style={{ textAlign:"center", marginBottom:36 }}>
+          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:`${T.accent}12`, border:`1px solid ${T.accent}28`, borderRadius:100, padding:"7px 18px", marginBottom:14 }}>
+            <ShieldCheck size={14} color={T.accent} />
+            <span style={{ fontFamily:sans, fontSize:11, color:T.accent, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:800 }}>Pourquoi Resto d'ici</span>
+          </div>
+          <h2 style={{ fontFamily:serif, fontSize:"clamp(24px,3.2vw,38px)", color:T.dark, fontWeight:900, margin:0, letterSpacing:"-0.025em" }}>
+            Bien manger, <em style={{ color:T.accent, fontStyle:"italic" }}>simplement.</em>
+          </h2>
+        </div>
+        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:24 }}>
+          {items.map(({ Icon, title, text }) => (
+            <div key={title} style={{ textAlign:"center", padding:"16px", borderRadius:20, background:T.bg, border:`1px solid ${T.line}` }}>
+              <div style={{ width:60, height:60, borderRadius:18, margin:"0 auto 16px", background:`linear-gradient(135deg,${T.accent}18,${T.yellow}28)`, border:`1px solid ${T.line}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
+                <Icon size={26} color={T.accent} strokeWidth={2} />
+              </div>
+              <h3 style={{ fontFamily:serif, fontSize:18, color:T.dark, fontWeight:800, margin:"0 0 8px" }}>{title}</h3>
+              <p style={{ fontFamily:sans, fontSize:13.5, color:T.muted, lineHeight:1.6, margin:0, fontWeight:400 }}>{text}</p>
             </div>
           ))}
         </div>
@@ -295,858 +274,257 @@ function Hero({ search, onSearch, menuRef, restaurantCount = 0 }) {
   );
 }
 
-/* ─── Envie de quoi ? ─── */
-const EMOJI_MAP = [
-  { keys:["pizza"],                             emoji:"🍕" },
-  { keys:["grillade","grillé","bœuf","viande","braisé","steak"], emoji:"🥩" },
-  { keys:["local","ivoirien","attiéké","alloco","foutou","placali","garba"], emoji:"🍛" },
-  { keys:["salade","crudité"],                  emoji:"🥗" },
-  { keys:["dessert","pâtisserie","gâteau","sucré"], emoji:"🍰" },
-  { keys:["boisson","jus","soda","eau","drink","cocktail"], emoji:"🥤" },
-  { keys:["poisson","thon","capitaine","tilapia","sardine"], emoji:"🐟" },
-  { keys:["poulet","volaille","dinde"],          emoji:"🍗" },
-  { keys:["riz"],                               emoji:"🍚" },
-  { keys:["burger","sandwich","wrap"],          emoji:"🍔" },
-  { keys:["soupe","sauce","bouillon"],          emoji:"🍲" },
-  { keys:["pâtes","pasta","spaghetti"],         emoji:"🍝" },
-];
-
-function getCatEmoji(nom) {
-  const lower = (nom || "").toLowerCase();
-  for (const { keys, emoji } of EMOJI_MAP) {
-    if (keys.some(k => lower.includes(k))) return emoji;
-  }
-  return "🍽️";
-}
-
-function CategoryStrip({ activeCatId, onCategorySelect, menuRef, restaurants = [] }) {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading]       = useState(true);
-
-  useEffect(() => {
-    if (!restaurants.length) { setLoading(true); return; }
-    let cancelled = false;
-    menuAPI.getCategories({ restaurantId: restaurants[0].id })
-      .then(res => { if (!cancelled) setCategories(Array.isArray(res.data) ? res.data : []); })
-      .catch(() => {})
-      .finally(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
-  }, [restaurants]);
-
-  const handleClick = (catId) => {
-    onCategorySelect(catId === activeCatId ? null : catId);
-    if (menuRef?.current) menuRef.current.scrollIntoView({ behavior:"smooth", block:"start" });
-  };
-
-  return (
-    <section style={{ background:"#fff", padding:"32px 0 28px", borderBottom:`1px solid ${T.line}` }}>
-      <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 24px" }}>
-        <p style={{ fontFamily:serif, fontSize:20, fontWeight:900, color:T.dark, margin:"0 0 20px" }}>Envie de quoi ?</p>
-        {loading ? (
-          <div style={{ display:"flex", gap:22, paddingBottom:4 }}>
-            {Array.from({ length:6 }).map((_,i) => (
-              <div key={i} style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, flexShrink:0 }}>
-                <div style={{ width:68, height:68, borderRadius:"50%", background:T.bgAlt }} />
-                <div style={{ width:44, height:10, borderRadius:4, background:T.bgAlt, marginTop:2 }} />
-              </div>
-            ))}
-          </div>
-        ) : categories.length === 0 ? null : (
-          <div style={{ display:"flex", gap:22, overflowX:"auto", paddingBottom:4 }}>
-            {categories.map(cat => {
-              const active = cat.id === activeCatId;
-              return (
-                <button key={cat.id} onClick={() => handleClick(cat.id)}
-                  style={{ display:"flex", flexDirection:"column", alignItems:"center", gap:8, background:"none", border:"none", cursor:"pointer", flexShrink:0, padding:0 }}>
-                  <div style={{ width:68, height:68, borderRadius:"50%", background:active?`${T.accent}18`:T.bgAlt, border:`2px solid ${active?T.accent:T.line}`, display:"flex", alignItems:"center", justifyContent:"center", fontSize:26, transition:"all .18s" }}
-                    onMouseEnter={e=>{ if (!active){ e.currentTarget.style.borderColor=T.accent; e.currentTarget.style.background=`${T.accent}10`; }}}
-                    onMouseLeave={e=>{ if (!active){ e.currentTarget.style.borderColor=T.line; e.currentTarget.style.background=T.bgAlt; }}}>
-                    {getCatEmoji(cat.nom)}
-                  </div>
-                  <span style={{ fontFamily:sans, fontSize:12, fontWeight:600, color:active?T.accent:T.muted }}>{cat.nom}</span>
-                </button>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Marquee ─── */
-function Marquee() {
-  /* Plats ivoiriens — ce que les restaurants servent vraiment */
-  const plats = [
-    "Attiéké Poisson Braisé","Kedjenou de Poulet","Garba au Thon","Alloco Poulet Grillé",
-    "Foutou Sauce Graine","Soupe Kandia","Mafé Mouton","Riz Gras Sauté","Capitaine Frit",
-    "Tchep au Crabe","Placali & Sauce Graine","Brochettes Bœuf","Poulet Yassa","Aloko Poisson Fumé",
-  ];
-  /* Quartiers + moyens de paiement — données réelles du projet */
-  const infos = [
-    "Cocody","Plateau","Adjamé","Treichville","Marcory","Yopougon","Abobo","Koumassi",
-    "Orange Money","MTN MoMo","Wave","Moov Money",
-  ];
-
-  const DOT = <span style={{ display:"inline-block", width:4, height:4, borderRadius:"50%", background:"#EA580C", margin:"0 22px", verticalAlign:"middle", opacity:0.7, flexShrink:0 }} />;
-  const DIAMOND = <span style={{ color:"#EA580C", margin:"0 18px", opacity:0.5, fontSize:8 }}>◆</span>;
-
-  return (
-    <div style={{ background:"#0E0600", overflow:"hidden", position:"relative", padding:"20px 0" }}>
-
-      {/* Ligne top orange — fixe, fine */}
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#EA580C 30%,#FFB800 50%,#EA580C 70%,transparent)" }} />
-
-      {/* Dégradé de fondu gauche/droite */}
-      <div style={{ position:"absolute", left:0, top:0, bottom:0, width:120, background:"linear-gradient(to right,#0E0600,transparent)", zIndex:2, pointerEvents:"none" }} />
-      <div style={{ position:"absolute", right:0, top:0, bottom:0, width:120, background:"linear-gradient(to left,#0E0600,transparent)", zIndex:2, pointerEvents:"none" }} />
-
-      {/* Rangée 1 — Plats ivoiriens, écriture script/serif, blanc cassé */}
-      <div style={{ display:"flex", alignItems:"center", width:"max-content", animation:"kfmarquee 45s linear infinite", marginBottom:14 }}>
-        {[...plats,...plats,...plats].map((plat,i) => (
-          <span key={i} style={{ display:"inline-flex", alignItems:"center" }}>
-            <span style={{ fontFamily:serif, fontSize:17, fontStyle:"italic", fontWeight:700, color:"rgba(255,245,230,0.92)", whiteSpace:"nowrap", letterSpacing:"0.01em" }}>
-              {plat}
-            </span>
-            {DOT}
-          </span>
-        ))}
-      </div>
-
-      {/* Rangée 2 — Quartiers & paiements, capslock, orange/doré, sens inverse */}
-      <div style={{ display:"flex", alignItems:"center", width:"max-content", animation:"kfmarqueeR 36s linear infinite" }}>
-        {[...infos,...infos,...infos,...infos].map((info,i) => (
-          <span key={i} style={{ display:"inline-flex", alignItems:"center" }}>
-            <span style={{ fontFamily:sans, fontSize:11, fontWeight:800, color:"#EA580C", whiteSpace:"nowrap", letterSpacing:"0.16em", textTransform:"uppercase" }}>
-              {info}
-            </span>
-            {DIAMOND}
-          </span>
-        ))}
-      </div>
-
-      {/* Ligne bottom — fixe */}
-      <div style={{ position:"absolute", bottom:0, left:0, right:0, height:1, background:"linear-gradient(90deg,transparent,#EA580C 30%,#FFB800 50%,#EA580C 70%,transparent)" }} />
-    </div>
-  );
-}
-
-/* ─── Section "Comment ça marche" ─── */
-function HowItWorks() {
-  const [hovIdx, setHovIdx] = useState(null);
-
-  /* Thème de base + thème survol par carte */
-  const cards = [
-    {
-      Icon: Truck,
-      title: "Livraison Rapide",
-      body: "Des repas chauds livrés directement à votre porte ou bureau en moins de 30 minutes. Ne faites plus attendre votre faim.",
-      cta: null,
-      base:  { bg:"#fff",       icon:T.accent,  iconBg:`${T.accent}14`,         title:T.dark,  body:T.muted,             border:`1px solid ${T.line}`,   shadow:"0 1px 4px rgba(0,0,0,0.06)" },
-      hover: { bg:`linear-gradient(135deg,${T.accent},${T.accentD})`, icon:"#fff", iconBg:"rgba(255,255,255,0.22)", title:"#fff", body:"rgba(255,255,255,0.85)", border:"none", shadow:`0 16px 48px ${T.accent}44` },
-    },
-    {
-      Icon: ShoppingBag,
-      title: "Solutions Entreprise",
-      body: "Commandes groupées, facturation mensuelle simplifiée et reçus conformes SYSCOHADA pour votre comptabilité.",
-      cta: { label:"En savoir plus →", href:"/register?type=b2b" },
-      base:  { bg:T.accent,     icon:"#fff",    iconBg:"rgba(255,255,255,0.2)", title:"#fff",  body:"rgba(255,255,255,0.78)", border:"none",                shadow:"0 12px 40px rgba(249,115,22,0.22)" },
-      hover: { bg:"linear-gradient(135deg,#1A0C00,#3B1500)", icon:T.yellow, iconBg:`${T.yellow}22`, title:T.yellow, body:"rgba(255,255,255,0.72)", border:"none", shadow:"0 20px 60px rgba(26,12,0,0.35)" },
-    },
-    {
-      Icon: Heart,
-      title: "Paiement Mobile",
-      body: "Réglez vos commandes en toute simplicité et sécurité avec Orange Money, MTN Mobile Money ou Wave.",
-      cta: null,
-      base:  { bg:"#fff",       icon:T.accent,  iconBg:`${T.accent}14`,         title:T.dark,  body:T.muted,             border:`1px solid ${T.line}`,   shadow:"0 1px 4px rgba(0,0,0,0.06)" },
-      hover: { bg:"linear-gradient(135deg,#1DC9E8,#0284C7)", icon:"#fff", iconBg:"rgba(255,255,255,0.22)", title:"#fff", body:"rgba(255,255,255,0.85)", border:"none", shadow:"0 16px 48px rgba(29,201,232,0.38)" },
-    },
-  ];
-
-  return (
-    <section id="processus" style={{ background:T.bgAlt, padding:"64px 0" }}>
-      <div style={{ maxWidth:1100, margin:"0 auto", padding:"0 24px", display:"grid", gridTemplateColumns:"repeat(3,1fr)", gap:16 }}>
-        {cards.map((c,i) => {
-          const isHov = hovIdx === i;
-          const theme = isHov ? c.hover : c.base;
-          return (
-            <Reveal key={i} delay={i*80}>
-              <div
-                onMouseEnter={() => setHovIdx(i)}
-                onMouseLeave={() => setHovIdx(null)}
-                style={{
-                  background: theme.bg,
-                  borderRadius: 18,
-                  padding: "36px 32px",
-                  border: theme.border,
-                  boxShadow: theme.shadow,
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 16,
-                  cursor: "default",
-                  transition: "background 0.35s cubic-bezier(.4,0,.2,1), box-shadow 0.35s, border 0.25s, transform 0.25s",
-                  transform: isHov ? "translateY(-6px)" : "translateY(0)",
-                }}
-              >
-                <div style={{ width:52, height:52, borderRadius:14, background:theme.iconBg, display:"flex", alignItems:"center", justifyContent:"center", transition:"background 0.35s" }}>
-                  <c.Icon size={26} color={theme.icon} style={{ transition:"color 0.25s" }} />
-                </div>
-                <div style={{ flex:1 }}>
-                  <h3 style={{ fontFamily:serif, fontSize:20, fontWeight:800, color:theme.title, margin:"0 0 10px", transition:"color 0.25s" }}>{c.title}</h3>
-                  <p style={{ fontFamily:sans, fontSize:14, color:theme.body, lineHeight:1.7, margin:0, fontWeight:300, transition:"color 0.25s" }}>{c.body}</p>
-                </div>
-                {c.cta && (
-                  <a href={c.cta.href} style={{ fontFamily:sans, fontSize:13, fontWeight:700, color:isHov?T.yellow:"#fff", textDecoration:"none", alignSelf:"flex-start", transition:"color 0.2s" }}>
-                    {c.cta.label}
-                  </a>
-                )}
-              </div>
-            </Reveal>
-          );
-        })}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Carte article du menu ─── */
-function MenuItem({ item, restaurant, idx }) {
-  const [fav, setFav] = useState(false);
+/* ─── Carte restaurant ─── */
+function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDish }) {
   const [hov, setHov] = useState(false);
-  const navigate = useNavigate();
-  const tags = [item.categorie?.nom, restaurant?.typeRestaurant || restaurant?.type].filter(Boolean);
-  const rating = Number(restaurant?.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
-
-  const handleCardClick = () => {
-    const restaurantId = item._restaurantId || restaurant?.id;
-    if (!restaurantId) return;
-    try {
-      localStorage.setItem('pendingHomeItem', JSON.stringify({
-        articleId: item.id || item.articleId,
-        nom: item.nom,
-        prix: item.prix,
-        restaurantId,
-        restaurantName: restaurant?.nom || 'Restaurant',
-        photoUrl: item.photoUrl || item.imageUrl || null,
-        categorie: item.categorie || null,
-      }));
-    } catch { /* ignore */ }
-    navigate('/menu');
-  };
+  const rating = Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
+  const time   = restaurant.deliveryTime || (20 + (idx % 4) * 5) + "–" + (30 + (idx % 4) * 5) + " min";
 
   return (
-    <div onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)} onClick={handleCardClick}
-      style={{ background:T.card,borderRadius:18,overflow:"hidden",boxShadow:T.shadowS,border:`1px solid ${T.line}`,transition:"all .35s cubic-bezier(.22,1,.36,1)",cursor:"pointer",transform:hov?"translateY(-4px)":"none" }}>
+    <div className="rd-card" onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
+      style={{ background:T.card, borderRadius:22, overflow:"hidden", boxShadow:T.shadowS, border:`1px solid ${T.line}`, transition:"all .35s cubic-bezier(.22,1,.36,1)", display:"flex", flexDirection:"column" }}>
 
       {/* Photo */}
-      <div style={{ position:"relative",height:200,overflow:"hidden" }}>
-        <img
-          src={getItemImg(item, idx)}
-          alt={item.nom}
-          onError={e=>{e.target.src=`https://images.unsplash.com/${FOOD_IMGS[idx%FOOD_IMGS.length]}?q=80&w=500&auto=format&fit=crop`;}}
-          style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform .55s",transform:hov?"scale(1.07)":"scale(1)" }}
-        />
-        {/* Bouton favori */}
-        <button
-          onClick={e=>{e.stopPropagation();setFav(!fav);}}
-          style={{ position:"absolute",top:12,right:12,width:34,height:34,borderRadius:"50%",background:"rgba(255,255,255,0.92)",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",boxShadow:"0 2px 10px rgba(0,0,0,0.15)",transition:"transform .18s" }}
-          onMouseEnter={e=>e.currentTarget.style.transform="scale(1.12)"}
-          onMouseLeave={e=>e.currentTarget.style.transform="scale(1)"}
-        >
-          <Heart size={15} fill={fav?T.red:"none"} color={fav?T.red:T.muted} strokeWidth={2.5} />
-        </button>
-        {/* Badge note restaurant */}
+      <div onClick={()=>onOpenResto(restaurant)} style={{ position:"relative", height:180, overflow:"hidden", cursor:"pointer" }}>
+        <img src={restoImg(restaurant, idx)} alt={restaurant.nom}
+          onError={e=>{ e.target.src=fallbackImg(idx); }}
+          style={{ width:"100%", height:"100%", objectFit:"cover", display:"block", transition:"transform .55s", transform:hov?"scale(1.06)":"scale(1)" }} />
         {rating && (
-          <div style={{ position:"absolute",top:12,left:12,background:"rgba(255,255,255,0.95)",borderRadius:8,padding:"4px 10px",display:"flex",alignItems:"center",gap:5,boxShadow:"0 2px 10px rgba(0,0,0,0.12)" }}>
+          <div style={{ position:"absolute", top:12, left:12, background:"rgba(255,255,255,0.95)", borderRadius:10, padding:"4px 10px", display:"flex", alignItems:"center", gap:5, boxShadow:"0 2px 10px rgba(0,0,0,0.12)" }}>
             <Star size={12} fill={T.yellow} color={T.yellow} />
-            <span style={{ fontFamily:sans,fontSize:12,fontWeight:700,color:T.dark }}>{rating}</span>
+            <span style={{ fontFamily:sans, fontSize:12, fontWeight:800, color:T.dark }}>{rating}</span>
           </div>
         )}
       </div>
 
       {/* Info */}
-      <div style={{ padding:"16px 18px 20px" }}>
-        <h3 style={{ fontFamily:serif,fontSize:17,color:T.dark,fontWeight:700,margin:"0 0 3px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{item.nom}</h3>
+      <div style={{ padding:"16px 18px 18px", display:"flex", flexDirection:"column", flex:1 }}>
+        <h3 onClick={()=>onOpenResto(restaurant)} style={{ fontFamily:serif, fontSize:19, color:T.dark, fontWeight:800, margin:"0 0 4px", cursor:"pointer", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{restaurant.nom}</h3>
+        <p style={{ fontFamily:sans, fontSize:12.5, color:T.muted, margin:"0 0 12px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+          {restaurant.adresse || restaurant.ville || "Restaurant partenaire"}
+        </p>
 
-        {/* Nom du restaurant */}
-        {restaurant && (
-          <p style={{ fontFamily:sans,fontSize:12,color:T.muted,margin:"0 0 9px",fontWeight:500,display:"flex",alignItems:"center",gap:5 }}>
-            <UtensilsCrossed size={11} /> {restaurant.nom}
-          </p>
-        )}
-
-        {/* Tags catégorie */}
-        {tags.length > 0 && (
-          <div style={{ display:"flex",gap:6,marginBottom:12,flexWrap:"wrap" }}>
-            {tags.slice(0,2).map((t,i)=>(
-              <span key={i} style={{ background:i===0?`${T.accent}18`:`${T.yellow}22`,color:i===0?T.accent:"#8A6000",fontFamily:sans,fontSize:11,fontWeight:700,padding:"3px 10px",borderRadius:6 }}>{t}</span>
-            ))}
-          </div>
-        )}
-
-        {/* Prix + infos livraison */}
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",borderTop:`1px solid ${T.line}`,paddingTop:10,marginTop:6 }}>
-          <span style={{ fontFamily:sans,fontSize:15,fontWeight:800,color:T.accent }}>{formatPrix(item.prix)}</span>
-          <div style={{ display:"flex",gap:12,alignItems:"center" }}>
-            <div style={{ display:"flex",alignItems:"center",gap:4,color:T.muted }}>
-              <Clock size={12} />
-              <span style={{ fontFamily:sans,fontSize:11,fontWeight:500 }}>20-35 min</span>
-            </div>
-            <div style={{ display:"flex",alignItems:"center",gap:4 }}>
-              <Truck size={12} color="#22C55E" />
-              <span style={{ fontFamily:sans,fontSize:11,fontWeight:600,color:"#16A34A" }}>Gratuit</span>
+        {/* Plats correspondant à la recherche */}
+        {matched && matched.length > 0 && (
+          <div style={{ marginBottom:12 }}>
+            <p style={{ fontFamily:sans, fontSize:10, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", color:T.accent, margin:"0 0 7px" }}>
+              Propose « {query} »
+            </p>
+            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+              {matched.map(d => (
+                <button key={d.id ?? d.nom} onClick={()=>onOpenDish(restaurant, d)}
+                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, background:`${T.accent}0D`, border:`1px solid ${T.line}`, borderRadius:10, padding:"7px 10px", cursor:"pointer", textAlign:"left" }}>
+                  <span style={{ fontFamily:sans, fontSize:12.5, fontWeight:600, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{d.nom}</span>
+                  <span style={{ fontFamily:sans, fontSize:12, fontWeight:800, color:T.accent, flexShrink:0 }}>{formatPrix(d.prix)}</span>
+                </button>
+              ))}
             </div>
           </div>
+        )}
+
+        {/* Pied : délai livraison + CTA */}
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderTop:`1px solid ${T.line}`, paddingTop:12, marginTop:"auto" }}>
+          <div style={{ display:"flex", gap:12, alignItems:"center" }}>
+            <div style={{ display:"flex", alignItems:"center", gap:4, color:T.muted }}>
+              <Clock size={12} /><span style={{ fontFamily:sans, fontSize:11.5, fontWeight:600 }}>{time}</span>
+            </div>
+            <div style={{ display:"flex", alignItems:"center", gap:4 }}>
+              <Truck size={12} color="#16A34A" /><span style={{ fontFamily:sans, fontSize:11.5, fontWeight:700, color:T.green }}>Livraison</span>
+            </div>
+          </div>
+          <button onClick={()=>onOpenResto(restaurant)}
+            style={{ display:"inline-flex", alignItems:"center", gap:5, fontFamily:sans, fontSize:12.5, fontWeight:800, color:T.accent, background:"none", border:"none", cursor:"pointer", padding:0 }}>
+            Voir le menu <ArrowRight size={14} />
+          </button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ─── Section menu — plats populaires ─── */
-function MenuSection({ search, onSearch, sectionRef, activeCatId, onCategorySelect, restaurants = [] }) {
-  const [categories, setCategories] = useState([]);
-  const [items, setItems]           = useState([]);
-  const [restaurantMap, setRestaurantMap] = useState({});
-  const [loading, setLoading]       = useState(true);
+function SkeletonCard() {
+  const shimmer = {
+    background: `linear-gradient(90deg, ${T.bgAlt} 25%, ${T.surface} 50%, ${T.bgAlt} 75%)`,
+    backgroundSize: "200% 100%",
+    animation: "kfskeleton 1.6s ease-in-out infinite",
+  };
+  return (
+    <div style={{ background:T.card, borderRadius:22, overflow:"hidden", boxShadow:T.shadowS, border:`1px solid ${T.line}` }}>
+      <div style={{ height:180, ...shimmer }} />
+      <div style={{ padding:"16px 18px 20px" }}>
+        <div style={{ height:18, width:"60%", borderRadius:6, marginBottom:10, ...shimmer }} />
+        <div style={{ height:12, width:"45%", borderRadius:6, marginBottom:18, ...shimmer }} />
+        <div style={{ height:32, borderRadius:8, ...shimmer }} />
+      </div>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    if (!restaurants.length) { setLoading(true); return; }
-    let cancelled = false;
-    const load = async () => {
-      try {
-        const rmap = {};
-        restaurants.forEach(r => { rmap[r.id] = r; });
+/* ─── Catalogue avec Sidebar dynamique Yango Deli ─── */
+function Catalog({
+  loading, types, activeType, onType,
+  restaurants, selectedRestoId, onRestoChange,
+  priceRange, onPriceRangeChange,
+  minRating, onMinRatingChange,
+  freeDeliveryOnly, onFreeDeliveryChange,
+  fastDeliveryOnly, onFastDeliveryChange,
+  sortBy, onSortByChange,
+  onResetFilters, activeFiltersCount,
+  results, query, onOpenResto, onOpenDish
+}) {
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-        const catRes = await menuAPI.getCategories({ restaurantId: restaurants[0].id });
-        if (!cancelled) setCategories(Array.isArray(catRes.data) ? catRes.data : []);
-
-        const allRaw = await Promise.all(
-          restaurants.slice(0, 3).map(r =>
-            menuAPI.getByRestaurant(r.id, { cible: "CLIENT" })
-              .then(res => {
-                const raw  = res.data;
-                const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
-                return plats.map(p => ({ ...p, _restaurantId: r.id }));
-              })
-              .catch(() => [])
-          )
-        );
-        if (cancelled) return;
-        setRestaurantMap(rmap);
-        setItems(allRaw.flat());
-      } catch {
-        /* backend hors-ligne */
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    load();
-    return () => { cancelled = true; };
-  }, [restaurants]);
-
-  useEffect(() => {
-    if (search && sectionRef?.current) {
-      sectionRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  }, [search, sectionRef]);
-
-  const filtered = items.filter(item => {
-    if (item.disponible === false) return false;
-    if (activeCatId && item.categorie?.id !== activeCatId) return false;
-    if (search) {
-      const q = search.toLowerCase();
-      const resto = restaurantMap[item._restaurantId];
-      return (
-        item.nom?.toLowerCase().includes(q) ||
-        item.description?.toLowerCase().includes(q) ||
-        item.categorie?.nom?.toLowerCase().includes(q) ||
-        resto?.nom?.toLowerCase().includes(q)
-      );
-    }
-    return true;
-  });
+  /* Formattage des catégories pour FilterSidebar */
+  const sidebarCats = useMemo(() => {
+    return [
+      { id: "__all__", nom: "Tous les plats", count: types.reduce((acc, t) => acc + (t.count || 0), 0) },
+      ...types.map(t => ({ id: t.nom, nom: t.nom, count: t.count }))
+    ];
+  }, [types]);
 
   return (
-    <section id="fonctionnalites" ref={sectionRef} style={{ background:T.bg,padding:"80px 0 120px" }}>
-      <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 48px" }}>
+    <section id="catalogue" style={{ background:T.bg, padding:"40px 0 96px", minHeight:"70vh" }}>
+      <div style={{ maxWidth:1320, margin:"0 auto", padding:"0 24px" }}>
 
-        {/* ── Cuisines & Catégories ── */}
-        {!loading && categories.length > 0 && (
-          <Reveal>
-            <div style={{ marginBottom:52 }}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:22 }}>
-                <h2 style={{ fontFamily:serif,fontSize:24,color:T.dark,fontWeight:900,margin:0 }}>Cuisines &amp; Catégories</h2>
-                {search && (
-                  <button onClick={()=>onSearch("")}
-                    style={{ fontFamily:sans,fontSize:13,color:T.accent,background:"none",border:`1px solid ${T.accent}`,borderRadius:50,padding:"6px 16px",cursor:"pointer",fontWeight:600,display:"flex",alignItems:"center",gap:6 }}>
-                    «{search}» <span style={{ fontWeight:900 }}>×</span>
-                  </button>
+        {/* Bouton mobile pour ouvrir la sidebar Yango Deli */}
+        <div className="rd-mobile-filter-btn" style={{ marginBottom: 18 }}>
+          <button
+            onClick={() => setMobileFilterOpen(true)}
+            style={{
+              width: "100%", padding: "12px 18px", borderRadius: 14,
+              background: `linear-gradient(135deg, ${T.accent}, ${T.accentD})`,
+              color: "#fff", border: "none", fontFamily: sans, fontSize: 14, fontWeight: 800,
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              boxShadow: "0 6px 20px rgba(234,88,12,0.3)"
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <SlidersHorizontal size={18} /> Filtres Yango Deli
+            </span>
+            {activeFiltersCount > 0 && (
+              <span style={{ background: "#fff", color: T.accent, borderRadius: 99, padding: "2px 10px", fontSize: 12, fontWeight: 900 }}>
+                {activeFiltersCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Disposition 2 Colonnes Desktop : Left = FilterSidebar, Right = Results */}
+        <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
+
+          {/* Sidebar fixe desktop / mobile drawer */}
+          <div className="rd-desktop-sidebar">
+            <FilterSidebar
+              categories={sidebarCats}
+              activeCat={activeType}
+              onCatChange={onType}
+              restaurants={restaurants}
+              selectedRestoId={selectedRestoId}
+              onRestoChange={onRestoChange}
+              priceRange={priceRange}
+              onPriceRangeChange={onPriceRangeChange}
+              minRating={minRating}
+              onMinRatingChange={onMinRatingChange}
+              freeDeliveryOnly={freeDeliveryOnly}
+              onFreeDeliveryChange={onFreeDeliveryChange}
+              fastDeliveryOnly={fastDeliveryOnly}
+              onFastDeliveryChange={onFastDeliveryChange}
+              sortBy={sortBy}
+              onSortByChange={onSortByChange}
+              onReset={onResetFilters}
+              activeCount={activeFiltersCount}
+            />
+          </div>
+
+          {/* Drawer mobile */}
+          {mobileFilterOpen && (
+            <FilterSidebar
+              categories={sidebarCats}
+              activeCat={activeType}
+              onCatChange={onType}
+              restaurants={restaurants}
+              selectedRestoId={selectedRestoId}
+              onRestoChange={onRestoChange}
+              priceRange={priceRange}
+              onPriceRangeChange={onPriceRangeChange}
+              minRating={minRating}
+              onMinRatingChange={onMinRatingChange}
+              freeDeliveryOnly={freeDeliveryOnly}
+              onFreeDeliveryChange={onFreeDeliveryChange}
+              fastDeliveryOnly={fastDeliveryOnly}
+              onFastDeliveryChange={onFastDeliveryChange}
+              sortBy={sortBy}
+              onSortByChange={onSortByChange}
+              onReset={onResetFilters}
+              activeCount={activeFiltersCount}
+              isOpenMobile={true}
+              onCloseMobile={() => setMobileFilterOpen(false)}
+            />
+          )}
+
+          {/* Colonne Principale : Grille des résultats */}
+          <div style={{ flex: 1, minWidth: 0 }}>
+            {/* En-tête des résultats & Filtres rapides */}
+            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+              <div>
+                <h2 style={{ fontFamily:serif, fontSize:"clamp(22px,3vw,30px)", color:T.dark, fontWeight:900, margin:0, letterSpacing:"-0.02em" }}>
+                  {query ? `Résultats pour « ${query} »` : activeType !== "__all__" ? `Restaurants — ${activeType}` : "Tous les restaurants"}
+                </h2>
+                {!loading && (
+                  <p style={{ fontFamily:sans, fontSize:13, color:T.muted, margin:"4px 0 0", fontWeight:500 }}>
+                    {results.length} restaurant{results.length !== 1 ? "s" : ""} disponible{results.length !== 1 ? "s" : ""}
+                  </p>
                 )}
               </div>
-              <div style={{ display:"flex",gap:20,overflowX:"auto",paddingBottom:8 }}>
-                {/* Tout */}
-                <div onClick={()=>onCategorySelect(null)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
-                  <div style={{ width:72,height:72,borderRadius:"50%",overflow:"hidden",border:`2.5px solid ${!activeCatId?T.accent:T.line}`,marginBottom:7,display:"flex",alignItems:"center",justifyContent:"center",background:!activeCatId?`${T.accent}14`:T.bgAlt,transition:"border-color .2s" }}>
-                    <UtensilsCrossed size={26} color={!activeCatId?T.accent:T.muted} />
-                  </div>
-                  <p style={{ fontFamily:sans,fontSize:11,color:!activeCatId?T.accent:T.muted,fontWeight:700,margin:0,textAlign:"center" }}>Tout</p>
-                </div>
-                {categories.map((cat,i)=>(
-                  <div key={cat.id} onClick={()=>onCategorySelect(activeCatId===cat.id?null:cat.id)} style={{ cursor:"pointer",textAlign:"center",flexShrink:0 }}>
-                    <div style={{ width:72,height:72,borderRadius:"50%",overflow:"hidden",border:`2.5px solid ${activeCatId===cat.id?T.accent:T.line}`,marginBottom:7,transition:"border-color .2s" }}>
-                      <img
-                        src={`https://images.unsplash.com/${FOOD_IMGS[i%FOOD_IMGS.length]}?q=70&w=140&auto=format&fit=crop`}
-                        alt={cat.nom}
-                        style={{ width:"100%",height:"100%",objectFit:"cover",display:"block" }}
-                      />
-                    </div>
-                    <p style={{ fontFamily:sans,fontSize:11,color:activeCatId===cat.id?T.accent:T.muted,fontWeight:700,margin:0,textAlign:"center",maxWidth:72,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{cat.nom}</p>
-                  </div>
+
+              {activeFiltersCount > 0 && (
+                <button
+                  onClick={onResetFilters}
+                  style={{
+                    display:"inline-flex", alignItems:"center", gap:6,
+                    padding:"8px 14px", borderRadius:99, background:T.accentL, border:`1px solid ${T.line}`,
+                    color:T.accentD, fontFamily:sans, fontSize:12, fontWeight:700, cursor:"pointer"
+                  }}
+                >
+                  <RotateCcw size={13} /> Effacer les filtres ({activeFiltersCount})
+                </button>
+              )}
+            </div>
+
+            {/* Grille */}
+            {loading ? (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:20 }}>
+                {Array.from({ length:6 }).map((_,i)=><SkeletonCard key={i} />)}
+              </div>
+            ) : results.length === 0 ? (
+              <div style={{ textAlign:"center", padding:"70px 20px", background:T.card, borderRadius:24, border:`1px solid ${T.line}` }}>
+                <p style={{ fontFamily:serif, fontSize:22, color:T.dark, fontWeight:800, margin:"0 0 8px" }}>
+                  Aucun résultat trouvé
+                </p>
+                <p style={{ fontFamily:sans, fontSize:14, color:T.muted, margin:"0 0 20px" }}>
+                  {query ? `Aucun restaurant ne correspond à « ${query} ».` : "Essayez de modifier vos filtres Yango Deli."}
+                </p>
+                <button
+                  onClick={onResetFilters}
+                  style={{
+                    padding:"10px 24px", borderRadius:50, background:T.accent, color:"#fff",
+                    fontFamily:sans, fontSize:13, fontWeight:700, border:"none", cursor:"pointer",
+                    boxShadow:`0 4px 16px ${T.accent}44`
+                  }}
+                >
+                  Réinitialiser les filtres
+                </button>
+              </div>
+            ) : (
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:20 }}>
+                {results.map(({ restaurant, matched }, i) => (
+                  <RestaurantCard key={restaurant.id ?? i} restaurant={restaurant} idx={i} matched={matched} query={query}
+                    onOpenResto={onOpenResto} onOpenDish={onOpenDish} />
                 ))}
               </div>
-            </div>
-          </Reveal>
-        )}
-
-        {/* ── Titre section plats ── */}
-        <Reveal>
-          <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:28 }}>
-            <h2 style={{ fontFamily:serif,fontSize:24,color:T.dark,fontWeight:900,margin:0 }}>Populaires près de vous</h2>
-            <a href="/menu" style={{ fontFamily:sans,fontSize:13,fontWeight:700,color:T.accent,textDecoration:"none",display:"flex",alignItems:"center",gap:5 }}
-              onMouseEnter={e=>e.currentTarget.style.opacity="0.75"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>
-              Voir tout <ArrowRight size={14} />
-            </a>
-          </div>
-        </Reveal>
-
-        {/* Loading */}
-        {loading && (
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24 }}>
-            {Array.from({length:9}).map((_,i)=><SkeletonCard key={i} />)}
-          </div>
-        )}
-
-        {/* Résultats */}
-        {!loading && filtered.length > 0 && (
-          <div style={{ display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:24 }}>
-            {filtered.slice(0,9).map((item,i)=>(
-              <Reveal key={item.id??i} delay={i*45}>
-                <MenuItem item={item} restaurant={restaurantMap[item._restaurantId]} idx={i} />
-              </Reveal>
-            ))}
-          </div>
-        )}
-
-        {/* État vide */}
-        {!loading && filtered.length === 0 && (
-          <div style={{ textAlign:"center",padding:"70px 0" }}>
-            {search ? (
-              <>
-                <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic",margin:"0 0 16px" }}>Aucun résultat pour «&nbsp;{search}&nbsp;»</p>
-                <button onClick={()=>onSearch("")} style={{ fontFamily:sans,fontSize:14,color:T.accent,background:"none",border:`1.5px solid ${T.accent}`,borderRadius:50,padding:"10px 24px",cursor:"pointer",fontWeight:600 }}>Voir tout le menu</button>
-              </>
-            ) : (
-              <p style={{ fontFamily:serif,fontSize:22,color:T.muted,fontStyle:"italic" }}>{items.length===0?"Menu en cours de préparation…":"Aucun plat dans cette catégorie."}</p>
             )}
           </div>
-        )}
-
-        {!loading && filtered.length > 0 && (
-          <Reveal delay={80}>
-            <div style={{ textAlign:"center",marginTop:48 }}>
-              <a href="/menu" style={{ display:"inline-flex",alignItems:"center",gap:9,fontFamily:sans,fontSize:15,fontWeight:700,color:T.accent,textDecoration:"none",border:`2px solid ${T.accent}`,borderRadius:50,padding:"14px 38px",transition:"all .22s" }}
-                onMouseEnter={e=>{e.currentTarget.style.background=T.accent;e.currentTarget.style.color="#fff";}}
-                onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color=T.accent;}}>
-                Explorer tout le menu <ArrowRight size={16} />
-              </a>
-            </div>
-          </Reveal>
-        )}
-      </div>
-    </section>
-  );
-}
-
-/* ─── Bandeaux des avantages ─── */
-function Banners() {
-  const banners=[
-    { img:"photo-1664993101841-036f189719b6", title:"Le plat du moment",   sub:"À ne pas manquer",  dark:true },
-    { img:"photo-1665401015549-712c0dc5ef85", title:"Poisson braisé",      sub:"Fraîcheur du jour",  dark:false },
-    { img:"photo-1665332305771-e49a5dd5ba80", title:"Saveurs d'ici",        sub:"Cuisine ivoirienne", dark:false },
-  ];
-  return (
-    <section style={{ background:T.bgAlt,padding:"120px 0",position:"relative",overflow:"hidden" }}>
-      <Brush color={T.accent} opacity={0.1} style={{ width:600,top:"10%",right:-100 }} />
-      <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 48px" }}>
-        <Reveal>
-          <div style={{ textAlign:"center",marginBottom:56 }}>
-            <Chip color={T.yellow}>Coups de cœur</Chip>
-            <h2 style={{ fontFamily:serif,fontSize:"clamp(34px,4vw,56px)",color:T.dark,fontWeight:900,lineHeight:1.06,margin:0,letterSpacing:"-0.025em" }}>
-              À essayer <em style={{ color:T.accent }}>aujourd'hui.</em>
-            </h2>
-          </div>
-        </Reveal>
-        <div style={{ display:"grid",gridTemplateColumns:"1.2fr 1fr",gridTemplateRows:"220px 220px",gap:14 }}>
-          {banners.map((b,i)=>(
-            <Reveal key={b.title} delay={i*80}>
-              <div className="rd-feat-card" style={{ position:"relative",borderRadius:18,overflow:"hidden",cursor:"pointer",transition:"all .35s",boxShadow:T.shadowS,...(i===0?{gridRow:"1/3"}:{}) }}>
-                <img src={`https://images.unsplash.com/${b.img}?q=80&w=600&auto=format&fit=crop`} alt={b.title} style={{ width:"100%",height:"100%",objectFit:"cover",display:"block",transition:"transform .5s" }} />
-                <div style={{ position:"absolute",inset:0,background:b.dark?"linear-gradient(to bottom right,rgba(26,12,0,0.85) 0%,rgba(26,12,0,0.4) 100%)":"linear-gradient(to bottom,rgba(26,12,0,0.25) 0%,rgba(26,12,0,0.75) 100%)" }} />
-                <div style={{ position:"absolute",top:24,left:24,bottom:24,display:"flex",flexDirection:"column",justifyContent:"flex-end" }}>
-                  <span style={{ fontFamily:sans,fontSize:10,color:T.yellow,letterSpacing:"0.16em",textTransform:"uppercase",fontWeight:700,display:"block",marginBottom:6 }}>À ESSAYER</span>
-                  <p style={{ fontFamily:serif,fontSize:i===0?28:22,color:"#fff",fontWeight:900,margin:"0 0 8px",lineHeight:1.1 }}>{b.title}</p>
-                  <a href="/menu" style={{ display:"inline-flex",alignItems:"center",gap:6,fontFamily:sans,fontSize:13,fontWeight:700,color:"#fff",textDecoration:"none",background:`linear-gradient(135deg,${T.accent},${T.accentD})`,borderRadius:50,padding:"8px 18px",alignSelf:"flex-start",boxShadow:`0 4px 14px ${T.accent}44` }}>
-                    Commander <ArrowRight size={12} />
-                  </a>
-                </div>
-              </div>
-            </Reveal>
-          ))}
         </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Section statistiques ─── */
-function Stats() {
-  const [live, setLive] = useState(null);
-  useEffect(() => {
-    api.get('/stats/public').then(r => setLive(r.data)).catch(() => {});
-  }, []);
-  const items=[
-    { n: live ? live.clients       : 12000, pre:"+", suf:"",      l:"Clients actifs",   c:T.accent },
-    { n:98,                                  pre:"",  suf:"%",     l:"Taux livraison",   c:T.yellow },
-    { n: live ? live.commandesMois : 47,     pre:"",  suf:" ce mois", l:"Commandes",    c:T.accent },
-    { n: live ? live.restaurants   : 4,      pre:"",  suf:"",      l:"Restaurants actifs", c:T.yellow },
-  ];
-  return (
-    <section style={{ background:T.dark,padding:"90px 0",position:"relative",overflow:"hidden" }}>
-      <KS h={4} />
-      <Brush color={T.accent} opacity={0.08} style={{ width:600,top:"-10%",left:"20%" }} />
-      <div style={{ position:"relative",zIndex:1,maxWidth:1280,margin:"0 auto",padding:"0 48px",display:"grid",gridTemplateColumns:"repeat(4,1fr)" }}>
-        {items.map((s,i)=>(
-          <Reveal key={s.l} delay={i*80}>
-            <div style={{ textAlign:"center",padding:"0 28px",borderRight:i<3?`1px solid rgba(255,255,255,0.08)`:"none" }}>
-              <p style={{ fontFamily:serif,fontSize:"clamp(44px,5vw,70px)",fontWeight:900,color:"#fff",margin:"0 0 8px",lineHeight:1 }}>
-                {s.pre}<Counter end={s.n} />{s.suf}
-              </p>
-              <div style={{ width:28,height:2,background:s.c,margin:"0 auto 10px",borderRadius:1 }} />
-              <p style={{ fontFamily:sans,fontSize:11,color:s.c,margin:0,letterSpacing:"0.14em",textTransform:"uppercase",fontWeight:700 }}>{s.l}</p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-      <div style={{ marginTop:90 }}><KS h={4} /></div>
-    </section>
-  );
-}
-
-/* ─── Section témoignages ─── */
-function Testimonials() {
-  const items=[
-    {
-      q:"J'habite à Riviera 2 et je commandais toujours par téléphone — souvent le plat était épuisé. Avec RestoDici je vois en direct ce qui est dispo. Mon attiéké poisson braisé du vendredi arrive toujours chaud.",
-      name:"Rosine Akissi N'Dri", role:"Cliente · Riviera 2, Cocody", ini:"RA", c:T.accent, stars:5,
-      badge:"Client régulier", via:"Orange Money", featured:true,
-    },
-    {
-      q:"On gère les repas de 60 commerciaux en déplacement. Avant c'était un chaos de tickets et de remboursements. Aujourd'hui la compta reçoit une facture consolidée chaque mois. Conforme SYSCOHADA, enfin.",
-      name:"Kouadio Serge Brou", role:"DAF · Groupe Palmafrique, Plateau", ini:"KS", c:T.yellow, stars:5,
-      badge:"Compte Entreprise", via:"Virement mensuel", featured:false,
-    },
-    {
-      q:"Mon restaurant est devenu rentable depuis qu'on a activé le QR code. Les clients commandent eux-mêmes, les erreurs ont chuté. En 2 mois : +18 % de ticket moyen et zéro imprimante de menus.",
-      name:"Patricia Adjoumani", role:"Gérante · Chez Patricia, Treichville", ini:"PA", c:T.accent, stars:5,
-      badge:"Partenaire Restaurateur", via:"Dashboard gérant", featured:false,
-    },
-    {
-      q:"Je teste toujours avec Wave. Ici le paiement passe en 10 secondes, sans coupure, sans OTP foireux. Mon garba du midi est toujours là à l'heure. Les gars d'Abobo vous remercient.",
-      name:"Thierry Dié", role:"Chauffeur VTC · Abobo", ini:"TD", c:T.yellow, stars:5,
-      badge:"Client depuis le lancement", via:"Wave", featured:false,
-    },
-  ];
-
-  /* grande guillemet décorative */
-  const BigQuote = ({ color }) => (
-    <svg width="42" height="32" viewBox="0 0 42 32" fill="none" style={{ opacity:0.18, flexShrink:0 }}>
-      <path d="M0 32V19.2C0 8.53 6.4 2.13 19.2 0L21.3 3.84C15.57 5.33 12.27 8.53 11.4 13.44H18V32H0ZM23.7 32V19.2C23.7 8.53 30.1 2.13 42.9 0L45 3.84C39.27 5.33 35.97 8.53 35.1 13.44H41.7V32H23.7Z" fill={color}/>
-    </svg>
-  );
-
-  return (
-    <section style={{ background:"#fff", padding:"120px 0", position:"relative", overflow:"hidden" }}>
-      {/* Fond décoratif subtil */}
-      <div style={{ position:"absolute", top:0, left:0, right:0, height:4, background:`linear-gradient(90deg,${T.accent},${T.yellow},${T.accent})` }} />
-
-      <div style={{ maxWidth:1280, margin:"0 auto", padding:"0 48px" }}>
-
-        {/* ─ En-tête ─ */}
-        <Reveal>
-          <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", marginBottom:64, flexWrap:"wrap", gap:20 }}>
-            <div>
-              <Chip color={T.accent}>Avis vérifiés</Chip>
-              <h2 style={{ fontFamily:serif, fontSize:"clamp(32px,4vw,52px)", color:T.dark, fontWeight:900, lineHeight:1.08, margin:"8px 0 0", letterSpacing:"-0.025em" }}>
-                Ils l'utilisent au <em style={{ color:T.accent, fontStyle:"italic" }}>quotidien.</em>
-              </h2>
-            </div>
-            {/* Score global */}
-            <div style={{ display:"flex", flexDirection:"column", alignItems:"flex-end", gap:4 }}>
-              <div style={{ display:"flex", gap:4 }}>
-                {Array.from({length:5}).map((_,i)=>(
-                  <svg key={i} width="22" height="22" viewBox="0 0 24 24" fill={T.yellow}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                ))}
-              </div>
-              <p style={{ fontFamily:sans, fontSize:22, fontWeight:900, color:T.dark, margin:0, letterSpacing:"-0.02em" }}>4,9 <span style={{ fontSize:14, fontWeight:500, color:T.mutedL }}>/&nbsp;5</span></p>
-              <p style={{ fontFamily:sans, fontSize:12, color:T.mutedL, margin:0 }}>2 400+ avis vérifiés</p>
-            </div>
-          </div>
-        </Reveal>
-
-        {/* ─ Grille ─ */}
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(2,1fr)", gap:24 }}>
-          {items.map((t,i)=>(
-            <Reveal key={t.name} delay={i*90}>
-              <div className="rd-feat-card" style={{
-                background:"#fff",
-                border:`1px solid rgba(0,0,0,0.07)`,
-                borderRadius:24,
-                padding:"36px 32px 28px",
-                display:"flex", flexDirection:"column",
-                boxShadow:"0 2px 16px rgba(0,0,0,0.06), 0 8px 32px rgba(0,0,0,0.04)",
-                transition:"all .3s",
-                height:"100%",
-                position:"relative",
-                overflow:"hidden",
-              }}>
-                {/* Barre couleur top */}
-                <div style={{ position:"absolute", top:0, left:0, right:0, height:3, background:t.c, borderRadius:"24px 24px 0 0" }} />
-
-                {/* Ligne supérieure : badge + guillemet */}
-                <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:20 }}>
-                  <span style={{
-                    fontFamily:sans, fontSize:9, fontWeight:800, letterSpacing:"0.12em",
-                    textTransform:"uppercase", color:t.c,
-                    background:`${t.c}12`, padding:"5px 11px", borderRadius:99,
-                    border:`1px solid ${t.c}22`,
-                  }}>{t.badge}</span>
-                  <BigQuote color={t.c} />
-                </div>
-
-                {/* Étoiles */}
-                <div style={{ display:"flex", gap:3, marginBottom:16 }}>
-                  {Array.from({length:t.stars}).map((_,si)=>(
-                    <svg key={si} width="16" height="16" viewBox="0 0 24 24" fill={T.yellow}><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                  ))}
-                </div>
-
-                {/* Citation */}
-                <p style={{
-                  fontFamily:serif, fontSize:15.5, color:"#2D2D2D",
-                  lineHeight:1.78, fontStyle:"italic", margin:"0 0 auto",
-                  fontWeight:400, flex:1,
-                }}>
-                  &ldquo;{t.q}&rdquo;
-                </p>
-
-                {/* Auteur */}
-                <div style={{ display:"flex", alignItems:"center", gap:14, paddingTop:24, marginTop:24, borderTop:`1px solid rgba(0,0,0,0.06)` }}>
-                  {/* Avatar */}
-                  <div style={{
-                    width:48, height:48, borderRadius:"50%", flexShrink:0,
-                    background:`linear-gradient(135deg, ${t.c}, ${t.c}BB)`,
-                    display:"flex", alignItems:"center", justifyContent:"center",
-                    boxShadow:`0 4px 12px ${t.c}44`,
-                  }}>
-                    <span style={{ fontFamily:sans, fontSize:15, fontWeight:900, color:"#fff", letterSpacing:"-0.02em" }}>{t.ini}</span>
-                  </div>
-                  <div style={{ flex:1 }}>
-                    <p style={{ fontFamily:sans, fontSize:14, fontWeight:800, color:T.dark, margin:"0 0 2px", letterSpacing:"-0.01em" }}>{t.name}</p>
-                    <p style={{ fontFamily:sans, fontSize:11, color:T.mutedL, margin:0, fontWeight:500 }}>{t.role}</p>
-                  </div>
-                  {/* Via */}
-                  <span style={{ fontFamily:sans, fontSize:10, fontWeight:700, color:"#fff", background:t.c, padding:"4px 10px", borderRadius:99, whiteSpace:"nowrap", flexShrink:0 }}>
-                    {t.via}
-                  </span>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-
-        {/* ─ CTA bas ─ */}
-        <Reveal delay={200}>
-          <div style={{ textAlign:"center", marginTop:56 }}>
-            <p style={{ fontFamily:sans, fontSize:14, color:T.mutedL, margin:"0 0 16px" }}>
-              Rejoignez <strong style={{ color:T.dark }}>12 000+</strong> clients satisfaits
-            </p>
-            <a href="/register" style={{ display:"inline-flex", alignItems:"center", gap:8, fontFamily:sans, fontSize:14, fontWeight:700, color:"#fff", background:`linear-gradient(135deg,${T.accent},${T.accentD})`, padding:"13px 36px", borderRadius:50, textDecoration:"none", boxShadow:`0 8px 28px ${T.accent}44`, transition:"all .2s" }}>
-              Commencer gratuitement <ArrowRight size={15} />
-            </a>
-          </div>
-        </Reveal>
-
-      </div>
-    </section>
-  );
-}
-
-/* ─── Double offre — Client & Restaurant ─── */
-function DualOffer() {
-  const cards=[
-    { tag:"GRAND PUBLIC", tagBg:T.accent, tagCol:"#fff", topCol:T.accent, title:"Pour toute la famille", sub:"Commandez, payez, profitez.", img:"photo-1773620494293-e9e075dd48fd", perks:["Menu dynamique & QR Code table","Orange Money · MTN · Wave · Espèces","Suivi commande en temps réel","Reçu SYSCOHADA par email"], perkCol:T.accent, cta:"Commander maintenant", ctaBg:`linear-gradient(135deg,${T.accent},${T.accentD})`, ctaCol:"#fff", href:"/menu" },
-    { tag:"ENTREPRISE",   tagBg:T.yellow, tagCol:T.dark,  topCol:T.yellow, title:"Pour vos équipes",     sub:"Gérez, facturez, conformez.",  img:"photo-1665333048952-a3ee97714c6b", perks:["Commandes groupées 50+ repas","Facturation mensuelle consolidée","Budgets par collaborateur","Conformité TVA 18% & SYSCOHADA"], perkCol:T.yellow, cta:"Créer un compte Entreprise →", ctaBg:`linear-gradient(135deg,${T.yellow},#F8A020)`, ctaCol:T.dark, href:"/register?type=b2b" },
-  ];
-  return (
-    <section id="offres" style={{ background:T.bgAlt,padding:"120px 0",position:"relative",overflow:"hidden" }}>
-      <Brush color={T.yellow} opacity={0.12} style={{ width:500,bottom:0,right:-80 }} />
-      <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 48px" }}>
-        <Reveal>
-          <div style={{ textAlign:"center",marginBottom:72 }}>
-            <Chip color={T.accent}>Deux mondes, une solution</Chip>
-            <h2 style={{ fontFamily:serif,fontSize:"clamp(34px,4vw,56px)",color:T.dark,fontWeight:900,lineHeight:1.06,margin:0,letterSpacing:"-0.025em" }}>
-              Particuliers & <em style={{ color:T.accent }}>Entreprises</em>
-            </h2>
-          </div>
-        </Reveal>
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:24 }}>
-          {cards.map((c,i)=>(
-            <Reveal key={c.tag} dir={i===0?"left":"right"} delay={i*100}>
-              <div className="rd-feat-card" style={{ borderRadius:22,overflow:"hidden",background:T.card,boxShadow:T.shadow,borderTop:`3px solid ${c.topCol}`,transition:"all .35s" }}>
-                <div style={{ height:270,overflow:"hidden",position:"relative" }}>
-                  <img src={`https://images.unsplash.com/${c.img}?q=80&w=800&auto=format&fit=crop`} alt={c.title} style={{ width:"100%",height:"100%",objectFit:"cover",display:"block" }} />
-                  <div style={{ position:"absolute",inset:0,background:"linear-gradient(to bottom,transparent 25%,rgba(26,12,0,0.9))" }} />
-                  <div style={{ position:"absolute",bottom:22,left:26,right:26 }}>
-                    <span style={{ display:"inline-block",background:c.tagBg,color:c.tagCol,fontFamily:sans,fontSize:10,fontWeight:700,letterSpacing:"0.14em",padding:"5px 14px",borderRadius:20,marginBottom:9 }}>{c.tag}</span>
-                    <p style={{ fontFamily:serif,fontSize:24,fontWeight:700,color:"#fff",fontStyle:"italic",margin:"0 0 3px" }}>{c.title}</p>
-                    <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.55)",margin:0 }}>{c.sub}</p>
-                  </div>
-                </div>
-                <div style={{ padding:"28px 26px 34px" }}>
-                  {c.perks.map(p=>(
-                    <div key={p} style={{ display:"flex",gap:11,alignItems:"center",marginBottom:12 }}>
-                      <div style={{ width:22,height:22,borderRadius:"50%",background:`${c.perkCol}16`,border:`1px solid ${c.perkCol}28`,display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0 }}>
-                        <Check size={11} color={c.perkCol} strokeWidth={2.5} />
-                      </div>
-                      <span style={{ fontFamily:sans,fontSize:14,color:T.muted }}>{p}</span>
-                    </div>
-                  ))}
-                  <a href={c.href} style={{ display:"block",marginTop:24,padding:"14px 0",textAlign:"center",background:c.ctaBg,color:c.ctaCol,fontFamily:sans,fontSize:14,fontWeight:700,textDecoration:"none",borderRadius:50,boxShadow:i===0?`0 8px 24px ${T.accent}40`:`0 8px 24px ${T.yellow}40`,transition:"opacity .2s" }}
-                    onMouseEnter={e=>e.currentTarget.style.opacity="0.88"} onMouseLeave={e=>e.currentTarget.style.opacity="1"}>{c.cta}</a>
-                </div>
-              </div>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Section appel à l'action ─── */
-function CTA() {
-  return (
-    <section style={{ background:T.dark,padding:"100px 48px",position:"relative",overflow:"hidden" }}>
-      <KS h={4} />
-      <Brush color={T.accent} opacity={0.12} style={{ width:700,top:"0%",right:-100 }} />
-      <Brush color={T.yellow} opacity={0.1} style={{ width:500,bottom:"0%",left:-80,transform:"scaleX(-1) rotate(10deg)" }} />
-      <div style={{ position:"relative",zIndex:1,maxWidth:800,margin:"0 auto",textAlign:"center" }}>
-        <Reveal>
-          <Chip color={T.yellow}>Rejoindre la plateforme</Chip>
-          <h2 style={{ fontFamily:serif,fontSize:"clamp(42px,6.5vw,88px)",color:"#fff",fontWeight:900,lineHeight:0.98,margin:"0 0 24px",letterSpacing:"-0.035em" }}>
-            Prêt à commander<br/><em style={{ color:T.accent }}>maintenant&nbsp;?</em>
-          </h2>
-          <p style={{ fontFamily:sans,fontSize:18,color:"rgba(255,255,255,0.5)",lineHeight:1.8,margin:"0 auto 52px",fontWeight:300,maxWidth:500 }}>
-            Rejoignez des milliers de clients sur la première plateforme de restauration digitale de Côte d'Ivoire.
-          </p>
-          <div style={{ display:"flex",gap:14,justifyContent:"center",flexWrap:"wrap" }}>
-            <a href="/menu" className="rd-btn-cta" style={{ padding:"17px 52px",background:`linear-gradient(135deg,${T.accent},${T.accentD})`,color:"#fff",fontFamily:sans,fontSize:15,fontWeight:700,textDecoration:"none",borderRadius:50,boxShadow:`0 12px 40px ${T.accent}55`,transition:"all .24s",display:"inline-flex",alignItems:"center",gap:9 }}>
-              Explorer le Menu <ArrowRight size={16} />
-            </a>
-            <a href="/register" className="rd-btn-outline" style={{ padding:"17px 52px",border:"2px solid rgba(255,255,255,0.25)",color:"rgba(255,255,255,0.8)",background:"transparent",fontFamily:sans,fontSize:15,fontWeight:700,textDecoration:"none",borderRadius:50,transition:"all .24s" }}
-              onMouseEnter={e=>{e.currentTarget.style.background="rgba(255,255,255,0.1)";e.currentTarget.style.color="#fff";}}
-              onMouseLeave={e=>{e.currentTarget.style.background="transparent";e.currentTarget.style.color="rgba(255,255,255,0.8)";}}>
-              Devenir Partenaire
-            </a>
-          </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
-/* ─── Section Newsletter dédiée ─── */
-function NewsletterSection() {
-  const [email, setEmail]   = useState("");
-  const [state, setState]   = useState("idle"); // idle | loading | success | error
-  const [msg,   setMsg]     = useState("");
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!email.trim()) return;
-    setState("loading");
-    try {
-      const res = await newsletterAPI.subscribe(email.trim());
-      setMsg(res.data?.message || "Inscription confirmée !");
-      setState("success");
-      setEmail("");
-    } catch (err) {
-      setMsg(err?.response?.data?.message || "Une erreur est survenue. Réessayez.");
-      setState("error");
-    }
-  };
-
-  return (
-    <section style={{ background: T.accent, padding: "80px 48px", position: "relative", overflow: "hidden" }}>
-      <Brush color="#fff" opacity={0.06} style={{ width: 600, top: "-20%", right: -100 }} />
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 700, margin: "0 auto", textAlign: "center" }}>
-        <Reveal>
-          <div style={{ width: 56, height: 56, borderRadius: 16, background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
-            <Mail size={26} color="#fff" />
-          </div>
-          <h2 style={{ fontFamily: serif, fontSize: "clamp(28px,4vw,46px)", color: "#fff", fontWeight: 900, lineHeight: 1.08, margin: "0 0 14px", letterSpacing: "-0.025em" }}>
-            Restez dans la boucle
-          </h2>
-          <p style={{ fontFamily: sans, fontSize: 16, color: "rgba(255,255,255,0.75)", lineHeight: 1.7, margin: "0 auto 36px", maxWidth: 480, fontWeight: 300 }}>
-            Offres exclusives, nouveaux restaurants partenaires, promotions — recevez l'actualité Resto d'ici directement dans votre boîte mail.
-          </p>
-
-          {state === "success" ? (
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.15)", border: "1px solid rgba(255,255,255,0.3)", borderRadius: 50, padding: "14px 30px" }}>
-              <Check size={18} color="#fff" />
-              <span style={{ fontFamily: sans, fontSize: 15, fontWeight: 700, color: "#fff" }}>{msg}</span>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} style={{ display: "flex", gap: 0, maxWidth: 520, margin: "0 auto", borderRadius: 50, overflow: "hidden", boxShadow: "0 12px 48px rgba(0,0,0,0.18)", background: "#fff" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "0 20px", flex: 1 }}>
-                <Mail size={16} color={T.mutedL} />
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  placeholder="votre@email.ci"
-                  required
-                  style={{ border: "none", outline: "none", fontFamily: sans, fontSize: 14, color: T.text, background: "transparent", width: "100%", padding: "15px 0" }}
-                />
-              </div>
-              <button
-                type="submit"
-                disabled={state === "loading"}
-                style={{ background: "#16A34A", color: "#fff", fontFamily: sans, fontSize: 13, fontWeight: 700, border: "none", cursor: state === "loading" ? "wait" : "pointer", padding: "0 28px", borderRadius: "0 50px 50px 0", whiteSpace: "nowrap", opacity: state === "loading" ? 0.7 : 1 }}
-              >
-                {state === "loading" ? "…" : "S'inscrire"}
-              </button>
-            </form>
-          )}
-          {state === "error" && (
-            <p style={{ fontFamily: sans, fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 12 }}>{msg}</p>
-          )}
-          <p style={{ fontFamily: sans, fontSize: 11, color: "rgba(255,255,255,0.45)", margin: "16px 0 0", letterSpacing: "0.04em" }}>
-            Pas de spam. Désabonnement en un clic.
-          </p>
-        </Reveal>
       </div>
     </section>
   );
@@ -1160,7 +538,7 @@ function Footer() {
   const handleNl = async (e) => {
     e.preventDefault();
     if (!nlEmail.trim()) return;
-    try { await newsletterAPI.subscribe(nlEmail.trim()); } catch { /* déjà inscrit ou erreur — on affiche quand même le succès */ }
+    try { await newsletterAPI.subscribe(nlEmail.trim()); } catch { /* silension */ }
     setNlDone(true);
     setNlEmail("");
   };
@@ -1169,41 +547,37 @@ function Footer() {
     {
       title: "Produit",
       links: [
-        ["Explorer le menu",      "/menu"],
-        ["Commander en ligne",    "/menu"],
-        ["Suivi de commande",     "/login"],
-        ["QR Code table",         "#"],
-        ["Livraison à domicile",  "#"],
+        ["Explorer les restaurants", "#catalogue"],
+        ["Commander en ligne",       "/menu"],
+        ["Suivi de commande",        "/login"],
+        ["Livraison à domicile",     "#"],
       ],
     },
     {
       title: "Entreprises",
       links: [
-        ["Espace B2B",               "/register?type=b2b"],
-        ["Commandes groupées",        "/b2b"],
-        ["Facturation SYSCOHADA",     "/b2b/invoices"],
-        ["Budgets collaborateurs",    "/b2b/teams"],
-        ["Rapports & analytics",      "/b2b/reports"],
+        ["Espace B2B",             "/register?type=b2b"],
+        ["Commandes groupées",     "/b2b"],
+        ["Facturation SYSCOHADA",  "/b2b/invoices"],
+        ["Budgets collaborateurs", "/b2b/teams"],
       ],
     },
     {
       title: "Restaurateurs",
       links: [
-        ["Interface Gérant",      "/gerant"],
-        ["Gestion des stocks",    "/gerant"],
-        ["KDS Cuisine",           "/gerant"],
-        ["Trésorerie & rapports", "/gerant"],
-        ["Devenir partenaire",    "/register"],
+        ["Interface Gérant",   "/gerant"],
+        ["Gestion des stocks", "/gerant"],
+        ["KDS Cuisine",        "/gerant"],
+        ["Devenir partenaire", "/register"],
       ],
     },
     {
       title: "Support",
       links: [
-        ["Centre d'aide",         "/aide"],
-        ["Nous contacter",        "/contact"],
-        ["Statut des services",   "#"],
-        ["Mentions légales",      "/legal"],
-        ["Confidentialité",       "/privacy"],
+        ["Centre d'aide",    "/aide"],
+        ["Nous contacter",   "/contact"],
+        ["Mentions légales", "/legal"],
+        ["Confidentialité",  "/privacy"],
       ],
     },
   ];
@@ -1216,21 +590,20 @@ function Footer() {
   ];
 
   const PAYMENTS = [
-    { label: "Orange Money", color: "#FF6600" },
-    { label: "Wave",         color: "#1DC9E8" },
-    { label: "MTN MoMo",     color: "#FFCC02" },
+    { label: "Orange Money", logo: orangeMoneyLogo },
+    { label: "MTN MoMo",     logo: mtnMomoLogo },
+    { label: "Moov Money",   logo: moovMoneyLogo },
+    { label: "Wave",         logo: waveLogo },
+    { label: "Carte Bancaire", logo: carteBancaireLogo },
   ];
 
   return (
     <footer style={{ background: "#0A0F1E", borderTop: `3px solid transparent`, backgroundImage: `linear-gradient(#0A0F1E,#0A0F1E) padding-box, linear-gradient(90deg,${T.accent},${T.yellow},${T.accent}) border-box` }}>
-
-      {/* ── Corps principal ── */}
-      <div style={{ maxWidth:1280, margin:"0 auto", padding:"72px 48px 0" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"1.8fr 1fr 1fr 1fr 1fr", gap:48, paddingBottom:56, borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
+      <div style={{ maxWidth:1280, margin:"0 auto", padding:"64px 48px 0" }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1.8fr 1fr 1fr 1fr 1fr", gap:48, paddingBottom:48, borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
 
           {/* Colonne marque */}
           <div>
-            {/* Logo */}
             <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:16 }}>
               <div style={{ width:42,height:42,borderRadius:13,background:`linear-gradient(135deg,${T.accent},${T.yellow})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 8px 24px ${T.accent}40` }}>
                 <UtensilsCrossed style={{ width:21,height:21,color:"#fff" }} />
@@ -1240,33 +613,26 @@ function Footer() {
                 <p style={{ fontFamily:sans,fontSize:10,color:"rgba(255,255,255,0.35)",margin:0,letterSpacing:"0.08em",textTransform:"uppercase" }}>Abidjan · Côte d'Ivoire</p>
               </div>
             </div>
-
             <p style={{ fontFamily:sans,fontSize:13.5,color:"rgba(255,255,255,0.38)",lineHeight:1.9,maxWidth:240,fontWeight:300,margin:"0 0 24px" }}>
-              La plateforme qui modernise la restauration en Afrique de l'Ouest — de la commande à la facturation SYSCOHADA.
+              La plateforme qui modernise la restauration en Afrique de l'Ouest — de la commande à la facturation.
             </p>
-
-            {/* Réseaux sociaux */}
             <div style={{ display:"flex",gap:8,marginBottom:28 }}>
               {SOCIALS.map(({ label, href, path }) => (
                 <a key={label} href={href} aria-label={label}
                   style={{ width:34,height:34,borderRadius:9,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.09)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s",textDecoration:"none" }}
                   onMouseEnter={e=>{e.currentTarget.style.background=`${T.accent}22`;e.currentTarget.style.borderColor=`${T.accent}55`;}}
                   onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="rgba(255,255,255,0.09)";}}>
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="rgba(255,255,255,0.5)">
-                    <path d={path} />
-                  </svg>
+                  <svg viewBox="0 0 24 24" width="15" height="15" fill="rgba(255,255,255,0.5)"><path d={path} /></svg>
                 </a>
               ))}
             </div>
-
-            {/* Moyens de paiement */}
             <div>
-              <p style={{ fontFamily:sans,fontSize:10,color:"rgba(255,255,255,0.25)",letterSpacing:"0.1em",textTransform:"uppercase",margin:"0 0 10px" }}>Paiements acceptés</p>
-              <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
-                {PAYMENTS.map(({ label, color }) => (
-                  <div key={label} style={{ display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.05)",borderRadius:7,padding:"5px 10px",border:"1px solid rgba(255,255,255,0.08)" }}>
-                    <div style={{ width:8,height:8,borderRadius:"50%",background:color,boxShadow:`0 0 6px ${color}` }} />
-                    <span style={{ fontFamily:sans,fontSize:11,color:"rgba(255,255,255,0.45)",fontWeight:500 }}>{label}</span>
+              <p style={{ fontFamily:sans,fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:"0.12em",textTransform:"uppercase",margin:"0 0 10px",fontWeight:800 }}>Paiements 100% Sécurisés</p>
+              <div style={{ display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
+                {PAYMENTS.map(({ label, logo }) => (
+                  <div key={label} style={{ display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.06)",borderRadius:8,padding:"5px 10px",border:"1px solid rgba(255,255,255,0.12)" }}>
+                    <img src={logo} alt={label} style={{ height:16,width:"auto",objectFit:"contain" }} />
+                    <span style={{ fontFamily:sans,fontSize:11,color:"rgba(255,255,255,0.8)",fontWeight:700 }}>{label}</span>
                   </div>
                 ))}
               </div>
@@ -1280,11 +646,7 @@ function Footer() {
               <ul style={{ listStyle:"none",padding:0,margin:0 }}>
                 {col.links.map(([label, href]) => (
                   <li key={label} style={{ marginBottom:12 }}>
-                    <a href={href} style={{ fontFamily:sans,fontSize:13.5,color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:400,display:"inline-flex",alignItems:"center",gap:4,transition:"color .18s" }}
-                      onMouseEnter={e=>{e.currentTarget.style.color="#fff";}}
-                      onMouseLeave={e=>{e.currentTarget.style.color="rgba(255,255,255,0.45)";}}>
-                      {label}
-                    </a>
+                    <a href={href} className="rd-foot-link" style={{ fontFamily:sans,fontSize:13.5,color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:400,transition:"color .18s" }}>{label}</a>
                   </li>
                 ))}
               </ul>
@@ -1292,7 +654,7 @@ function Footer() {
           ))}
         </div>
 
-        {/* ── Newsletter band ── */}
+        {/* Newsletter band */}
         <div style={{ padding:"32px 0",borderBottom:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:20 }}>
           <div>
             <p style={{ fontFamily:serif,fontSize:18,color:"#fff",fontWeight:700,margin:"0 0 4px" }}>Restez informé</p>
@@ -1307,85 +669,229 @@ function Footer() {
             <form onSubmit={handleNl} style={{ display:"flex",gap:0,borderRadius:11,overflow:"hidden",border:"1px solid rgba(255,255,255,0.12)",flexShrink:0 }}>
               <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.05)",padding:"0 16px" }}>
                 <Mail size={14} color="rgba(255,255,255,0.3)" />
-                <input
-                  type="email" required value={nlEmail} onChange={e => setNlEmail(e.target.value)}
-                  placeholder="votre@email.ci"
-                  style={{ border:"none",outline:"none",background:"transparent",fontFamily:sans,fontSize:13,color:"#fff",width:200,padding:"12px 0" }}
-                />
+                <input type="email" required value={nlEmail} onChange={e => setNlEmail(e.target.value)} placeholder="votre@email.ci"
+                  style={{ border:"none",outline:"none",background:"transparent",fontFamily:sans,fontSize:13,color:"#fff",width:200,padding:"12px 0" }} />
               </div>
-              <button type="submit" style={{ background:"#16A34A",color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",padding:"0 22px",whiteSpace:"nowrap" }}>
-                S'inscrire
-              </button>
+              <button type="submit" style={{ background:"#16A34A",color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",padding:"0 22px",whiteSpace:"nowrap" }}>S'inscrire</button>
             </form>
           )}
         </div>
 
-        {/* ── Barre de bas ── */}
+        {/* Barre de bas */}
         <div style={{ padding:"22px 0 28px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16 }}>
-
-          {/* Kente strip + copyright */}
           <div style={{ display:"flex",alignItems:"center",gap:14 }}>
             <div style={{ display:"flex",gap:2 }}>
               {KENTE.map((c,i) => <div key={i} style={{ width:18,height:3,borderRadius:2,background:c }} />)}
             </div>
-            <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.22)",margin:0 }}>
-              © 2026 Resto d'ici. Tous droits réservés.
-            </p>
+            <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.22)",margin:0 }}>© 2026 Resto d'ici. Tous droits réservés.</p>
           </div>
-
-          {/* Liens légaux */}
           <div style={{ display:"flex",gap:20,flexWrap:"wrap" }}>
             {[["CGU","/legal"],["Confidentialité","/privacy"],["Cookies","#"],["Accessibilité","#"]].map(([l, href]) => (
-              <a key={l} href={href} style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.25)",textDecoration:"none",transition:"color .18s" }}
-                onMouseEnter={e=>e.currentTarget.style.color="rgba(255,255,255,0.6)"}
-                onMouseLeave={e=>e.currentTarget.style.color="rgba(255,255,255,0.25)"}>
-                {l}
-              </a>
+              <a key={l} href={href} className="rd-foot-link" style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.25)",textDecoration:"none",transition:"color .18s" }}>{l}</a>
             ))}
           </div>
-
-          {/* Status + crédit */}
-          <div style={{ display:"flex",alignItems:"center",gap:16 }}>
-            <div style={{ display:"flex",alignItems:"center",gap:6,background:"rgba(16,185,129,0.1)",border:"1px solid rgba(16,185,129,0.2)",borderRadius:20,padding:"4px 11px" }}>
-              <div style={{ width:6,height:6,borderRadius:"50%",background:"#10B981",boxShadow:"0 0 6px #10B981" }} />
-              <span style={{ fontFamily:sans,fontSize:11,color:"rgba(16,185,129,0.85)",fontWeight:600 }}>Systèmes opérationnels</span>
-            </div>
-            <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.18)",margin:0 }}>
-              par <span style={{ color:"rgba(255,255,255,0.35)" }}>Sankofa-Lab</span>
-            </p>
-          </div>
+          <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.18)",margin:0 }}>
+            par <span style={{ color:"rgba(255,255,255,0.35)" }}>Sankofa-Lab</span>
+          </p>
         </div>
       </div>
     </footer>
   );
 }
 
-/* ─── Composant principal — Page d'accueil ─── */
+/* ─── Composant principal — Accueil = catalogue ─── */
 export default function Home() {
-  const [search, setSearch]           = useState("");
-  const [activeCatId, setActiveCatId] = useState(null);
-  const [restaurants, setRestaurants] = useState([]);
-  const menuRef = useRef(null);
+  const navigate = useNavigate();
+  const [restaurants, setRestaurants]     = useState([]);
+  const [dishesByResto, setDishesByResto] = useState({});
+  const [loading, setLoading]             = useState(true);
+  const [search, setSearch]               = useState("");
+
+  /* Filtres avancés style Yango Deli */
+  const [activeType, setActiveType]           = useState("__all__");
+  const [selectedRestoId, setSelectedRestoId] = useState("__all__");
+  const [priceRange, setPriceRange]           = useState("__all__");
+  const [minRating, setMinRating]             = useState(0);
+  const [freeDeliveryOnly, setFreeDelivery]   = useState(false);
+  const [fastDeliveryOnly, setFastDelivery]   = useState(false);
+  const [sortBy, setSortBy]                   = useState("popular");
 
   useEffect(() => {
-    menuAPI.getRestaurants().then(res => setRestaurants(Array.isArray(res.data) ? res.data : [])).catch(() => {});
+    let cancelled = false;
+    menuAPI.getRestaurants()
+      .then(async res => {
+        const list = Array.isArray(res.data) ? res.data : [];
+        if (cancelled) return;
+        setRestaurants(list);
+        setLoading(false);
+        /* Charge les menus en arrière-plan */
+        const entries = await Promise.all(list.map(r =>
+          menuAPI.getByRestaurant(r.id, { cible: "CLIENT" })
+            .then(mr => {
+              const raw = mr.data;
+              const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
+              return [r.id, plats.filter(p => p.disponible !== false)];
+            })
+            .catch(() => [r.id, []])
+        ));
+        if (!cancelled) setDishesByResto(Object.fromEntries(entries));
+      })
+      .catch(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
+  /* Types de cuisine disponibles avec décompte */
+  const types = useMemo(() => {
+    const counts = {};
+    Object.values(dishesByResto).forEach(dishes =>
+      dishes.forEach(d => {
+        const n = d.categorie?.nom;
+        if (n) counts[n] = (counts[n] || 0) + 1;
+      })
+    );
+    return Object.entries(counts)
+      .map(([nom, count]) => ({ nom, count }))
+      .sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
+  }, [dishesByResto]);
+
+  /* Réinitialisation complète des filtres Yango Deli */
+  const resetFilters = () => {
+    setActiveType("__all__");
+    setSelectedRestoId("__all__");
+    setPriceRange("__all__");
+    setMinRating(0);
+    setFreeDelivery(false);
+    setFastDelivery(false);
+    setSortBy("popular");
+    setSearch("");
+  };
+
+  /* Compteur des filtres actifs */
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (activeType !== "__all__") count++;
+    if (selectedRestoId !== "__all__") count++;
+    if (priceRange !== "__all__") count++;
+    if (minRating > 0) count++;
+    if (freeDeliveryOnly) count++;
+    if (fastDeliveryOnly) count++;
+    if (sortBy !== "popular") count++;
+    if (search.trim()) count++;
+    return count;
+  }, [activeType, selectedRestoId, priceRange, minRating, freeDeliveryOnly, fastDeliveryOnly, sortBy, search]);
+
+  /* Calcul et filtrage dynamique des restaurants et plats */
+  const q = search.trim().toLowerCase();
+  const results = useMemo(() => {
+    let filtered = restaurants.map((r, idx) => {
+      const dishes = dishesByResto[r.id] || [];
+
+      /* Filtre par restaurant spécifique */
+      if (selectedRestoId !== "__all__" && String(r.id) !== String(selectedRestoId)) return null;
+
+      /* Filtre par type/catégorie de plat */
+      if (activeType !== "__all__" && !dishes.some(d => d.categorie?.nom === activeType)) return null;
+
+      /* Filtre par note minimum */
+      const rRating = Number(r.noteMoyenne) || 0;
+      if (minRating > 0 && rRating < minRating) return null;
+
+      /* Filtre par livraison offerte */
+      if (freeDeliveryOnly && r.fraisLivraison !== 0) return null;
+
+      /* Filtre par délai rapide (< 30 min) */
+      if (fastDeliveryOnly) {
+        const timeStr = r.deliveryTime || "25 min";
+        const firstNum = parseInt(timeStr, 10);
+        if (!isNaN(firstNum) && firstNum > 30) return null;
+      }
+
+      /* Filtre par tranche de prix des plats du restaurant */
+      if (priceRange !== "__all__") {
+        const hasMatchingPrice = dishes.some(d => {
+          const p = Number(d.prixClient ?? d.prix) || 0;
+          if (priceRange === "under_3000") return p < 3000;
+          if (priceRange === "3000_6000") return p >= 3000 && p <= 6000;
+          if (priceRange === "over_6000") return p > 6000;
+          return true;
+        });
+        if (!hasMatchingPrice) return null;
+      }
+
+      /* Recherche par mot-clé */
+      if (!q) return { restaurant: r, matched: null, _idx: idx };
+
+      const nameMatch = r.nom?.toLowerCase().includes(q) || (r.adresse || "").toLowerCase().includes(q);
+      const matchedDishes = dishes.filter(d =>
+        d.nom?.toLowerCase().includes(q) || d.categorie?.nom?.toLowerCase().includes(q)
+      );
+      if (!nameMatch && matchedDishes.length === 0) return null;
+
+      return { restaurant: r, matched: matchedDishes.slice(0, 4), _idx: idx };
+    }).filter(Boolean);
+
+    /* Tri des résultats */
+    filtered.sort((a, b) => {
+      const rA = a.restaurant;
+      const rB = b.restaurant;
+      if (sortBy === "rating") {
+        return (Number(rB.noteMoyenne) || 0) - (Number(rA.noteMoyenne) || 0);
+      }
+      if (sortBy === "time") {
+        const tA = parseInt(rA.deliveryTime || "20", 10);
+        const tB = parseInt(rB.deliveryTime || "20", 10);
+        return tA - tB;
+      }
+      if (sortBy === "price_asc" || sortBy === "price_desc") {
+        const avgPrice = (restoId) => {
+          const d = dishesByResto[restoId] || [];
+          if (!d.length) return 0;
+          return d.reduce((acc, x) => acc + Number(x.prixClient ?? x.prix), 0) / d.length;
+        };
+        const pA = avgPrice(rA.id);
+        const pB = avgPrice(rB.id);
+        return sortBy === "price_asc" ? pA - pB : pB - pA;
+      }
+      return 0; // Popularité / défaut
+    });
+
+    return filtered;
+  }, [restaurants, dishesByResto, activeType, selectedRestoId, priceRange, minRating, freeDeliveryOnly, fastDeliveryOnly, sortBy, q]);
+
+  const openResto = (r) => navigate(`/menu?resto=${r.id}`);
+  const openDish  = (r, d) => navigate(`/menu?resto=${r.id}&plat=${encodeURIComponent(d.nom || "")}`);
+
   return (
-    <div style={{ background:T.bg,minHeight:"100dvh",overflowX:"hidden" }}>
+    <div style={{ background:T.bg, minHeight:"100dvh", overflowX:"hidden" }}>
       <FontLoader />
       <Nav />
-      <Hero search={search} onSearch={setSearch} menuRef={menuRef} restaurantCount={restaurants.length} />
-      <CategoryStrip activeCatId={activeCatId} onCategorySelect={setActiveCatId} menuRef={menuRef} restaurants={restaurants} />
-      <HowItWorks />
-      <Marquee />
-      <MenuSection search={search} onSearch={setSearch} sectionRef={menuRef} activeCatId={activeCatId} onCategorySelect={setActiveCatId} restaurants={restaurants} />
-      <Banners />
-      <Stats />
-      <Testimonials />
-      <DualOffer />
-      <CTA />
-      <NewsletterSection />
+      <CatalogHero search={search} onSearch={setSearch} resultCount={results.length} hasQuery={!!q} />
+      <Pillars />
+      <Catalog
+        loading={loading}
+        types={types}
+        activeType={activeType}
+        onType={setActiveType}
+        restaurants={restaurants}
+        selectedRestoId={selectedRestoId}
+        onRestoChange={setSelectedRestoId}
+        priceRange={priceRange}
+        onPriceRangeChange={setPriceRange}
+        minRating={minRating}
+        onMinRatingChange={setMinRating}
+        freeDeliveryOnly={freeDeliveryOnly}
+        onFreeDeliveryChange={setFreeDelivery}
+        fastDeliveryOnly={fastDeliveryOnly}
+        onFastDeliveryChange={setFastDelivery}
+        sortBy={sortBy}
+        onSortByChange={setSortBy}
+        onResetFilters={resetFilters}
+        activeFiltersCount={activeFiltersCount}
+        results={results}
+        query={search.trim()}
+        onOpenResto={openResto}
+        onOpenDish={openDish}
+      />
       <Footer />
     </div>
   );

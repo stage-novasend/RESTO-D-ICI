@@ -43,7 +43,9 @@ api.interceptors.response.use(
       // On ne tente le refresh que si une session existait (access token présent).
       const hadSession = !!getAccessToken();
       if (!hadSession) {
+        clearAccessToken();
         localStorage.removeItem('user');
+        window.dispatchEvent(new CustomEvent('auth:expired'));
         if (window.location.pathname !== '/login') window.location.href = '/login';
         return Promise.reject(err);
       }
@@ -73,6 +75,7 @@ api.interceptors.response.use(
         _flushQueue(null, refreshErr);
         clearAccessToken();
         localStorage.removeItem('user');
+        window.dispatchEvent(new CustomEvent('auth:expired'));
         if (window.location.pathname !== '/login') window.location.href = '/login';
         return Promise.reject(refreshErr);
       } finally {

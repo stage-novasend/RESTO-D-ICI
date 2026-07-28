@@ -3,9 +3,8 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 import { EXTERNAL_URLS } from '../config/app-config';
+import { toInternationalCiMsisdn, normalizeNovaSendProvider } from './gateways/novasend.gateway';
 
-// Providers internes — utilisés pour tracker le mode de paiement côté webhook
-// CARTE : réservé pour l'intégration carte bancaire NovaSend (à venir)
 export type NovaSendProvider =
   | 'WAVE'
   | 'NOVASEND'
@@ -19,7 +18,7 @@ export interface InitiatePaymentParams {
   amount: number;
   customerName: string;
   telephone?: string;
-  provider: NovaSendProvider; // tracking interne uniquement, non envoyé à l'API
+  provider: NovaSendProvider;
   otp?: string;
 }
 
@@ -32,7 +31,14 @@ export interface InitiatePaymentResult {
 @Injectable()
 export class NovaSendService {
   private readonly logger = new Logger(NovaSendService.name);
-  private readonly BASE = EXTERNAL_URLS.novasend;
+
+  private get baseUrl(): string {
+    return (
+      this.config.get<string>('NOVASEND_BASE_URL') ||
+      EXTERNAL_URLS.novasend ||
+      'https://business.novasend.app/v1'
+    );
+  }
 
   // Mapping référence → provider pour enrichir le webhook entrant
   private readonly pendingMap = new Map<string, NovaSendProvider>();
@@ -66,31 +72,51 @@ export class NovaSendService {
   ): Promise<InitiatePaymentResult> {
     const apiKey = this.config.get<string>('NOVASEND_API_KEY')!;
     const apiSecret = this.config.get<string>('NOVASEND_API_SECRET')!;
-    const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString(
-      'base64',
-    );
+    const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
     const appUrl =
       this.config.get<string>('APP_URL') || 'http://localhost:5173';
 
-    // Direct Payin (documenté) : POST /v1/direct/payin
-    const payload: Record<string, any> = {
-      reference: params.reference,
-      customerName: params.customerName,
-      payin: {
-        amount: params.amount,
-        provider: params.provider,
-        country: 'CI',
-        ...(params.telephone ? { msisdn: params.telephone } : {}),
-        ...(params.otp ? { otp: params.otp } : {}),
-      },
-      action: {
-        successUrl: `${appUrl}/paiement/success`,
-        failureUrl: `${appUrl}/paiement/failure`,
-      },
+    const msisdn = toInternationalCiMsisdn(params.telephone);
+    const providerCode = normalizeNovaSendProvider(params.provider);
+
+    const action = {
+      successUrl: `${appUrl}/paiement/success`,
+      failureUrl: `${appUrl}/paiement/failure`,
     };
 
+    // Règle d'acheminement des flux NovaSend :
+    //  - MTN / MOOV / ORANGE ➔ POST /v1/direct/payin (Push USSD)
+    //  - WAVE ➔ POST /v1/payin/sessions (Lien / QR Code)
+    const isWave = providerCode === 'WAVE';
+    const url = isWave
+      ? `${this.baseUrl}/payin/sessions`
+      : `${this.baseUrl}/direct/payin`;
+
+    const payload: Record<string, any> = isWave
+      ? {
+          reference: params.reference,
+          amount: params.amount,
+          country: 'CI',
+          customerName: params.customerName || 'Client',
+          ...(msisdn ? { msisdn } : {}),
+          action,
+        }
+      : {
+          reference: params.reference,
+          customerName: params.customerName || 'Client',
+          payin: {
+            amount: params.amount,
+            provider: providerCode,
+            country: 'CI',
+            ...(msisdn ? { msisdn } : {}),
+            ...(params.otp ? { otp: params.otp } : {}),
+          },
+          action,
+        };
+
     try {
-      const { data } = await axios.post(`${this.BASE}/direct/payin`, payload, {
+      this.logger.log(`[NovaSendService] Calling ${url} (${providerCode}) for ${msisdn}`);
+      const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${credentials}`,
           'X-Idempotency-Key': randomUUID(),
@@ -98,25 +124,14 @@ export class NovaSendService {
         },
         timeout: 15_000,
       });
-
-      const paymentUrl =
-        data.paymentUrl ||
-        data.payment_url ||
-        data.wave_launch_url ||
-        data.checkout_url ||
-        data.action?.url ||
-        data.actionUrl ||
-        data.url ||
-        data.session_url;
-
       return {
-        sessionId: data.id || data.sessionId || `session_${randomUUID().slice(0, 8)}`,
-        paymentUrl,
+        sessionId: data?.id || data?.reference || params.reference,
+        paymentUrl: data?.paymentUrl || data?.checkoutUrl,
         simulated: false,
       };
     } catch (err: any) {
       this.logger.error(
-        'NovaSend API error',
+        `NovaSend API error [${providerCode}] (${url}):`,
         err?.response?.data ?? err.message,
       );
       throw err;
@@ -130,14 +145,9 @@ export class NovaSendService {
     const appUrl =
       this.config.get<string>('APP_URL') || 'http://localhost:5173';
 
-    const paymentUrl =
-      params.provider === 'WAVE'
-        ? `${appUrl}/paiement/preview?ref=${params.reference}&session=${sessionId}&montant=${params.amount}&provider=WAVE`
-        : `${appUrl}/paiement/preview?ref=${params.reference}&session=${sessionId}&montant=${params.amount}`;
-
     return {
       sessionId,
-      paymentUrl,
+      paymentUrl: `${appUrl}/paiement/preview?ref=${params.reference}&session=${sessionId}&montant=${params.amount}`,
       simulated: true,
     };
   }

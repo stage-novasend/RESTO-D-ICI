@@ -1,6 +1,7 @@
 import { Outlet, Link } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 
 export default function ClientLayout() {
   const { user } = useAuth();
@@ -30,6 +31,9 @@ export default function ClientLayout() {
 
             {/* Actions droite */}
             <div className="flex items-center gap-3">
+
+              {/* Language Switcher */}
+              <LanguageSwitcher variant="header" />
 
               {/* Retour à l'accueil */}
               <Link

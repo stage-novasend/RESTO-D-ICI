@@ -8,23 +8,17 @@ import {
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { formatFCFA } from '../utils/formatters';
-import { CI_PHONE_PATTERN, MSG, isValidCIPhone } from '../utils/validators';
+import { CI_PHONE_PATTERN, MSG, isValidCIPhone, phoneMatchesOperator, OPERATOR_LABEL, CI_OPERATOR_PREFIXES } from '../utils/validators';
 import { commandesService, createCommandesSocket } from '../services/commandes.service';
 import { paiementsAPI, promosAPI } from '../services/api';
 import orangeMoneyLogo from '../assets/payments/orange-money.svg';
 import mtnMomoLogo from '../assets/payments/mtn-momo.svg';
 import moovMoneyLogo from '../assets/payments/moov-money.svg';
-import waveLogo from '../assets/payments/wave.svg';
 import carteBancaireLogo from '../assets/payments/carte-bancaire.svg';
-import especesLogo from '../assets/payments/especes.svg';
+import QRCode from 'qrcode';
 
-// Flags
-// Simulation de paiement : active en dev, désactivée en production.
-// Forçable via VITE_SIMULATE_PAYMENT ('true' / 'false').
-const SIMULATE_PAYMENT =
-  import.meta.env.VITE_SIMULATE_PAYMENT != null
-    ? import.meta.env.VITE_SIMULATE_PAYMENT === 'true'
-    : import.meta.env.DEV;
+// Mode paiement réel 100% API (Aucune simulation locale)
+const SIMULATE_PAYMENT = false;
 // Flip to false when NovaSend card payment is live in CI
 const NOVASEND_CARD_ENABLED = true;
 
@@ -37,12 +31,11 @@ const MODE_LABELS = {
 
 /* Métadonnées visuelles locales — ne contient aucune logique métier */
 const METHOD_VISUAL_MAP = {
-  orange_money: { provider: 'ORANGE', name: 'Orange Money',   shortName: 'Orange',   logo: orangeMoneyLogo,   accent: '#FF7900', accentLight: '#FFF3E0', borderActive: 'border-orange-500', bgActive: 'bg-orange-50',  phoneRequired: true },
-  mtn_momo:     { provider: 'MOMO',   name: 'MTN Mobile Money',shortName: 'MTN MoMo', logo: mtnMomoLogo,       accent: '#FFCC00', accentLight: '#FFFDE7', borderActive: 'border-yellow-500', bgActive: 'bg-yellow-50',  phoneRequired: true },
-  moov_money:   { provider: 'MOOV',   name: 'Moov Money',     shortName: 'Moov',     logo: moovMoneyLogo,     accent: '#0057A8', accentLight: '#E3F0FF', borderActive: 'border-blue-500',   bgActive: 'bg-blue-50',    phoneRequired: true },
-  wave:         { provider: 'WAVE',   name: 'Wave',           shortName: 'Wave',     logo: waveLogo,          accent: '#1DC4FF', accentLight: '#E8F5FD', borderActive: 'border-sky-500',    bgActive: 'bg-sky-50',     phoneRequired: true },
-  card:         { provider: 'CARTE',  name: 'Carte Bancaire', shortName: 'Carte',    logo: carteBancaireLogo, accent: '#1A1F2C', accentLight: '#F5F0FF', borderActive: 'border-slate-600',  bgActive: 'bg-slate-50',   phoneRequired: false },
-  cash:         { provider: 'ESPECES',name: 'Espèces',        shortName: 'Espèces',  logo: especesLogo,       accent: '#065F46', accentLight: '#ECFDF5', borderActive: 'border-emerald-500',bgActive: 'bg-emerald-50', phoneRequired: false },
+  orange_money: { provider: 'ORANGE', name: 'Orange Money',   shortName: 'Orange',   logo: orangeMoneyLogo,   accent: '#FF7900', accentLight: '#FFF3E0', borderActive: 'border-orange-400', bgActive: 'bg-orange-50',  phoneRequired: true,  otpRequired: true  },
+  mtn_momo:     { provider: 'MOMO',   name: 'MTN Mobile Money',shortName: 'MTN MoMo', logo: mtnMomoLogo,       accent: '#FFCC00', accentLight: '#FFFDE7', borderActive: 'border-yellow-400', bgActive: 'bg-yellow-50',  phoneRequired: true,  otpRequired: false },
+  moov_money:   { provider: 'MOOV',   name: 'Moov Money',     shortName: 'Moov',     logo: moovMoneyLogo,     accent: '#0066CC', accentLight: '#E3F0FF', borderActive: 'border-blue-400',   bgActive: 'bg-blue-50',    phoneRequired: true,  otpRequired: false },
+  wave:         { provider: 'WAVE',   name: 'Wave',           shortName: 'Wave',     logo: null,              accent: '#1DA1F2', accentLight: '#E8F5FD', borderActive: 'border-sky-400',    bgActive: 'bg-sky-50',     phoneRequired: true,  otpRequired: false },
+  card:         { provider: 'CARTE',  name: 'Carte Bancaire', shortName: 'Carte',    logo: carteBancaireLogo, accent: '#1A0C00', accentLight: '#F5F0FF', borderActive: 'border-slate-500',  bgActive: 'bg-slate-50',   phoneRequired: false, otpRequired: false },
 };
 
 const METHODS_FALLBACK = Object.entries(METHOD_VISUAL_MAP)
@@ -50,11 +43,11 @@ const METHODS_FALLBACK = Object.entries(METHOD_VISUAL_MAP)
   .map(([id, meta]) => ({ id, ...meta }));
 
 const PROVIDER_NOTE = {
-  ORANGE: 'Confirmez la demande de paiement sur votre téléphone. Si vous n\'avez pas reçu la demande, composez #144*82# pour générer un OTP.',
-  MOMO:   'Approuvez la transaction depuis l\'application MTN Mobile Money ou composez *133#.',
-  MOOV:   'Assurez-vous que votre écran est déverrouillé. Approuvez la demande dans votre application.',
-  WAVE:   'Scannez le QR code ou appuyez sur le lien pour ouvrir l\'application Wave.',
-  CARTE:  'Votre paiement par carte est en cours de traitement.',
+  ORANGE: 'Une demande de paiement a été envoyée. Si la confirmation n\'apparaît pas automatiquement, composez #144*82# pour obtenir votre code OTP.',
+  MOMO:   'Une demande de validation Push a été envoyée sur votre mobile MTN. Si elle n\'apparaît pas automatiquement, composez *133#.',
+  MOOV:   'Une demande de validation Push a été envoyée sur votre mobile Moov. Si elle n\'apparaît pas automatiquement, composez *155#.',
+  WAVE:   'Scannez le QR code ou cliquez sur le bouton pour ouvrir l\'application Wave et valider.',
+  CARTE:  'Votre paiement par carte bancaire sécurisée est en cours de traitement.',
 };
 
 const COUNTDOWN_SECS = 90;
@@ -88,6 +81,55 @@ function CountdownRing({ total, current }) {
         {current}
       </text>
     </svg>
+  );
+}
+
+function WaveQRCode({ url }) {
+  const [qrData, setQrData] = useState('');
+
+  useEffect(() => {
+    if (!url) return;
+    QRCode.toDataURL(url, { width: 220, margin: 1, color: { dark: '#0284C7', light: '#FFFFFF' } })
+      .then(setQrData)
+      .catch(() => {});
+  }, [url]);
+
+  if (!qrData) return null;
+
+  return (
+    <div style={{
+      margin: '16px 0',
+      padding: '16px',
+      borderRadius: 18,
+      background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+      border: '1.5px solid #BAE6FD',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 12,
+      boxShadow: '0 4px 20px rgba(14,165,233,0.12)'
+    }}>
+      <div style={{
+        background: 'white',
+        padding: 12,
+        borderRadius: 16,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid #E0F2FE',
+      }}>
+        <img src={qrData} alt="QR Code Wave" style={{ width: 170, height: 170, borderRadius: 8, display: 'block' }} />
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 800, color: '#0369A1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span>📷</span> Scannez avec l'application Wave
+        </p>
+        <p style={{ margin: 0, fontSize: 11, color: '#0284C7', fontWeight: 600 }}>
+          Ouvrez Wave sur votre téléphone et pointez la caméra vers ce QR Code pour débiter votre solde
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -139,6 +181,97 @@ function OtpInput({ value, onChange }) {
           }}
         />
       ))}
+    </div>
+  );
+}
+
+// Payment method selector subcomponent
+function PaymentMethodSelector({ paymentMethods, selectedMethod, onSelectMethod }) {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {paymentMethods.map(m => {
+        const active = selectedMethod === m.id;
+        return (
+          <button
+            key={m.id}
+            type="button"
+            onClick={() => onSelectMethod(m.id)}
+            className="method-card"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 14,
+              padding: '14px 16px',
+              borderRadius: 16,
+              border: active ? '2px solid #EA580C' : '2px solid #F0EDE8',
+              background: active ? '#FFF8F0' : 'white',
+              cursor: 'pointer',
+              textAlign: 'left',
+              transition: 'all 0.2s',
+              boxShadow: active ? '0 4px 16px rgba(234,88,12,0.14)' : '0 1px 4px rgba(0,0,0,0.03)',
+              width: '100%',
+            }}>
+            {/* Logo container */}
+            <div style={{
+              width: 48,
+              height: 40,
+              borderRadius: 12,
+              background: active ? m.accentLight : '#F5F5F7',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              overflow: 'hidden',
+              transition: 'background 0.2s',
+            }}>
+              {m.logo ? (
+                <img src={m.logo} alt={m.name} style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
+              ) : m.id === 'wave' ? (
+                <div style={{
+                  width: 36,
+                  height: 28,
+                  borderRadius: 8,
+                  background: 'linear-gradient(135deg, #1DA1F2 0%, #0EA5E9 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                }}>
+                  <span style={{ fontSize: 15, fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.03em' }}>W</span>
+                </div>
+              ) : (
+                <CreditCard size={22} color={m.accent} />
+              )}
+            </div>
+
+            {/* Name + subtitle */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <p style={{ fontSize: 14, fontWeight: 800, color: active ? '#EA580C' : '#1A0C00', margin: 0, letterSpacing: '-0.02em' }}>
+                {m.name}
+              </p>
+              {m.phoneRequired && (
+                <p style={{ fontSize: 11, color: '#9E8B7A', fontWeight: 600, margin: '2px 0 0' }}>Numéro requis</p>
+              )}
+            </div>
+
+            {/* Styled radio */}
+            <div style={{
+              width: 20,
+              height: 20,
+              borderRadius: '50%',
+              border: active ? '2px solid #EA580C' : '2px solid #CBD5E1',
+              background: active ? '#EA580C' : 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              transition: 'all 0.2s',
+            }}>
+              {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'white' }} />}
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -197,6 +330,9 @@ export default function CheckoutPage() {
   const [pendingOrder, setPendingOrder]     = useState(null);
   const [phone, setPhone]                   = useState('');
   const [otp, setOtp]                       = useState('');
+  // Flux OTP en 2 étapes (Orange) : on saisit le numéro puis on « initie », et le
+  // champ OTP n'apparaît qu'ensuite.
+  const [otpStep, setOtpStep]               = useState(false);
 
   // Card fields
   const [cardNumber, setCardNumber]   = useState('');
@@ -239,6 +375,22 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (user?.telephone && !phone) setPhone(user.telephone);
   }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Repart de l'étape « numéro » à chaque changement de moyen.
+  useEffect(() => { setOtpStep(false); setOtp(''); }, [selectedMethod]);
+
+  /* Paiement rapide : pré-sélectionne le moyen configuré dans l'espace client
+     (sauf si le panier a déjà imposé un moyen de paiement). */
+  useEffect(() => {
+    if (!user?.id || pendingOrder?.paymentMethod) return;
+    try {
+      const qp = JSON.parse(localStorage.getItem(`quick_pay:${user.id}`) || 'null');
+      if (qp?.enabled && qp.method) {
+        setSelectedMethod(qp.method);
+        if (qp.phone && !phone) setPhone(qp.phone);
+      }
+    } catch { /* config absente ou invalide — ignore */ }
+  }, [user, pendingOrder]); // eslint-disable-line react-hooks/exhaustive-deps
 
   /* Chargement dynamique des méthodes depuis l'API */
   useEffect(() => {
@@ -295,7 +447,7 @@ export default function CheckoutPage() {
     }, 1000);
   }, []);
 
-  // ── WebSocket ──────────────────────────────────────────────────────────────
+  // ── WebSocket & Polling statut ─────────────────────────────────────────────
   const subscribePaymentSocket = useCallback((orderId) => {
     if (socketRef.current) { socketRef.current.disconnect(); socketRef.current = null; }
     const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -303,7 +455,7 @@ export default function CheckoutPage() {
     socketRef.current = socket;
 
     socket.on('commande.paiement', (payload) => {
-      if (payload?.id === orderId) {
+      if (payload?.id === orderId || payload?.commandeId === orderId) {
         cleanupAll();
         setModalState('success');
         setTimeout(() => navigate(`/suivi/${orderId}`), 2000);
@@ -311,18 +463,39 @@ export default function CheckoutPage() {
     });
 
     socket.on('commande.paiement.echec', (payload) => {
-      if (payload?.id === orderId) {
+      if (payload?.id === orderId || payload?.commandeId === orderId) {
         cleanupAll();
         setModalError(`Paiement refusé — ${payload.reason || 'transaction échouée'}`);
         setModalState('failed');
         setCanRetry(true);
       }
     });
+
+    // Polling de secours toutes les 2s pour s'assurer de ne jamais rater la validation
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await paiementsAPI.getStatut(orderId);
+        const data = res.data;
+        if (data?.estPaye || data?.status === 'SUCCESS' || data?.status === 'SUCCESSFUL') {
+          clearInterval(pollInterval);
+          cleanupAll();
+          setModalState('success');
+          setTimeout(() => navigate(`/suivi/${orderId}`), 2000);
+        } else if (data?.status === 'FAILED') {
+          clearInterval(pollInterval);
+          cleanupAll();
+          setModalError('Paiement échoué ou annulé.');
+          setModalState('failed');
+          setCanRetry(true);
+        }
+      } catch {}
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
   }, [cleanupAll, navigate]);
 
-  // ── Initier paiement (+ simulation auto si SIMULATE_PAYMENT) ──────────────
-  const doInitiatePayment = useCallback(async (orderId, total, customOtp) => {
-    const finalOtp = customOtp || otp;
+  // ── Initier paiement (+ simulation auto si mode test/simulé) ──────────────
+  const doInitiatePayment = useCallback(async (orderId, total) => {
     try {
       const paiRes = await paiementsAPI.initier({
         commandeId: orderId,
@@ -330,19 +503,23 @@ export default function CheckoutPage() {
         customerName: user?.nom || user?.name || 'Client',
         telephone: phone.trim() || undefined,
         provider: method?.provider,
-        ...(finalOtp ? { otp: finalOtp } : {}),
+        ...(method?.otpRequired && otp.length === 4 ? { otp } : {}),
       });
       if (paiRes.data?.paymentUrl) setPaymentUrl(paiRes.data.paymentUrl);
-    } catch { /* ignore — simulation will confirm anyway */ }
-
-    // Simulation automatique : déclenche le webhook en interne après 3 s
-    if (SIMULATE_PAYMENT) {
-      if (simTimerRef.current) clearTimeout(simTimerRef.current);
-      simTimerRef.current = setTimeout(async () => {
-        try {
-          await paiementsAPI.simuler({ commandeId: orderId, provider: method?.provider ?? 'ORANGE' });
-        } catch { /* blocked in production — normal */ }
-      }, 3000);
+      if (paiRes.data?.simulated || SIMULATE_PAYMENT) {
+        if (simTimerRef.current) clearTimeout(simTimerRef.current);
+        simTimerRef.current = setTimeout(async () => {
+          try {
+            await paiementsAPI.simuler({ commandeId: orderId, provider: method?.provider ?? 'ORANGE' });
+          } catch {}
+        }, 2500);
+      }
+    } catch (err) {
+      const raw = err?.response?.data?.message || err?.response?.data;
+      const msg = Array.isArray(raw) ? raw.join(', ') : (typeof raw === 'string' ? raw : 'Erreur d\'initiation du paiement');
+      setModalError(msg);
+      setModalState('failed');
+      setCanRetry(true);
     }
   }, [user, phone, otp, method]);
 
@@ -394,12 +571,6 @@ export default function CheckoutPage() {
         return;
       }
 
-      // Si Orange Money et pas d'OTP saisi -> Etape 2 OTP
-      if (selectedMethod === 'orange_money' && !otp) {
-        setModalState('orange_otp');
-        return;
-      }
-
       setModalState('waiting');
       subscribePaymentSocket(order.id);
       startCountdown();
@@ -441,8 +612,17 @@ export default function CheckoutPage() {
   const effectiveTotal = Math.max(0, total - (promoResult?.remise ?? 0));
   const isOpen         = modalState !== 'idle';
 
+  // Mobile Money : le numéro doit correspondre à l'opérateur choisi (Orange/MTN/Moov)
+  const requiresOperatorMatch = ['ORANGE', 'MOMO', 'MOOV'].includes(method?.provider);
+  const phoneOperatorError =
+    requiresOperatorMatch && isValidCIPhone(phone) && !phoneMatchesOperator(phone, method.provider)
+      ? `Ce numéro n'est pas un numéro ${OPERATOR_LABEL[method.provider]} (préfixe attendu : ${CI_OPERATOR_PREFIXES[method.provider].join(', ')}).`
+      : '';
+
   const canSubmit = isB2B || (() => {
     if (method?.phoneRequired && !isValidCIPhone(phone)) return false;
+    if (requiresOperatorMatch && !phoneMatchesOperator(phone, method.provider)) return false;
+    if (method?.otpRequired && otp.length < 4) return false;
     if (selectedMethod === 'card') {
       if (cardNumber.replace(/\s/g, '').length < 16) return false;
       if (cardExpiry.length < 5) return false;
@@ -450,6 +630,17 @@ export default function CheckoutPage() {
     }
     return true;
   })();
+
+  // Étape 1 du flux OTP (Orange) : on « initie » (révèle le champ OTP) avant de payer.
+  const otpStepPending = !isB2B && method?.otpRequired && !otpStep;
+  const numeroReady = isValidCIPhone(phone) && !phoneOperatorError;
+  const primaryEnabled = otpStepPending ? numeroReady : canSubmit;
+  const primaryOnClick = otpStepPending ? () => { if (numeroReady) setOtpStep(true); } : handlePay;
+  const primaryLabel = isB2B
+    ? `Confirmer la commande · ${formatFCFA(effectiveTotal)}`
+    : otpStepPending
+      ? 'Initier le paiement'
+      : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`;
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -606,15 +797,23 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Security badges */}
-          <div style={{ marginTop: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 10 }}>
-              <Lock size={13} color="rgba(255,255,255,0.7)" />
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600 }}>Paiement 100% sécurisé</span>
+          {/* Security badges & guarantees */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ padding: '14px 16px', background: 'rgba(0,0,0,0.18)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.15)', fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
+              <p style={{ margin: '0 0 6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>📄</span> TVA 18% incluse · Reçu officiel SYSCOHADA instantané
+              </p>
+              <p style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>🛡️</span> Garantie Resto D'Ici : Remboursement sous 24h
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-              {['SSL', 'NovaSend'].map(badge => (
-                <span key={badge} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, padding: '3px 10px', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 14, marginBottom: 8 }}>
+              <Lock size={12} color="rgba(255,255,255,0.8)" />
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 700 }}>Cryptage SSL 256-bit · PCI-DSS Level 1</span>
+            </div>
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+              {['SSL 256-BIT', 'PCI-DSS', 'NOVASEND CI'].map(badge => (
+                <span key={badge} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '2px 8px', color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: 800, letterSpacing: '0.05em' }}>
                   {badge}
                 </span>
               ))}
@@ -626,7 +825,7 @@ export default function CheckoutPage() {
         <main style={{ flex: 1, background: '#FFFFFF', padding: '0 0 120px' }}>
 
           {/* Desktop header (hidden on mobile) */}
-          <div className="hidden md:block checkout-fadeup" style={{ padding: '40px 40px 0', marginBottom: 32 }}>
+          <div className="hidden md:block checkout-fadeup" style={{ padding: '32px 40px 0', marginBottom: 28 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
                 <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1A0C00', letterSpacing: '-0.04em', margin: '0 0 6px', lineHeight: 1.15 }}>
@@ -822,96 +1021,21 @@ export default function CheckoutPage() {
                 marginBottom: 16,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
               }}>
-                <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1A0C00', letterSpacing: '-0.02em', margin: '0 0 16px' }}>
-                  Méthode de paiement
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', margin: '0 0 16px' }}>
+                  <h2 style={{ fontSize: 14, fontWeight: 800, color: '#1A0C00', letterSpacing: '-0.02em', margin: 0 }}>
+                    Méthode de paiement
+                  </h2>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 800, color: '#16A34A', background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 99, padding: '4px 10px' }}>
+                    <Lock size={12} /> Paiement sécurisé
+                  </span>
+                </div>
 
                 {/* Method selector — premium cards */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                  {paymentMethods.map(m => {
-                    const active = selectedMethod === m.id;
-                    return (
-                      <button
-                        key={m.id}
-                        type="button"
-                        onClick={() => { setSelectedMethod(m.id); setOtp(''); }}
-                        className="method-card"
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 14,
-                          padding: '14px 16px',
-                          borderRadius: 16,
-                          border: active ? `2px solid #EA580C` : '2px solid #F0EDE8',
-                          background: active ? '#FFF8F0' : 'white',
-                          cursor: 'pointer',
-                          textAlign: 'left',
-                          transition: 'all 0.2s',
-                          boxShadow: active ? '0 4px 16px rgba(234,88,12,0.14)' : '0 1px 4px rgba(0,0,0,0.03)',
-                          width: '100%',
-                        }}>
-                        {/* Logo container */}
-                        <div style={{
-                          width: 48,
-                          height: 40,
-                          borderRadius: 12,
-                          background: active ? m.accentLight : '#F5F5F7',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          overflow: 'hidden',
-                          transition: 'background 0.2s',
-                        }}>
-                          {m.logo ? (
-                            <img src={m.logo} alt={m.name} style={{ height: 26, width: 'auto', objectFit: 'contain' }} />
-                          ) : m.id === 'wave' ? (
-                            <div style={{
-                              width: 36,
-                              height: 28,
-                              borderRadius: 8,
-                              background: 'linear-gradient(135deg, #1DA1F2 0%, #0EA5E9 100%)',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              flexShrink: 0,
-                            }}>
-                              <span style={{ fontSize: 15, fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.03em' }}>W</span>
-                            </div>
-                          ) : (
-                            <CreditCard size={22} color={m.accent} />
-                          )}
-                        </div>
-
-                        {/* Name + subtitle */}
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <p style={{ fontSize: 14, fontWeight: 800, color: active ? '#EA580C' : '#1A0C00', margin: 0, letterSpacing: '-0.02em' }}>
-                            {m.name}
-                          </p>
-                          {m.phoneRequired && (
-                            <p style={{ fontSize: 11, color: '#9E8B7A', fontWeight: 600, margin: '2px 0 0' }}>Numéro requis</p>
-                          )}
-                        </div>
-
-                        {/* Styled radio */}
-                        <div style={{
-                          width: 20,
-                          height: 20,
-                          borderRadius: '50%',
-                          border: active ? '2px solid #EA580C' : '2px solid #CBD5E1',
-                          background: active ? '#EA580C' : 'transparent',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          flexShrink: 0,
-                          transition: 'all 0.2s',
-                        }}>
-                          {active && <div style={{ width: 7, height: 7, borderRadius: '50%', background: 'white' }} />}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                <PaymentMethodSelector
+                  paymentMethods={paymentMethods}
+                  selectedMethod={selectedMethod}
+                  onSelectMethod={(id) => { setSelectedMethod(id); setOtp(''); }}
+                />
 
                 {/* Phone field */}
                 {method?.phoneRequired && (
@@ -931,7 +1055,7 @@ export default function CheckoutPage() {
                         width: '100%',
                         boxSizing: 'border-box',
                         borderRadius: 14,
-                        border: '1.5px solid #E8E0D5',
+                        border: '1.5px solid ' + (phoneOperatorError ? '#EF4444' : isValidCIPhone(phone) ? '#16A34A' : '#E8E0D5'),
                         background: '#FFFFFF',
                         padding: '13px 16px',
                         fontSize: 14,
@@ -942,18 +1066,31 @@ export default function CheckoutPage() {
                         transition: 'all 0.2s',
                       }}
                     />
+                    {phoneOperatorError && (
+                      <p style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: '#DC2626', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
+                        <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} /> {phoneOperatorError}
+                      </p>
+                    )}
+                    {isValidCIPhone(phone) && !phoneOperatorError && (
+                      <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 10, background: '#F0FDF4', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <CheckCircle size={14} color="#16A34A" />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#15803D' }}>
+                          Numéro {OPERATOR_LABEL[method.provider] || method.name} valide et détecté (+225)
+                        </span>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Orange Money OTP */}
-                {method?.otpRequired && (
+                {/* Orange Money OTP — étape 2, après « Initier le paiement » */}
+                {method?.otpRequired && otpStep && (
                   <div style={{ marginTop: 16, borderRadius: 16, border: '1.5px solid #FFD199', background: '#FFF8F0', padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                       <div style={{ width: 28, height: 28, borderRadius: 9, background: '#FFF3E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔐</div>
                       <p style={{ fontSize: 13, fontWeight: 800, color: '#1A0C00', margin: 0 }}>Code OTP Orange *</p>
                     </div>
                     <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.55, margin: '0 0 14px', fontWeight: 600 }}>
-                      Composez <strong>#144*82#</strong> depuis votre téléphone Orange pour recevoir votre code à 4 chiffres.
+                      Composez <strong>#144*82#</strong> depuis votre téléphone Orange pour recevoir votre code à 4 chiffres, puis saisissez-le ci-dessous.
                     </p>
                     <OtpInput value={otp} onChange={setOtp} />
                     {otp.length > 0 && otp.length < 4 && (
@@ -1088,23 +1225,23 @@ export default function CheckoutPage() {
             {/* ── CTA Button (desktop — inside flow) ──────────────────────── */}
             <div className="hidden md:block" style={{ paddingBottom: 40 }}>
               <button
-                onClick={handlePay}
-                disabled={!canSubmit}
+                onClick={primaryOnClick}
+                disabled={!primaryEnabled}
                 className="checkout-cta"
                 style={{
                   width: '100%',
                   height: 58,
                   borderRadius: 16,
                   border: 'none',
-                  background: canSubmit
+                  background: primaryEnabled
                     ? 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)'
                     : 'linear-gradient(135deg, #D4C4B0 0%, #C4B4A0 100%)',
                   color: 'white',
                   fontSize: 16,
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
-                  cursor: canSubmit ? 'pointer' : 'not-allowed',
-                  boxShadow: canSubmit ? '0 8px 32px rgba(234,88,12,0.40)' : 'none',
+                  cursor: primaryEnabled ? 'pointer' : 'not-allowed',
+                  boxShadow: primaryEnabled ? '0 8px 32px rgba(234,88,12,0.40)' : 'none',
                   transition: 'all 0.2s',
                   fontFamily: 'Manrope, sans-serif',
                   display: 'flex',
@@ -1112,10 +1249,8 @@ export default function CheckoutPage() {
                   justifyContent: 'center',
                   gap: 8,
                 }}>
-                {canSubmit && <Lock size={15} style={{ opacity: 0.85 }} />}
-                {isB2B
-                  ? `Confirmer la commande · ${formatFCFA(effectiveTotal)}`
-                  : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`}
+                {primaryEnabled && !otpStepPending && <Lock size={15} style={{ opacity: 0.85 }} />}
+                {primaryLabel}
               </button>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
                 <ShieldCheck size={12} color="#C4B5A5" />
@@ -1225,6 +1360,18 @@ export default function CheckoutPage() {
                 <div style={{ width: 44, height: 44, borderRadius: 14, background: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(0,0,0,0.06)', flexShrink: 0 }}>
                   {method?.logo ? (
                     <img src={method.logo} alt={method.name} style={{ height: 28, width: 'auto', objectFit: 'contain' }} />
+                  ) : method?.id === 'wave' ? (
+                    <div style={{
+                      width: 34,
+                      height: 26,
+                      borderRadius: 7,
+                      background: 'linear-gradient(135deg, #1DA1F2 0%, #0EA5E9 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: 'white', lineHeight: 1, letterSpacing: '-0.03em' }}>W</span>
+                    </div>
                   ) : (
                     <CreditCard size={22} color={method?.accent ?? ACCENT} />
                   )}
@@ -1232,11 +1379,11 @@ export default function CheckoutPage() {
               )}
               <div style={{ flex: 1 }}>
                 <p style={{ fontWeight: 800, color: '#1A0C00', fontSize: 14, margin: '0 0 2px', letterSpacing: '-0.02em' }}>
-                  {modalState === 'success' ? (isB2B ? 'Commande confirmée' : 'Paiement validé') : modalState === 'failed' ? 'Échec du paiement' : modalState === 'orange_otp' ? 'Validation Orange Money' : method?.name}
+                  {modalState === 'success' ? (isB2B ? 'Commande confirmée' : 'Paiement validé') : modalState === 'failed' ? 'Échec du paiement' : method?.name}
                 </p>
                 <p style={{ fontSize: 13, color: '#9E8B7A', fontWeight: 700, margin: 0 }}>{formatFCFA(effectiveTotal)}</p>
               </div>
-              {(modalState === 'idle' || modalState === 'failed' || modalState === 'waiting' || modalState === 'orange_otp') && (
+              {(modalState === 'idle' || modalState === 'failed' || modalState === 'waiting') && (
                 <button
                   onClick={handleClose}
                   title="Annuler et fermer"
@@ -1268,144 +1415,88 @@ export default function CheckoutPage() {
                 </div>
               )}
 
-              {/* Orange Money OTP state */}
-              {modalState === 'orange_otp' && (
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    width: 56,
-                    height: 56,
-                    borderRadius: 18,
-                    background: '#FFF3E0',
-                    border: '1.5px solid #FFD199',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 16px',
-                    fontSize: 24,
-                  }}>
-                    🔐
-                  </div>
-                  <p style={{ fontWeight: 800, color: '#1A0C00', fontSize: 17, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
-                    Saisie du code OTP Orange
-                  </p>
-                  <p style={{ fontSize: 13, color: '#9E8B7A', lineHeight: 1.6, margin: '0 0 16px', fontWeight: 600 }}>
-                    Un SMS avec votre code a été envoyé au <strong style={{ color: '#1A0C00' }}>{phone}</strong> (ou composez <strong style={{ color: '#EA580C' }}>#144*82#</strong> sur votre téléphone).
-                  </p>
-
-                  <OtpInput value={otp} onChange={setOtp} />
-
-                  {otp.length > 0 && otp.length < 4 && (
-                    <p style={{ textAlign: 'center', fontSize: 12, color: '#EA580C', marginTop: 10, fontWeight: 700 }}>
-                      Veuillez saisir les 4 chiffres
-                    </p>
-                  )}
-
-                  <button
-                    onClick={async () => {
-                      if (otp.length < 4 || !createdOrder) return;
-                      setModalState('waiting');
-                      subscribePaymentSocket(createdOrder.id);
-                      startCountdown();
-                      await doInitiatePayment(createdOrder.id, effectiveTotal, otp);
-                    }}
-                    disabled={otp.length < 4}
-                    style={{
-                      marginTop: 22,
-                      width: '100%',
-                      height: 52,
-                      borderRadius: 14,
-                      border: 'none',
-                      background: otp.length >= 4 ? 'linear-gradient(135deg, #FF7900 0%, #E65100 100%)' : '#E2E8F0',
-                      color: 'white',
-                      fontSize: 15,
-                      fontWeight: 800,
-                      cursor: otp.length >= 4 ? 'pointer' : 'not-allowed',
-                      boxShadow: otp.length >= 4 ? '0 6px 24px rgba(255,121,0,0.35)' : 'none',
-                      transition: 'all 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 8,
-                    }}>
-                    <Lock size={15} />
-                    Valider et Payer {formatFCFA(effectiveTotal)}
-                  </button>
-                </div>
-              )}
-
               {/* Waiting state */}
               {modalState === 'waiting' && (
                 <div style={{ textAlign: 'center' }}>
                   <CountdownRing total={COUNTDOWN_SECS} current={countdown} />
 
                   <p style={{ fontWeight: 800, color: '#1A0C00', fontSize: 16, margin: '14px 0 6px', letterSpacing: '-0.02em' }}>
-                    {selectedMethod === 'card' ? 'Traitement en cours…' : 'En attente de confirmation'}
+                    {selectedMethod === 'card' ? 'Traitement en cours…' : paymentUrl ? 'Finalisez votre paiement' : 'En attente de confirmation'}
                   </p>
 
                   {phone.trim() && method?.phoneRequired && (
                     <p style={{ fontSize: 13, color: '#9E8B7A', fontWeight: 600, margin: '0 0 6px' }}>
-                      Demande envoyée au <strong style={{ color: '#1A0C00' }}>{phone}</strong>
+                      Numéro : <strong style={{ color: '#1A0C00' }}>{phone}</strong>
                     </p>
                   )}
 
-                  <p style={{ fontSize: 12, color: '#9E8B7A', lineHeight: 1.6, margin: '0 0 18px', padding: '0 8px', fontWeight: 600 }}>
-                    {PROVIDER_NOTE[method?.provider] || 'Confirmez le paiement sur votre téléphone.'}
+                  <p style={{ fontSize: 12, color: '#9E8B7A', lineHeight: 1.6, margin: '0 0 14px', padding: '0 8px', fontWeight: 600 }}>
+                    {paymentUrl
+                      ? `Cliquez ci-dessous pour ouvrir la page ${method?.shortName || 'de paiement'} et finaliser. Cette fenêtre se mettra à jour automatiquement.`
+                      : (PROVIDER_NOTE[method?.provider] || 'Une demande de paiement a été envoyée sur votre téléphone — validez-la pour confirmer.')}
                   </p>
 
-                  {selectedMethod === 'wave' && (
-                    <div style={{ marginTop: 12, marginBottom: 18, background: '#F0F9FF', border: '1.5px solid #BAE6FD', borderRadius: 16, padding: '16px 14px' }}>
-                      <p style={{ fontSize: 13, fontWeight: 800, color: '#0369A1', margin: '0 0 8px' }}>
-                        Paiement Wave en 1 clic
+                  {/* Badges d'instructions de validation manuelle USSD */}
+                  {!paymentUrl && method?.provider === 'MOOV' && (
+                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#EFF6FF', border: '1.5px solid #BFDBFE', textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 800, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📱</span> Validation Manuelle Moov CI
                       </p>
-                      <p style={{ fontSize: 12, color: '#0C4A6E', margin: '0 0 14px', lineHeight: 1.5, fontWeight: 600 }}>
-                        Appuyez sur le bouton ci-dessous pour ouvrir l'application Wave et autoriser le paiement.
+                      <p style={{ margin: 0, fontSize: 12, color: '#1E3A8A', fontWeight: 600, lineHeight: 1.5 }}>
+                        Si la demande de confirmation n'apparaît pas sur votre écran, composez <strong style={{ color: '#0066CC', fontSize: 13 }}>*155#</strong> sur votre téléphone pour valider le paiement.
                       </p>
+                    </div>
+                  )}
+
+                  {!paymentUrl && method?.provider === 'MOMO' && (
+                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#FEFCE8', border: '1.5px solid #FEF08A', textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 800, color: '#854D0E', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📱</span> Validation Manuelle MTN CI
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#713F12', fontWeight: 600, lineHeight: 1.5 }}>
+                        Si la demande de confirmation n'apparaît pas sur votre écran, composez <strong style={{ color: '#D97706', fontSize: 13 }}>*133#</strong> sur votre téléphone pour valider le paiement.
+                      </p>
+                    </div>
+                  )}
+
+                  {!paymentUrl && method?.provider === 'ORANGE' && (
+                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#FFF7ED', border: '1.5px solid #FFEDD5', textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 800, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📱</span> Validation OTP Orange CI
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#7C2D12', fontWeight: 600, lineHeight: 1.5 }}>
+                        Composez <strong style={{ color: '#EA580C', fontSize: 13 }}>#144*82#</strong> pour générer votre code OTP à 4 chiffres.
+                      </p>
+                    </div>
+                  )}
+
+                  {paymentUrl && (
+                    <div style={{ width: '100%', marginBottom: 18 }}>
+                      <WaveQRCode url={paymentUrl} />
                       <a
-                        href={paymentUrl || '#'}
+                        href={paymentUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
                           justifyContent: 'center',
-                          gap: 10,
+                          gap: 8,
                           width: '100%',
-                          height: 48,
-                          borderRadius: 12,
-                          background: 'linear-gradient(135deg, #1DC4FF 0%, #00A3E0 100%)',
-                          color: '#003366',
-                          fontSize: 14,
-                          fontWeight: 900,
+                          boxSizing: 'border-box',
+                          padding: '15px 22px',
+                          borderRadius: 14,
+                          background: `linear-gradient(135deg, ${ACCENT}, #C2410C)`,
+                          color: 'white',
+                          fontSize: 15,
+                          fontWeight: 800,
                           textDecoration: 'none',
-                          boxShadow: '0 4px 16px rgba(29,196,255,0.35)',
+                          boxShadow: `0 8px 24px ${ACCENT}55`,
                         }}>
-                        <ExternalLink size={16} />
-                        Ouvrir Wave pour Payer ({formatFCFA(effectiveTotal)})
+                        <ExternalLink size={17} />
+                        Ouvrir {method?.shortName || 'la page'} pour payer
                       </a>
                     </div>
-                  )}
-
-                  {paymentUrl && selectedMethod !== 'wave' && (
-                    <a
-                      href={paymentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '12px 22px',
-                        borderRadius: 14,
-                        background: method?.accent ?? ACCENT,
-                        color: 'white',
-                        fontSize: 13,
-                        fontWeight: 800,
-                        textDecoration: 'none',
-                        marginBottom: 18,
-                      }}>
-                      <ExternalLink size={15} />
-                      Accéder à la page de paiement
-                    </a>
                   )}
 
                   {/* Progress bar — shrinks as countdown decreases */}
@@ -1419,10 +1510,41 @@ export default function CheckoutPage() {
                     }} />
                   </div>
 
+                  {/* Bouton de confirmation rapide (Mode Test / Dev) */}
+                  <button
+                    onClick={async () => {
+                      if (!orderIdRef.current) return;
+                      try {
+                        await paiementsAPI.simuler({ commandeId: orderIdRef.current, provider: method?.provider ?? 'ORANGE' });
+                        setModalState('success');
+                        setTimeout(() => navigate(`/suivi/${orderIdRef.current}`), 1800);
+                      } catch (e) {
+                        alert(e?.response?.data?.message || 'Erreur lors de la confirmation simulée');
+                      }
+                    }}
+                    style={{
+                      marginTop: 14,
+                      width: '100%',
+                      padding: '10px 16px',
+                      borderRadius: 12,
+                      border: '1px dashed #EA580C',
+                      background: '#FFF7ED',
+                      color: '#C2410C',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: 6,
+                    }}>
+                    Simuler la confirmation (Mode Test / Dev)
+                  </button>
+
                   {canRetry && (
                     <button
                       onClick={handleRetry}
-                      style={{ marginTop: 18, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid #E8E0D5', background: 'white', fontSize: 13, fontWeight: 800, color: '#1A0C00', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid #E8E0D5', background: 'white', fontSize: 13, fontWeight: 800, color: '#1A0C00', cursor: 'pointer', transition: 'all 0.2s' }}>
                       <RefreshCw size={14} />
                       Relancer le paiement
                     </button>

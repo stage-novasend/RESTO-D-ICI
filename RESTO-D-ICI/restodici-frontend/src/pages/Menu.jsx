@@ -1,23 +1,25 @@
-// Menu.jsx — Catalogue restaurants + menu par restaurant
+// Menu.jsx — Catalogue restaurants + menu par restaurant avec Sidebar dynamique Yango Deli
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Search, X, UtensilsCrossed, Star, Clock, Heart, ArrowLeft,
   ShoppingCart, Plus, Minus, Store, AlertCircle, MapPin, ChevronRight,
-  Truck, Package, Navigation, SlidersHorizontal, Trash2,
+  Truck, Package, Navigation, Trash2, SlidersHorizontal, RotateCcw,
 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
-import { menuAPI, promosAPI, publicConfigAPI } from '../services/api';
+import { menuAPI, promosAPI } from '../services/api';
 import ProductCustomizationModal from '../components/menu/ProductCustomizationModal';
 import CartDrawer from '../components/cart/CartDrawer';
 import DeliveryMap from '../components/maps/DeliveryMap';
+import FilterSidebar from '../components/menu/FilterSidebar';
+import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { formatFCFA } from '../utils/formatters';
 import { getArticleImage } from '../utils/articleImage';
 
 /* ── Design tokens ── */
 const C = {
-  bg:     '#FFFFFF',
+  bg:     '#FFF4ED',
   card:   '#FFFFFF',
   accent: '#EA580C',
   aD:     '#C2410C',
@@ -25,17 +27,17 @@ const C = {
   yellow: '#FFB800',
   red:    '#FF3B30',
   green:  '#22C55E',
-  dark:   '#1C1C1E',
-  text:   '#3D3D3D',
-  muted:  '#8A8A8A',
+  dark:   '#1A0C00',
+  text:   '#3B2409',
+  muted:  '#7A5E3A',
   faint:  '#D1D1D6',
-  line:   '#EBEBEB',
+  line:   'rgba(234,88,12,0.14)',
   nav:    '#FFFFFF',
-  sh:     '0 1px 8px rgba(0,0,0,0.07)',
-  shM:    '0 4px 24px rgba(0,0,0,0.10)',
-  shL:    '0 12px 40px rgba(0,0,0,0.14)',
+  sh:     '0 2px 14px rgba(234,88,12,0.07)',
+  shM:    '0 6px 24px rgba(234,88,12,0.12)',
+  shL:    '0 14px 44px rgba(234,88,12,0.18)',
 };
-const sans = "'Plus Jakarta Sans', 'Manrope', system-ui, sans-serif";
+const sans = "'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif";
 
 const DELIVERY_MODES = [
   { key: 'SUR_PLACE', label: 'Sur place',  Icon: UtensilsCrossed },
@@ -64,14 +66,21 @@ const CSS = `
 @keyframes spin { to{transform:rotate(360deg)} }
 @keyframes bannerMarquee  { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
 @keyframes bannerMarqueeR { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
+@keyframes slideInLeft { from{transform:translateX(-100%)} to{transform:translateX(0)} }
 .cat-scroll::-webkit-scrollbar{display:none}
-.prod-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:16px; }
+.prod-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:20px; }
 .cart-panel{ display:flex; flex-direction:column; }
 .cart-mobile-bar{ display:none; }
+
 @media(max-width:900px){
   .cart-panel{ display:none !important; }
-  .prod-grid{ grid-template-columns:repeat(auto-fit,minmax(155px,1fr)); gap:10px; }
+  .prod-grid{ grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:12px; }
   .cart-mobile-bar{ display:block; }
+  .rd-menu-desktop-sidebar { display: none !important; }
+  .rd-menu-mobile-filter-btn { display: flex !important; }
+}
+@media(min-width:901px){
+  .rd-menu-mobile-filter-btn { display: none !important; }
 }
 `;
 
@@ -89,7 +98,7 @@ function SK({ w = '100%', h = 16, r = 8 }) {
 const CAT_EMOJI = {
   pizza: '🍕', burger: '🍔', sushi: '🍣', tacos: '🌮', poulet: '🍗',
   poisson: '🐟', riz: '🍚', salade: '🥗', dessert: '🍰', boisson: '🥤',
-  brochette: '🥩', foutou: '🫙', soupe: '🍜',
+  brochette: '🥩', foutou: '🫙', soupe: '🍲',
   grillades: '🔥', sandwich: '🥪', plat: '🍽️',
   donut: '🍩', icecream: '🍦', café: '☕', viande: '🥩',
 };
@@ -112,33 +121,32 @@ function buildDynCats(articles, catList) {
 /* ── Logo ── */
 function Logo() {
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+    <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
       <div style={{
-        width: 34, height: 34, borderRadius: 10,
+        width: 36, height: 36, borderRadius: 10,
         background: 'linear-gradient(135deg, #EA580C, #FFB800)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 2px 8px #EA580C44',
+        boxShadow: '0 4px 12px #EA580C44',
       }}>
         <UtensilsCrossed size={18} color="#fff" strokeWidth={2.5} />
       </div>
-      <span style={{ fontFamily: sans, fontSize: 17, fontWeight: 900, letterSpacing: '-0.04em' }}>
+      <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, letterSpacing: '-0.04em' }}>
         <span style={{ color: '#EA580C' }}>Resto</span>
         <span style={{ color: '#1C1C1E' }}>&nbsp;d'ici</span>
       </span>
-    </div>
+    </a>
   );
 }
 
-/* ── Modal carte livraison — centrée, avec recherche d'adresse ── */
+/* ── Modal carte livraison ── */
 function DeliveryMapModal({ onClose, onConfirm, initial }) {
   const [loc,       setLoc]       = useState(initial || null);
-  const [mapLoc,    setMapLoc]    = useState(initial || null); // valeur passée à DeliveryMap
+  const [mapLoc,    setMapLoc]    = useState(initial || null);
   const [query,     setQuery]     = useState(initial?.address || '');
   const [results,   setResults]   = useState([]);
   const [searching, setSearching] = useState(false);
   const debounceRef = useRef(null);
 
-  /* Recherche Nominatim avec debounce */
   const handleQueryChange = (val) => {
     setQuery(val);
     clearTimeout(debounceRef.current);
@@ -157,7 +165,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
     }, 550);
   };
 
-  /* Sélection d'un résultat → centre la carte sur ce point */
   const pickResult = (r) => {
     const newLoc = { lat: parseFloat(r.lat), lng: parseFloat(r.lon), address: r.display_name };
     setLoc(newLoc);
@@ -166,7 +173,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
     setResults([]);
   };
 
-  /* Quand l'utilisateur clique/déplace sur la carte */
   const handleMapChange = (newLoc) => {
     setLoc(newLoc);
     if (newLoc?.address) setQuery(newLoc.address);
@@ -178,8 +184,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
       onClick={e => { if (e.target === e.currentTarget) onClose(); }}
     >
       <div style={{ width: '100%', maxWidth: 700, background: C.card, borderRadius: 24, overflow: 'hidden', display: 'flex', flexDirection: 'column', maxHeight: '92vh', animation: 'modalIn 0.28s cubic-bezier(.22,1,.36,1) both', boxShadow: '0 32px 80px rgba(0,0,0,0.35)' }}>
-
-        {/* ── En-tête ── */}
         <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid ' + C.line, display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
           <div style={{ width: 40, height: 40, borderRadius: 12, background: C.aL, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Truck size={18} color={C.accent} />
@@ -193,11 +197,8 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
           </button>
         </div>
 
-        {/* ── Barre de recherche ── */}
         <div style={{ padding: '12px 20px', borderBottom: '1px solid ' + C.line, flexShrink: 0, position: 'relative', zIndex: 10 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 12, padding: '0 14px', height: 44, transition: 'border-color 0.15s' }}
-            onFocus={() => {}} // pour l'état focus géré par l'input enfant
-          >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 12, padding: '0 14px', height: 44 }}>
             <Search size={15} color={C.muted} />
             <input
               type="text"
@@ -216,7 +217,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
             )}
           </div>
 
-          {/* Dropdown résultats */}
           {results.length > 0 && (
             <div style={{ position: 'absolute', top: 'calc(100% - 2px)', left: 20, right: 20, background: C.card, border: '1px solid ' + C.line, borderRadius: 14, boxShadow: C.shL, maxHeight: 220, overflowY: 'auto', zIndex: 20 }}>
               {results.map((r, i) => (
@@ -235,7 +235,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
           )}
         </div>
 
-        {/* ── Adresse sélectionnée ── */}
         {loc?.address && (
           <div style={{ padding: '9px 20px', background: C.aL, display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
             <MapPin size={13} color={C.accent} style={{ flexShrink: 0 }} />
@@ -245,7 +244,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
           </div>
         )}
 
-        {/* ── Carte — grande, pleine largeur ── */}
         <div style={{ height: 400, flexShrink: 0 }}>
           <DeliveryMap
             value={mapLoc}
@@ -255,7 +253,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
           />
         </div>
 
-        {/* ── Bouton confirmer ── */}
         <div style={{ padding: '14px 20px 18px', borderTop: '1px solid ' + C.line, flexShrink: 0 }}>
           <button
             onClick={() => { if (loc) { onConfirm(loc); onClose(); } }}
@@ -270,8 +267,6 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               transition: 'all 0.15s',
             }}
-            onMouseEnter={e => { if (loc) e.currentTarget.style.transform = 'scale(1.01)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
             <Navigation size={16} />
             {loc ? 'Confirmer — ' + loc.address?.split(',')[0] : 'Sélectionnez un emplacement sur la carte'}
@@ -283,15 +278,14 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
 }
 
 /* ── Carte restaurant ── */
-function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav }) {
+function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav, matched }) {
   const [hov, setHov] = useState(false);
   const img = restaurant.logo || restaurant.coverImage || restaurant.photoUrl || fallback(idx, 480);
   const rating = (Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne) : 0).toFixed(1);
   const time   = restaurant.deliveryTime || (20 + (idx % 4) * 5) + '–' + (30 + (idx % 4) * 5) + ' min';
   const isFav  = favorites?.includes(restaurant.id);
   const isOpen = restaurant.isOpen !== false;
-  const BADGE_LABELS = ['⭐ Populaire', '🔥 Tendance', '✨ Nouveau', '🎯 Top'];
-  const badge = idx < 4 ? BADGE_LABELS[idx] : null;
+  const badge = Number(restaurant.noteMoyenne) >= 4.5 ? '★ Bien noté' : null;
 
   return (
     <div
@@ -299,13 +293,14 @@ function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav }) {
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: C.card, borderRadius: 20,
+        background: C.card, borderRadius: 22,
         boxShadow: hov ? C.shL : C.sh,
         overflow: 'hidden', cursor: isOpen ? 'pointer' : 'default',
         transform: hov ? 'translateY(-4px)' : 'translateY(0)',
         transition: 'all 0.22s cubic-bezier(.4,0,.2,1)',
         opacity: isOpen ? 1 : 0.68,
         animation: 'fadeUp 0.35s ease both',
+        border: `1px solid ${C.line}`
       }}
     >
       <div style={{ position: 'relative', height: 180, overflow: 'hidden' }}>
@@ -332,10 +327,24 @@ function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav }) {
       <div style={{ padding: '14px 14px 16px' }}>
         <p style={{ margin: '0 0 3px', fontFamily: sans, fontSize: 15, fontWeight: 800, color: C.dark, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurant.nom}</p>
         <p style={{ margin: '0 0 10px', fontFamily: sans, fontSize: 12, color: C.muted, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurant.adresse || restaurant.ville || restaurant.description || 'Restaurant partenaire'}</p>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
-          {(restaurant.cuisines || restaurant.tags || []).slice(0, 3).map((t, i) => <span key={i} style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: C.aL, color: C.aD, borderRadius: 99, padding: '3px 8px' }}>{t}</span>)}
-          {restaurant.fraisLivraison != null && <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: '#F0FFF4', color: C.green, borderRadius: 99, padding: '3px 8px' }}>{restaurant.fraisLivraison === 0 ? '🚴 Livraison offerte' : '🚴 ' + formatFCFA(restaurant.fraisLivraison)}</span>}
-        </div>
+        {matched && matched.length > 0 ? (
+          <div style={{ marginBottom: 12 }}>
+            <p style={{ margin: '0 0 6px', fontFamily: sans, fontSize: 10, fontWeight: 800, letterSpacing: '0.08em', textTransform: 'uppercase', color: C.accent }}>Propose votre recherche</p>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+              {matched.map((d, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', gap: 8, background: C.aL, border: '1px solid ' + C.line, borderRadius: 8, padding: '5px 9px' }}>
+                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, color: C.text, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{d.nom}</span>
+                  <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{formatFCFA(d.prixClient ?? d.prix)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 12 }}>
+            {(restaurant.cuisines || restaurant.tags || []).slice(0, 3).map((t, i) => <span key={i} style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: C.aL, color: C.aD, borderRadius: 99, padding: '3px 8px' }}>{t}</span>)}
+            {restaurant.fraisLivraison != null && <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: '#F0FFF4', color: C.green, borderRadius: 99, padding: '3px 8px' }}>{restaurant.fraisLivraison === 0 ? '🚴 Livraison offerte' : '🚴 ' + formatFCFA(restaurant.fraisLivraison)}</span>}
+          </div>
+        )}
         <button onClick={e => { if (!isOpen) return; e.stopPropagation(); onSelect(restaurant); }} disabled={!isOpen} style={{ width: '100%', padding: '10px', borderRadius: 12, border: 'none', background: isOpen ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isOpen ? '#fff' : C.muted, fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: isOpen ? 'pointer' : 'not-allowed', boxShadow: isOpen ? '0 4px 14px #EA580C44' : 'none', transition: 'all 0.15s' }}>
           {isOpen ? 'Voir le menu →' : 'Restaurant fermé'}
         </button>
@@ -344,92 +353,72 @@ function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav }) {
   );
 }
 
-/* ── Carte produit — grille verticale ── */
+/* ── Carte produit Yango Deli ── */
 function ProductCard({ product, qty, onAdd, onRemove, onCustomize, idx, isFav, onToggleFav }) {
-  const img = getArticleImage(product) || fallback(idx, 300);
+  const img = getArticleImage(product) || fallback(idx, 400);
   const isAvail = product.disponible !== false;
   const [hov, setHov] = useState(false);
+  const price = product.prixClient ?? product.prix;
+  const openDetail = () => { if (isAvail && onCustomize) onCustomize(product); };
 
   return (
     <div
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
+      onClick={openDetail}
       style={{
-        background: C.card, borderRadius: 18, overflow: 'hidden',
+        background: C.card, borderRadius: 22, overflow: 'hidden',
+        border: `1px solid ${C.line}`,
         boxShadow: hov && isAvail ? C.shM : C.sh,
-        transform: hov && isAvail ? 'translateY(-3px)' : 'none',
+        transform: hov && isAvail ? 'translateY(-4px)' : 'none',
         transition: 'all 0.22s cubic-bezier(.4,0,.2,1)',
         opacity: isAvail ? 1 : 0.6,
         display: 'flex', flexDirection: 'column',
+        height: 340,
+        cursor: isAvail && onCustomize ? 'pointer' : 'default',
         animation: 'fadeUp 0.3s ease both',
       }}
     >
-      <div style={{ position: 'relative', height: 170, flexShrink: 0, overflow: 'hidden' }}>
-        <img src={img} alt={product.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transform: hov ? 'scale(1.06)' : 'scale(1)', transition: 'transform 0.4s ease' }} onError={e => { e.target.src = fallback(idx, 300); }} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(0,0,0,0.52) 0%, transparent 55%)' }} />
-        <span style={{ position: 'absolute', bottom: 8, left: 10, fontFamily: sans, fontSize: 15, fontWeight: 900, color: '#fff', textShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
-          {formatFCFA(product.prixClient ?? product.prix)}
-        </span>
+      <div style={{ position: 'relative', height: 196, flexShrink: 0, overflow: 'hidden' }}>
+        <img src={img} alt={product.nom} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', transform: hov ? 'scale(1.06)' : 'scale(1)', transition: 'transform 0.45s ease' }} onError={e => { e.target.src = fallback(idx, 400); }} />
         {!isAvail && (
           <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.48)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 800, color: '#fff', background: 'rgba(0,0,0,0.72)', padding: '4px 10px', borderRadius: 99 }}>Rupture</span>
+            <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, color: '#fff', background: 'rgba(0,0,0,0.72)', padding: '5px 12px', borderRadius: 99 }}>Rupture</span>
           </div>
         )}
-        {/* Bouton favori fonctionnel */}
         <button
           onClick={e => { e.stopPropagation(); onToggleFav?.(product.id); }}
           style={{
-            position: 'absolute', top: 8, right: 8, width: 30, height: 30, borderRadius: '50%',
+            position: 'absolute', top: 10, right: 10, width: 34, height: 34, borderRadius: '50%',
             border: 'none', cursor: 'pointer',
-            background: isFav ? C.red : 'rgba(255,255,255,0.92)',
+            background: isFav ? C.red : 'rgba(255,255,255,0.94)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.18)',
             transition: 'background 0.2s, transform 0.15s',
             transform: isFav ? 'scale(1.15)' : 'scale(1)',
           }}
         >
-          <Heart size={13} color={isFav ? '#fff' : C.red} fill={isFav ? '#fff' : 'none'} strokeWidth={2} />
+          <Heart size={15} color={isFav ? '#fff' : C.red} fill={isFav ? '#fff' : 'none'} strokeWidth={2} />
         </button>
       </div>
 
-      <div style={{ flex: 1, padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <p style={{ margin: 0, fontFamily: sans, fontSize: 13, fontWeight: 800, color: C.dark, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.nom}</p>
-        {product.description && (
-          <p style={{ margin: 0, fontFamily: sans, fontSize: 11, color: C.muted, lineHeight: 1.4, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{product.description}</p>
-        )}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
-          <span style={{ width: 6, height: 6, borderRadius: '50%', background: isAvail ? C.green : C.faint, flexShrink: 0 }} />
-          <span style={{ fontFamily: sans, fontSize: 10, color: C.muted, fontWeight: 600 }}>{isAvail ? 'Disponible · 15 min' : 'Indisponible'}</span>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 8, gap: 6 }}>
-          {/* Bouton Personnaliser */}
-          {onCustomize && isAvail ? (
-            <button
-              onClick={e => { e.stopPropagation(); onCustomize(product); }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 4,
-                fontFamily: sans, fontSize: 11, fontWeight: 700, color: C.accent,
-                background: C.aL, border: `1px solid ${C.accent}30`,
-                borderRadius: 99, padding: '5px 10px',
-                cursor: 'pointer', flexShrink: 0, transition: 'all 0.15s',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.background = `${C.accent}22`; e.currentTarget.style.borderColor = `${C.accent}60`; }}
-              onMouseLeave={e => { e.currentTarget.style.background = C.aL; e.currentTarget.style.borderColor = `${C.accent}30`; }}
-            >
-              <SlidersHorizontal size={11} />
-              Personnaliser
-            </button>
-          ) : <span />}
-          {/* Bouton ajouter */}
+      <div style={{ flex: 1, padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+        <p style={{ margin: 0, fontFamily: sans, fontSize: 15, fontWeight: 800, color: C.dark, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{product.nom}</p>
+        <p style={{ margin: '4px 0 0', fontFamily: sans, fontSize: 12, color: C.muted, lineHeight: 1.45, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          {product.description || (isAvail ? 'Prêt en ~15 min' : 'Indisponible')}
+        </p>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 10, gap: 8 }}>
+          <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, color: C.dark }}>{formatFCFA(price)}</span>
           {qty > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', background: C.accent, borderRadius: 99, overflow: 'hidden', boxShadow: '0 3px 12px #EA580C55' }}>
-              <button onClick={e => { e.stopPropagation(); onRemove(product); }} style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={11} /></button>
-              <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: '#fff', minWidth: 18, textAlign: 'center' }}>{qty}</span>
-              <button onClick={e => { e.stopPropagation(); onAdd(product); }} style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={11} /></button>
+            <div style={{ display: 'flex', alignItems: 'center', background: C.accent, borderRadius: 99, overflow: 'hidden', boxShadow: '0 4px 14px #EA580C55' }}>
+              <button onClick={e => { e.stopPropagation(); onRemove(product); }} style={{ width: 34, height: 34, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} /></button>
+              <span style={{ fontFamily: sans, fontSize: 15, fontWeight: 800, color: '#fff', minWidth: 20, textAlign: 'center' }}>{qty}</span>
+              <button onClick={e => { e.stopPropagation(); onAdd(product); }} style={{ width: 34, height: 34, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} /></button>
             </div>
           ) : (
-            <button onClick={e => { e.stopPropagation(); if (isAvail) onAdd(product); }} disabled={!isAvail} style={{ width: 32, height: 32, borderRadius: '50%', border: 'none', background: isAvail ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isAvail ? '#fff' : C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isAvail ? 'pointer' : 'not-allowed', boxShadow: isAvail ? '0 3px 12px #EA580C55' : 'none', flexShrink: 0, transition: 'all 0.15s' }}>
-              <Plus size={15} />
+            <button onClick={e => { e.stopPropagation(); if (isAvail) onAdd(product); }} disabled={!isAvail} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: isAvail ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isAvail ? '#fff' : C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isAvail ? 'pointer' : 'not-allowed', boxShadow: isAvail ? '0 4px 14px #EA580C55' : 'none', flexShrink: 0, transition: 'all 0.15s' }}>
+              <Plus size={19} />
             </button>
           )}
         </div>
@@ -493,7 +482,7 @@ function PromoStrip({ promos }) {
   );
 }
 
-/* ── Panneau panier — 3 modes de livraison ── */
+/* ── Panneau panier ── */
 function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMode, onCheckout, deliveryAddress, onOpenMap }) {
   const subtotal = total();
   const fraisLiv = deliveryMode === 'LIVRAISON' ? 500 : 0;
@@ -534,7 +523,6 @@ function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMo
           })}
         </div>
 
-        {/* Adresse livraison */}
         {deliveryMode === 'LIVRAISON' && (
           <div style={{ marginTop: 10 }}>
             {deliveryAddress?.address ? (
@@ -618,8 +606,11 @@ function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMo
 
 export default function MenuPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const pendingPlatRef = useRef(searchParams.get('plat') || null);
 
   const [restaurants,     setRestaurants]     = useState([]);
+  const [dishesByResto,   setDishesByResto]   = useState({});
   const [selectedResto,   setSelectedResto]   = useState(null);
   const [menuData,        setMenuData]        = useState([]);
   const [categories,      setCategories]      = useState([]);
@@ -630,32 +621,36 @@ export default function MenuPage() {
   const [discoSearch,     setDiscoSearch]     = useState('');
   const [activeCat,       setActiveCat]       = useState('__all__');
   const [discoCat,        setDiscoCat]        = useState('__all__');
+
+  /* États des filtres avancés Yango Deli */
+  const [discoRestoId,    setDiscoRestoId]    = useState('__all__');
+  const [discoPriceRange, setDiscoPriceRange] = useState('__all__');
+  const [discoMinRating,  setDiscoMinRating]  = useState(0);
+  const [discoFreeDelivery, setDiscoFreeDelivery] = useState(false);
+  const [discoFastDelivery, setDiscoFastDelivery] = useState(false);
+  const [discoSortBy,     setDiscoSortBy]     = useState('popular');
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
   const [quantities,      setQuantities]      = useState({});
   const [cartOpen,        setCartOpen]        = useState(false);
   const [customModal,     setCustomModal]     = useState({ open: false, product: null });
   const [error,           setError]           = useState(null);
   const [mapOpen,         setMapOpen]         = useState(false);
-  const [bannerMessages,  setBannerMessages]  = useState([]);
 
-  /* Bannière défilante — noms réels des restaurants */
   const bannerItems = restaurants.length > 0
     ? restaurants.map(r => r.nom)
     : ['Cocody', 'Plateau', 'Adjamé', 'Treichville', 'Marcory', 'Yopougon', 'Abobo', 'Koumassi'];
 
-  /* Favoris — restaurants */
   const [restoFavs, setRestoFavs] = useState(
     () => { try { return JSON.parse(localStorage.getItem('restoFavs') || '[]'); } catch { return []; } }
   );
-  /* Favoris — articles */
   const [articleFavs, setArticleFavs] = useState(
     () => { try { return JSON.parse(localStorage.getItem('articleFavs') || '[]'); } catch { return []; } }
   );
 
-  /* Mode de livraison */
   const [deliveryMode, setDeliveryMode] = useState(
     () => localStorage.getItem('deliveryMode') || 'EMPORTER'
   );
-  /* Adresse de livraison */
   const [deliveryAddress, setDeliveryAddress] = useState(
     () => { try { return JSON.parse(localStorage.getItem('deliveryAddress') || 'null'); } catch { return null; } }
   );
@@ -664,16 +659,11 @@ export default function MenuPage() {
   const { addItem, updateQuantity, clearCart, items, total } = useCart();
   const cartCount = items.reduce((s, i) => s + (i.quantite || 0), 0);
 
-  /* Persister favoris restaurants */
   useEffect(() => { localStorage.setItem('restoFavs', JSON.stringify(restoFavs)); }, [restoFavs]);
-  /* Persister favoris articles */
   useEffect(() => { localStorage.setItem('articleFavs', JSON.stringify(articleFavs)); }, [articleFavs]);
-  /* Persister mode livraison */
   useEffect(() => { localStorage.setItem('deliveryMode', deliveryMode); }, [deliveryMode]);
-  /* Persister adresse livraison */
   useEffect(() => { localStorage.setItem('deliveryAddress', JSON.stringify(deliveryAddress)); }, [deliveryAddress]);
 
-  /* Verrouiller scroll body quand overlay ou modal ouverts */
   useEffect(() => {
     document.body.style.overflow = (selectedResto || mapOpen) ? 'hidden' : '';
     return () => { document.body.style.overflow = ''; };
@@ -682,13 +672,27 @@ export default function MenuPage() {
   useEffect(() => {
     setLoading(true);
     menuAPI.getRestaurants()
-      .then(r => setRestaurants(r.data || []))
+      .then(r => {
+        const list = r.data || [];
+        setRestaurants(list);
+        const restoId = searchParams.get('resto');
+        if (restoId) {
+          const target = list.find(x => String(x.id) === String(restoId));
+          if (target) setSelectedResto(target);
+        }
+        Promise.all(list.map(rr =>
+          menuAPI.getByRestaurant(rr.id)
+            .then(mr => {
+              const raw = mr.data;
+              const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
+              return [rr.id, plats.filter(p => p.disponible !== false)];
+            })
+            .catch(() => [rr.id, []])
+        )).then(entries => setDishesByResto(Object.fromEntries(entries)));
+      })
       .catch(() => setError('Impossible de charger les restaurants.'))
       .finally(() => setLoading(false));
-    publicConfigAPI.getBannerMessages()
-      .then(res => { if (Array.isArray(res.data?.messages) && res.data.messages.length > 0) setBannerMessages(res.data.messages); })
-      .catch(() => {});
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!selectedResto) { setPromos([]); return; }
@@ -705,10 +709,15 @@ export default function MenuPage() {
         setMenuData(mr.data || []);
         setCategories(cr.data || []);
         setPromos(pr.data || []);
+        if (pendingPlatRef.current) {
+          setSearch(pendingPlatRef.current);
+          pendingPlatRef.current = null;
+          setSearchParams({}, { replace: true });
+        }
       })
       .catch(() => setError('Impossible de charger le menu.'))
       .finally(() => setMenuLoading(false));
-  }, [selectedResto]);
+  }, [selectedResto]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const map = {};
@@ -769,20 +778,100 @@ export default function MenuPage() {
     navigate('/checkout');
   }, [navigate, deliveryMode, deliveryAddress, selectedResto, items, total]);
 
+  /* Catégories structurées avec décompte */
   const discoCats = useMemo(() => {
-    const names = new Set();
-    restaurants.forEach(r => (r.cuisines || r.tags || []).forEach(t => names.add(t)));
-    return [{ id: '__all__', nom: 'Tous' }, ...[...names].map((n, i) => ({ id: String(i), nom: n }))];
-  }, [restaurants]);
+    const counts = {};
+    Object.values(dishesByResto).forEach(dishes => dishes.forEach(d => {
+      const n = d.categorie?.nom;
+      if (n) counts[n] = (counts[n] || 0) + 1;
+    }));
+    return [
+      { id: '__all__', nom: 'Tous les plats', count: Object.values(counts).reduce((a,b)=>a+b,0) },
+      ...Object.entries(counts).map(([nom, count]) => ({ id: nom, nom, count }))
+    ];
+  }, [dishesByResto]);
 
+  /* Compteur des filtres Yango Deli actifs en mode découverte */
+  const activeFiltersCount = useMemo(() => {
+    let count = 0;
+    if (discoCat !== '__all__') count++;
+    if (discoRestoId !== '__all__') count++;
+    if (discoPriceRange !== '__all__') count++;
+    if (discoMinRating > 0) count++;
+    if (discoFreeDelivery) count++;
+    if (discoFastDelivery) count++;
+    if (discoSortBy !== 'popular') count++;
+    if (discoSearch.trim()) count++;
+    return count;
+  }, [discoCat, discoRestoId, discoPriceRange, discoMinRating, discoFreeDelivery, discoFastDelivery, discoSortBy, discoSearch]);
+
+  const resetDiscoFilters = () => {
+    setDiscoCat('__all__');
+    setDiscoRestoId('__all__');
+    setDiscoPriceRange('__all__');
+    setDiscoMinRating(0);
+    setDiscoFreeDelivery(false);
+    setDiscoFastDelivery(false);
+    setDiscoSortBy('popular');
+    setDiscoSearch('');
+  };
+
+  /* Filtrage et tri des restaurants avec filtres Yango Deli */
   const filteredRestaurants = useMemo(() => {
-    const catName = discoCat !== '__all__' ? (discoCats.find(c => c.id === discoCat)?.nom || '') : '';
-    return restaurants.filter(r => {
-      const matchSearch = !discoSearch || r.nom.toLowerCase().includes(discoSearch.toLowerCase()) || (r.adresse || '').toLowerCase().includes(discoSearch.toLowerCase());
-      const matchCat = discoCat === '__all__' || (r.cuisines || r.tags || []).includes(catName);
-      return matchSearch && matchCat;
+    const q = discoSearch.trim().toLowerCase();
+    let res = restaurants.map(r => {
+      const dishes = dishesByResto[r.id] || [];
+
+      if (discoRestoId !== '__all__' && String(r.id) !== String(discoRestoId)) return null;
+      if (discoCat !== '__all__' && !dishes.some(d => d.categorie?.nom === discoCat)) return null;
+
+      const rating = Number(r.noteMoyenne) || 0;
+      if (discoMinRating > 0 && rating < discoMinRating) return null;
+
+      if (discoFreeDelivery && r.fraisLivraison !== 0) return null;
+
+      if (discoFastDelivery) {
+        const timeStr = r.deliveryTime || "25 min";
+        const firstNum = parseInt(timeStr, 10);
+        if (!isNaN(firstNum) && firstNum > 30) return null;
+      }
+
+      if (discoPriceRange !== '__all__') {
+        const hasMatchingPrice = dishes.some(d => {
+          const p = Number(d.prixClient ?? d.prix) || 0;
+          if (discoPriceRange === 'under_3000') return p < 3000;
+          if (discoPriceRange === '3000_6000') return p >= 3000 && p <= 6000;
+          if (discoPriceRange === 'over_6000') return p > 6000;
+          return true;
+        });
+        if (!hasMatchingPrice) return null;
+      }
+
+      if (!q) return { restaurant: r, matched: null };
+
+      const nameMatch = r.nom.toLowerCase().includes(q) || (r.adresse || '').toLowerCase().includes(q);
+      const matchedDishes = dishes.filter(d => d.nom?.toLowerCase().includes(q) || d.categorie?.nom?.toLowerCase().includes(q));
+      if (!nameMatch && matchedDishes.length === 0) return null;
+
+      return { restaurant: r, matched: matchedDishes.slice(0, 3) };
+    }).filter(Boolean);
+
+    res.sort((a, b) => {
+      const rA = a.restaurant;
+      const rB = b.restaurant;
+      if (discoSortBy === 'rating') {
+        return (Number(rB.noteMoyenne) || 0) - (Number(rA.noteMoyenne) || 0);
+      }
+      if (discoSortBy === 'time') {
+        const tA = parseInt(rA.deliveryTime || '20', 10);
+        const tB = parseInt(rB.deliveryTime || '20', 10);
+        return tA - tB;
+      }
+      return 0;
     });
-  }, [restaurants, discoSearch, discoCat, discoCats]);
+
+    return res;
+  }, [restaurants, dishesByResto, discoSearch, discoCat, discoRestoId, discoPriceRange, discoMinRating, discoFreeDelivery, discoFastDelivery, discoSortBy]);
 
   const menuCats = useMemo(() => buildDynCats(menuData, categories), [menuData, categories]);
 
@@ -803,15 +892,14 @@ export default function MenuPage() {
     return { grouped: Object.values(grp) };
   }, [filteredProducts, activeCat, categories]);
 
-  /* Rendu produits */
   const renderProducts = () => {
     if (menuLoading) return (
       <div className="prod-grid">
         {[...Array(8)].map((_, i) => (
-          <div key={i} style={{ background: C.card, borderRadius: 18, overflow: 'hidden', boxShadow: C.sh }}>
-            <SK w="100%" h={170} r={0} />
-            <div style={{ padding: '10px 12px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <SK w="70%" h={13} /><SK w="90%" h={11} /><SK w="40%" h={11} />
+          <div key={i} style={{ background: C.card, borderRadius: 22, overflow: 'hidden', boxShadow: C.sh, border: `1px solid ${C.line}`, height: 340 }}>
+            <SK w="100%" h={196} r={0} />
+            <div style={{ padding: '12px 14px 14px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+              <SK w="70%" h={15} /><SK w="90%" h={12} /><SK w="45%" h={18} />
             </div>
           </div>
         ))}
@@ -851,46 +939,43 @@ export default function MenuPage() {
     );
   };
 
-  /* ── RENDU ── */
   return (
-    <div style={{ background: '#FFF4ED', minHeight: '100dvh', fontFamily: sans }}>
+    <div style={{ background: C.bg, minHeight: '100dvh', fontFamily: sans }}>
       <style>{CSS}</style>
 
       {/* ═══ Mode découverte ═══ */}
       {!selectedResto && (
         <>
-          <div style={{ position: 'sticky', top: 0, zIndex: 10, background: C.nav, borderBottom: '1px solid ' + C.line, boxShadow: C.sh }}>
-            <div style={{ padding: '0 clamp(12px,4vw,28px)', height: 60, display: 'flex', alignItems: 'center', gap: 16 }}>
+          <div style={{ position: 'sticky', top: 0, zIndex: 100, background: C.nav, borderBottom: '1px solid ' + C.line, boxShadow: C.sh }}>
+            <div style={{ padding: '0 clamp(12px,4vw,28px)', height: 64, display: 'flex', alignItems: 'center', gap: 16 }}>
               <Logo />
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 12, padding: '0 12px', height: 38, maxWidth: 520 }}>
-                <Search size={14} color={C.muted} />
-                <input type="text" placeholder="Rechercher un restaurant…" value={discoSearch} onChange={e => setDiscoSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13, color: C.dark, background: 'transparent' }} />
-                {discoSearch && <button onClick={() => setDiscoSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={13} color={C.muted} /></button>}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 16px', height: 42, maxWidth: 540 }}>
+                <Search size={16} color={C.accent} />
+                <input type="text" placeholder="Rechercher un plat, une spécialité ou un resto…" value={discoSearch} onChange={e => setDiscoSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent' }} />
+                {discoSearch && <button onClick={() => setDiscoSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
               </div>
-              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 12, padding: '7px 14px', fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 3px 12px #EA580C44' : 'none', transition: 'all 0.2s' }}>
+              <LanguageSwitcher variant="light" />
+              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 50, padding: '8px 16px', fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 4px 14px #EA580C44' : 'none', transition: 'all 0.2s' }}>
                 <ShoppingCart size={15} />
                 {cartCount > 0 && <><span>{cartCount}</span><span style={{ opacity: 0.85 }}>·</span><span>{formatFCFA(total())}</span></>}
               </button>
             </div>
           </div>
 
-          <div style={{ padding: 'clamp(16px,3vw,24px) clamp(12px,4vw,28px) 40px' }}>
-            {/* Hero — bannière défilante sombre */}
-            <div style={{ background: '#0E0600', borderRadius: 18, marginBottom: 24, overflow: 'hidden', position: 'relative', boxShadow: '0 8px 32px rgba(0,0,0,0.28)' }}>
-              {/* Barre orange top */}
+          <div style={{ padding: 'clamp(16px,3vw,24px) clamp(12px,4vw,28px) 40px', maxWidth: 1380, margin: '0 auto' }}>
+            {/* Bannière défilante */}
+            <div style={{ background: '#0E0600', borderRadius: 22, marginBottom: 26, overflow: 'hidden', position: 'relative', boxShadow: '0 10px 36px rgba(0,0,0,0.24)' }}>
               <div style={{ height: 3, background: 'linear-gradient(90deg, #EA580C, #FFB800, #EA580C)' }} />
-              {/* Titre + compteur */}
               <div style={{ padding: 'clamp(14px,3vw,20px) clamp(14px,4vw,24px) 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ margin: 0, fontFamily: sans, fontSize: 'clamp(13px,3vw,15px)', fontWeight: 800, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
-                  Restaurants disponibles
+                  Restaurants partenaires à Abidjan
                 </p>
                 {restaurants.length > 0 && (
                   <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: '#EA580C', background: 'rgba(255,140,0,0.12)', border: '1px solid rgba(255,140,0,0.25)', borderRadius: 99, padding: '3px 12px' }}>
-                    {restaurants.length}
+                    {restaurants.length} Restos
                   </span>
                 )}
               </div>
-              {/* Bande défilante */}
               <div style={{ overflow: 'hidden', paddingBottom: 'clamp(14px,3vw,20px)', maskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)', WebkitMaskImage: 'linear-gradient(to right, transparent, black 8%, black 92%, transparent)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', width: 'max-content', animation: `bannerMarquee ${Math.max(18, bannerItems.length * 3)}s linear infinite` }}>
                   {[...bannerItems, ...bannerItems, ...bannerItems].map((nom, i) => (
@@ -903,48 +988,148 @@ export default function MenuPage() {
               </div>
             </div>
 
-            {discoCats.length > 1 && (
-              <div style={{ marginBottom: 20 }}>
-                <div className="cat-scroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-                  {discoCats.map(cat => {
-                    const isA = cat.id === discoCat;
-                    return <button key={cat.id} onClick={() => setDiscoCat(cat.id)} style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 5, padding: '8px 16px', borderRadius: 99, border: 'none', background: isA ? C.accent : C.card, color: isA ? '#fff' : C.text, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: C.sh, transition: 'all 0.15s' }}>{cat.id !== '__all__' && catEmoji(cat.nom)} {cat.nom}</button>;
-                  })}
-                </div>
-              </div>
-            )}
-
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-              <h2 style={{ margin: 0, fontFamily: sans, fontSize: 18, fontWeight: 900, color: C.dark, letterSpacing: '-0.03em' }}>{discoCat === '__all__' ? 'Tous les restaurants' : discoCats.find(c => c.id === discoCat)?.nom || 'Restaurants'}</h2>
-              <span style={{ fontFamily: sans, fontSize: 13, color: C.muted, fontWeight: 600 }}>{filteredRestaurants.length} résultat{filteredRestaurants.length !== 1 ? 's' : ''}</span>
+            {/* Bouton mobile filtres Yango Deli */}
+            <div className="rd-menu-mobile-filter-btn" style={{ marginBottom: 18 }}>
+              <button
+                onClick={() => setMobileFilterOpen(true)}
+                style={{
+                  width: "100%", padding: "12px 18px", borderRadius: 14,
+                  background: `linear-gradient(135deg, ${C.accent}, ${C.aD})`,
+                  color: "#fff", border: "none", fontFamily: sans, fontSize: 14, fontWeight: 800,
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
+                  boxShadow: "0 6px 20px rgba(234,88,12,0.3)"
+                }}
+              >
+                <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <SlidersHorizontal size={18} /> Filtres Yango Deli
+                </span>
+                {activeFiltersCount > 0 && (
+                  <span style={{ background: "#fff", color: C.accent, borderRadius: 99, padding: "2px 10px", fontSize: 12, fontWeight: 900 }}>
+                    {activeFiltersCount}
+                  </span>
+                )}
+              </button>
             </div>
 
-            {loading && (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} style={{ background: C.card, borderRadius: 20, overflow: 'hidden', boxShadow: C.sh }}>
-                    <SK w="100%" h={180} r={0} />
-                    <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 8 }}><SK w="70%" h={16} /><SK w="50%" h={12} /><SK w="100%" h={36} r={12} /></div>
+            {/* Disposition 2 Colonnes Yango Deli : Left = FilterSidebar, Right = Main Content */}
+            <div style={{ display: 'flex', gap: 28, alignItems: 'flex-start' }}>
+
+              {/* Sidebar Desktop */}
+              <div className="rd-menu-desktop-sidebar">
+                <FilterSidebar
+                  categories={discoCats}
+                  activeCat={discoCat}
+                  onCatChange={setDiscoCat}
+                  restaurants={restaurants}
+                  selectedRestoId={discoRestoId}
+                  onRestoChange={setDiscoRestoId}
+                  priceRange={discoPriceRange}
+                  onPriceRangeChange={setDiscoPriceRange}
+                  minRating={discoMinRating}
+                  onMinRatingChange={setDiscoMinRating}
+                  freeDeliveryOnly={discoFreeDelivery}
+                  onFreeDeliveryChange={setDiscoFreeDelivery}
+                  fastDeliveryOnly={discoFastDelivery}
+                  onFastDeliveryChange={setDiscoFastDelivery}
+                  sortBy={discoSortBy}
+                  onSortByChange={setDiscoSortBy}
+                  onReset={resetDiscoFilters}
+                  activeCount={activeFiltersCount}
+                />
+              </div>
+
+              {/* Drawer Mobile */}
+              {mobileFilterOpen && (
+                <FilterSidebar
+                  categories={discoCats}
+                  activeCat={discoCat}
+                  onCatChange={setDiscoCat}
+                  restaurants={restaurants}
+                  selectedRestoId={discoRestoId}
+                  onRestoChange={setDiscoRestoId}
+                  priceRange={discoPriceRange}
+                  onPriceRangeChange={setDiscoPriceRange}
+                  minRating={discoMinRating}
+                  onMinRatingChange={setDiscoMinRating}
+                  freeDeliveryOnly={discoFreeDelivery}
+                  onFreeDeliveryChange={setDiscoFreeDelivery}
+                  fastDeliveryOnly={discoFastDelivery}
+                  onFastDeliveryChange={setDiscoFastDelivery}
+                  sortBy={discoSortBy}
+                  onSortByChange={setDiscoSortBy}
+                  onReset={resetDiscoFilters}
+                  activeCount={activeFiltersCount}
+                  isOpenMobile={true}
+                  onCloseMobile={() => setMobileFilterOpen(false)}
+                />
+              )}
+
+              {/* Colonne des résultats */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20, flexWrap: 'wrap', gap: 12 }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontFamily: sans, fontSize: 22, fontWeight: 900, color: C.dark, letterSpacing: '-0.03em' }}>
+                      {discoSearch.trim() ? `Résultats pour « ${discoSearch.trim()} »` : discoCat === '__all__' ? 'Tous les restaurants' : `Restaurants — ${discoCat}`}
+                    </h2>
+                    <p style={{ margin: '4px 0 0', fontFamily: sans, fontSize: 13, color: C.muted, fontWeight: 500 }}>
+                      {filteredRestaurants.length} restaurant{filteredRestaurants.length !== 1 ? 's' : ''} disponible{filteredRestaurants.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={resetDiscoFilters}
+                      style={{
+                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                        padding: '8px 14px', borderRadius: 99, background: C.aL, border: `1px solid ${C.line}`,
+                        color: C.aD, fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer'
+                      }}
+                    >
+                      <RotateCcw size={13} /> Effacer les filtres ({activeFiltersCount})
+                    </button>
+                  )}
+                </div>
+
+                {loading && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 20 }}>
+                    {[...Array(6)].map((_, i) => (
+                      <div key={i} style={{ background: C.card, borderRadius: 22, overflow: 'hidden', boxShadow: C.sh }}>
+                        <SK w="100%" h={180} r={0} />
+                        <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 8 }}><SK w="70%" h={16} /><SK w="50%" h={12} /><SK w="100%" h={36} r={12} /></div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {error && !loading && <div style={{ textAlign: 'center', padding: '60px 20px' }}><AlertCircle size={36} color={C.faint} style={{ marginBottom: 12 }} /><p style={{ fontFamily: sans, fontSize: 14, color: C.muted, margin: 0 }}>{error}</p></div>}
+
+                {!loading && !error && (filteredRestaurants.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '60px 20px', background: C.card, borderRadius: 24, border: `1px solid ${C.line}` }}>
+                    <Store size={40} color={C.faint} style={{ marginBottom: 12 }} />
+                    <p style={{ fontFamily: sans, fontSize: 16, fontWeight: 800, color: C.dark, margin: '0 0 6px' }}>Aucun restaurant trouvé</p>
+                    <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: '0 0 18px' }}>Essayez de modifier votre recherche ou vos filtres Yango Deli</p>
+                    <button
+                      onClick={resetDiscoFilters}
+                      style={{
+                        padding: '10px 24px', borderRadius: 50, background: C.accent, color: '#fff',
+                        fontFamily: sans, fontSize: 13, fontWeight: 800, border: 'none', cursor: 'pointer',
+                        boxShadow: `0 4px 14px ${C.accent}44`
+                      }}
+                    >
+                      Réinitialiser les filtres
+                    </button>
+                  </div>
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 20 }}>
+                    {filteredRestaurants.map(({ restaurant, matched }, i) => (
+                      <RestaurantCard key={restaurant.id} restaurant={restaurant} idx={i} matched={matched}
+                        onSelect={(r) => { if (matched && matched.length) pendingPlatRef.current = discoSearch.trim(); setSelectedResto(r); }}
+                        favorites={restoFavs} onFav={toggleRestoFav} />
+                    ))}
                   </div>
                 ))}
               </div>
-            )}
-
-            {error && !loading && <div style={{ textAlign: 'center', padding: '60px 20px' }}><AlertCircle size={36} color={C.faint} style={{ marginBottom: 12 }} /><p style={{ fontFamily: sans, fontSize: 14, color: C.muted, margin: 0 }}>{error}</p></div>}
-
-            {!loading && !error && (filteredRestaurants.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 20px' }}>
-                <Store size={40} color={C.faint} style={{ marginBottom: 12 }} />
-                <p style={{ fontFamily: sans, fontSize: 15, fontWeight: 700, color: C.dark, margin: '0 0 6px' }}>Aucun restaurant trouvé</p>
-                <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: 0 }}>Essayez de modifier votre recherche</p>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 }}>
-                {filteredRestaurants.map((r, i) => (
-                  <RestaurantCard key={r.id} restaurant={r} idx={i} onSelect={setSelectedResto} favorites={restoFavs} onFav={toggleRestoFav} />
-                ))}
-              </div>
-            ))}
+            </div>
           </div>
 
           {cartCount > 0 && (
@@ -961,46 +1146,41 @@ export default function MenuPage() {
 
       {/* ═══ Overlay restaurant ═══ */}
       {selectedResto && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 60, background: C.bg, fontFamily: sans, display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'overlayIn 0.25s ease both' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: C.bg, fontFamily: sans, display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'overlayIn 0.25s ease both' }}>
 
-          {/* Navbar interne */}
           <div style={{ background: C.nav, borderBottom: '1px solid ' + C.line, boxShadow: C.sh, flexShrink: 0 }}>
             <div style={{ padding: '0 20px', height: 60, display: 'flex', alignItems: 'center', gap: 16 }}>
               <button onClick={() => { setSelectedResto(null); setMenuData([]); }} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', flexShrink: 0 }}>
                 <div style={{ width: 34, height: 34, borderRadius: 10, background: C.aL, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ArrowLeft size={17} color={C.accent} /></div>
                 <span style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: C.accent }}>Retour</span>
               </button>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 12, padding: '0 12px', height: 38, maxWidth: 520 }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 14px', height: 38, maxWidth: 520 }}>
                 <Search size={14} color={C.muted} />
                 <input type="text" placeholder={'Rechercher dans ' + selectedResto.nom + '…'} value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13, color: C.dark, background: 'transparent' }} />
                 {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={13} color={C.muted} /></button>}
               </div>
-              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 12, padding: '7px 14px', fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 3px 12px #EA580C44' : 'none', transition: 'all 0.2s' }}>
+              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 50, padding: '7px 14px', fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 3px 12px #EA580C44' : 'none', transition: 'all 0.2s' }}>
                 <ShoppingCart size={15} />
                 {cartCount > 0 && <><span>{cartCount}</span><span style={{ opacity: 0.85 }}>·</span><span>{formatFCFA(total())}</span></>}
               </button>
             </div>
           </div>
 
-          {/* Corps 2 colonnes */}
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
-
-            {/* Colonne gauche */}
             <div style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
-              {/* Info restaurant */}
               <div style={{ background: C.card, borderBottom: '1px solid ' + C.line }}>
-                <div style={{ padding: '16px 20px' }}>
+                <div style={{ padding: '18px 24px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 64, height: 64, borderRadius: 16, overflow: 'hidden', flexShrink: 0, background: C.bg, boxShadow: C.sh }}>
+                    <div style={{ width: 68, height: 68, borderRadius: 18, overflow: 'hidden', flexShrink: 0, background: C.bg, boxShadow: C.sh }}>
                       <img src={selectedResto.logo || selectedResto.photoUrl || fallback(0, 120)} alt={selectedResto.nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.src = fallback(0, 120); }} />
                     </div>
                     <div style={{ flex: 1 }}>
-                      <p style={{ margin: '0 0 5px', fontFamily: sans, fontSize: 18, fontWeight: 900, color: C.dark }}>{selectedResto.nom}</p>
+                      <p style={{ margin: '0 0 5px', fontFamily: sans, fontSize: 20, fontWeight: 900, color: C.dark }}>{selectedResto.nom}</p>
                       <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, color: C.muted }}><Star size={12} fill={C.yellow} color={C.yellow} />{Number(selectedResto.noteMoyenne) > 0 ? Number(selectedResto.noteMoyenne).toFixed(1) : '–'}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, color: C.muted }}><Clock size={12} color={C.muted} />{selectedResto.deliveryTime || '25–40 min'}</span>
-                        {selectedResto.adresse && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, color: C.muted }}><MapPin size={12} color={C.muted} />{selectedResto.adresse}</span>}
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, color: C.green, fontWeight: 700 }}><Truck size={12} color={C.green} />{selectedResto.fraisLivraison === 0 ? 'Livraison offerte' : selectedResto.fraisLivraison ? formatFCFA(selectedResto.fraisLivraison) : 'Livraison disponible'}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.muted }}><Star size={13} fill={C.yellow} color={C.yellow} />{Number(selectedResto.noteMoyenne) > 0 ? Number(selectedResto.noteMoyenne).toFixed(1) : '–'}</span>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.muted }}><Clock size={13} color={C.muted} />{selectedResto.deliveryTime || '25–40 min'}</span>
+                        {selectedResto.adresse && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.muted }}><MapPin size={13} color={C.muted} />{selectedResto.adresse}</span>}
+                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.green, fontWeight: 700 }}><Truck size={13} color={C.green} />{selectedResto.fraisLivraison === 0 ? 'Livraison offerte' : selectedResto.fraisLivraison ? formatFCFA(selectedResto.fraisLivraison) : 'Livraison disponible'}</span>
                       </div>
                     </div>
                   </div>
@@ -1015,12 +1195,11 @@ export default function MenuPage() {
                 </div>
               </div>
 
-              {/* Grille produits — pleine largeur */}
-              <div style={{ padding: '20px 20px 0' }}>
+              <div style={{ padding: '20px 24px 0' }}>
                 {promos.length > 0 && <PromoStrip promos={promos} />}
                 {!menuLoading && filteredProducts.length > 0 && (
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <h2 style={{ margin: 0, fontFamily: sans, fontSize: 16, fontWeight: 900, color: C.dark }}>{activeCat === '__all__' ? 'Choisissez votre plat' : (menuCats.find(c => c.id === activeCat)?.nom || 'Plats')}</h2>
+                    <h2 style={{ margin: 0, fontFamily: sans, fontSize: 17, fontWeight: 900, color: C.dark }}>{activeCat === '__all__' ? 'Choisissez votre plat' : (menuCats.find(c => c.id === activeCat)?.nom || 'Plats')}</h2>
                     <span style={{ fontFamily: sans, fontSize: 12, color: C.muted, fontWeight: 600 }}>{filteredProducts.length} article{filteredProducts.length > 1 ? 's' : ''}</span>
                   </div>
                 )}
@@ -1029,7 +1208,6 @@ export default function MenuPage() {
               </div>
             </div>
 
-            {/* Colonne droite : panier desktop */}
             <CartPanel
               items={items}
               total={total}
@@ -1043,7 +1221,6 @@ export default function MenuPage() {
             />
           </div>
 
-          {/* Barre panier mobile */}
           {cartCount > 0 && (
             <div className="cart-mobile-bar" style={{ padding: '12px 16px 20px', background: C.card, borderTop: '1px solid ' + C.line, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', flexShrink: 0 }}>
               <button onClick={() => setCartOpen(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg,#EF4444,#DC2626)', color: '#fff', border: 'none', borderRadius: 14, padding: '14px 20px', cursor: 'pointer', fontFamily: sans, fontSize: 14, fontWeight: 800, boxShadow: '0 4px 16px rgba(246, 39, 39, 0.4)' }}>
@@ -1055,7 +1232,6 @@ export default function MenuPage() {
         </div>
       )}
 
-      {/* ── Modal carte livraison ── */}
       {mapOpen && (
         <DeliveryMapModal
           initial={deliveryAddress}
@@ -1067,7 +1243,6 @@ export default function MenuPage() {
         />
       )}
 
-      {/* ── Modals ── */}
       <CartDrawer isOpen={cartOpen} onClose={() => setCartOpen(false)} initialMode={deliveryMode} />
       {customModal.open && (
         <ProductCustomizationModal
