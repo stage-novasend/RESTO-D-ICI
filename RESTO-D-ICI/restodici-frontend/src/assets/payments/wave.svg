@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 56" width="160" height="56">
+  <defs>
+    <linearGradient id="waveBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1DC4FF" />
+      <stop offset="100%" stop-color="#00A3E0" />
+    </linearGradient>
+  </defs>
+  <!-- Background Card -->
+  <rect width="160" height="56" rx="12" fill="url(#waveBg)"/>
+  
+  <!-- Wave Penguin Symbol Circle -->
+  <circle cx="28" cy="28" r="16" fill="#003366"/>
+  <!-- Penguin Belly -->
+  <ellipse cx="28" cy="30" rx="9" ry="11" fill="#FFFFFF"/>
+  <ellipse cx="28" cy="31" rx="6" ry="8" fill="#003366"/>
+  <!-- Penguin Eye -->
+  <circle cx="25" cy="24" r="1.5" fill="#003366"/>
+  <circle cx="31" cy="24" r="1.5" fill="#003366"/>
+  <!-- Penguin Beak -->
+  <polygon points="28,26 26,29 30,29" fill="#FF9900"/>
+  
+  <!-- "wave" Logo Text -->
+  <text x="54" y="37" font-family="'Inter', 'Helvetica Neue', Arial, sans-serif" font-size="26" font-weight="900" fill="#003366" letter-spacing="-1">wave</text>
+</svg>

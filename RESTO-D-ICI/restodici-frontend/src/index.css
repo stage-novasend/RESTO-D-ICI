@@ -1,0 +1,488 @@
+/* ═══════════════════════════════════════════════════════════════
+   index.css — Feuille de styles globale de l'application Restodici
+   Palette orange #EA580C · Police Manrope · Mode responsive complet
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Google Fonts — doit précéder @tailwind ── */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Ordre recommandé par Tailwind (base → components → utilities) ── */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ═══════════════════════════════════════════════════════════════
+   VARIABLES CSS — Palette chaude Restodici
+   Accessibles partout dans l'app via var(--color-...)
+   ═══════════════════════════════════════════════════════════════ */
+:root {
+  /* ── Brand colors ─────────────────────────────────────── */
+  --color-primary:       #EA580C;
+  --color-primary-dark:  #C2410C;
+  --color-primary-light: #FFF0DF;
+  --color-primary-dim:   rgba(255,140,0,0.12);
+  --color-primary-glow:  rgba(255,140,0,0.3);
+
+  /* ── Surfaces ─────────────────────────────────────────── */
+  --surface-base:    #FFF4ED;
+  --surface-card:    #FFFFFF;
+  --surface-raised:  #FFFFFF;
+  --surface-overlay: rgba(61,21,0,0.45);
+
+  /* ── Light mode surfaces (backward compat) ───────────── */
+  --color-bg:            #FFF4ED;
+  --color-bg-alt:        #FFEBDD;
+  --color-surface:       #FFFFFF;
+  --color-surface-alt:   #FFF4ED;
+
+  /* ── Dark mode surfaces (used when .dark class present) ── */
+  --color-dark-bg:       #1A0C00;
+  --color-dark-panel:    #2D1200;
+  --color-dark-card:     #3D1500;
+  --color-dark-elevated: #5C2400;
+  --color-dark-raised:   #7C3A00;
+
+  /* ── Text ─────────────────────────────────────────────── */
+  --text-primary:   #1A0C00;
+  --text-secondary: #8B6E50;
+  --text-muted:     #A89070;
+  --text-inverse:   #FFFFFF;
+
+  /* ── Text (backward compat) ───────────────────────────── */
+  --color-text:          #1A0C00;
+  --color-text-secondary:#8B6E50;
+  --color-text-muted:    #A89070;
+  --color-text-inverse:  #FFFFFF;
+
+  /* ── Borders ──────────────────────────────────────────── */
+  --border:         rgba(255,140,0,0.10);
+  --border-strong:  rgba(255,140,0,0.20);
+  --border-focus:   rgba(255,140,0,0.45);
+
+  /* ── Borders (backward compat) ───────────────────────── */
+  --color-border:        rgba(255,140,0,0.10);
+  --color-border-soft:   rgba(255,140,0,0.08);
+  --color-border-dark:   rgba(255,255,255,0.08);
+
+  /* ── Semantic ─────────────────────────────────────────── */
+  --color-success:       #22C55E;
+  --color-warning:       #F59E0B;
+  --color-danger:        #EF4444;
+  --color-info:          #3B82F6;
+
+  /* ── Shadows ──────────────────────────────────────────── */
+  --shadow-card:    0 1px 8px rgba(0,0,0,0.04);
+  --shadow-hover:   0 4px 20px rgba(0,0,0,0.08);
+  --shadow-button:  0 4px 16px rgba(234,88,12,0.3);
+  --shadow-modal:   0 20px 60px rgba(0,0,0,0.2);
+  --shadow-float:   0 -4px 20px rgba(0,0,0,0.08);
+
+  /* ── Shadows (backward compat) ───────────────────────── */
+  --shadow-card-hover:   0 4px 20px rgba(0,0,0,0.08);
+  --shadow-accent:       0 4px 20px rgba(234,88,12,0.30);
+  --shadow-floating:     0 -4px 20px rgba(0,0,0,0.08);
+
+  /* ── Radii ────────────────────────────────────────────── */
+  --radius-sm:   8px;
+  --radius-md:   12px;
+  --radius-lg:   16px;
+  --radius-xl:   20px;
+  --radius-2xl:  24px;
+  --radius-full: 9999px;
+
+  /* ── Spacing ──────────────────────────────────────────── */
+  --page-px:    clamp(12px, 4vw, 24px);
+  --section-gap: clamp(16px, 3vw, 32px);
+
+  /* ── Backward-compat aliases ──────────────────────────── */
+  --color-accent:   #EA580C;
+  --color-accent-d: #C2410C;
+  --color-dark:     #111827;
+  --color-muted:    #9CA3AF;
+  --color-card:     #FFFFFF;
+  --color-line:     rgba(0,0,0,0.07);
+}
+
+html.dark {
+  --color-bg:            #070707;
+  --color-bg-alt:        #0C0C0C;
+  --color-surface:       #141414;
+  --color-surface-alt:   #1E1E1E;
+  --color-text:          #F0F0F0;
+  --color-text-secondary:#A0A0A0;
+  --color-text-muted:    #606060;
+  --color-border:        rgba(255, 255, 255, 0.08);
+  --color-border-soft:   rgba(255, 255, 255, 0.05);
+  --shadow-card:         0 2px 16px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover:   0 8px 32px rgba(0, 0, 0, 0.7);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE — Styles fondamentaux appliqués à tous les éléments
+   ═══════════════════════════════════════════════════════════════ */
+html {
+  scroll-behavior: smooth;           /* défilement fluide au clic sur ancre */
+  text-size-adjust: 100%;            /* empêche iOS de grossir le texte à tort */
+  -webkit-text-size-adjust: 100%;
+  background-color: #FFF4ED;
+}
+
+body {
+  background-color: #FFF4ED;
+  color: var(--color-text);
+  font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+  font-weight: 600;
+  -webkit-font-smoothing: antialiased;   /* rendu de police lissé sur Mac/iOS */
+  -moz-osx-font-smoothing: grayscale;
+  min-height: 100dvh;               /* dvh évite le bug de hauteur sur mobile */
+  overflow-x: hidden;               /* évite le défilement horizontal parasite */
+}
+
+/* ── Transition de page — fondu rapide sur chaque changement de route ── */
+@keyframes pageIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.page-enter {
+  animation: pageIn 0.18s ease-out both;
+}
+
+/* ── Poids de police minimum — lisibilité sur fond blanc ── */
+p, span, div, li, td, th, label, a, input, textarea, select {
+  font-weight: inherit;
+}
+
+/* ── Images responsives par défaut ── */
+img {
+  max-width: 100%;
+  height: auto;
+}
+
+/* ── Boutons — réinitialisation du curseur pour les éléments désactivés ── */
+button:disabled {
+  cursor: not-allowed;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SCROLLBAR — Style personnalisé (Chrome / Edge / Safari)
+   Firefox utilise scrollbar-width et scrollbar-color dans la section suivante
+   ═══════════════════════════════════════════════════════════════ */
+::-webkit-scrollbar         { width: 6px; height: 6px; }
+::-webkit-scrollbar-track   { background: var(--color-bg-alt); }
+::-webkit-scrollbar-thumb   { background: rgba(234,88,12,0.35); border-radius: 99px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent); }
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(234,88,12,0.35) var(--color-bg-alt);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   FOCUS — Accessibilité clavier
+   Visible uniquement quand l'utilisateur navigue au clavier (focus-visible)
+   ═══════════════════════════════════════════════════════════════ */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Supprime le focus par défaut du navigateur quand on clique à la souris */
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITAIRES RESPONSIFS — Classes Tailwind personnalisées
+   ═══════════════════════════════════════════════════════════════ */
+@layer utilities {
+
+  /* Conteneur centré avec padding responsive horizontal */
+  .page-container {
+    width: 100%;
+    max-width: 1280px;
+    margin-inline: auto;
+    padding-inline: var(--page-px);
+  }
+
+  /* Supprime la scrollbar visible mais garde le défilement fonctionnel */
+  .scrollbar-hidden {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-hidden::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Troncature de texte multi-lignes */
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  /* Animation d'apparition douce — utilisée sur les cartes, modals */
+  .fade-up {
+    animation: fadeUp 0.3s ease both;
+  }
+
+  /* Spinner de chargement — appliqué sur l'icône avec animate-spin */
+  .spin {
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   ANIMATIONS GLOBALES — Réutilisées dans toutes les pages
+   ═══════════════════════════════════════════════════════════════ */
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes kpiIn {
+  from { opacity: 0; transform: translateY(12px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Skeleton shimmer — animation de chargement sur les placeholders */
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Apparition d'un élément flottant depuis le bas (ex: barre panier) */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SKELETON — Composant de chargement utilisé sur les cartes / listes
+   ═══════════════════════════════════════════════════════════════ */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    #EBEBEB 25%,
+    #F5F5F5 50%,
+    #EBEBEB 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.4s ease infinite;
+  border-radius: 8px;
+}
+
+/* ── Reusable button utilities ───────────────────────── */
+.btn-primary {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: var(--shadow-button);
+}
+.btn-primary:hover {
+  background-color: var(--color-primary-light);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px rgba(234, 88, 12, 0.45);
+}
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-ghost {
+  background-color: transparent;
+  color: var(--color-text);
+  border: 1px solid var(--color-border);
+  font-weight: 500;
+  padding: 0.625rem 1.25rem;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.btn-ghost:hover {
+  background-color: var(--color-primary-dim);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ── Status badge utilities ──────────────────────────── */
+.badge         { display: inline-flex; align-items: center; padding: 0.2rem 0.625rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+.badge-success { background-color: rgba(34, 197, 94, 0.12);  color: #22C55E; }
+.badge-warning { background-color: rgba(245, 158, 11, 0.12); color: #F59E0B; }
+.badge-danger  { background-color: rgba(239, 68, 68, 0.12);  color: #EF4444; }
+.badge-info    { background-color: rgba(59, 130, 246, 0.12); color: #3B82F6; }
+.badge-neutral { background-color: rgba(0, 0, 0, 0.06);      color: #6B6B6B; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PREMIUM UI — Stripe-style améliorations globales
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Inputs — focus ring orange premium ── */
+input:focus,
+textarea:focus,
+select:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(234,88,12,0.18);
+  border-color: var(--color-primary) !important;
+}
+
+/* ── Tables — lisibles, aérées ── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table th {
+  text-align: left;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #6B7280;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+.data-table td {
+  padding: 12px 14px;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(0,0,0,0.05);
+  vertical-align: middle;
+}
+.data-table tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: rgba(234,88,12,0.03); }
+
+/* ── Pulse animation pour les indicateurs live ── */
+@keyframes livePulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(234,88,12,0.4); }
+  50%       { box-shadow: 0 0 0 6px rgba(234,88,12,0); }
+}
+.live-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  animation: livePulse 2s ease-in-out infinite;
+}
+
+/* ── KPI card grid responsive ── */
+.kpi-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+}
+@media (max-width: 640px) {
+  .kpi-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+}
+
+/* ── Modal overlay backdrop ── */
+.modal-backdrop {
+  position: fixed; inset: 0; z-index: 1000;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+/* ── Card premium (alternative à inline styles) ── */
+.card-premium {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid rgba(0,0,0,0.07);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.06);
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+.card-premium:hover {
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+  transform: translateY(-1px);
+}
+
+/* ── Framer Motion — désactive les transitions pour préférence reduced-motion ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   IMPRESSION — Masque les éléments de navigation à l'impression
+   ═══════════════════════════════════════════════════════════════ */
+@media print {
+  /* Cache la navigation, les boutons d'action et les sidebars à l'impression */
+  header,
+  nav,
+  aside,
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 12pt;
+  }
+
+  /* Les liens affichent leur URL entre parenthèses */
+  a[href]::after {
+    content: ' (' attr(href) ')';
+    font-size: 0.85em;
+    color: #666;
+  }
+}
+
+/* ── Admin sidebar — cachée sur mobile, visible ≥ 1024px ── */
+.admin-sidebar {
+  display: flex;
+}
+@media (max-width: 1023px) {
+  .admin-sidebar { display: none !important; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE — Corrections pour très petits écrans (≤ 360px)
+   Téléphones anciens ou bas de gamme (Samsung Galaxy A02, etc.)
+   ═══════════════════════════════════════════════════════════════ */
+@media (max-width: 360px) {
+  /* Réduit les tailles de police pour éviter le débordement */
+  .text-3xl { font-size: 1.5rem !important; }
+  .text-2xl { font-size: 1.25rem !important; }
+
+  /* Réduit le padding horizontal sur les très petits écrans */
+  .px-4 { padding-left: 0.75rem; padding-right: 0.75rem; }
+  .px-6 { padding-left: 1rem;    padding-right: 1rem; }
+
+  /* S'assure que les boutons en ligne passent en colonne */
+  .flex-nowrap-mobile {
+    flex-wrap: wrap;
+  }
+}
