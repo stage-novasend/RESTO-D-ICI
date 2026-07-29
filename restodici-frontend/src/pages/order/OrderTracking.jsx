@@ -677,5 +677,6 @@ export default function OrderTrackingPage() {
           </button>
         </div>
       </main>
+    </div>
   );
 }
