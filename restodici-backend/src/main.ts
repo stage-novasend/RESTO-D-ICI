@@ -59,7 +59,7 @@ async function bootstrap() {
   }
 
   const port = parseInt(process.env.PORT || '3000', 10);
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   const logger = new Logger('Bootstrap');
   logger.log(`API Resto d'ici démarrée sur le port ${port} (préfixe /api)`);
   if (process.env.NODE_ENV !== 'production') {

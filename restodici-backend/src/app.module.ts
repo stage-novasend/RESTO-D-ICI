@@ -53,7 +53,9 @@ import { LivraisonsExternesModule } from './livraisons-externes/livraisons-exter
         process.env.DB_SYNC !== undefined
           ? process.env.DB_SYNC === 'true'
           : process.env.NODE_ENV !== 'production',
-      migrationsRun: process.env.NODE_ENV === 'production',
+      migrationsRun:
+        process.env.NODE_ENV === 'production' &&
+        process.env.DB_SYNC !== 'true',
     }),
     CacheModule.register({
       isGlobal: true,

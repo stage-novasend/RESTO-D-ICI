@@ -321,6 +321,21 @@ export class AuthService {
     const savedUser = await this.userRepository.save(user);
     savedUser.restaurant = restaurant ?? undefined;
 
+    const skipEmailVerification =
+      (this.configService?.get<string>('SKIP_EMAIL_VERIFICATION') || '')
+        .toLowerCase()
+        .trim() === 'true';
+
+    if (skipEmailVerification) {
+      // Staging CapRover : emails Resend limités — auto-vérifier pour pouvoir se connecter
+      savedUser.emailVerified = true;
+      await this.userRepository.save(savedUser);
+      return this.buildAuthResponse(
+        savedUser,
+        'Compte créé avec succès.',
+      );
+    }
+
     // Générer un token de vérification d'email
     const verificationToken = crypto.randomBytes(32).toString('hex');
     const verificationExpires = new Date(Date.now() + 24 * 3600 * 1000); // 24h
@@ -363,7 +378,12 @@ export class AuthService {
     }
     if (!user.actif) throw new BadRequestException('Compte désactivé');
 
-    if (!user.emailVerified) {
+    const skipEmailVerification =
+      (this.configService?.get<string>('SKIP_EMAIL_VERIFICATION') || '')
+        .toLowerCase()
+        .trim() === 'true';
+
+    if (!user.emailVerified && !skipEmailVerification) {
       throw new UnauthorizedException(
         'Email non vérifié — vérifiez votre boîte mail pour activer votre compte',
       );

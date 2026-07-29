@@ -15,7 +15,10 @@ export const dataSourceOptions: DataSourceOptions = {
   migrations: [__dirname + '/../migrations/*{.ts,.js}'],
   synchronize: false,
   logging: process.env.DB_LOGGING === 'true',
-  ssl: process.env.DB_SSL === 'true',
+  ssl:
+    process.env.DB_SSL === 'true'
+      ? { rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false' }
+      : false,
 };
 
 // Instance par défaut pour la CLI (`-d src/config/data-source.ts`).
