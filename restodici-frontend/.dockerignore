@@ -1,0 +1,9 @@
+node_modules
+dist
+.git
+.vite
+test-results
+e2e
+*.md
+.env
+.env.*

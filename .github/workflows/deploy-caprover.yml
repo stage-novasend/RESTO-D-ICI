@@ -1,0 +1,78 @@
+name: Deploy CapRover
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-restodici
+  cancel-in-progress: false
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'restodici-backend/**'
+            frontend:
+              - 'restodici-frontend/**'
+
+  backend:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pack backend
+        working-directory: restodici-backend
+        run: |
+          COPYFILE_DISABLE=1 tar \
+            --exclude='./.git' \
+            --exclude='./node_modules' \
+            --exclude='./dist' \
+            --exclude='./coverage' \
+            --exclude='./caprover.env' \
+            -cf "$GITHUB_WORKSPACE/deploy.tar" .
+
+      - name: Deploy backend
+        uses: caprover/deploy-from-github@v1.1.2
+        with:
+          server: ${{ secrets.CAPROVER_SERVER }}
+          app: restodici-backend
+          token: ${{ secrets.CAPROVER_BACKEND_APP_TOKEN }}
+
+  frontend:
+    needs: changes
+    if: github.event_name == 'workflow_dispatch' || needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pack frontend
+        working-directory: restodici-frontend
+        run: |
+          COPYFILE_DISABLE=1 tar \
+            --exclude='./.git' \
+            --exclude='./node_modules' \
+            --exclude='./dist' \
+            --exclude='./.vite' \
+            --exclude='./test-results' \
+            --exclude='./e2e' \
+            -cf "$GITHUB_WORKSPACE/deploy.tar" .
+
+      - name: Deploy frontend
+        uses: caprover/deploy-from-github@v1.1.2
+        with:
+          server: ${{ secrets.CAPROVER_SERVER }}
+          app: restodici-front
+          token: ${{ secrets.CAPROVER_FRONTEND_APP_TOKEN }}
