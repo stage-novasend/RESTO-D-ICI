@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
+import Chart from 'chart.js/auto';
 import {
   LayoutDashboard, ShoppingBag, Users, FileText, Settings,
   Plus, X, RefreshCw, AlertCircle, UtensilsCrossed, Download,
@@ -20,8 +21,8 @@ import { buildSyscohadaBlob, buildFactureBlob } from '../../utils/syscohada-pdf'
 // ── Design tokens (couleurs : theme/colors.js) ──────────────────────────────────
 import {
   BG, SURFACE as CARD, BROWN_COFFEE as NAVY, BROWN_COFFEE_HOVER as NAVY2,
-  TEXT, MUTED_WARM as MUTED, FAINT_WARM as FAINT, BORDER_WARM as BORDER,
-  ORANGE, ORANGE_PEACH as ORANGE_L, ORANGE_DARK as ORANGE_D,
+  TEXT, MUTED_WARM as MUTED, FAINT_WARM as FAINT, BORDER_SLATE as BORDER,
+  BLUE as ORANGE, BLUE_LIGHT as ORANGE_L, BLUE_BRIGHT as ORANGE_D,
   GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, GREEN_FOREST as GREEN_D,
   RED_STRONG as RED, RED_ROSE as RED_L, AMBER, YELLOW_LIGHT as AMBER_L,
 } from '../../theme/colors';
@@ -138,6 +139,86 @@ function buildNotifFromEvent(event, data) {
 }
 
 // ── Micro components ───────────────────────────────────────────────────────────
+
+function CostCenterChart({ data, total }) {
+  const chartRef = useRef(null);
+  const chartInstance = useRef(null);
+
+  useEffect(() => {
+    if (!chartRef.current) return;
+    const ctx = chartRef.current.getContext('2d');
+    if (chartInstance.current) {
+      chartInstance.current.destroy();
+    }
+
+    const labels = Object.keys(data).length > 0 ? Object.keys(data) : ['Aucune commande'];
+    const values = Object.keys(data).length > 0 ? Object.values(data) : [1];
+    
+    // Corporate colors (Slate & Navy & Blue shades)
+    const bgColors = Object.keys(data).length > 0 
+      ? ['#1E3A8A', '#3B82F6', '#60A5FA', '#93C5FD', '#1E40AF', '#475569']
+      : ['#E2E8F0'];
+
+    chartInstance.current = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels,
+        datasets: [{
+          data: values,
+          backgroundColor: bgColors,
+          borderWidth: 0,
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            position: 'right',
+            labels: {
+              usePointStyle: true,
+              padding: 16,
+              font: { family: 'inherit', size: 11, weight: '600' },
+              color: '#475569'
+            }
+          },
+          tooltip: {
+            backgroundColor: 'rgba(15, 23, 42, 0.9)',
+            padding: 10,
+            cornerRadius: 8,
+            displayColors: false,
+            callbacks: {
+              label: (ctx) => {
+                if (Object.keys(data).length === 0) return ' 0 commande';
+                const val = ctx.raw;
+                const pct = Math.round((val / total) * 100);
+                return ` ${val} commande${val > 1 ? 's' : ''} (${pct}%)`;
+              }
+            }
+          }
+        },
+        cutout: '72%',
+        layout: { padding: 0 }
+      }
+    });
+
+    return () => {
+      if (chartInstance.current) chartInstance.current.destroy();
+    };
+  }, [data, total]);
+
+  return (
+    <div style={{ height: 210, width: '100%', position: 'relative' }}>
+      <canvas ref={chartRef} />
+      <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', paddingRight: '110px' }}>
+        <span style={{ fontSize: 24, fontWeight: 900, color: '#1E293B', lineHeight: 1 }}>{total}</span>
+        <span style={{ fontSize: 10, fontWeight: 600, color: '#64748B', textTransform: 'uppercase', marginTop: 2 }}>Total</span>
+      </div>
+    </div>
+  );
+}
+
 function Avatar({ name = '', size = 32 }) {
   const initials = name.trim().split(' ').slice(0, 2).map(w => w[0]?.toUpperCase() || '').join('');
   const hue = name.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) % 360;
@@ -744,7 +825,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                 {collabs.length === 0 ? (
                   <div className="py-8 text-center text-[13px]" style={{ color: '#8B6E50' }}>Aucun collaborateur enregistré</div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead style={{ background: '#F8FAFC' }}>
                       <tr>{['N°','Collaborateur','Poste','Budget','Dépensé','Solde','Taux'].map(h => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: ['Budget','Dépensé','Solde','Taux'].includes(h) ? 'right' : h === 'N°' ? 'center' : 'left', fontWeight: 700, color: '#374151', borderBottom: '1px solid rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>{h}</th>
@@ -788,7 +869,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                         );
                       })()}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </div>
             </div>
@@ -802,7 +883,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                 {factures.length === 0 ? (
                   <div className="py-8 text-center text-[13px]" style={{ color: '#8B6E50' }}>Aucune facture émise</div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead style={{ background: '#F8FAFC' }}>
                       <tr>{['N°','Référence','Période','Échéance','Montant HT','TVA 18%','TTC','Statut'].map(h => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: ['Montant HT','TVA 18%','TTC'].includes(h) ? 'right' : h === 'N°' ? 'center' : 'left', fontWeight: 700, color: '#374151', borderBottom: '1px solid rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>{h}</th>
@@ -835,7 +916,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                         );
                       })}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </div>
             </div>
@@ -846,7 +927,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                 <p className="text-white font-bold text-[12px] uppercase tracking-wider">3. Récapitulatif fiscal (SYSCOHADA / DGI-CI)</p>
               </div>
               <div className="rounded-b-xl overflow-hidden border border-t-0" style={{ borderColor: 'rgba(255,140,0,0.10)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead style={{ background: '#F8FAFC' }}>
                     <tr>{['Désignation','Base HT','Taux TVA','Montant TVA','Total TTC'].map(h => (
                       <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Désignation' ? 'left' : 'right', fontWeight: 700, color: '#374151', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>{h}</th>
@@ -868,7 +949,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                       <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: '#EA580C' }}>{fcfa(totalTTC)}</td>
                     </tr>
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
 
@@ -1748,7 +1829,7 @@ export default function B2BDashboard() {
 
                   {/* Table */}
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left">
+                    <div className="overflow-x-auto w-full"><table className="w-full text-left">
                       <thead style={{ borderBottom: `1px solid ${BORDER}` }}>
                         <tr>
                           {['COMMANDE #', 'DATE', 'CENTRE DE COÛTS', 'ARTICLES', 'MONTANT', 'STATUT'].map(h => (
@@ -1809,7 +1890,7 @@ export default function B2BDashboard() {
                           </tr>
                         )}
                       </tbody>
-                    </table>
+                    </table></div>
                   </div>
                 </div>
 
@@ -1871,54 +1952,24 @@ export default function B2BDashboard() {
                   </div>
                 </div>
 
-                {/* ── Centres de coûts — bar chart — col 7 ─────────────────── */}
-                <div className="col-span-12 lg:col-span-7 rounded-[32px] p-8 relative overflow-hidden transition-all duration-200 hover:-translate-y-1"
-                  style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: '0 2px 16px rgba(139,110,80,0.08)' }}>
-                  <div className="flex items-center justify-between mb-6">
-                    <h4 className="text-lg font-bold" style={{ color: TEXT }}>Centres de Coûts</h4>
+                {/* ── Centres de coûts — Doughnut Chart — col 7 ─────────────────── */}
+                <div className="col-span-12 lg:col-span-7 rounded-2xl p-7 relative overflow-hidden transition-all duration-200"
+                  style={{ background: '#FFFFFF', border: `1px solid #E2E8F0`, boxShadow: '0 4px 20px rgba(15, 23, 42, 0.05)' }}>
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <h4 className="text-base font-bold text-slate-800">Répartition par Centre de Coûts</h4>
+                      <p className="text-[12px] text-slate-500 font-medium mt-0.5">Mois en cours</p>
+                    </div>
                     {Object.keys(centerCounts).length > 0 && (
-                      <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full" style={{ background: ORANGE_L, color: ORANGE }}>
-                        {orders.length} commandes
+                      <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: '#EFF6FF', color: '#2563EB' }}>
+                        {Object.keys(centerCounts).length} centres
                       </span>
                     )}
                   </div>
-                  {Object.keys(centerCounts).length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-6 gap-2">
-                      <span style={{ fontSize: 28, opacity: 0.35 }}>📊</span>
-                      <p className="text-[13px] font-semibold" style={{ color: MUTED }}>0 commande enregistrée</p>
-                      <p className="text-[11px]" style={{ color: FAINT }}>Les centres de coûts apparaîtront ici</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {Object.entries(centerCounts)
-                        .sort((a, b) => b[1] - a[1])
-                        .slice(0, 6)
-                        .map(([name, value], i) => {
-                          const BAR_COLORS = [ORANGE, '#4F46E5', GREEN, '#7C3AED', '#0EA5E9', AMBER];
-                          const color = BAR_COLORS[i % BAR_COLORS.length];
-                          const total = orders.length || 1;
-                          const pct = Math.round((value / total) * 100);
-                          const barW = Math.max(4, Math.round((value / Math.max(...Object.values(centerCounts), 1)) * 100));
-                          return (
-                            <div key={name} className="group flex items-center gap-3 rounded-xl px-3 py-2 transition-colors" style={{ background: 'transparent' }}
-                              onMouseEnter={e => e.currentTarget.style.background = BG}
-                              onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                              <div className="w-2 h-2 rounded-full shrink-0" style={{ background: color }} />
-                              <span className="text-[12px] font-semibold shrink-0" style={{ color: TEXT, minWidth: 80, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-                              <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: BORDER }}>
-                                <div className="h-full rounded-full transition-all duration-700" style={{ width: `${barW}%`, background: `linear-gradient(90deg, ${color}, ${color}bb)` }} />
-                              </div>
-                              <span className="text-[11px] font-bold shrink-0 w-5 text-right" style={{ color }}>{value}</span>
-                              <span className="text-[10px] shrink-0 w-9 text-right" style={{ color: FAINT }}>{pct}%</span>
-                            </div>
-                          );
-                        })}
-                      <div className="mt-2 pt-3 flex items-center justify-between" style={{ borderTop: `1px solid ${BORDER}` }}>
-                        <span className="text-[11px]" style={{ color: FAINT }}>Total</span>
-                        <span className="text-[12px] font-bold" style={{ color: TEXT }}>{orders.length} commandes</span>
-                      </div>
-                    </div>
-                  )}
+                  
+                  <div className="mt-4">
+                    <CostCenterChart data={centerCounts} total={orders.length} />
+                  </div>
                 </div>
 
               </div>

@@ -35,8 +35,8 @@ export default function Button({
       onMouseLeave={(e) => { if (variant === 'primary' && !isDisabled) e.currentTarget.style.background = ORANGE; }}
       {...rest}
     >
-      {Icon && <Icon className="w-4 h-4" />}
-      {children}
+      {Icon && <span><Icon className="w-4 h-4" /></span>}
+      <span>{children}</span>
     </button>
   );
 }

@@ -1,104 +1,101 @@
-import { useState, useRef, useEffect } from 'react';
 import { useLanguage } from '../../hooks/useLanguage';
-import { Globe, ChevronDown } from 'lucide-react';
 
-export default function LanguageSwitcher({ variant = 'header', style = {} }) {
+const FrenchFlag = () => (
+  <svg width="22" height="16" viewBox="0 0 20 15" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ borderRadius: '4px', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
+    <rect width="6.67" height="15" fill="#002395"/>
+    <rect x="6.67" width="6.67" height="15" fill="#FFFFFF"/>
+    <rect x="13.34" width="6.66" height="15" fill="#ED2939"/>
+  </svg>
+);
+
+const UKFlag = () => (
+  <svg width="22" height="16" viewBox="0 0 60 30" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ borderRadius: '4px', flexShrink: 0, boxShadow: '0 1px 3px rgba(0,0,0,0.2)' }}>
+    <clipPath id="uk-flag-clip"><rect width="60" height="30" rx="4" /></clipPath>
+    <g clipPath="url(#uk-flag-clip)">
+      <path d="M0,0 v30 h60 v-30 z" fill="#012169"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#fff" strokeWidth="6"/>
+      <path d="M0,0 L60,30 M60,0 L0,30" stroke="#C8102E" strokeWidth="4"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#fff" strokeWidth="10"/>
+      <path d="M30,0 v30 M0,15 h60" stroke="#C8102E" strokeWidth="6"/>
+    </g>
+  </svg>
+);
+
+export default function LanguageSwitcher({ style = {}, className = '' }) {
   const { lang, setLang } = useLanguage();
-  const [open, setOpen] = useState(false);
-  const ref = useRef(null);
 
-  useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (ref.current && !ref.current.contains(e.target)) setOpen(false);
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const LANGUAGES = [
-    { code: 'fr', label: 'Français', flag: '🇫🇷' },
-    { code: 'en', label: 'English',  flag: '🇬🇧' },
-  ];
-
-  const current = LANGUAGES.find(l => l.code === lang) || LANGUAGES[0];
-
-  const isDark = variant === 'dark' || variant === 'footer';
+  const isFr = lang === 'fr';
+  const isEn = lang === 'en';
 
   return (
-    <div ref={ref} style={{ position: 'relative', display: 'inline-block', ...style }}>
+    <div
+      className={`inline-flex items-center select-none ${className}`}
+      style={{
+        backgroundColor: '#EA580C',
+        borderRadius: '9999px',
+        padding: '4px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
+        ...style,
+      }}
+    >
+      {/* FRANCAIS button */}
       <button
         type="button"
-        onClick={() => setOpen(!open)}
-        aria-label="Changer de langue / Change language"
+        onClick={() => setLang('fr')}
+        aria-label="Changer en français"
         style={{
-          display: 'flex',
+          display: 'inline-flex',
           alignItems: 'center',
-          gap: 6,
-          padding: '6px 12px',
-          borderRadius: 20,
-          border: isDark ? '1px solid rgba(255,255,255,0.18)' : '1px solid #E2E8F0',
-          background: isDark ? 'rgba(255,255,255,0.08)' : '#FFFFFF',
-          color: isDark ? '#F8FAFC' : '#1E293B',
-          fontSize: 12,
-          fontWeight: 700,
+          gap: '8px',
+          padding: '7px 16px',
+          borderRadius: '9999px',
+          border: 'none',
+          backgroundColor: isFr ? '#003B46' : 'transparent',
+          color: isFr ? '#FFFFFF' : 'rgba(255, 255, 255, 0.9)',
+          fontWeight: 800,
+          fontSize: '12px',
           fontFamily: 'Manrope, sans-serif',
+          letterSpacing: '0.04em',
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
-          boxShadow: isDark ? 'none' : '0 1px 4px rgba(0,0,0,0.04)',
+          transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: isFr ? '0 2px 6px rgba(0, 0, 0, 0.2)' : 'none',
           outline: 'none',
         }}
       >
-        <span style={{ fontSize: 14 }}>{current.flag}</span>
-        <span style={{ letterSpacing: '0.04em' }}>{current.code.toUpperCase()}</span>
-        <ChevronDown size={12} style={{ opacity: 0.6, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+        <FrenchFlag />
+        <span>FRANCAIS</span>
       </button>
 
-      {open && (
-        <div style={{
-          position: 'absolute',
-          top: 'calc(100% + 6px)',
-          right: 0,
-          zIndex: 9999,
-          minWidth: 130,
-          background: '#FFFFFF',
-          borderRadius: 14,
-          border: '1px solid #E2E8F0',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.15)',
-          padding: 6,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 2,
-          animation: 'fadeUp 0.18s ease both',
-        }}>
-          {LANGUAGES.map(item => (
-            <button
-              key={item.code}
-              type="button"
-              onClick={() => { setLang(item.code); setOpen(false); }}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                padding: '8px 12px',
-                borderRadius: 10,
-                border: 'none',
-                background: lang === item.code ? '#FFF3E0' : 'transparent',
-                color: lang === item.code ? '#EA580C' : '#1E293B',
-                fontSize: 12,
-                fontWeight: lang === item.code ? 800 : 600,
-                fontFamily: 'Manrope, sans-serif',
-                cursor: 'pointer',
-                textAlign: 'left',
-                width: '100%',
-                transition: 'background 0.15s',
-              }}
-            >
-              <span style={{ fontSize: 16 }}>{item.flag}</span>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </div>
-      )}
+      {/* ENGLISH button */}
+      <button
+        type="button"
+        onClick={() => setLang('en')}
+        aria-label="Switch to english"
+        style={{
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: '8px',
+          padding: '7px 16px',
+          borderRadius: '9999px',
+          border: 'none',
+          backgroundColor: isEn ? '#003B46' : 'transparent',
+          color: isEn ? '#FFFFFF' : 'rgba(255, 255, 255, 0.9)',
+          fontWeight: 800,
+          fontSize: '12px',
+          fontFamily: 'Manrope, sans-serif',
+          letterSpacing: '0.04em',
+          cursor: 'pointer',
+          transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
+          boxShadow: isEn ? '0 2px 6px rgba(0, 0, 0, 0.2)' : 'none',
+          outline: 'none',
+        }}
+      >
+        <UKFlag />
+        <span>ENGLISH</span>
+      </button>
     </div>
   );
 }
+

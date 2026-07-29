@@ -1,4 +1,6 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback } from 'react';
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
 
 const LanguageContext = createContext(null);
 
@@ -117,15 +119,25 @@ const TRANSLATIONS = {
   }
 };
 
-export function LanguageProvider({ children }) {
-  const [lang, setLangState] = useState(() => {
-    const saved = localStorage.getItem('restodici_lang');
-    return saved === 'en' ? 'en' : 'fr';
+i18n
+  .use(initReactI18next)
+  .init({
+    resources: {
+      fr: { translation: TRANSLATIONS.fr },
+      en: { translation: TRANSLATIONS.en }
+    },
+    lng: localStorage.getItem('restodici_lang') || 'fr',
+    fallbackLng: 'fr',
+    interpolation: { escapeValue: false }
   });
+
+export function LanguageProvider({ children }) {
+  const [lang, setLangState] = useState(i18n.language || 'fr');
 
   const setLang = useCallback((newLang) => {
     const val = newLang === 'en' ? 'en' : 'fr';
     setLangState(val);
+    i18n.changeLanguage(val);
     localStorage.setItem('restodici_lang', val);
   }, []);
 
@@ -134,9 +146,8 @@ export function LanguageProvider({ children }) {
   }, [lang, setLang]);
 
   const t = useCallback((key, fallback) => {
-    const dict = TRANSLATIONS[lang] || TRANSLATIONS.fr;
-    return dict[key] ?? fallback ?? TRANSLATIONS.fr[key] ?? key;
-  }, [lang]);
+    return i18n.t(key, fallback || key);
+  }, []);
 
   return (
     <LanguageContext.Provider value={{

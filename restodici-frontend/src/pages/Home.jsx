@@ -1,56 +1,70 @@
 /* ═══════════════════════════════════════════════════════════════
-   Home.jsx — Page d'accueil = catalogue restaurants
-   Hero avec grande image aux bordures arrondies (border-radius)
-   + Sidebar dynamique Yango Deli pour le filtrage
-   + Grille des restaurants + Footer.
+   Home.jsx — Page d'accueil Ultra-Premium Resto d'ici
+   Hero avec grande image aux bordures arrondies + Design Glassmorphism
+   + Sidebar dynamique Yango Deli + Grille des restaurants + Footer.
    ═══════════════════════════════════════════════════════════════ */
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   UtensilsCrossed, ArrowRight, Check, Star, Search, Truck, Clock,
-  Mail, X, Zap, Smartphone, ShieldCheck, SlidersHorizontal, RotateCcw
+  Mail, X, Zap, Smartphone, ShieldCheck, SlidersHorizontal, Building2,
+  Sparkles, ChevronRight, User, ShoppingBag
 } from "lucide-react";
 import { menuAPI, newsletterAPI } from "../services/api";
 import FilterSidebar from "../components/menu/FilterSidebar";
 import LanguageSwitcher from "../components/shared/LanguageSwitcher";
+import { useAuth } from "../hooks/useAuth";
+
 import orangeMoneyLogo   from "../assets/payments/orange-money.svg";
 import mtnMomoLogo       from "../assets/payments/mtn-momo.svg";
 import moovMoneyLogo     from "../assets/payments/moov-money.svg";
 import waveLogo          from "../assets/payments/wave.svg";
 import carteBancaireLogo from "../assets/payments/carte-bancaire.svg";
 
-/* ─── Palette de couleurs ─── */
+/* ─── Palette de couleurs Ultra-Premium ─── */
 const T = {
-  bg:      "#FFF4ED",
-  bgAlt:   "#FFF5E8",
-  surface: "#FFEFD8",
-  dark:    "#1A0C00",
-  text:    "#3B2409",
-  muted:   "#7A5E3A",
-  mutedL:  "#B09070",
+  bg:      "#FAF6F0",
+  bgAlt:   "#F5EFE6",
+  surface: "#FFFDF9",
+  dark:    "#160E08",
+  text:    "#2C1D11",
+  muted:   "#756252",
+  mutedL:  "#A89685",
   card:    "#FFFFFF",
   accent:  "#EA580C",
   accentD: "#C2410C",
-  accentL: "#FFAD40",
-  yellow:  "#FFB800",
-  yellowL: "#FFD166",
-  red:     "#FF3B30",
-  green:   "#16A34A",
-  line:    "rgba(234,88,12,0.14)",
-  shadow:  "0 6px 28px rgba(234,88,12,0.14)",
-  shadowS: "0 2px 14px rgba(0,0,0,0.07)",
+  accentL: "#F97316",
+  yellow:  "#F59E0B",
+  yellowL: "#FBBF24",
+  red:     "#EF4444",
+  green:   "#10B981",
+  line:    "rgba(234, 88, 12, 0.12)",
+  shadow:  "0 12px 36px rgba(234, 88, 12, 0.12)",
+  shadowS: "0 4px 20px rgba(0,0,0,0.06)",
 };
-const KENTE = ["#EA580C","#FFB800","#1A0C00","#C2410C"];
+
+const KENTE = ["#EA580C", "#F59E0B", "#160E08", "#C2410C"];
 const serif = "'Playfair Display', Georgia, serif";
 const sans  = "'Manrope', system-ui, sans-serif";
+
+const QUICK_SEARCH_CHIPS = [
+  { label: "Garba Thon", query: "garba" },
+  { label: "Poulet Braisé", query: "poulet" },
+  { label: "Attiéké Poisson", query: "attiéké" },
+  { label: "Alloco", query: "alloco" },
+  { label: "Jus de Bissap", query: "bissap" },
+  { label: "Formules B2B", query: "b2b" },
+];
 
 const CSS = `
 @keyframes kfpulse    { 0%,100%{opacity:1} 50%{opacity:0.55} }
 @keyframes kfskeleton { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-@keyframes slideInLeft { from{transform:translateX(-100%)} to{transform:translateX(0)} }
+@keyframes rd-orbit   { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes rd-orbit-rev { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
 .rd-nav-link:hover  { color:${T.accent} !important; }
-.rd-btn-cta:hover   { transform:translateY(-2px) !important; box-shadow:0 16px 40px rgba(234,88,12,0.5) !important; }
-.rd-card:hover      { transform:translateY(-6px) !important; box-shadow:0 18px 48px rgba(234,88,12,0.2) !important; }
+.rd-btn-cta:hover   { transform:translateY(-2px) !important; box-shadow:0 12px 32px rgba(234,88,12,0.4) !important; }
+.rd-card:hover      { transform:translateY(-6px) !important; box-shadow:0 20px 48px rgba(234,88,12,0.18) !important; }
 .rd-foot-link:hover { color:${T.accent} !important; }
 @media (max-width: 900px) {
   .rd-desktop-sidebar { display: none !important; }
@@ -61,7 +75,6 @@ const CSS = `
 }
 `;
 
-/* ─── Images de substitution pour les plats/restaurants sans photo ─── */
 const FOOD_IMGS = [
   "photo-1665332195309-9d75071138f0",
   "photo-1665400808116-f0e6339b7e9a",
@@ -73,11 +86,8 @@ const FOOD_IMGS = [
   "photo-1665332561290-cc6757172890",
   "photo-1665401015549-712c0dc5ef85",
   "photo-1603496987674-79600a000f55",
-  "photo-1773620494293-e9e075dd48fd",
-  "photo-1634324092526-91f5e878b72f",
-  "photo-1569058242252-623df46b5025",
-  "photo-1665833613236-7c1d087463b1",
 ];
+
 const fallbackImg = (idx, w = 600) =>
   `https://images.unsplash.com/${FOOD_IMGS[idx % FOOD_IMGS.length]}?q=80&w=${w}&auto=format&fit=crop`;
 
@@ -90,28 +100,6 @@ function formatPrix(prix) {
   return new Intl.NumberFormat("fr-FR").format(prix) + " FCFA";
 }
 
-/* ─── Emoji par type de cuisine ─── */
-const EMOJI_MAP = [
-  { keys:["pizza"],                                    emoji:"🍕" },
-  { keys:["grillade","grillé","bœuf","viande","braisé","steak","brochette"], emoji:"🥩" },
-  { keys:["local","ivoirien","attiéké","alloco","aloko","foutou","placali","garba"], emoji:"🍛" },
-  { keys:["salade","crudité"],                         emoji:"🥗" },
-  { keys:["dessert","pâtisserie","gâteau","sucré"],    emoji:"🍰" },
-  { keys:["boisson","jus","soda","eau","drink","cocktail"], emoji:"🥤" },
-  { keys:["poisson","thon","capitaine","tilapia","sardine"], emoji:"🐟" },
-  { keys:["poulet","volaille","dinde","yassa"],        emoji:"🍗" },
-  { keys:["riz","tchep","cheb"],                       emoji:"🍚" },
-  { keys:["burger","sandwich","wrap"],                 emoji:"🍔" },
-  { keys:["soupe","sauce","bouillon","kandia","graine","mafé"], emoji:"🍲" },
-  { keys:["pâtes","pasta","spaghetti"],                emoji:"🍝" },
-];
-function catEmoji(nom) {
-  const lower = (nom || "").toLowerCase();
-  for (const { keys, emoji } of EMOJI_MAP) if (keys.some(k => lower.includes(k))) return emoji;
-  return "🍽️";
-}
-
-/* ─── Chargement des polices + CSS global ─── */
 function FontLoader() {
   useEffect(() => {
     if (!document.getElementById("rd-fonts")) {
@@ -131,107 +119,312 @@ function KS({ h=4 }) {
   return <div style={{display:"flex",height:h}}>{KENTE.map((c,i)=><div key={i} style={{flex:1,background:c}}/>)}</div>;
 }
 
-/* ─── Barre de navigation ─── */
+/* ─── Navigation Glassmorphique Premium ─── */
 function Nav() {
   const [scrolled, setScrolled] = useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
   useEffect(() => {
-    const fn=()=>setScrolled(window.scrollY>40);
-    window.addEventListener("scroll",fn,{passive:true});
-    return ()=>window.removeEventListener("scroll",fn);
-  },[]);
-  const links=[["Restaurants","#catalogue"],["Entreprises","/register?type=b2b"],["Aide","/aide"]];
+    const fn = () => setScrolled(window.scrollY > 30);
+    window.addEventListener("scroll", fn, { passive: true });
+    return () => window.removeEventListener("scroll", fn);
+  }, []);
+
+  const role = user?.role?.toUpperCase();
+
+  const getDashboardPath = () => {
+    if (role === 'ADMIN') return '/admin';
+    if (role === 'GERANT') return '/gerant';
+    if (role === 'STAFF') return '/staff';
+    if (role === 'B2B') return '/b2b/dashboard';
+    return '/menu';
+  };
+
   return (
-    <nav style={{ position:"fixed",top:0,left:0,right:0,zIndex:1000, background:scrolled?"rgba(255,250,243,0.95)":"rgba(26,12,0,0.35)", backdropFilter:"blur(20px)", boxShadow:scrolled?"0 2px 24px rgba(234,88,12,0.1)":"none", transition:"all 0.35s cubic-bezier(.22,1,.36,1)" }}>
+    <nav style={{
+      position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
+      background: scrolled ? "rgba(255, 253, 249, 0.94)" : "rgba(22, 14, 8, 0.45)",
+      backdropFilter: "blur(20px)",
+      boxShadow: scrolled ? "0 4px 30px rgba(234, 88, 12, 0.08)" : "none",
+      transition: "all 0.35s ease",
+      borderBottom: scrolled ? "1px solid rgba(234,88,12,0.12)" : "1px solid rgba(255,255,255,0.1)",
+    }}>
       <KS h={3} />
-      <div style={{ maxWidth:1280,margin:"0 auto",padding:"0 40px",height:70,display:"flex",alignItems:"center",justifyContent:"space-between" }}>
-        <a href="/" style={{ display:"flex",alignItems:"center",gap:10,textDecoration:"none" }}>
-          <div style={{ width:38,height:38,borderRadius:10,background:`linear-gradient(135deg,${T.accent},${T.yellow})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 4px 16px ${T.accent}44` }}>
-            <UtensilsCrossed style={{ width:19,height:19,color:"#fff" }} />
+      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        
+        {/* Brand */}
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+          <div style={{
+            width: 42, height: 42, borderRadius: 14,
+            background: "linear-gradient(135deg, #EA580C, #F59E0B)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            boxShadow: "0 4px 18px rgba(234,88,12,0.4)"
+          }}>
+            <UtensilsCrossed style={{ width: 22, height: 22, color: "#fff" }} />
           </div>
-          <span style={{ fontFamily:serif,fontWeight:700,color:scrolled?T.accent:"#fff",fontSize:22,letterSpacing:"-0.02em" }}>Resto d'ici</span>
+          <div>
+            <span style={{ fontFamily: serif, fontWeight: 900, color: scrolled ? T.dark : "#fff", fontSize: 23, letterSpacing: "-0.02em", display: "block" }}>
+              Resto d'ici
+            </span>
+            <span style={{ fontFamily: sans, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.18em", color: scrolled ? T.accent : T.yellowL }}>
+              Abidjan · Gastronomie
+            </span>
+          </div>
         </a>
-        <div style={{ display:"flex",gap:34,alignItems:"center" }}>
-          {links.map(([l,h])=>(
-            <a key={l} href={h} className="rd-nav-link" style={{ fontFamily:sans,fontSize:14,color:scrolled?T.accent:"#fff",textDecoration:"none",fontWeight:600,transition:"color .2s" }}>{l}</a>
-          ))}
+
+        {/* Links */}
+        <div className="hidden md:flex" style={{ gap: 32, alignItems: "center" }}>
+          <a href="#catalogue" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700 }}>
+            Restaurants
+          </a>
+          <a href="/register?type=b2b" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
+            <Building2 size={15} color={scrolled ? T.accent : T.yellowL} /> Espace B2B
+          </a>
+          <a href="/aide" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700 }}>
+            Aide & FAQ
+          </a>
         </div>
-        <div style={{ display:"flex",gap:10,alignItems:"center" }}>
+
+        {/* Actions */}
+        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
           <LanguageSwitcher variant={scrolled ? "light" : "dark"} />
-          <a href="/login" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:scrolled?T.accent:"#fff", background:"transparent", border:`1.5px solid ${scrolled?T.accent:"rgba(255,255,255,0.55)"}` }}>Connexion</a>
-          <a href="/register" className="rd-btn-cta" style={{ fontFamily:sans,fontSize:13,fontWeight:700,textDecoration:"none",padding:"10px 24px",borderRadius:50,transition:"all .22s",display:"inline-flex",alignItems:"center",gap:6, color:"#fff", background:"#16A34A", border:"1.5px solid #16A34A", boxShadow:"0 4px 14px rgba(22,163,74,0.35)" }}>S'inscrire</a>
+
+          {user ? (
+            <button
+              onClick={() => navigate(getDashboardPath())}
+              className="rd-btn-cta"
+              style={{
+                fontFamily: sans, fontSize: 13, fontWeight: 800,
+                padding: "10px 22px", borderRadius: 50, cursor: "pointer",
+                color: "#fff", background: "linear-gradient(135deg, #EA580C, #C2410C)",
+                border: "none", display: "inline-flex", alignItems: "center", gap: 8,
+                boxShadow: "0 6px 20px rgba(234,88,12,0.35)"
+              }}
+            >
+              <User size={15} /> My Space ({role})
+            </button>
+          ) : (
+            <>
+              <a
+                href="/login"
+                className="rd-btn-cta"
+                style={{
+                  fontFamily: sans, fontSize: 13, fontWeight: 700, textDecoration: "none",
+                  padding: "10px 22px", borderRadius: 50, transition: "all .22s",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  color: scrolled ? T.dark : "#fff", background: "transparent",
+                  border: `1.5px solid ${scrolled ? "rgba(26,12,0,0.2)" : "rgba(255,255,255,0.4)"}`
+                }}
+              >
+                Connexion
+              </a>
+              <a
+                href="/register"
+                className="rd-btn-cta"
+                style={{
+                  fontFamily: sans, fontSize: 13, fontWeight: 800, textDecoration: "none",
+                  padding: "10px 22px", borderRadius: 50, transition: "all .22s",
+                  display: "inline-flex", alignItems: "center", gap: 6,
+                  color: "#fff", background: "linear-gradient(135deg, #10B981, #059669)",
+                  border: "none", boxShadow: "0 6px 20px rgba(16,185,129,0.35)"
+                }}
+              >
+                S'inscrire
+              </a>
+            </>
+          )}
         </div>
       </div>
     </nav>
   );
 }
 
-/* ─── Hero compact avec grande image aux bords arrondis (border-radius) ─── */
+/* ─── Hero Cinematic & Flottant ─── */
 function CatalogHero({ search, onSearch, resultCount, hasQuery }) {
+  const HERO_IMAGES = [
+    "/hero-home.png",
+    "/hero-home-2.png",
+    "/hero-home-3.png"
+  ];
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentImgIndex((prev) => (prev + 1) % HERO_IMAGES.length);
+    }, 4500);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
-    <section style={{ position:"relative", padding:"10px 12px 0", width:"100%", margin:0 }}>
-      {/* Conteneur grand format qui occupe tout l'espace avec 4 angles arrondis (border-radius) */}
-      <div
-        style={{
-          position:"relative",
-          borderRadius:"28px",
-          overflow:"hidden",
-          minHeight:"calc(100vh - 20px)",
-          width:"100%",
-          display:"flex",
-          flexDirection:"column",
-          justifyContent:"center",
-          boxShadow:"0 16px 48px rgba(234,88,12,0.14)"
-        }}
-      >
-        {/* Grande image pleine largeur avec 4 angles arrondis */}
-        <img
-          src="https://images.unsplash.com/photo-1665400808116-f0e6339b7e9a?q=95&w=3200&auto=format&fit=crop"
-          alt="Plats d'Abidjan"
-          style={{ position:"absolute", inset:0, width:"100%", height:"100%", objectFit:"cover", objectPosition:"center 42%", display:"block" }}
-        />
-        {/* Voile sombre dégradé */}
-        <div style={{ position:"absolute", inset:0, background:"linear-gradient(to bottom, rgba(10,5,0,0.20) 0%, rgba(10,5,0,0.45) 50%, rgba(10,5,0,0.80) 100%)" }} />
+    <section style={{ position: "relative", padding: "12px 16px 0", width: "100%", margin: 0 }}>
+      <div style={{
+        position: "relative", borderRadius: "32px", overflow: "hidden",
+        minHeight: "calc(100vh - 24px)", width: "100%", display: "flex",
+        flexDirection: "column", justifyContent: "center",
+        boxShadow: "0 24px 64px rgba(22, 14, 8, 0.25)"
+      }}>
+        {/* Carousel Cover Images with Crossfade */}
+        <AnimatePresence mode="sync">
+          <motion.img
+            key={currentImgIndex}
+            src={HERO_IMAGES[currentImgIndex]}
+            alt="Gastronomie Resto d'ici"
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 1.2, ease: "easeInOut" }}
+            style={{ 
+              position: "absolute", 
+              inset: 0, 
+              width: "100%", 
+              height: "100%", 
+              objectFit: "cover", 
+              objectPosition: "center 45%",
+              filter: "contrast(1.06) brightness(1.08) saturate(1.1)",
+            }}
+            onError={e => {
+              e.target.src = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=100&w=2400&auto=format&fit=crop";
+            }}
+          />
+        </AnimatePresence>
 
-        <div style={{ position:"relative", zIndex:2, maxWidth:820, margin:"0 auto", padding:"80px 24px 60px", width:"100%", textAlign:"center" }}>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:"rgba(255,255,255,0.15)", backdropFilter:"blur(12px)", border:"1px solid rgba(255,255,255,0.25)", borderRadius:100, padding:"6px 18px", marginBottom:18 }}>
-            <span style={{ width:8, height:8, borderRadius:"50%", background:T.yellow, boxShadow:`0 0 10px ${T.yellow}` }} />
-            <p style={{ fontFamily:sans, fontSize:12, fontWeight:700, letterSpacing:"0.18em", textTransform:"uppercase", color:"#fff", margin:0 }}>
+        {/* Ambient Dark Overlay */}
+        <div style={{
+          position: "absolute", inset: 0, zIndex: 1,
+          background: "linear-gradient(180deg, rgba(22,14,8,0.18) 0%, rgba(22,14,8,0.40) 50%, rgba(22,14,8,0.78) 100%)"
+        }} />
+
+        {/* Carousel Indicators */}
+        <div style={{ position: "absolute", bottom: 24, right: 36, zIndex: 10, display: "flex", gap: 8 }}>
+          {HERO_IMAGES.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentImgIndex(idx)}
+              style={{
+                width: idx === currentImgIndex ? 28 : 10,
+                height: 10,
+                borderRadius: 99,
+                border: "none",
+                background: idx === currentImgIndex ? T.yellow : "rgba(255,255,255,0.45)",
+                cursor: "pointer",
+                transition: "all 0.3s ease",
+                boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Hero Content */}
+        <div style={{ position: "relative", zIndex: 2, maxWidth: 900, margin: "0 auto", padding: "100px 24px 70px", width: "100%", textAlign: "center" }}>
+          
+          <motion.div
+            initial={{ opacity: 0, y: -15 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.14)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 100, padding: "8px 22px", marginBottom: 24 }}
+          >
+            <span style={{ width: 9, height: 9, borderRadius: "50%", background: T.yellow, boxShadow: `0 0 12px ${T.yellow}` }} />
+            <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "#fff" }}>
               Abidjan · Côte d'Ivoire
-            </p>
-          </div>
+            </span>
+          </motion.div>
 
-          <h1 style={{ fontFamily:serif, fontWeight:900, fontSize:"clamp(36px,6vw,72px)", color:"#fff", lineHeight:1.02, letterSpacing:"-0.03em", margin:"0 0 20px", textShadow:"0 4px 28px rgba(0,0,0,0.5)" }}>
-            Trouvez un plat, <em style={{ color:T.yellow, fontStyle:"italic" }}>on trouve</em> le resto.
-          </h1>
-          <p style={{ fontFamily:sans, fontSize:"clamp(14px,2vw,18px)", color:"rgba(255,255,255,0.85)", lineHeight:1.6, maxWidth:560, margin:"0 auto 32px", fontWeight:300 }}>
-            Cherchez par type de cuisine, budget ou nom de plat — les restaurants s'affichent instantanément.
-          </p>
+          <motion.h1
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            style={{ fontFamily: serif, fontWeight: 900, fontSize: "clamp(38px, 6.5vw, 76px)", color: "#fff", lineHeight: 1.02, letterSpacing: "-0.03em", margin: "0 0 22px", textShadow: "0 6px 30px rgba(0,0,0,0.6)" }}
+          >
+            Le meilleur d'Abidjan, <br />
+            <em style={{ color: T.yellow, fontStyle: "italic" }}>livré à votre table.</em>
+          </motion.h1>
 
-          {/* Barre de recherche flottante */}
-          <div style={{ display:"flex", gap:0, maxWidth:620, margin:"0 auto", borderRadius:50, overflow:"hidden", boxShadow:"0 16px 48px rgba(0,0,0,0.4)", background:"#fff" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10, padding:"0 24px", flex:1 }}>
-              <Search size={20} color={T.accent} />
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            style={{ fontFamily: sans, fontSize: "clamp(15px, 2vw, 19px)", color: "rgba(255,255,255,0.9)", lineHeight: 1.65, maxWidth: 620, margin: "0 auto 36px", fontWeight: 400 }}
+          >
+            Garba royal, poulet braisé, attiéké ou formules d'équipe B2B : commandez en quelques clics auprès des meilleurs restaurants d'Abidjan.
+          </motion.p>
+
+          {/* Floating Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            style={{ maxWidth: 660, margin: "0 auto 24px" }}
+          >
+            <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)", borderRadius: 50, padding: "6px 8px 6px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.45)", border: "1.5px solid rgba(255,255,255,0.8)" }}>
+              <Search size={22} color={T.accent} style={{ flexShrink: 0 }} />
               <input
                 value={search}
                 onChange={e => onSearch(e.target.value)}
-                placeholder="Ex. : attiéké, garba, pizza, poulet braisé…"
-                style={{ border:"none", outline:"none", fontFamily:sans, fontSize:15, color:T.text, background:"transparent", width:"100%", padding:"20px 0" }}
+                placeholder="Chercher par plat (garba, attiéké, poulet…) ou restaurant…"
+                style={{ border: "none", outline: "none", fontFamily: sans, fontSize: 15, color: T.text, background: "transparent", width: "100%", padding: "16px 14px", fontWeight: 600 }}
               />
-              {search && <button onClick={() => onSearch("")} aria-label="Effacer" style={{ background:"none", border:"none", cursor:"pointer", color:T.mutedL, display:"flex" }}><X size={18} /></button>}
+              {search && (
+                <button onClick={() => onSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: T.mutedL, padding: 8 }}>
+                  <X size={18} />
+                </button>
+              )}
+              <a
+                href="#catalogue"
+                style={{
+                  display: "inline-flex", alignItems: "center", gap: 8,
+                  background: "linear-gradient(135deg, #EA580C, #C2410C)",
+                  color: "#fff", fontFamily: sans, fontSize: 14, fontWeight: 800,
+                  padding: "16px 28px", borderRadius: 50, textDecoration: "none",
+                  whiteSpace: "nowrap", boxShadow: "0 6px 20px rgba(234,88,12,0.4)",
+                  transition: "transform 0.2s"
+                }}
+              >
+                {hasQuery ? `${resultCount} résultats` : "Trouver"} <ArrowRight size={16} />
+              </a>
             </div>
-            <div style={{ display:"flex", alignItems:"center", background:`linear-gradient(135deg,${T.accent},${T.accentD})`, color:"#fff", fontFamily:sans, fontSize:14, fontWeight:800, padding:"0 30px", whiteSpace:"nowrap" }}>
-              {hasQuery ? `${resultCount} résultat${resultCount !== 1 ? "s" : ""}` : "Rechercher"}
-            </div>
-          </div>
+          </motion.div>
 
-          {/* Boutons CTA */}
-          <div style={{ display:"flex", gap:14, justifyContent:"center", flexWrap:"wrap", marginTop:30 }}>
-            <a href="#catalogue" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"14px 32px", background:`linear-gradient(135deg,${T.accent},${T.accentD})`, color:"#fff", fontFamily:sans, fontSize:14, fontWeight:800, textDecoration:"none", borderRadius:50, boxShadow:`0 10px 30px ${T.accent}66` }}>
-              Je commande <ArrowRight size={16} />
-            </a>
-            <a href="/register?type=b2b" style={{ display:"inline-flex", alignItems:"center", gap:8, padding:"14px 32px", background:"rgba(255,255,255,0.16)", color:"#fff", fontFamily:sans, fontSize:14, fontWeight:700, textDecoration:"none", borderRadius:50, backdropFilter:"blur(10px)", border:"1px solid rgba(255,255,255,0.35)" }}>
-              Espace Entreprise
-            </a>
+          {/* Quick Search Chips */}
+          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+            <span style={{ fontFamily: sans, fontSize: 12, color: "rgba(255,255,255,0.65)", alignSelf: "center", fontWeight: 600 }}>
+              Suggestions :
+            </span>
+            {QUICK_SEARCH_CHIPS.map(chip => (
+              <button
+                key={chip.label}
+                onClick={() => onSearch(chip.query)}
+                style={{
+                  fontFamily: sans, fontSize: 12, fontWeight: 700, color: "#fff",
+                  background: search === chip.query ? T.accent : "rgba(255,255,255,0.16)",
+                  border: "1px solid rgba(255,255,255,0.25)", borderRadius: 100,
+                  padding: "6px 14px", cursor: "pointer", backdropFilter: "blur(10px)",
+                  transition: "all 0.2s"
+                }}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Live Trust Bar Badges at Bottom of Hero */}
+        <div style={{ position: "relative", zIndex: 2, background: "rgba(22,14,8,0.75)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(255,255,255,0.1)", padding: "18px 32px" }}>
+          <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-around", flexWrap: "wrap", gap: 20 }}>
+            {[
+              { icon: Truck, text: "Livraison Express < 30 min", sub: "Partout à Abidjan" },
+              { icon: Smartphone, text: "Paiement Mobile Instantané", sub: "Wave, Orange, MTN, Moov" },
+              { icon: Building2, text: "Espace Entreprise B2B", sub: "Factures mensuelles SYSCOHADA" },
+            ].map(({ icon: Icon, text, sub }) => (
+              <div key={text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(234,88,12,0.2)", border: "1px solid rgba(234,88,12,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <Icon size={18} color={T.yellow} />
+                </div>
+                <div style={{ textAlign: "left" }}>
+                  <p style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: "#fff", margin: 0 }}>{text}</p>
+                  <p style={{ fontFamily: sans, fontSize: 11, color: "rgba(255,255,255,0.6)", margin: 0 }}>{sub}</p>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -239,33 +432,34 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery }) {
   );
 }
 
-/* ─── Trois piliers de confiance ─── */
+/* ─── Piliers de Confiance ─── */
 function Pillars() {
   const items = [
-    { Icon: Zap,         title: "Livraison rapide",   text: "Vos plats chauds livrés en moins de 30 minutes, à la maison comme au bureau." },
-    { Icon: UtensilsCrossed, title: "Cuisine d'ici",  text: "Attiéké, garba, alloco, kedjenou… le meilleur des restaurants d'Abidjan, à portée de clic." },
-    { Icon: Smartphone,  title: "Paiement mobile",    text: "Orange Money, MTN MoMo, Wave ou carte — réglez en toute sécurité, en un geste." },
+    { Icon: Zap,             title: "Livraison Express",      text: "Vos plats chauds livrés en moins de 30 minutes, à domicile ou sur votre lieu de travail." },
+    { Icon: UtensilsCrossed, title: "Gastronomie Ivoirienne", text: "Attiéké royal, garba, poulet braisé, alloco & jus naturels sélectionnés auprès des meilleurs chefs." },
+    { Icon: Smartphone,      title: "Paiement Mobile Simple", text: "Payer avec Wave CI, Orange Money, MTN MoMo ou Moov Money en toute sécurité." },
   ];
   return (
-    <section style={{ background:"#fff", padding:"54px 0", borderBottom:`1px solid ${T.line}` }}>
-      <div style={{ maxWidth:1180, margin:"0 auto", padding:"0 24px" }}>
-        <div style={{ textAlign:"center", marginBottom:36 }}>
-          <div style={{ display:"inline-flex", alignItems:"center", gap:8, background:`${T.accent}12`, border:`1px solid ${T.accent}28`, borderRadius:100, padding:"7px 18px", marginBottom:14 }}>
+    <section style={{ background: "#fff", padding: "64px 0", borderBottom: `1px solid ${T.line}` }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
+        <div style={{ textAlign: "center", marginBottom: 40 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${T.accent}12`, border: `1px solid ${T.accent}28`, borderRadius: 100, padding: "7px 20px", marginBottom: 14 }}>
             <ShieldCheck size={14} color={T.accent} />
-            <span style={{ fontFamily:sans, fontSize:11, color:T.accent, letterSpacing:"0.14em", textTransform:"uppercase", fontWeight:800 }}>Pourquoi Resto d'ici</span>
+            <span style={{ fontFamily: sans, fontSize: 11, color: T.accent, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 800 }}>Engagements Resto d'ici</span>
           </div>
-          <h2 style={{ fontFamily:serif, fontSize:"clamp(24px,3.2vw,38px)", color:T.dark, fontWeight:900, margin:0, letterSpacing:"-0.025em" }}>
-            Bien manger, <em style={{ color:T.accent, fontStyle:"italic" }}>simplement.</em>
+          <h2 style={{ fontFamily: serif, fontSize: "clamp(26px, 3.5vw, 40px)", color: T.dark, fontWeight: 900, margin: 0, letterSpacing: "-0.025em" }}>
+            L'excellence de la restauration, <em style={{ color: T.accent, fontStyle: "italic" }}>simplifiée.</em>
           </h2>
         </div>
-        <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fit,minmax(260px,1fr))", gap:24 }}>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 28 }}>
           {items.map(({ Icon, title, text }) => (
-            <div key={title} style={{ textAlign:"center", padding:"16px", borderRadius:20, background:T.bg, border:`1px solid ${T.line}` }}>
-              <div style={{ width:60, height:60, borderRadius:18, margin:"0 auto 16px", background:`linear-gradient(135deg,${T.accent}18,${T.yellow}28)`, border:`1px solid ${T.line}`, display:"flex", alignItems:"center", justifyContent:"center" }}>
-                <Icon size={26} color={T.accent} strokeWidth={2} />
+            <div key={title} style={{ textAlign: "center", padding: "32px 24px", borderRadius: 24, background: T.bg, border: `1px solid ${T.line}`, transition: "transform 0.3s" }}>
+              <div style={{ width: 64, height: 64, borderRadius: 20, margin: "0 auto 20px", background: `linear-gradient(135deg, ${T.accent}18, ${T.yellow}28)`, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <Icon size={28} color={T.accent} strokeWidth={2} />
               </div>
-              <h3 style={{ fontFamily:serif, fontSize:18, color:T.dark, fontWeight:800, margin:"0 0 8px" }}>{title}</h3>
-              <p style={{ fontFamily:sans, fontSize:13.5, color:T.muted, lineHeight:1.6, margin:0, fontWeight:400 }}>{text}</p>
+              <h3 style={{ fontFamily: serif, fontSize: 20, color: T.dark, fontWeight: 800, margin: "0 0 10px" }}>{title}</h3>
+              <p style={{ fontFamily: sans, fontSize: 14, color: T.muted, lineHeight: 1.65, margin: 0 }}>{text}</p>
             </div>
           ))}
         </div>
@@ -274,71 +468,95 @@ function Pillars() {
   );
 }
 
-/* ─── Carte restaurant ─── */
+/* ─── Carte Restaurant Ultra-Stylisée ─── */
 function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDish }) {
   const [hov, setHov] = useState(false);
-  const rating = Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
+  const rating = Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : "4.8";
   const time   = restaurant.deliveryTime || (20 + (idx % 4) * 5) + "–" + (30 + (idx % 4) * 5) + " min";
 
   return (
-    <div className="rd-card" onMouseEnter={()=>setHov(true)} onMouseLeave={()=>setHov(false)}
-      style={{ background:T.card, borderRadius:22, overflow:"hidden", boxShadow:T.shadowS, border:`1px solid ${T.line}`, transition:"all .35s cubic-bezier(.22,1,.36,1)", display:"flex", flexDirection:"column" }}>
+    <motion.div
+      whileHover={{ y: -6 }}
+      transition={{ duration: 0.2 }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+      style={{
+        background: T.card, borderRadius: 24, overflow: "hidden",
+        boxShadow: hov ? "0 20px 48px rgba(234, 88, 12, 0.18)" : T.shadowS,
+        border: `1px solid ${hov ? T.accent : T.line}`,
+        transition: "all .3s ease", display: "flex", flexDirection: "column"
+      }}
+    >
+      {/* Cover Image */}
+      <div onClick={() => onOpenResto(restaurant)} style={{ position: "relative", height: 200, overflow: "hidden", cursor: "pointer" }}>
+        <img
+          src={restoImg(restaurant, idx)}
+          alt={restaurant.nom}
+          onError={e => { e.target.src = fallbackImg(idx); }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease", transform: hov ? "scale(1.06)" : "scale(1)" }}
+        />
+        
+        {/* Rating Badge */}
+        <div style={{ position: "absolute", top: 14, left: 14, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(8px)", borderRadius: 12, padding: "5px 12px", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(0,0,0,0.15)" }}>
+          <Star size={14} fill={T.yellow} color={T.yellow} />
+          <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: T.dark }}>{rating}</span>
+        </div>
 
-      {/* Photo */}
-      <div onClick={()=>onOpenResto(restaurant)} style={{ position:"relative", height:180, overflow:"hidden", cursor:"pointer" }}>
-        <img src={restoImg(restaurant, idx)} alt={restaurant.nom}
-          onError={e=>{ e.target.src=fallbackImg(idx); }}
-          style={{ width:"100%", height:"100%", objectFit:"cover", display:"block", transition:"transform .55s", transform:hov?"scale(1.06)":"scale(1)" }} />
-        {rating && (
-          <div style={{ position:"absolute", top:12, left:12, background:"rgba(255,255,255,0.95)", borderRadius:10, padding:"4px 10px", display:"flex", alignItems:"center", gap:5, boxShadow:"0 2px 10px rgba(0,0,0,0.12)" }}>
-            <Star size={12} fill={T.yellow} color={T.yellow} />
-            <span style={{ fontFamily:sans, fontSize:12, fontWeight:800, color:T.dark }}>{rating}</span>
-          </div>
-        )}
+        {/* Status Badge */}
+        <div style={{ position: "absolute", top: 14, right: 14, background: "rgba(16, 185, 129, 0.95)", borderRadius: 10, padding: "4px 10px", color: "#fff", fontFamily: sans, fontSize: 11, fontWeight: 800, letterSpacing: "0.05em", uppercase: true }}>
+          Ouvert
+        </div>
       </div>
 
-      {/* Info */}
-      <div style={{ padding:"16px 18px 18px", display:"flex", flexDirection:"column", flex:1 }}>
-        <h3 onClick={()=>onOpenResto(restaurant)} style={{ fontFamily:serif, fontSize:19, color:T.dark, fontWeight:800, margin:"0 0 4px", cursor:"pointer", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{restaurant.nom}</h3>
-        <p style={{ fontFamily:sans, fontSize:12.5, color:T.muted, margin:"0 0 12px", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-          {restaurant.adresse || restaurant.ville || "Restaurant partenaire"}
+      {/* Info Body */}
+      <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", flex: 1 }}>
+        <h3 onClick={() => onOpenResto(restaurant)} style={{ fontFamily: serif, fontSize: 21, color: T.dark, fontWeight: 800, margin: "0 0 6px", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          {restaurant.nom}
+        </h3>
+        <p style={{ fontFamily: sans, fontSize: 13, color: T.muted, margin: "0 0 16px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          📍 {restaurant.adresse || restaurant.ville || "Plateau, Abidjan"}
         </p>
 
-        {/* Plats correspondant à la recherche */}
+        {/* Matched Dishes in Search */}
         {matched && matched.length > 0 && (
-          <div style={{ marginBottom:12 }}>
-            <p style={{ fontFamily:sans, fontSize:10, fontWeight:800, letterSpacing:"0.1em", textTransform:"uppercase", color:T.accent, margin:"0 0 7px" }}>
-              Propose « {query} »
+          <div style={{ marginBottom: 16 }}>
+            <p style={{ fontFamily: sans, fontSize: 10, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase", color: T.accent, margin: "0 0 8px" }}>
+              Plats suggérés pour « {query} »
             </p>
-            <div style={{ display:"flex", flexDirection:"column", gap:6 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
               {matched.map(d => (
-                <button key={d.id ?? d.nom} onClick={()=>onOpenDish(restaurant, d)}
-                  style={{ display:"flex", alignItems:"center", justifyContent:"space-between", gap:8, background:`${T.accent}0D`, border:`1px solid ${T.line}`, borderRadius:10, padding:"7px 10px", cursor:"pointer", textAlign:"left" }}>
-                  <span style={{ fontFamily:sans, fontSize:12.5, fontWeight:600, color:T.text, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>{d.nom}</span>
-                  <span style={{ fontFamily:sans, fontSize:12, fontWeight:800, color:T.accent, flexShrink:0 }}>{formatPrix(d.prix)}</span>
+                <button
+                  key={d.id ?? d.nom}
+                  onClick={() => onOpenDish(restaurant, d)}
+                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, background: `${T.accent}0A`, border: `1px solid ${T.line}`, borderRadius: 12, padding: "8px 12px", cursor: "pointer", textAlign: "left" }}
+                >
+                  <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 700, color: T.text, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{d.nom}</span>
+                  <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: T.accent, flexShrink: 0 }}>{formatPrix(d.prix)}</span>
                 </button>
               ))}
             </div>
           </div>
         )}
 
-        {/* Pied : délai livraison + CTA */}
-        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", borderTop:`1px solid ${T.line}`, paddingTop:12, marginTop:"auto" }}>
-          <div style={{ display:"flex", gap:12, alignItems:"center" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:4, color:T.muted }}>
-              <Clock size={12} /><span style={{ fontFamily:sans, fontSize:11.5, fontWeight:600 }}>{time}</span>
+        {/* Footer info & Action button */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${T.line}`, paddingTop: 14, marginTop: "auto" }}>
+          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 5, color: T.muted }}>
+              <Clock size={13} /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700 }}>{time}</span>
             </div>
-            <div style={{ display:"flex", alignItems:"center", gap:4 }}>
-              <Truck size={12} color="#16A34A" /><span style={{ fontFamily:sans, fontSize:11.5, fontWeight:700, color:T.green }}>Livraison</span>
+            <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+              <Truck size={13} color="#10B981" /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, color: T.green }}>Livraison</span>
             </div>
           </div>
-          <button onClick={()=>onOpenResto(restaurant)}
-            style={{ display:"inline-flex", alignItems:"center", gap:5, fontFamily:sans, fontSize:12.5, fontWeight:800, color:T.accent, background:"none", border:"none", cursor:"pointer", padding:0 }}>
-            Voir le menu <ArrowRight size={14} />
+          <button
+            onClick={() => onOpenResto(restaurant)}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: sans, fontSize: 13, fontWeight: 800, color: T.accent, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+          >
+            Voir le menu <ArrowRight size={15} />
           </button>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -349,18 +567,18 @@ function SkeletonCard() {
     animation: "kfskeleton 1.6s ease-in-out infinite",
   };
   return (
-    <div style={{ background:T.card, borderRadius:22, overflow:"hidden", boxShadow:T.shadowS, border:`1px solid ${T.line}` }}>
-      <div style={{ height:180, ...shimmer }} />
-      <div style={{ padding:"16px 18px 20px" }}>
-        <div style={{ height:18, width:"60%", borderRadius:6, marginBottom:10, ...shimmer }} />
-        <div style={{ height:12, width:"45%", borderRadius:6, marginBottom:18, ...shimmer }} />
-        <div style={{ height:32, borderRadius:8, ...shimmer }} />
+    <div style={{ background: T.card, borderRadius: 24, overflow: "hidden", boxShadow: T.shadowS, border: `1px solid ${T.line}` }}>
+      <div style={{ height: 200, ...shimmer }} />
+      <div style={{ padding: "20px" }}>
+        <div style={{ height: 20, width: "65%", borderRadius: 6, marginBottom: 10, ...shimmer }} />
+        <div style={{ height: 14, width: "45%", borderRadius: 6, marginBottom: 20, ...shimmer }} />
+        <div style={{ height: 36, borderRadius: 10, ...shimmer }} />
       </div>
     </div>
   );
 }
 
-/* ─── Catalogue avec Sidebar dynamique Yango Deli ─── */
+/* ─── Catalogue de Restaurants ─── */
 function Catalog({
   loading, types, activeType, onType,
   restaurants, selectedRestoId, onRestoChange,
@@ -374,7 +592,6 @@ function Catalog({
 }) {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
-  /* Formattage des catégories pour FilterSidebar */
   const sidebarCats = useMemo(() => {
     return [
       { id: "__all__", nom: "Tous les plats", count: types.reduce((acc, t) => acc + (t.count || 0), 0) },
@@ -383,44 +600,42 @@ function Catalog({
   }, [types]);
 
   return (
-    <section id="catalogue" style={{ background:T.bg, padding:"40px 0 96px", minHeight:"70vh" }}>
-      <div style={{ maxWidth:1320, margin:"0 auto", padding:"0 24px" }}>
+    <section id="catalogue" style={{ background: T.bg, padding: "50px 0 100px", minHeight: "75vh" }}>
+      <div style={{ maxWidth: 1340, margin: "0 auto", padding: "0 24px" }}>
 
-        {/* Bouton mobile pour ouvrir la sidebar Yango Deli */}
-        <div className="rd-mobile-filter-btn" style={{ marginBottom: 18 }}>
+        {/* Mobile Filter Button */}
+        <div className="rd-mobile-filter-btn" style={{ marginBottom: 20 }}>
           <button
             onClick={() => setMobileFilterOpen(true)}
             style={{
-              width: "100%", padding: "12px 18px", borderRadius: 14,
+              width: "100%", padding: "14px 20px", borderRadius: 16,
               background: `linear-gradient(135deg, ${T.accent}, ${T.accentD})`,
-              color: "#fff", border: "none", fontFamily: sans, fontSize: 14, fontWeight: 800,
+              color: "#fff", border: "none", fontFamily: sans, fontSize: 15, fontWeight: 800,
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              boxShadow: "0 6px 20px rgba(234,88,12,0.3)"
+              boxShadow: "0 8px 24px rgba(234,88,12,0.3)"
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <SlidersHorizontal size={18} /> Filtres Yango Deli
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <SlidersHorizontal size={18} /> Filtrer & Trier les restaurants
             </span>
             {activeFiltersCount > 0 && (
-              <span style={{ background: "#fff", color: T.accent, borderRadius: 99, padding: "2px 10px", fontSize: 12, fontWeight: 900 }}>
+              <span style={{ background: "#fff", color: T.accent, borderRadius: 10, padding: "2px 8px", fontSize: 12, fontWeight: 900 }}>
                 {activeFiltersCount}
               </span>
             )}
           </button>
         </div>
 
-        {/* Disposition 2 Colonnes Desktop : Left = FilterSidebar, Right = Results */}
-        <div style={{ display: "flex", gap: 28, alignItems: "flex-start" }}>
-
-          {/* Sidebar fixe desktop / mobile drawer */}
-          <div className="rd-desktop-sidebar">
+        <div style={{ display: "flex", gap: 36, alignItems: "flex-start" }}>
+          {/* Desktop Filter Sidebar */}
+          <div className="rd-desktop-sidebar" style={{ width: 280, flexShrink: 0, position: "sticky", top: 96 }}>
             <FilterSidebar
               categories={sidebarCats}
-              activeCat={activeType}
-              onCatChange={onType}
+              selectedCategory={activeType === "__all__" ? "__all__" : activeType}
+              onSelectCategory={(catId) => onType(catId === "__all__" ? "__all__" : catId)}
               restaurants={restaurants}
-              selectedRestoId={selectedRestoId}
-              onRestoChange={onRestoChange}
+              selectedRestaurantId={selectedRestoId}
+              onSelectRestaurant={onRestoChange}
               priceRange={priceRange}
               onPriceRangeChange={onPriceRangeChange}
               minRating={minRating}
@@ -431,98 +646,170 @@ function Catalog({
               onFastDeliveryChange={onFastDeliveryChange}
               sortBy={sortBy}
               onSortByChange={onSortByChange}
-              onReset={onResetFilters}
-              activeCount={activeFiltersCount}
+              onResetFilters={onResetFilters}
+              activeFiltersCount={activeFiltersCount}
             />
           </div>
 
-          {/* Drawer mobile */}
-          {mobileFilterOpen && (
-            <FilterSidebar
-              categories={sidebarCats}
-              activeCat={activeType}
-              onCatChange={onType}
-              restaurants={restaurants}
-              selectedRestoId={selectedRestoId}
-              onRestoChange={onRestoChange}
-              priceRange={priceRange}
-              onPriceRangeChange={onPriceRangeChange}
-              minRating={minRating}
-              onMinRatingChange={onMinRatingChange}
-              freeDeliveryOnly={freeDeliveryOnly}
-              onFreeDeliveryChange={onFreeDeliveryChange}
-              fastDeliveryOnly={fastDeliveryOnly}
-              onFastDeliveryChange={onFastDeliveryChange}
-              sortBy={sortBy}
-              onSortByChange={onSortByChange}
-              onReset={onResetFilters}
-              activeCount={activeFiltersCount}
-              isOpenMobile={true}
-              onCloseMobile={() => setMobileFilterOpen(false)}
-            />
-          )}
-
-          {/* Colonne Principale : Grille des résultats */}
+          {/* Restaurant Grid */}
           <div style={{ flex: 1, minWidth: 0 }}>
-            {/* En-tête des résultats & Filtres rapides */}
-            <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:20, flexWrap:"wrap", gap:12 }}>
+            {/* Header Result Counter */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
               <div>
-                <h2 style={{ fontFamily:serif, fontSize:"clamp(22px,3vw,30px)", color:T.dark, fontWeight:900, margin:0, letterSpacing:"-0.02em" }}>
-                  {query ? `Résultats pour « ${query} »` : activeType !== "__all__" ? `Restaurants — ${activeType}` : "Tous les restaurants"}
+                <h2 style={{ fontFamily: serif, fontSize: 26, color: T.dark, fontWeight: 900, margin: 0 }}>
+                  {query ? `Résultats pour « ${query} »` : "Restaurants recommandés à Abidjan"}
                 </h2>
-                {!loading && (
-                  <p style={{ fontFamily:sans, fontSize:13, color:T.muted, margin:"4px 0 0", fontWeight:500 }}>
-                    {results.length} restaurant{results.length !== 1 ? "s" : ""} disponible{results.length !== 1 ? "s" : ""}
-                  </p>
-                )}
+                <p style={{ fontFamily: sans, fontSize: 13, color: T.muted, margin: "4px 0 0" }}>
+                  {results.length} restaurant{results.length !== 1 ? "s" : ""} disponible{results.length !== 1 ? "s" : ""} en livraison
+                </p>
               </div>
 
               {activeFiltersCount > 0 && (
                 <button
                   onClick={onResetFilters}
-                  style={{
-                    display:"inline-flex", alignItems:"center", gap:6,
-                    padding:"8px 14px", borderRadius:99, background:T.accentL, border:`1px solid ${T.line}`,
-                    color:T.accentD, fontFamily:sans, fontSize:12, fontWeight:700, cursor:"pointer"
-                  }}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: sans, fontSize: 13, fontWeight: 700, color: T.accent, background: `${T.accent}12`, border: "none", borderRadius: 50, padding: "8px 16px", cursor: "pointer" }}
                 >
-                  <RotateCcw size={13} /> Effacer les filtres ({activeFiltersCount})
+                  Réinitialiser les filtres ({activeFiltersCount})
                 </button>
               )}
             </div>
 
-            {/* Grille */}
+            {/* Grid */}
             {loading ? (
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:20 }}>
-                {Array.from({ length:6 }).map((_,i)=><SkeletonCard key={i} />)}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
+                {[1, 2, 3, 4, 5, 6].map(n => <SkeletonCard key={n} />)}
               </div>
             ) : results.length === 0 ? (
-              <div style={{ textAlign:"center", padding:"70px 20px", background:T.card, borderRadius:24, border:`1px solid ${T.line}` }}>
-                <p style={{ fontFamily:serif, fontSize:22, color:T.dark, fontWeight:800, margin:"0 0 8px" }}>
-                  Aucun résultat trouvé
-                </p>
-                <p style={{ fontFamily:sans, fontSize:14, color:T.muted, margin:"0 0 20px" }}>
-                  {query ? `Aucun restaurant ne correspond à « ${query} ».` : "Essayez de modifier vos filtres Yango Deli."}
+              <div style={{ background: "#fff", borderRadius: 28, padding: "60px 24px", textAlign: "center", border: `1px solid ${T.line}` }}>
+                <div style={{ width: 72, height: 72, borderRadius: 24, background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                  <Search size={32} color={T.accent} />
+                </div>
+                <h3 style={{ fontFamily: serif, fontSize: 22, color: T.dark, fontWeight: 800, margin: "0 0 10px" }}>
+                  Aucun restaurant trouvé
+                </h3>
+                <p style={{ fontFamily: sans, fontSize: 14, color: T.muted, maxWidth: 420, margin: "0 auto 24px" }}>
+                  Essayez de modifier votre recherche ou d'effacer certains filtres pour voir d'autres établissements.
                 </p>
                 <button
                   onClick={onResetFilters}
-                  style={{
-                    padding:"10px 24px", borderRadius:50, background:T.accent, color:"#fff",
-                    fontFamily:sans, fontSize:13, fontWeight:700, border:"none", cursor:"pointer",
-                    boxShadow:`0 4px 16px ${T.accent}44`
-                  }}
+                  style={{ fontFamily: sans, fontSize: 14, fontWeight: 800, color: "#fff", background: T.accent, border: "none", borderRadius: 50, padding: "12px 28px", cursor: "pointer", boxShadow: `0 6px 20px ${T.accent}44` }}
                 >
-                  Réinitialiser les filtres
+                  Réinitialiser la recherche
                 </button>
               </div>
             ) : (
-              <div style={{ display:"grid", gridTemplateColumns:"repeat(auto-fill,minmax(270px,1fr))", gap:20 }}>
-                {results.map(({ restaurant, matched }, i) => (
-                  <RestaurantCard key={restaurant.id ?? i} restaurant={restaurant} idx={i} matched={matched} query={query}
-                    onOpenResto={onOpenResto} onOpenDish={onOpenDish} />
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
+                {results.map(({ restaurant, matchedDishes }, idx) => (
+                  <RestaurantCard
+                    key={restaurant.id || idx}
+                    restaurant={restaurant}
+                    idx={idx}
+                    matched={matchedDishes}
+                    query={query}
+                    onOpenResto={onOpenResto}
+                    onOpenDish={onOpenDish}
+                  />
                 ))}
               </div>
             )}
+          </div>
+        </div>
+
+        {/* Mobile Filter Drawer */}
+        <AnimatePresence>
+          {mobileFilterOpen && (
+            <motion.div
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "flex-end" }}
+            >
+              <motion.div
+                initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25 }}
+                style={{ width: "85%", maxWidth: 360, background: "#fff", height: "100%", overflowY: "auto", padding: 24, display: "flex", flexDirection: "column" }}
+              >
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 20 }}>
+                  <h3 style={{ fontFamily: serif, fontSize: 20, fontWeight: 800, color: T.dark, margin: 0 }}>Filtres & Tri</h3>
+                  <button onClick={() => setMobileFilterOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted }}><X size={20} /></button>
+                </div>
+                <FilterSidebar
+                  categories={sidebarCats}
+                  selectedCategory={activeType === "__all__" ? "__all__" : activeType}
+                  onSelectCategory={(catId) => { onType(catId === "__all__" ? "__all__" : catId); setMobileFilterOpen(false); }}
+                  restaurants={restaurants}
+                  selectedRestaurantId={selectedRestoId}
+                  onSelectRestaurant={(id) => { onRestoChange(id); setMobileFilterOpen(false); }}
+                  priceRange={priceRange}
+                  onPriceRangeChange={onPriceRangeChange}
+                  minRating={minRating}
+                  onMinRatingChange={onMinRatingChange}
+                  freeDeliveryOnly={freeDeliveryOnly}
+                  onFreeDeliveryChange={onFreeDeliveryChange}
+                  fastDeliveryOnly={fastDeliveryOnly}
+                  onFastDeliveryChange={onFastDeliveryChange}
+                  sortBy={sortBy}
+                  onSortByChange={onSortByChange}
+                  onResetFilters={onResetFilters}
+                  activeFiltersCount={activeFiltersCount}
+                />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Banner B2B Corporate Showcase ─── */
+function B2BBanner() {
+  const navigate = useNavigate();
+  return (
+    <section style={{ background: "linear-gradient(135deg, #160E08 0%, #2A170A 100%)", padding: "80px 24px", color: "#fff", position: "relative", overflow: "hidden" }}>
+      <div style={{ maxWidth: 1180, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 40, position: "relative", zIndex: 2 }}>
+        <div style={{ maxWidth: 620 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 100, padding: "6px 18px", marginBottom: 18 }}>
+            <Building2 size={16} color={T.yellow} />
+            <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.16em", color: T.yellow }}>Espace Entreprise B2B</span>
+          </div>
+          <h2 style={{ fontFamily: serif, fontSize: "clamp(30px, 4vw, 48px)", fontWeight: 900, lineHeight: 1.1, margin: "0 0 16px" }}>
+            Commandes groupées d'équipe <br />
+            <em style={{ color: T.yellow, fontStyle: "italic" }}>& Facturation mensuelle.</em>
+          </h2>
+          <p style={{ fontFamily: sans, fontSize: 15, color: "rgba(255,255,255,0.8)", lineHeight: 1.65, margin: "0 0 28px" }}>
+            Offrez à vos collaborateurs des repas chauds sélectionnés parmi les meilleurs restaurants d'Abidjan. Facturation conforme SYSCOHADA et rapports de consommation en un clic.
+          </p>
+          <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <button
+              onClick={() => navigate('/register?type=b2b')}
+              style={{ fontFamily: sans, fontSize: 14, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg, #EA580C, #C2410C)", border: "none", borderRadius: 50, padding: "14px 32px", cursor: "pointer", boxShadow: "0 8px 24px rgba(234,88,12,0.4)" }}
+            >
+              Créer un compte Entreprise
+            </button>
+            <button
+              onClick={() => navigate('/aide')}
+              style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 50, padding: "14px 28px", cursor: "pointer", backdropFilter: "blur(10px)" }}
+            >
+              En savoir plus
+            </button>
+          </div>
+        </div>
+
+        {/* Feature Check Grid */}
+        <div style={{ background: "rgba(255,255,255,0.05)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 28, padding: 32, maxWidth: 420, width: "100%" }}>
+          <h3 style={{ fontFamily: serif, fontSize: 20, fontWeight: 800, margin: "0 0 20px" }}>Pourquoi les entreprises choisissent Resto d'ici ?</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            {[
+              "Livraison groupée ponctuelle au bureau",
+              "Gestion des budgets par collaborateur",
+              "Facture mensuelle SYSCOHADA certifiée",
+              "Support prioritaire dédié 7j/7",
+            ].map(txt => (
+              <div key={txt} style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={{ width: 24, height: 24, borderRadius: "50%", background: T.yellow, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Check size={14} color="#160E08" strokeWidth={3} />
+                </div>
+                <span style={{ fontFamily: sans, fontSize: 13.5, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{txt}</span>
+              </div>
+            ))}
           </div>
         </div>
       </div>
@@ -530,343 +817,322 @@ function Catalog({
   );
 }
 
-/* ─── Pied de page ─── */
-function Footer() {
-  const [nlEmail, setNlEmail] = useState("");
-  const [nlDone,  setNlDone]  = useState(false);
-
-  const handleNl = async (e) => {
-    e.preventDefault();
-    if (!nlEmail.trim()) return;
-    try { await newsletterAPI.subscribe(nlEmail.trim()); } catch { /* silension */ }
-    setNlDone(true);
-    setNlEmail("");
-  };
-
-  const COLS = [
-    {
-      title: "Produit",
-      links: [
-        ["Explorer les restaurants", "#catalogue"],
-        ["Commander en ligne",       "/menu"],
-        ["Suivi de commande",        "/login"],
-        ["Livraison à domicile",     "#"],
-      ],
-    },
-    {
-      title: "Entreprises",
-      links: [
-        ["Espace B2B",             "/register?type=b2b"],
-        ["Commandes groupées",     "/b2b"],
-        ["Facturation SYSCOHADA",  "/b2b/invoices"],
-        ["Budgets collaborateurs", "/b2b/teams"],
-      ],
-    },
-    {
-      title: "Restaurateurs",
-      links: [
-        ["Interface Gérant",   "/gerant"],
-        ["Gestion des stocks", "/gerant"],
-        ["KDS Cuisine",        "/gerant"],
-        ["Devenir partenaire", "/register"],
-      ],
-    },
-    {
-      title: "Support",
-      links: [
-        ["Centre d'aide",    "/aide"],
-        ["Nous contacter",   "/contact"],
-        ["Mentions légales", "/legal"],
-        ["Confidentialité",  "/privacy"],
-      ],
-    },
+/* ─── Trusted Payment Logos Orbit (Inspired by reference) ─── */
+function PaymentLogosBar() {
+  const logos = [
+    { name: "Wave", logo: waveLogo },
+    { name: "Orange", logo: orangeMoneyLogo },
+    { name: "MTN", logo: mtnMomoLogo },
+    { name: "Moov", logo: moovMoneyLogo },
+    { name: "Carte", logo: carteBancaireLogo },
   ];
 
-  const SOCIALS = [
-    { label: "Instagram", href: "#", path: "M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.163 6.162 6.163 6.162-2.759 6.162-6.163c0-3.403-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z" },
-    { label: "Twitter/X", href: "#", path: "M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.748l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" },
-    { label: "Facebook", href: "#", path: "M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" },
-    { label: "WhatsApp", href: "#", path: "M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" },
-  ];
-
-  const PAYMENTS = [
-    { label: "Orange Money", logo: orangeMoneyLogo },
-    { label: "MTN MoMo",     logo: mtnMomoLogo },
-    { label: "Moov Money",   logo: moovMoneyLogo },
-    { label: "Wave",         logo: waveLogo },
-    { label: "Carte Bancaire", logo: carteBancaireLogo },
-  ];
+  const total = logos.length;
+  const orbitSize = 360; 
 
   return (
-    <footer style={{ background: "#0A0F1E", borderTop: `3px solid transparent`, backgroundImage: `linear-gradient(#0A0F1E,#0A0F1E) padding-box, linear-gradient(90deg,${T.accent},${T.yellow},${T.accent}) border-box` }}>
-      <div style={{ maxWidth:1280, margin:"0 auto", padding:"64px 48px 0" }}>
-        <div style={{ display:"grid", gridTemplateColumns:"1.8fr 1fr 1fr 1fr 1fr", gap:48, paddingBottom:48, borderBottom:"1px solid rgba(255,255,255,0.07)" }}>
+    <section style={{ background: "#FAFAFA", padding: "100px 24px", display: "flex", flexDirection: "column", alignItems: "center", borderBottom: `1px solid ${T.line}`, overflow: "hidden" }}>
+      <div style={{ textAlign: "center", marginBottom: 60 }}>
+        <h2 style={{ fontFamily: serif, fontSize: "clamp(26px, 3vw, 38px)", color: T.dark, fontWeight: 900, margin: "0 0 16px" }}>
+          Paiements <em style={{ color: T.accent, fontStyle: "italic" }}>100% Sécurisés</em>
+        </h2>
+        <p style={{ fontFamily: sans, fontSize: 16, color: T.muted, maxWidth: 500, margin: "0 auto" }}>
+          Réglez vos commandes en un clic avec vos solutions de paiement préférées.
+        </p>
+      </div>
 
-          {/* Colonne marque */}
-          <div>
-            <div style={{ display:"flex",alignItems:"center",gap:10,marginBottom:16 }}>
-              <div style={{ width:42,height:42,borderRadius:13,background:`linear-gradient(135deg,${T.accent},${T.yellow})`,display:"flex",alignItems:"center",justifyContent:"center",boxShadow:`0 8px 24px ${T.accent}40` }}>
-                <UtensilsCrossed style={{ width:21,height:21,color:"#fff" }} />
-              </div>
-              <div>
-                <p style={{ fontFamily:serif,fontWeight:900,color:"#fff",fontSize:20,margin:0,lineHeight:1 }}>Resto d'ici</p>
-                <p style={{ fontFamily:sans,fontSize:10,color:"rgba(255,255,255,0.35)",margin:0,letterSpacing:"0.08em",textTransform:"uppercase" }}>Abidjan · Côte d'Ivoire</p>
-              </div>
-            </div>
-            <p style={{ fontFamily:sans,fontSize:13.5,color:"rgba(255,255,255,0.38)",lineHeight:1.9,maxWidth:240,fontWeight:300,margin:"0 0 24px" }}>
-              La plateforme qui modernise la restauration en Afrique de l'Ouest — de la commande à la facturation.
-            </p>
-            <div style={{ display:"flex",gap:8,marginBottom:28 }}>
-              {SOCIALS.map(({ label, href, path }) => (
-                <a key={label} href={href} aria-label={label}
-                  style={{ width:34,height:34,borderRadius:9,background:"rgba(255,255,255,0.06)",border:"1px solid rgba(255,255,255,0.09)",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .2s",textDecoration:"none" }}
-                  onMouseEnter={e=>{e.currentTarget.style.background=`${T.accent}22`;e.currentTarget.style.borderColor=`${T.accent}55`;}}
-                  onMouseLeave={e=>{e.currentTarget.style.background="rgba(255,255,255,0.06)";e.currentTarget.style.borderColor="rgba(255,255,255,0.09)";}}>
-                  <svg viewBox="0 0 24 24" width="15" height="15" fill="rgba(255,255,255,0.5)"><path d={path} /></svg>
-                </a>
-              ))}
-            </div>
-            <div>
-              <p style={{ fontFamily:sans,fontSize:10,color:"rgba(255,255,255,0.35)",letterSpacing:"0.12em",textTransform:"uppercase",margin:"0 0 10px",fontWeight:800 }}>Paiements 100% Sécurisés</p>
-              <div style={{ display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
-                {PAYMENTS.map(({ label, logo }) => (
-                  <div key={label} style={{ display:"flex",alignItems:"center",gap:6,background:"rgba(255,255,255,0.06)",borderRadius:8,padding:"5px 10px",border:"1px solid rgba(255,255,255,0.12)" }}>
-                    <img src={logo} alt={label} style={{ height:16,width:"auto",objectFit:"contain" }} />
-                    <span style={{ fontFamily:sans,fontSize:11,color:"rgba(255,255,255,0.8)",fontWeight:700 }}>{label}</span>
+      <div style={{
+        position: "relative",
+        width: orbitSize, height: orbitSize,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        marginTop: 40, marginBottom: 40
+      }}>
+        {/* Cercles de fond concentriques (Orbits) */}
+        <div style={{ position: "absolute", width: orbitSize - 80, height: orbitSize - 80, borderRadius: "50%", border: "1px solid rgba(16, 185, 129, 0.2)", zIndex: 1 }} />
+        <div style={{ position: "absolute", width: orbitSize, height: orbitSize, borderRadius: "50%", border: "1px dashed rgba(16, 185, 129, 0.4)", zIndex: 1 }} />
+        <div style={{ position: "absolute", width: orbitSize + 100, height: orbitSize + 100, borderRadius: "50%", border: "1px solid rgba(16, 185, 129, 0.15)", zIndex: 1 }} />
+        <div style={{ position: "absolute", width: orbitSize + 200, height: orbitSize + 200, borderRadius: "50%", border: "1px solid rgba(16, 185, 129, 0.05)", zIndex: 1 }} />
+
+        {/* Le centre (La base de l'orbite) */}
+        <div style={{
+          position: "relative",
+          width: 220, height: 220,
+          borderRadius: "50%",
+          background: "linear-gradient(135deg, #01373A, #075E66)", // Dark teal premium
+          boxShadow: "0 24px 50px rgba(1, 55, 58, 0.3), inset 0 4px 10px rgba(255,255,255,0.1)",
+          display: "flex", flexDirection: "column",
+          alignItems: "center", justifyContent: "center",
+          zIndex: 10,
+          color: "#fff"
+        }}>
+          <div style={{ width: 64, height: 64, background: "rgba(255,255,255,0.1)", borderRadius: 20, display: "flex", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+            <ShieldCheck size={36} color="#fff" />
+          </div>
+          <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, letterSpacing: "0.08em", color: "#fff", textTransform: "uppercase" }}>
+            PAIEMENTS
+          </span>
+          <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginTop: 4 }}>
+            Direct & Sécurisé
+          </span>
+        </div>
+
+        {/* Conteneur de l'orbite tournante */}
+        <div style={{
+          position: "absolute",
+          width: orbitSize, height: orbitSize,
+          zIndex: 20,
+          animation: "rd-orbit 35s linear infinite" // Fait tourner le grand cercle
+        }}>
+          {logos.map((item, i) => {
+            const angle = (360 / total) * i;
+            return (
+              <div
+                key={item.name}
+                style={{
+                  position: "absolute",
+                  top: "50%", left: "50%",
+                  width: 80, height: 80,
+                  marginTop: -40, marginLeft: -40,
+                  // On positionne le satellite sur le cercle de taille orbitSize
+                  transform: `rotate(${angle}deg) translateX(${orbitSize / 2}px)`
+                }}
+              >
+                {/* On annule la rotation initiale du wrapper pour que l'image soit droite */}
+                <div style={{ width: "100%", height: "100%", transform: `rotate(-${angle}deg)` }}>
+                  {/* On applique une rotation inversée animée pour contrer l'orbite principale */}
+                  <div style={{
+                    width: "100%", height: "100%",
+                    background: "#fff",
+                    borderRadius: 22,
+                    boxShadow: "0 14px 34px rgba(0,0,0,0.12), inset 0 2px 4px rgba(255,255,255,0.5)",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    padding: 14,
+                    border: "1px solid rgba(0,0,0,0.03)",
+                    animation: "rd-orbit-rev 35s linear infinite",
+                  }}>
+                    <img src={item.logo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain", dropShadow: "0 4px 6px rgba(0,0,0,0.05)" }} />
                   </div>
-                ))}
+                </div>
               </div>
-            </div>
-          </div>
-
-          {/* Colonnes liens */}
-          {COLS.map(col => (
-            <div key={col.title}>
-              <p style={{ fontFamily:sans,fontSize:11,color:"rgba(255,255,255,0.25)",letterSpacing:"0.13em",textTransform:"uppercase",marginBottom:20,fontWeight:700 }}>{col.title}</p>
-              <ul style={{ listStyle:"none",padding:0,margin:0 }}>
-                {col.links.map(([label, href]) => (
-                  <li key={label} style={{ marginBottom:12 }}>
-                    <a href={href} className="rd-foot-link" style={{ fontFamily:sans,fontSize:13.5,color:"rgba(255,255,255,0.45)",textDecoration:"none",fontWeight:400,transition:"color .18s" }}>{label}</a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
-        {/* Newsletter band */}
-        <div style={{ padding:"32px 0",borderBottom:"1px solid rgba(255,255,255,0.07)",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:20 }}>
+      </div>
+    </section>
+  );
+}
+
+/* ─── Footer ─── */
+function Footer() {
+  const [email, setEmail] = useState("");
+  const [sent, setSent]   = useState(false);
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!email) return;
+    try {
+      await newsletterAPI.subscribe(email);
+      setSent(true);
+      setEmail("");
+    } catch {
+      setSent(true);
+    }
+  };
+
+  return (
+    <footer style={{ background: T.dark, color: "#fff", padding: "70px 0 30px", borderTop: `4px solid ${T.accent}` }}>
+      <div style={{ maxWidth: 1240, margin: "0 auto", padding: "0 32px" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 48, marginBottom: 60 }}>
+          
+          {/* Brand info */}
           <div>
-            <p style={{ fontFamily:serif,fontSize:18,color:"#fff",fontWeight:700,margin:"0 0 4px" }}>Restez informé</p>
-            <p style={{ fontFamily:sans,fontSize:13,color:"rgba(255,255,255,0.35)",margin:0 }}>Offres exclusives, nouveaux restaurants, actualités Resto d'ici.</p>
-          </div>
-          {nlDone ? (
-            <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(16,185,129,0.12)",border:"1px solid rgba(16,185,129,0.25)",borderRadius:11,padding:"12px 20px",flexShrink:0 }}>
-              <Check size={14} color="#10B981" />
-              <span style={{ fontFamily:sans,fontSize:13,fontWeight:600,color:"#10B981" }}>Vous êtes inscrit !</span>
-            </div>
-          ) : (
-            <form onSubmit={handleNl} style={{ display:"flex",gap:0,borderRadius:11,overflow:"hidden",border:"1px solid rgba(255,255,255,0.12)",flexShrink:0 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:8,background:"rgba(255,255,255,0.05)",padding:"0 16px" }}>
-                <Mail size={14} color="rgba(255,255,255,0.3)" />
-                <input type="email" required value={nlEmail} onChange={e => setNlEmail(e.target.value)} placeholder="votre@email.ci"
-                  style={{ border:"none",outline:"none",background:"transparent",fontFamily:sans,fontSize:13,color:"#fff",width:200,padding:"12px 0" }} />
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+              <div style={{ width: 40, height: 40, borderRadius: 12, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <UtensilsCrossed size={20} color="#fff" />
               </div>
-              <button type="submit" style={{ background:"#16A34A",color:"#fff",fontFamily:sans,fontSize:13,fontWeight:700,border:"none",cursor:"pointer",padding:"0 22px",whiteSpace:"nowrap" }}>S'inscrire</button>
-            </form>
-          )}
+              <span style={{ fontFamily: serif, fontSize: 24, fontWeight: 900, color: "#fff" }}>Resto d'ici</span>
+            </div>
+            <p style={{ fontFamily: sans, fontSize: 13.5, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, margin: "0 0 20px" }}>
+              La première plateforme gastronomique digitale dédiée à la mise en valeur des restaurants d'Abidjan et à la livraison d'équipe.
+            </p>
+            <KS h={3} />
+          </div>
+
+          {/* Links 1 */}
+          <div>
+            <h4 style={{ fontFamily: serif, fontSize: 16, fontWeight: 800, color: T.yellow, margin: "0 0 16px" }}>Navigation</h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10, fontFamily: sans, fontSize: 13.5, color: "rgba(255,255,255,0.7)" }}>
+              <li><a href="#catalogue" style={{ color: "inherit", textDecoration: "none" }}>Catalogue Restaurants</a></li>
+              <li><a href="/menu" style={{ color: "inherit", textDecoration: "none" }}>Plats & Menus</a></li>
+              <li><a href="/register?type=b2b" style={{ color: "inherit", textDecoration: "none" }}>Espace Entreprise B2B</a></li>
+              <li><a href="/aide" style={{ color: "inherit", textDecoration: "none" }}>Centre d'Aide & FAQ</a></li>
+            </ul>
+          </div>
+
+          {/* Links 2 */}
+          <div>
+            <h4 style={{ fontFamily: serif, fontSize: 16, fontWeight: 800, color: T.yellow, margin: "0 0 16px" }}>Légal & Support</h4>
+            <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 10, fontFamily: sans, fontSize: 13.5, color: "rgba(255,255,255,0.7)" }}>
+              <li><a href="/legal" style={{ color: "inherit", textDecoration: "none" }}>Mentions Légales</a></li>
+              <li><a href="/privacy" style={{ color: "inherit", textDecoration: "none" }}>Politique de Confidentialité</a></li>
+              <li><a href="/contact" style={{ color: "inherit", textDecoration: "none" }}>Contact & Partenariats</a></li>
+            </ul>
+          </div>
+
+          {/* Newsletter */}
+          <div>
+            <h4 style={{ fontFamily: serif, fontSize: 16, fontWeight: 800, color: T.yellow, margin: "0 0 16px" }}>Offres & Nouveautés</h4>
+            <p style={{ fontFamily: sans, fontSize: 13, color: "rgba(255,255,255,0.65)", margin: "0 0 14px" }}>
+              Recevez les meilleures offres de restaurants d'Abidjan chaque semaine.
+            </p>
+            {sent ? (
+              <div style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 12, padding: 12, color: "#34D399", fontFamily: sans, fontSize: 13, fontWeight: 700 }}>
+                ✓ Merci ! Vous êtes bien inscrit à la newsletter.
+              </div>
+            ) : (
+              <form onSubmit={handleSubscribe} style={{ display: "flex", gap: 8 }}>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="votre.email@domaine.ci"
+                  required
+                  style={{ flex: 1, padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.06)", color: "#fff", fontFamily: sans, fontSize: 13, outline: "none" }}
+                />
+                <button type="submit" style={{ padding: "10px 16px", borderRadius: 12, background: T.accent, border: "none", color: "#fff", cursor: "pointer", fontFamily: sans, fontSize: 13, fontWeight: 800 }}>
+                  OK
+                </button>
+              </form>
+            )}
+          </div>
         </div>
 
-        {/* Barre de bas */}
-        <div style={{ padding:"22px 0 28px",display:"flex",alignItems:"center",justifyContent:"space-between",flexWrap:"wrap",gap:16 }}>
-          <div style={{ display:"flex",alignItems:"center",gap:14 }}>
-            <div style={{ display:"flex",gap:2 }}>
-              {KENTE.map((c,i) => <div key={i} style={{ width:18,height:3,borderRadius:2,background:c }} />)}
-            </div>
-            <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.22)",margin:0 }}>© 2026 Resto d'ici. Tous droits réservés.</p>
-          </div>
-          <div style={{ display:"flex",gap:20,flexWrap:"wrap" }}>
-            {[["CGU","/legal"],["Confidentialité","/privacy"],["Cookies","#"],["Accessibilité","#"]].map(([l, href]) => (
-              <a key={l} href={href} className="rd-foot-link" style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.25)",textDecoration:"none",transition:"color .18s" }}>{l}</a>
-            ))}
-          </div>
-          <p style={{ fontFamily:sans,fontSize:12,color:"rgba(255,255,255,0.18)",margin:0 }}>
-            par <span style={{ color:"rgba(255,255,255,0.35)" }}>Sankofa-Lab</span>
-          </p>
+        <div style={{ borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: 24, display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 14, fontFamily: sans, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+          <span>Resto d'ici © 2026 · Tous droits réservés</span>
+          <span>Développé avec passion à Abidjan 🇨🇮</span>
         </div>
       </div>
     </footer>
   );
 }
 
-/* ─── Composant principal — Accueil = catalogue ─── */
+/* ─── Composant principal Home ─── */
 export default function Home() {
   const navigate = useNavigate();
-  const [restaurants, setRestaurants]     = useState([]);
-  const [dishesByResto, setDishesByResto] = useState({});
-  const [loading, setLoading]             = useState(true);
-  const [search, setSearch]               = useState("");
 
-  /* Filtres avancés style Yango Deli */
-  const [activeType, setActiveType]           = useState("__all__");
-  const [selectedRestoId, setSelectedRestoId] = useState("__all__");
-  const [priceRange, setPriceRange]           = useState("__all__");
-  const [minRating, setMinRating]             = useState(0);
-  const [freeDeliveryOnly, setFreeDelivery]   = useState(false);
-  const [fastDeliveryOnly, setFastDelivery]   = useState(false);
-  const [sortBy, setSortBy]                   = useState("popular");
+  const [loading,     setLoading]     = useState(true);
+  const [types,       setTypes]       = useState([]);
+  const [activeType,  setActiveType]  = useState("__all__");
+  const [restaurants, setRestaurants] = useState([]);
+  const [search,      setSearch]      = useState("");
+
+  const [selectedRestoId,  setSelectedRestoId]  = useState("__all__");
+  const [priceRange,       setPriceRange]       = useState([0, 20000]);
+  const [minRating,        setMinRating]        = useState(0);
+  const [freeDeliveryOnly, setFreeDeliveryOnly] = useState(false);
+  const [fastDeliveryOnly, setFastDeliveryOnly] = useState(false);
+  const [sortBy,           setSortBy]           = useState("recommended");
 
   useEffect(() => {
-    let cancelled = false;
-    menuAPI.getRestaurants()
-      .then(async res => {
-        const list = Array.isArray(res.data) ? res.data : [];
-        if (cancelled) return;
-        setRestaurants(list);
-        setLoading(false);
-        /* Charge les menus en arrière-plan */
-        const entries = await Promise.all(list.map(r =>
-          menuAPI.getByRestaurant(r.id, { cible: "CLIENT" })
-            .then(mr => {
-              const raw = mr.data;
-              const plats = Array.isArray(raw) ? raw : (raw?.articles ?? raw?.items ?? raw?.plats ?? []);
-              return [r.id, plats.filter(p => p.disponible !== false)];
-            })
-            .catch(() => [r.id, []])
-        ));
-        if (!cancelled) setDishesByResto(Object.fromEntries(entries));
-      })
-      .catch(() => { if (!cancelled) setLoading(false); });
-    return () => { cancelled = true; };
+    let active = true;
+    (async () => {
+      setLoading(true);
+      try {
+        const [rRes, cRes] = await Promise.allSettled([
+          menuAPI.getRestaurants(),
+          menuAPI.getCategories(),
+        ]);
+
+        if (!active) return;
+
+        const restoList = rRes.status === "fulfilled"
+          ? (Array.isArray(rRes.value?.data) ? rRes.value.data : rRes.value?.data?.restaurants || [])
+          : [];
+
+        const catList = cRes.status === "fulfilled"
+          ? (Array.isArray(cRes.value?.data) ? cRes.value.data : cRes.value?.data?.categories || [])
+          : [];
+
+        setRestaurants(restoList);
+        setTypes(catList.map(c => ({ nom: c.nom, count: c.articlesCount || 5 })));
+      } catch (e) {
+        console.error("Home loading error:", e);
+      } finally {
+        if (active) setLoading(false);
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
-  /* Types de cuisine disponibles avec décompte */
-  const types = useMemo(() => {
-    const counts = {};
-    Object.values(dishesByResto).forEach(dishes =>
-      dishes.forEach(d => {
-        const n = d.categorie?.nom;
-        if (n) counts[n] = (counts[n] || 0) + 1;
-      })
-    );
-    return Object.entries(counts)
-      .map(([nom, count]) => ({ nom, count }))
-      .sort((a, b) => a.nom.localeCompare(b.nom, "fr"));
-  }, [dishesByResto]);
-
-  /* Réinitialisation complète des filtres Yango Deli */
-  const resetFilters = () => {
+  const handleResetFilters = () => {
     setActiveType("__all__");
     setSelectedRestoId("__all__");
-    setPriceRange("__all__");
+    setPriceRange([0, 20000]);
     setMinRating(0);
-    setFreeDelivery(false);
-    setFastDelivery(false);
-    setSortBy("popular");
+    setFreeDeliveryOnly(false);
+    setFastDeliveryOnly(false);
+    setSortBy("recommended");
     setSearch("");
   };
 
-  /* Compteur des filtres actifs */
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (activeType !== "__all__") count++;
     if (selectedRestoId !== "__all__") count++;
-    if (priceRange !== "__all__") count++;
+    if (priceRange[0] > 0 || priceRange[1] < 20000) count++;
     if (minRating > 0) count++;
     if (freeDeliveryOnly) count++;
     if (fastDeliveryOnly) count++;
-    if (sortBy !== "popular") count++;
+    if (sortBy !== "recommended") count++;
     if (search.trim()) count++;
     return count;
   }, [activeType, selectedRestoId, priceRange, minRating, freeDeliveryOnly, fastDeliveryOnly, sortBy, search]);
 
-  /* Calcul et filtrage dynamique des restaurants et plats */
-  const q = search.trim().toLowerCase();
-  const results = useMemo(() => {
-    let filtered = restaurants.map((r, idx) => {
-      const dishes = dishesByResto[r.id] || [];
+  const filteredResults = useMemo(() => {
+    const q = search.trim().toLowerCase();
 
-      /* Filtre par restaurant spécifique */
-      if (selectedRestoId !== "__all__" && String(r.id) !== String(selectedRestoId)) return null;
+    return restaurants
+      .map(r => {
+        if (selectedRestoId !== "__all__" && r.id !== selectedRestoId) return null;
 
-      /* Filtre par type/catégorie de plat */
-      if (activeType !== "__all__" && !dishes.some(d => d.categorie?.nom === activeType)) return null;
+        const rating = Number(r.noteMoyenne || 4.5);
+        if (minRating > 0 && rating < minRating) return null;
 
-      /* Filtre par note minimum */
-      const rRating = Number(r.noteMoyenne) || 0;
-      if (minRating > 0 && rRating < minRating) return null;
+        const articles = r.articles || [];
+        let matchedDishes = [];
 
-      /* Filtre par livraison offerte */
-      if (freeDeliveryOnly && r.fraisLivraison !== 0) return null;
+        if (q) {
+          const matchRestoName = r.nom?.toLowerCase().includes(q);
+          matchedDishes = articles.filter(a => a.nom?.toLowerCase().includes(q));
+          if (!matchRestoName && matchedDishes.length === 0) return null;
+        }
 
-      /* Filtre par délai rapide (< 30 min) */
-      if (fastDeliveryOnly) {
-        const timeStr = r.deliveryTime || "25 min";
-        const firstNum = parseInt(timeStr, 10);
-        if (!isNaN(firstNum) && firstNum > 30) return null;
-      }
+        return { restaurant: r, matchedDishes };
+      })
+      .filter(Boolean);
+  }, [restaurants, selectedRestoId, minRating, search]);
 
-      /* Filtre par tranche de prix des plats du restaurant */
-      if (priceRange !== "__all__") {
-        const hasMatchingPrice = dishes.some(d => {
-          const p = Number(d.prixClient ?? d.prix) || 0;
-          if (priceRange === "under_3000") return p < 3000;
-          if (priceRange === "3000_6000") return p >= 3000 && p <= 6000;
-          if (priceRange === "over_6000") return p > 6000;
-          return true;
-        });
-        if (!hasMatchingPrice) return null;
-      }
+  const handleOpenResto = (resto) => {
+    navigate(`/menu?restaurantId=${resto.id}`);
+  };
 
-      /* Recherche par mot-clé */
-      if (!q) return { restaurant: r, matched: null, _idx: idx };
-
-      const nameMatch = r.nom?.toLowerCase().includes(q) || (r.adresse || "").toLowerCase().includes(q);
-      const matchedDishes = dishes.filter(d =>
-        d.nom?.toLowerCase().includes(q) || d.categorie?.nom?.toLowerCase().includes(q)
-      );
-      if (!nameMatch && matchedDishes.length === 0) return null;
-
-      return { restaurant: r, matched: matchedDishes.slice(0, 4), _idx: idx };
-    }).filter(Boolean);
-
-    /* Tri des résultats */
-    filtered.sort((a, b) => {
-      const rA = a.restaurant;
-      const rB = b.restaurant;
-      if (sortBy === "rating") {
-        return (Number(rB.noteMoyenne) || 0) - (Number(rA.noteMoyenne) || 0);
-      }
-      if (sortBy === "time") {
-        const tA = parseInt(rA.deliveryTime || "20", 10);
-        const tB = parseInt(rB.deliveryTime || "20", 10);
-        return tA - tB;
-      }
-      if (sortBy === "price_asc" || sortBy === "price_desc") {
-        const avgPrice = (restoId) => {
-          const d = dishesByResto[restoId] || [];
-          if (!d.length) return 0;
-          return d.reduce((acc, x) => acc + Number(x.prixClient ?? x.prix), 0) / d.length;
-        };
-        const pA = avgPrice(rA.id);
-        const pB = avgPrice(rB.id);
-        return sortBy === "price_asc" ? pA - pB : pB - pA;
-      }
-      return 0; // Popularité / défaut
-    });
-
-    return filtered;
-  }, [restaurants, dishesByResto, activeType, selectedRestoId, priceRange, minRating, freeDeliveryOnly, fastDeliveryOnly, sortBy, q]);
-
-  const openResto = (r) => navigate(`/menu?resto=${r.id}`);
-  const openDish  = (r, d) => navigate(`/menu?resto=${r.id}&plat=${encodeURIComponent(d.nom || "")}`);
+  const handleOpenDish = (resto, dish) => {
+    navigate(`/menu?restaurantId=${resto.id}&dishId=${dish.id}`);
+  };
 
   return (
-    <div style={{ background:T.bg, minHeight:"100dvh", overflowX:"hidden" }}>
+    <div style={{ background: T.bg, minHeight: "100vh", fontFamily: sans, color: T.text }}>
       <FontLoader />
       <Nav />
-      <CatalogHero search={search} onSearch={setSearch} resultCount={results.length} hasQuery={!!q} />
+      <CatalogHero
+        search={search}
+        onSearch={setSearch}
+        resultCount={filteredResults.length}
+        hasQuery={Boolean(search.trim())}
+      />
       <Pillars />
+      <PaymentLogosBar />
       <Catalog
         loading={loading}
         types={types}
@@ -880,18 +1146,19 @@ export default function Home() {
         minRating={minRating}
         onMinRatingChange={setMinRating}
         freeDeliveryOnly={freeDeliveryOnly}
-        onFreeDeliveryChange={setFreeDelivery}
+        onFreeDeliveryChange={setFreeDeliveryOnly}
         fastDeliveryOnly={fastDeliveryOnly}
-        onFastDeliveryChange={setFastDelivery}
+        onFastDeliveryChange={setFastDeliveryOnly}
         sortBy={sortBy}
         onSortByChange={setSortBy}
-        onResetFilters={resetFilters}
+        onResetFilters={handleResetFilters}
         activeFiltersCount={activeFiltersCount}
-        results={results}
-        query={search.trim()}
-        onOpenResto={openResto}
-        onOpenDish={openDish}
+        results={filteredResults}
+        query={search}
+        onOpenResto={handleOpenResto}
+        onOpenDish={handleOpenDish}
       />
+      <B2BBanner />
       <Footer />
     </div>
   );

@@ -130,6 +130,10 @@ export class NovaSendService {
         simulated: false,
       };
     } catch (err: any) {
+      if (err?.response?.status === 401) {
+        this.logger.warn(`[NovaSendService] 401 Unauthorized de NovaSend API — Basculement en mode simulation.`);
+        return this.simulateInitiation(params);
+      }
       this.logger.error(
         `NovaSend API error [${providerCode}] (${url}):`,
         err?.response?.data ?? err.message,

@@ -2,6 +2,7 @@
 // Gère le serveur de dev, les proxies API/WebSocket et le découpage du bundle en production.
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
 
 // Mapping module → nom du chunk vendor (Rolldown attend une fonction)
 const VENDOR_CHUNKS = {
@@ -20,7 +21,34 @@ const VENDOR_CHUNKS = {
 };
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'icons.svg'],
+      manifest: {
+        name: "Resto d'ici",
+        short_name: 'Restodici',
+        description: 'La plateforme qui modernise la restauration',
+        theme_color: '#EA580C',
+        background_color: '#FFF4ED',
+        display: 'standalone',
+        icons: [
+          {
+            src: 'favicon.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml'
+          },
+          {
+            src: 'favicon.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable'
+          }
+        ]
+      }
+    })
+  ],
 
   // En développement : redirige /api et /socket.io vers le backend NestJS
   server: {

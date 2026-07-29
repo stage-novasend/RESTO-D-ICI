@@ -50,7 +50,7 @@ describe('PaiementsController (e2e)', () => {
     await request(app.getHttpServer())
       .post('/paiements/simuler')
       .set('Authorization', `Bearer ${token}`)
-      .send({ commandeId: 'sim-cmd-1', provider: 'ORANGE' })
+      .send({ commandeId: 'a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11', provider: 'ORANGE' })
       .expect(200);
   });
 });

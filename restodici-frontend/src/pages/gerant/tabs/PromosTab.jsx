@@ -166,7 +166,7 @@ export default function PromosTab({ restaurantId }) {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto w-full"><table className="w-full text-sm">
               <thead className="bg-[#F9F9FC] border-b border-[#E2E8F0]">
                 <tr>
                   {['Code', 'Type', 'Réduction', 'Min commande', 'Utilisations', 'Expire le', 'Visibilité', 'Statut', 'Actions'].map(h => (
@@ -256,7 +256,7 @@ export default function PromosTab({ restaurantId }) {
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
           </div>
         )}
       </div>

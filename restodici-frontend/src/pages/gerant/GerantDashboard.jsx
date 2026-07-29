@@ -37,14 +37,6 @@ export default function GerantDashboard({ restaurantId, token }) {
     };
   }, []);
 
-  useEffect(() => {
-    const el = tabContentRef.current;
-    if (!el) return;
-    el.style.animation = 'none';
-    el.offsetHeight; // force reflow
-    el.style.animation = 'fadeUp 0.22s ease both';
-  }, [activeTab]);
-
 
   const renderTabContent = () => {
     switch (activeTab) {
@@ -78,18 +70,9 @@ export default function GerantDashboard({ restaurantId, token }) {
             : "bg-white border border-[rgba(0,0,0,0.05)]"
         }`}
       >
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            ref={tabContentRef}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -6 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {renderTabContent()}
-          </motion.div>
-        </AnimatePresence>
+        <div key={activeTab}>
+          {renderTabContent()}
+        </div>
       </div>
     </div>
   );

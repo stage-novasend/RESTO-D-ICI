@@ -1249,8 +1249,8 @@ export default function CheckoutPage() {
                   justifyContent: 'center',
                   gap: 8,
                 }}>
-                {primaryEnabled && !otpStepPending && <Lock size={15} style={{ opacity: 0.85 }} />}
-                {primaryLabel}
+                {primaryEnabled && !otpStepPending && <span><Lock size={15} style={{ opacity: 0.85 }} /></span>}
+                <span>{primaryLabel}</span>
               </button>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
                 <ShieldCheck size={12} color="#C4B5A5" />
@@ -1302,10 +1302,12 @@ export default function CheckoutPage() {
             justifyContent: 'center',
             gap: 8,
           }}>
-          {canSubmit && <Lock size={14} style={{ opacity: 0.85 }} />}
-          {isB2B
-            ? `Confirmer · ${formatFCFA(effectiveTotal)}`
-            : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`}
+          {canSubmit && <span><Lock size={14} style={{ opacity: 0.85 }} /></span>}
+          <span>
+            {isB2B
+              ? `Confirmer · ${formatFCFA(effectiveTotal)}`
+              : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`}
+          </span>
         </button>
       </div>
 
@@ -1510,36 +1512,6 @@ export default function CheckoutPage() {
                     }} />
                   </div>
 
-                  {/* Bouton de confirmation rapide (Mode Test / Dev) */}
-                  <button
-                    onClick={async () => {
-                      if (!orderIdRef.current) return;
-                      try {
-                        await paiementsAPI.simuler({ commandeId: orderIdRef.current, provider: method?.provider ?? 'ORANGE' });
-                        setModalState('success');
-                        setTimeout(() => navigate(`/suivi/${orderIdRef.current}`), 1800);
-                      } catch (e) {
-                        alert(e?.response?.data?.message || 'Erreur lors de la confirmation simulée');
-                      }
-                    }}
-                    style={{
-                      marginTop: 14,
-                      width: '100%',
-                      padding: '10px 16px',
-                      borderRadius: 12,
-                      border: '1px dashed #EA580C',
-                      background: '#FFF7ED',
-                      color: '#C2410C',
-                      fontSize: 12,
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      gap: 6,
-                    }}>
-                    Simuler la confirmation (Mode Test / Dev)
-                  </button>
 
                   {canRetry && (
                     <button

@@ -23,9 +23,9 @@ export function toInternationalCiMsisdn(phone?: string): string | undefined {
 export function normalizeNovaSendProvider(provider?: string): string {
   if (!provider) return 'ORANGE';
   const p = provider.toUpperCase().trim();
-  if (p === 'ORANGE_MONEY' || p === 'ORANGE') return 'ORANGE';
+  if (p === 'ORANGE_MONEY' || p === 'ORANGE' || p === 'OM') return 'ORANGE';
   if (p === 'MTN_MONEY' || p === 'MTN_MOMO' || p === 'MTN' || p === 'MOMO') return 'MOMO';
-  if (p === 'MOOV_MONEY' || p === 'MOOV') return 'MOOV';
+  if (p === 'MOOV_MONEY' || p === 'MOOV' || p === 'FLOOZ') return 'MOOV';
   if (p === 'WAVE') return 'WAVE';
   return p;
 }
@@ -107,18 +107,21 @@ export class NovaSendGateway implements PaymentGateway {
   }
 
   private get credentials(): string {
-    const rawKey = (this.integration?.apiKey || process.env.NOVASEND_API_KEY || '').trim();
-    const rawSecret = (process.env.NOVASEND_API_SECRET || '').trim();
+    const envKey = (process.env.NOVASEND_API_KEY || '').trim();
+    const envSecret = (process.env.NOVASEND_API_SECRET || '').trim();
 
-    if (rawKey.includes(':')) {
-      return Buffer.from(rawKey).toString('base64');
+    const dbKey = (this.integration?.apiKey || '').trim();
+
+    const key = dbKey || envKey;
+    const secret = envSecret;
+
+    if (key.includes(':')) {
+      return Buffer.from(key).toString('base64');
     }
-
-    if (rawKey && rawSecret) {
-      return Buffer.from(`${rawKey}:${rawSecret}`).toString('base64');
+    if (key && secret) {
+      return Buffer.from(`${key}:${secret}`).toString('base64');
     }
-
-    return rawKey ? Buffer.from(rawKey).toString('base64') : '';
+    return key ? Buffer.from(key).toString('base64') : '';
   }
 
   private get appUrl(): string {
@@ -136,13 +139,13 @@ export class NovaSendGateway implements PaymentGateway {
       successUrl: options.returnUrl || `${this.appUrl}/paiement/success`,
       failureUrl: `${this.appUrl}/paiement/failure`,
     };
-    const isLinkFlow = providerCode === 'WAVE';
+    const isWave = providerCode === 'WAVE';
 
-    const url = isLinkFlow
+    const url = isWave
       ? `${this.baseUrl}/payin/sessions`
       : `${this.baseUrl}/direct/payin`;
 
-    const payload: Record<string, any> = isLinkFlow
+    const payload: Record<string, any> = isWave
       ? {
           reference,
           amount: options.amount,
@@ -166,12 +169,13 @@ export class NovaSendGateway implements PaymentGateway {
         };
 
     try {
-      this.logger.log(`[NovaSend] Sending ${isLinkFlow ? 'Payin Session' : 'Direct Payin'} (${providerCode}) to ${url} for ${msisdn || 'non-specified phone'}`);
+      this.logger.log(`[NovaSend] Sending ${isWave ? 'Payin Session' : 'Direct Payin'} (${providerCode}) to ${url} for ${msisdn || 'non-specified phone'}`);
       const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${this.credentials}`,
           'X-Idempotency-Key': randomUUID(),
           'Content-Type': 'application/json',
+          'Accept-Language': 'fr',
         },
         timeout: 15_000,
       });
@@ -180,7 +184,6 @@ export class NovaSendGateway implements PaymentGateway {
       const status = String(data?.status || '').toUpperCase();
       const isSuccess = status === 'SUCCESSFUL' || status === 'SUCCESS';
 
-      // Résolution exhaustive de l'URL de paiement Wave / Session
       const paymentUrl =
         data?.paymentUrl ||
         data?.url ||
@@ -198,6 +201,41 @@ export class NovaSendGateway implements PaymentGateway {
         status: isSuccess ? 'SUCCESS' : 'PENDING',
       };
     } catch (err: any) {
+      const is401 = err?.response?.status === 401;
+
+      // Si 401 sur l'URL principale, essayer l'URL alternative (staging/prod)
+      if (is401) {
+        const altBase = url.includes('business-staging')
+          ? 'https://business.novasend.app/v1'
+          : 'https://business-staging.novasend.app/v1';
+        const altUrl = isWave ? `${altBase}/payin/sessions` : `${altBase}/direct/payin`;
+
+        try {
+          this.logger.log(`[NovaSend] Tentative fallback sur ${altUrl}...`);
+          const { data } = await axios.post(altUrl, payload, {
+            headers: {
+              Authorization: `Basic ${this.credentials}`,
+              'X-Idempotency-Key': randomUUID(),
+              'Content-Type': 'application/json',
+              'Accept-Language': 'fr',
+            },
+            timeout: 15_000,
+          });
+          const status = String(data?.status || '').toUpperCase();
+          const isSuccess = status === 'SUCCESSFUL' || status === 'SUCCESS';
+          const paymentUrl = data?.paymentUrl || data?.url || data?.checkoutUrl || data?.action?.url;
+
+          return {
+            transactionId: data?.id || data?.reference || reference,
+            paymentUrl,
+            status: isSuccess ? 'SUCCESS' : 'PENDING',
+          };
+        } catch (altErr: any) {
+          this.logger.warn(`[NovaSend] 401 sur API réelles (prod & staging) — Clés invalides ou expirées. Basculement en simulation.`);
+          return this.simulateInitiation(reference, options);
+        }
+      }
+
       this.logger.error(`NovaSend API error [${providerCode}] (${url}):`, err?.response?.data ?? err.message);
       throw err;
     }

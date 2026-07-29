@@ -119,9 +119,9 @@ export default function Register() {
     : "Créer un compte";
 
   return (
-    <div className="min-h-screen min-h-dvh flex" style={{ background: '#FFFFFF' }}>
+    <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF' }}>
 
-      {/* ── Formulaire d'inscription — côté gauche ── */}
+      {/* ── Formulaire d'inscription — côté droit (visuellement) ── */}
       <div className="flex-1 flex flex-col justify-center px-8 py-10 sm:px-12 lg:px-16 xl:px-24 overflow-y-auto">
         <div className="w-full max-w-sm mx-auto">
 
@@ -285,8 +285,9 @@ export default function Register() {
       <div className="hidden lg:block relative w-[44%] shrink-0">
         <img
           src="/burger-hero.jpg"
+          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=95&w=1920&auto=format&fit=crop'; }}
           alt="Plat Resto d'ici"
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover object-center contrast-[1.02] brightness-[1.02]"
         />
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)' }} />

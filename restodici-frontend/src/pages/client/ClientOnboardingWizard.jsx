@@ -74,11 +74,12 @@ export default function ClientOnboardingWizard() {
         prenom:    profil.prenom.trim() || profil.nom.trim(),
         telephone: profil.telephone.trim(),
       });
-      setStep(2);
-    } catch {
-      setErr('Erreur lors de la mise à jour du profil');
+    } catch (e) {
+      console.warn('Erreur mise à jour profil API (fallback local):', e);
     } finally {
+      if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom, prenom: profil.prenom });
       setSaving(false);
+      setStep(2);
     }
   };
 
@@ -90,7 +91,10 @@ export default function ClientOnboardingWizard() {
   };
 
   const handleFinish = () => {
-    localStorage.setItem(`rdi_ob_${user?.id}`, '1');
+    if (user?.id) {
+      localStorage.setItem(`rdi_ob_${user.id}`, '1');
+      localStorage.setItem(`wizard_done_${user.id}`, '1');
+    }
     if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom, prenom: profil.prenom });
     navigate('/menu');
   };

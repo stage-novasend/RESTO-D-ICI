@@ -390,7 +390,7 @@ export default function StocksTab({ restaurantId }) {
                 <p className="text-center text-sm text-[#8B6E50] py-8">Aucun article trouvé</p>
               ) : (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
+                  <div className="overflow-x-auto w-full"><table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-[#E2E8F0] text-xs font-semibold text-[#8B6E50] uppercase tracking-wide">
                         <th className="text-left pb-2 pr-4">Article</th>
@@ -422,7 +422,7 @@ export default function StocksTab({ restaurantId }) {
                         );
                       })}
                     </tbody>
-                  </table>
+                  </table></div>
                 </div>
               )}
             </>

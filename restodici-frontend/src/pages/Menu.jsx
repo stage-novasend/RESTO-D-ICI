@@ -1,6 +1,8 @@
 // Menu.jsx — Catalogue restaurants + menu par restaurant avec Sidebar dynamique Yango Deli
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { getDistanceFromLatLonInKm, getUserLocation } from '../utils/geo';
+import { expandQuery, createRestaurantIndex, createProductIndex, calculateHybridScore } from '../utils/searchEngine';
 import {
   Search, X, UtensilsCrossed, Star, Clock, Heart, ArrowLeft,
   ShoppingCart, Plus, Minus, Store, AlertCircle, MapPin, ChevronRight,
@@ -277,8 +279,8 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
   );
 }
 
-/* ── Carte restaurant ── */
-function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav, matched }) {
+/* ── Carte Restaurant Yango Deli ── */
+function RestaurantCard({ restaurant, idx, onSelect, matched, favorites, onFav, distance }) {
   const [hov, setHov] = useState(false);
   const img = restaurant.logo || restaurant.coverImage || restaurant.photoUrl || fallback(idx, 480);
   const rating = (Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne) : 0).toFixed(1);
@@ -321,7 +323,10 @@ function RestaurantCard({ restaurant, idx, onSelect, favorites, onFav, matched }
         </div>
         <div style={{ position: 'absolute', bottom: 10, left: 12, right: 12, display: 'flex', justifyContent: 'space-between' }}>
           <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 12, fontWeight: 700, color: '#fff' }}><Star size={12} fill={C.yellow} color={C.yellow} /> {rating}</span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 11, color: 'rgba(255,255,255,0.9)' }}><Clock size={11} color="rgba(255,255,255,0.8)" /> {time}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            {distance != null && distance !== Infinity && <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 11, color: 'rgba(255,255,255,0.9)' }}><MapPin size={11} color="rgba(255,255,255,0.8)" /> {distance < 1 ? '< 1 km' : distance.toFixed(1) + ' km'}</span>}
+            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 11, color: 'rgba(255,255,255,0.9)' }}><Clock size={11} color="rgba(255,255,255,0.8)" /> {time}</span>
+          </div>
         </div>
       </div>
       <div style={{ padding: '14px 14px 16px' }}>
@@ -622,6 +627,13 @@ export default function MenuPage() {
   const [activeCat,       setActiveCat]       = useState('__all__');
   const [discoCat,        setDiscoCat]        = useState('__all__');
 
+  // Search History & GeoLocation
+  const [searchHistory, setSearchHistory] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('restodici_search_history') || '[]'); } catch { return []; }
+  });
+  const [userLocation, setUserLocation] = useState(null);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+
   /* États des filtres avancés Yango Deli */
   const [discoRestoId,    setDiscoRestoId]    = useState('__all__');
   const [discoPriceRange, setDiscoPriceRange] = useState('__all__');
@@ -663,6 +675,34 @@ export default function MenuPage() {
   useEffect(() => { localStorage.setItem('articleFavs', JSON.stringify(articleFavs)); }, [articleFavs]);
   useEffect(() => { localStorage.setItem('deliveryMode', deliveryMode); }, [deliveryMode]);
   useEffect(() => { localStorage.setItem('deliveryAddress', JSON.stringify(deliveryAddress)); }, [deliveryAddress]);
+  useEffect(() => { localStorage.setItem('restodici_search_history', JSON.stringify(searchHistory)); }, [searchHistory]);
+
+  // GeoLocation effect
+  useEffect(() => {
+    if (deliveryAddress && deliveryAddress.lat && deliveryAddress.lng) {
+      setUserLocation({ lat: deliveryAddress.lat, lng: deliveryAddress.lng });
+    } else {
+      getUserLocation().then(loc => loc && setUserLocation(loc));
+    }
+  }, [deliveryAddress]);
+
+  // Add search to history
+  const saveSearchToHistory = useCallback((q) => {
+    const term = q.trim();
+    if (!term) return;
+    setSearchHistory(prev => {
+      const filtered = prev.filter(x => x.toLowerCase() !== term.toLowerCase());
+      return [term, ...filtered].slice(0, 8); // Keep last 8 searches
+    });
+  }, []);
+
+  const handleSearchSubmit = (e) => {
+    if (e.key === 'Enter') {
+      saveSearchToHistory(discoSearch);
+      setIsSearchFocused(false);
+      e.target.blur();
+    }
+  };
 
   useEffect(() => {
     document.body.style.overflow = (selectedResto || mapOpen) ? 'hidden' : '';
@@ -816,26 +856,58 @@ export default function MenuPage() {
     setDiscoSearch('');
   };
 
-  /* Filtrage et tri des restaurants avec filtres Yango Deli */
-  const filteredRestaurants = useMemo(() => {
-    const q = discoSearch.trim().toLowerCase();
-    let res = restaurants.map(r => {
+  // ── Fuse.js Indices ──
+  const restaurantIndex = useMemo(() => createRestaurantIndex(restaurants), [restaurants]);
+  const productIndex = useMemo(() => {
+    const allProds = [];
+    restaurants.forEach(r => {
       const dishes = dishesByResto[r.id] || [];
+      dishes.forEach(d => allProds.push({ ...d, restaurantId: r.id, restaurantName: r.nom, fakeResto: r }));
+    });
+    return createProductIndex(allProds);
+  }, [restaurants, dishesByResto]);
 
-      if (discoRestoId !== '__all__' && String(r.id) !== String(discoRestoId)) return null;
-      if (discoCat !== '__all__' && !dishes.some(d => d.categorie?.nom === discoCat)) return null;
+  /* ── Recherche Avancée (Fuse + Geo + Filtres) ── */
+  const searchResults = useMemo(() => {
+    const q = discoSearch.trim();
+    const expandedQ = expandQuery(q);
+    
+    let matchedRestos = [];
+    let matchedProds = [];
 
+    // 1. Initial Match (Fuse.js)
+    if (!expandedQ) {
+      matchedRestos = restaurants.map(r => ({ item: r, score: 0 }));
+    } else {
+      matchedRestos = restaurantIndex.search(expandedQ);
+      matchedProds = productIndex.search(expandedQ);
+      
+      // Assurer que les restos dont les plats correspondent sont inclus
+      matchedProds.forEach(prodMatch => {
+        const rId = prodMatch.item.restaurantId;
+        if (!matchedRestos.find(rm => rm.item.id === rId)) {
+          const resto = restaurants.find(r => r.id === rId);
+          if (resto) matchedRestos.push({ item: resto, score: prodMatch.score + 0.1 });
+        }
+      });
+    }
+
+    // 2. Filtres métier & Score hybride
+    const finalRestos = [];
+    matchedRestos.forEach(match => {
+      const r = match.item;
+      const dishes = dishesByResto[r.id] || [];
+      
+      // Appliquer les filtres existants
+      if (discoRestoId !== '__all__' && String(r.id) !== String(discoRestoId)) return;
+      if (discoCat !== '__all__' && !dishes.some(d => d.categorie?.nom === discoCat)) return;
       const rating = Number(r.noteMoyenne) || 0;
-      if (discoMinRating > 0 && rating < discoMinRating) return null;
-
-      if (discoFreeDelivery && r.fraisLivraison !== 0) return null;
-
+      if (discoMinRating > 0 && rating < discoMinRating) return;
+      if (discoFreeDelivery && r.fraisLivraison !== 0) return;
       if (discoFastDelivery) {
-        const timeStr = r.deliveryTime || "25 min";
-        const firstNum = parseInt(timeStr, 10);
-        if (!isNaN(firstNum) && firstNum > 30) return null;
+        const firstNum = parseInt(r.deliveryTime || "25", 10);
+        if (!isNaN(firstNum) && firstNum > 30) return;
       }
-
       if (discoPriceRange !== '__all__') {
         const hasMatchingPrice = dishes.some(d => {
           const p = Number(d.prixClient ?? d.prix) || 0;
@@ -844,34 +916,49 @@ export default function MenuPage() {
           if (discoPriceRange === 'over_6000') return p > 6000;
           return true;
         });
-        if (!hasMatchingPrice) return null;
+        if (!hasMatchingPrice) return;
       }
 
-      if (!q) return { restaurant: r, matched: null };
-
-      const nameMatch = r.nom.toLowerCase().includes(q) || (r.adresse || '').toLowerCase().includes(q);
-      const matchedDishes = dishes.filter(d => d.nom?.toLowerCase().includes(q) || d.categorie?.nom?.toLowerCase().includes(q));
-      if (!nameMatch && matchedDishes.length === 0) return null;
-
-      return { restaurant: r, matched: matchedDishes.slice(0, 3) };
-    }).filter(Boolean);
-
-    res.sort((a, b) => {
-      const rA = a.restaurant;
-      const rB = b.restaurant;
-      if (discoSortBy === 'rating') {
-        return (Number(rB.noteMoyenne) || 0) - (Number(rA.noteMoyenne) || 0);
+      // Distance
+      let dist = Infinity;
+      if (userLocation && r.latitude && r.longitude) {
+        dist = getDistanceFromLatLonInKm(userLocation.lat, userLocation.lng, r.latitude, r.longitude);
       }
-      if (discoSortBy === 'time') {
-        const tA = parseInt(rA.deliveryTime || '20', 10);
-        const tB = parseInt(rB.deliveryTime || '20', 10);
-        return tA - tB;
-      }
-      return 0;
+
+      // Calcul du score de pertinence intelligent
+      let finalScore = calculateHybridScore(match.score, r, dist);
+
+      // Tri additionnel si forcé par l'utilisateur
+      if (discoSortBy === 'rating') finalScore -= rating;
+      if (discoSortBy === 'time') finalScore += parseInt(r.deliveryTime || '20', 10) * 0.01;
+
+      // Associer les meilleurs plats trouvés pour l'aperçu du restaurant
+      const rDishesMatch = !expandedQ ? [] : matchedProds
+        .filter(pm => pm.item.restaurantId === r.id)
+        .slice(0, 3)
+        .map(pm => pm.item);
+
+      finalRestos.push({ restaurant: r, matched: rDishesMatch, _score: finalScore, _dist: dist });
     });
 
-    return res;
-  }, [restaurants, dishesByResto, discoSearch, discoCat, discoRestoId, discoPriceRange, discoMinRating, discoFreeDelivery, discoFastDelivery, discoSortBy]);
+    // 3. Tri final des restaurants
+    finalRestos.sort((a, b) => a._score - b._score);
+
+    // 4. Filtrer les plats trouvés globalement (ne garder que ceux des restos non filtrés)
+    const finalProds = !expandedQ ? [] : matchedProds
+      .filter(pm => finalRestos.some(fr => fr.restaurant.id === pm.item.restaurantId))
+      .sort((a, b) => a.score - b.score)
+      .map(pm => pm.item);
+
+    return { filteredRestaurants: finalRestos, discoMatchedProducts: finalProds };
+  }, [
+    restaurants, dishesByResto, discoSearch, discoCat, discoRestoId, 
+    discoPriceRange, discoMinRating, discoFreeDelivery, discoFastDelivery, 
+    discoSortBy, restaurantIndex, productIndex, userLocation
+  ]);
+
+  const filteredRestaurants = searchResults.filteredRestaurants;
+  const discoMatchedProducts = searchResults.discoMatchedProducts;
 
   const menuCats = useMemo(() => buildDynCats(menuData, categories), [menuData, categories]);
 
@@ -949,16 +1036,110 @@ export default function MenuPage() {
           <div style={{ position: 'sticky', top: 0, zIndex: 100, background: C.nav, borderBottom: '1px solid ' + C.line, boxShadow: C.sh }}>
             <div style={{ padding: '0 clamp(12px,4vw,28px)', height: 64, display: 'flex', alignItems: 'center', gap: 16 }}>
               <Logo />
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 16px', height: 42, maxWidth: 540 }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 16px', height: 42, maxWidth: 540, position: 'relative' }}>
                 <Search size={16} color={C.accent} />
-                <input type="text" placeholder="Rechercher un plat, une spécialité ou un resto…" value={discoSearch} onChange={e => setDiscoSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent' }} />
-                {discoSearch && <button onClick={() => setDiscoSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
+                <input 
+                  type="text" 
+                  placeholder="Rechercher un plat, une spécialité ou un resto…" 
+                  value={discoSearch} 
+                  onChange={e => setDiscoSearch(e.target.value)} 
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
+                  onKeyDown={handleSearchSubmit}
+                  style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent' }} 
+                />
+                {discoSearch && <button onClick={() => { setDiscoSearch(''); setIsSearchFocused(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
+                
+                {/* Dropdown Auto-complétion */}
+                {isSearchFocused && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 8, background: '#fff', borderRadius: 16, boxShadow: '0 10px 40px rgba(0,0,0,0.15)', border: `1px solid ${C.line}`, padding: '12px 0', zIndex: 1000, maxHeight: '70vh', overflowY: 'auto' }}>
+                    {!discoSearch.trim() ? (
+                      // Suggestions intelligentes & Historique
+                      <>
+                        {searchHistory.length > 0 && (
+                          <div style={{ padding: '0 16px 12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                              <History size={14} color={C.muted} />
+                              <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Recherches récentes</span>
+                            </div>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                              {searchHistory.map((h, i) => (
+                                <button key={i} onClick={() => { setDiscoSearch(h); saveSearchToHistory(h); setIsSearchFocused(false); }} style={{ background: C.bg, border: `1px solid ${C.line}`, borderRadius: 99, padding: '6px 12px', fontFamily: sans, fontSize: 13, color: C.dark, cursor: 'pointer' }}>{h}</button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div style={{ padding: '0 16px' }}>
+                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
+                              <Flame size={14} color={C.accent} />
+                              <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Suggestions populaires</span>
+                           </div>
+                           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                              {['Pizza', 'Burger', 'Poulet braisé', 'Garba', 'Chawarma', 'Alloco'].map((s, i) => (
+                                <button key={i} onClick={() => { setDiscoSearch(s); saveSearchToHistory(s); setIsSearchFocused(false); }} style={{ background: '#FFF5E8', border: `1px solid #FFE4C4`, color: C.accent, borderRadius: 99, padding: '6px 12px', fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{s}</button>
+                              ))}
+                           </div>
+                        </div>
+                      </>
+                    ) : (
+                      // Auto-complétion des résultats
+                      <div style={{ padding: '0 8px' }}>
+                         {filteredRestaurants.length === 0 && discoMatchedProducts.length === 0 ? (
+                           <div style={{ padding: '20px', textAlign: 'center', color: C.muted, fontFamily: sans, fontSize: 13 }}>Aucun résultat trouvé pour "{discoSearch}"</div>
+                         ) : (
+                           <>
+                             {filteredRestaurants.slice(0, 3).map((fr, i) => (
+                               <div key={fr.restaurant.id} onClick={() => { saveSearchToHistory(discoSearch); setSelectedResto(fr.restaurant); setIsSearchFocused(false); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = C.bg} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                 <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0 }}>
+                                   <img src={fr.restaurant.logo || fallback(i, 100)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                 </div>
+                                 <div style={{ flex: 1, overflow: 'hidden' }}>
+                                   <div style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: C.dark, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{fr.restaurant.nom}</div>
+                                   <div style={{ fontFamily: sans, fontSize: 12, color: C.muted, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>Restaurant • {fr._dist < Infinity ? (fr._dist < 1 ? '< 1 km' : fr._dist.toFixed(1) + ' km') : (fr.restaurant.adresse || 'Abidjan')}</div>
+                                 </div>
+                                 <ChevronRight size={16} color={C.muted} />
+                               </div>
+                             ))}
+                             
+                             {discoMatchedProducts.length > 0 && <div style={{ height: 1, background: C.line, margin: '8px 0' }} />}
+                             
+                             {discoMatchedProducts.slice(0, 4).map((p, i) => (
+                               <div key={p.id + '_' + i} onClick={() => { saveSearchToHistory(discoSearch); setSelectedResto(p.fakeResto); setIsSearchFocused(false); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = C.bg} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
+                                 <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#FFF5E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                   <Utensils size={18} color={C.accent} />
+                                 </div>
+                                 <div style={{ flex: 1, overflow: 'hidden' }}>
+                                   <div style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: C.dark, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.nom}</div>
+                                   <div style={{ fontFamily: sans, fontSize: 12, color: C.muted, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>Plat • {p.restaurantName}</div>
+                                 </div>
+                                 <ChevronRight size={16} color={C.muted} />
+                               </div>
+                             ))}
+                           </>
+                         )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <LanguageSwitcher variant="light" />
               <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 50, padding: '8px 16px', fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 4px 14px #EA580C44' : 'none', transition: 'all 0.2s' }}>
                 <ShoppingCart size={15} />
                 {cartCount > 0 && <><span>{cartCount}</span><span style={{ opacity: 0.85 }}>·</span><span>{formatFCFA(total())}</span></>}
               </button>
+              <Link
+                to={!user ? '/login' : user.role === 'B2B' ? '/b2b' : '/account'}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF5E8', border: '1.5px solid ' + C.line, borderRadius: 50, padding: '4px 14px 4px 4px', textDecoration: 'none', color: C.accent, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = C.line; }}
+              >
+                <span
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#EA580C,#C2410C)', color: '#fff', fontSize: 14, fontWeight: 800 }}
+                >
+                  {(user?.prenom?.charAt(0) || user?.nom?.charAt(0) || 'P').toUpperCase()}
+                </span>
+                <span className="hidden sm:inline">{user ? 'Profil' : 'Connexion'}</span>
+              </Link>
             </div>
           </div>
 
@@ -1001,7 +1182,7 @@ export default function MenuPage() {
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <SlidersHorizontal size={18} /> Filtres Yango Deli
+                  <SlidersHorizontal size={18} /> Filtres
                 </span>
                 {activeFiltersCount > 0 && (
                   <span style={{ background: "#fff", color: C.accent, borderRadius: 99, padding: "2px 10px", fontSize: 12, fontWeight: 900 }}>
@@ -1107,7 +1288,7 @@ export default function MenuPage() {
                   <div style={{ textAlign: 'center', padding: '60px 20px', background: C.card, borderRadius: 24, border: `1px solid ${C.line}` }}>
                     <Store size={40} color={C.faint} style={{ marginBottom: 12 }} />
                     <p style={{ fontFamily: sans, fontSize: 16, fontWeight: 800, color: C.dark, margin: '0 0 6px' }}>Aucun restaurant trouvé</p>
-                    <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: '0 0 18px' }}>Essayez de modifier votre recherche ou vos filtres Yango Deli</p>
+                    <p style={{ fontFamily: sans, fontSize: 13, color: C.muted, margin: '0 0 18px' }}>Essayez de modifier votre recherche ou vos filtres</p>
                     <button
                       onClick={resetDiscoFilters}
                       style={{
@@ -1121,13 +1302,48 @@ export default function MenuPage() {
                   </div>
                 ) : (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 20 }}>
-                    {filteredRestaurants.map(({ restaurant, matched }, i) => (
-                      <RestaurantCard key={restaurant.id} restaurant={restaurant} idx={i} matched={matched}
+                    {filteredRestaurants.map(({ restaurant, matched, _dist }, i) => (
+                      <RestaurantCard key={restaurant.id} restaurant={restaurant} idx={i} matched={matched} distance={_dist}
                         onSelect={(r) => { if (matched && matched.length) pendingPlatRef.current = discoSearch.trim(); setSelectedResto(r); }}
                         favorites={restoFavs} onFav={toggleRestoFav} />
                     ))}
                   </div>
                 ))}
+                
+                {/* Plats trouvés dans la recherche globale */}
+                {!loading && !error && discoMatchedProducts.length > 0 && (
+                  <div style={{ marginTop: 40 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+                      <span style={{ fontSize: 22 }}>🍽️</span>
+                      <h2 style={{ margin: 0, fontFamily: sans, fontSize: 20, fontWeight: 900, color: C.dark }}>
+                        Plats correspondants
+                      </h2>
+                      <span style={{ fontFamily: sans, fontSize: 13, color: C.muted, fontWeight: 600 }}>({discoMatchedProducts.length})</span>
+                      <div style={{ flex: 1, height: 1, background: C.line }} />
+                    </div>
+                    <div className="prod-grid">
+                      {discoMatchedProducts.map((p, i) => (
+                        <ProductCard 
+                          key={p.id + '_' + i} 
+                          product={p} 
+                          idx={i} 
+                          qty={quantities[p.id] || 0} 
+                          onAdd={() => {
+                            if (!selectedResto) {
+                              setSelectedResto(p.fakeResto);
+                            } else {
+                              handleAdd(p);
+                            }
+                          }} 
+                          onRemove={handleRemove} 
+                          onCustomize={handleCustomize} 
+                          isFav={articleFavs.includes(p.id)} 
+                          onToggleFav={toggleArticleFav} 
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -1148,44 +1364,64 @@ export default function MenuPage() {
       {selectedResto && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: C.bg, fontFamily: sans, display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'overlayIn 0.25s ease both' }}>
 
-          <div style={{ background: C.nav, borderBottom: '1px solid ' + C.line, boxShadow: C.sh, flexShrink: 0 }}>
-            <div style={{ padding: '0 20px', height: 60, display: 'flex', alignItems: 'center', gap: 16 }}>
-              <button onClick={() => { setSelectedResto(null); setMenuData([]); }} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0', flexShrink: 0 }}>
-                <div style={{ width: 34, height: 34, borderRadius: 10, background: C.aL, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><ArrowLeft size={17} color={C.accent} /></div>
-                <span style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: C.accent }}>Retour</span>
+          {/* Unified Dynamic Top Bar for Restaurant Menu */}
+          <div style={{ background: 'rgba(255,253,249,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid ' + C.line, boxShadow: '0 8px 30px rgba(234,88,12,0.06)', flexShrink: 0, position: 'relative', zIndex: 10 }}>
+            <div style={{ padding: '0 24px', height: 86, display: 'flex', alignItems: 'center', gap: 20 }}>
+              
+              {/* Back Button */}
+              <button onClick={() => { setSelectedResto(null); setMenuData([]); }} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
+                <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff', border: '1.5px solid ' + C.line, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', transition: 'all 0.2s' }}
+                     onMouseEnter={e => e.currentTarget.style.transform = 'translateX(-3px)'}
+                     onMouseLeave={e => e.currentTarget.style.transform = 'translateX(0)'}>
+                  <ArrowLeft size={20} color={C.dark} />
+                </div>
               </button>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 14px', height: 38, maxWidth: 520 }}>
-                <Search size={14} color={C.muted} />
-                <input type="text" placeholder={'Rechercher dans ' + selectedResto.nom + '…'} value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13, color: C.dark, background: 'transparent' }} />
-                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={13} color={C.muted} /></button>}
+
+              {/* Restaurant Info (Logo + Name + Meta) */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0, borderRight: '1px solid ' + C.line, paddingRight: 20, marginRight: 10 }}>
+                <div style={{ width: 54, height: 54, borderRadius: 16, overflow: 'hidden', flexShrink: 0, background: C.bg, boxShadow: '0 4px 14px rgba(0,0,0,0.08)' }}>
+                  <img src={selectedResto.logo || selectedResto.photoUrl || fallback(0, 120)} alt={selectedResto.nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.src = fallback(0, 120); }} />
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+                  <h2 style={{ margin: '0 0 3px', fontFamily: sans, fontSize: 19, fontWeight: 900, color: C.dark, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {selectedResto.nom}
+                  </h2>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, fontWeight: 800, color: C.dark }}>
+                      <Star size={12} fill={C.yellow} color={C.yellow} /> {Number(selectedResto.noteMoyenne) > 0 ? Number(selectedResto.noteMoyenne).toFixed(1) : 'Nouveau'}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, color: C.muted }}>
+                      <Clock size={12} color={C.muted} /> {selectedResto.deliveryTime || '30 min'}
+                    </span>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, fontWeight: 700, color: C.green }}>
+                      <Truck size={12} color={C.green} /> {selectedResto.fraisLivraison === 0 ? 'Offerte' : (selectedResto.fraisLivraison ? formatFCFA(selectedResto.fraisLivraison) : 'Livraison')}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 50, padding: '7px 14px', fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 3px 12px #EA580C44' : 'none', transition: 'all 0.2s' }}>
-                <ShoppingCart size={15} />
-                {cartCount > 0 && <><span>{cartCount}</span><span style={{ opacity: 0.85 }}>·</span><span>{formatFCFA(total())}</span></>}
+
+              {/* Search Bar */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid rgba(234,88,12,0.15)', borderRadius: 50, padding: '0 18px', height: 46, width: '100%', maxWidth: 340, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+                <Search size={16} color={C.accent} />
+                <input type="text" placeholder={'Rechercher un plat…'} value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent', fontWeight: 600 }} />
+                {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
+              </div>
+
+              {/* Cart Button */}
+              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : '#fff', border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.dark, borderRadius: 50, padding: '0 24px', height: 46, fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 8px 24px rgba(234,88,12,0.3)' : '0 4px 12px rgba(0,0,0,0.04)', transition: 'all 0.2s', transform: 'translateY(0)' }}
+                      onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
+                      onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
+                <ShoppingCart size={17} color={cartCount > 0 ? '#fff' : C.accent} />
+                {cartCount > 0 ? <><span>{cartCount} art.</span><span style={{ opacity: 0.6 }}>|</span><span>{formatFCFA(total())}</span></> : <span>Panier</span>}
               </button>
+
             </div>
           </div>
 
           <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
             <div style={{ flex: 1, minWidth: 0, overflowY: 'auto' }}>
               <div style={{ background: C.card, borderBottom: '1px solid ' + C.line }}>
-                <div style={{ padding: '18px 24px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                    <div style={{ width: 68, height: 68, borderRadius: 18, overflow: 'hidden', flexShrink: 0, background: C.bg, boxShadow: C.sh }}>
-                      <img src={selectedResto.logo || selectedResto.photoUrl || fallback(0, 120)} alt={selectedResto.nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.src = fallback(0, 120); }} />
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <p style={{ margin: '0 0 5px', fontFamily: sans, fontSize: 20, fontWeight: 900, color: C.dark }}>{selectedResto.nom}</p>
-                      <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.muted }}><Star size={13} fill={C.yellow} color={C.yellow} />{Number(selectedResto.noteMoyenne) > 0 ? Number(selectedResto.noteMoyenne).toFixed(1) : '–'}</span>
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.muted }}><Clock size={13} color={C.muted} />{selectedResto.deliveryTime || '25–40 min'}</span>
-                        {selectedResto.adresse && <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.muted }}><MapPin size={13} color={C.muted} />{selectedResto.adresse}</span>}
-                        <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12.5, color: C.green, fontWeight: 700 }}><Truck size={13} color={C.green} />{selectedResto.fraisLivraison === 0 ? 'Livraison offerte' : selectedResto.fraisLivraison ? formatFCFA(selectedResto.fraisLivraison) : 'Livraison disponible'}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div style={{ borderTop: '1px solid ' + C.line }}>
+                <div>
                   <p style={{ margin: '12px 20px 0', fontFamily: sans, fontSize: 11, fontWeight: 800, color: C.muted, textTransform: 'uppercase', letterSpacing: '0.08em' }}>Choisir la catégorie</p>
                   {menuLoading ? (
                     <div style={{ display: 'flex', gap: 16, padding: '10px 20px 14px' }}>{[...Array(5)].map((_, i) => <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}><SK w={60} h={60} r={99} /><SK w={50} h={10} r={4} /></div>)}</div>

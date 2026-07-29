@@ -5,6 +5,8 @@ import {
   NotFoundException,
   ForbiddenException,
   OnModuleInit,
+  HttpException,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -161,10 +163,28 @@ export class PaiementsService implements OnModuleInit {
       await this.paymentLock.cacheStatus(dto.commandeId, PaymentStatus.PENDING);
 
       return result;
-    } catch (e) {
+    } catch (e: any) {
       // Échec d'initiation → on libère le verrou pour permettre un retry immédiat.
       await this.paymentLock.release(dto.commandeId);
-      throw e;
+      
+      this.logger.error(`Erreur d'initiation de paiement : ${e.message}`, e.stack);
+      
+      if (e instanceof HttpException) {
+        throw e;
+      }
+      
+      const status = e?.response?.status || 500;
+      let message = e?.response?.data?.message || e?.message || 'Erreur lors de l\'initiation du paiement';
+      
+      // Nettoyer les messages d'erreur complexes de l'API
+      if (typeof message === 'object') {
+        message = JSON.stringify(message);
+      }
+      
+      if (status >= 400 && status < 500) {
+        throw new BadRequestException(`Paiement refusé : ${message}`);
+      }
+      throw new InternalServerErrorException(`Erreur de paiement : ${message}`);
     }
   }
 

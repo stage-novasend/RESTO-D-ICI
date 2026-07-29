@@ -364,37 +364,31 @@ export default function FilterSidebar({
     </div>
   );
 
-  /* Version Mobile — Drawer slide-over */
+  /* Version Mobile — Inline block au lieu de Drawer */
   if (isOpenMobile) {
     return (
       <div
         style={{
-          position: 'fixed', inset: 0, zIndex: 300,
-          background: 'rgba(10,5,0,0.6)', backdropFilter: 'blur(4px)',
-          display: 'flex', justifyContent: 'flex-start'
+          width: '100%',
+          background: C.card,
+          borderRadius: 20,
+          border: `1px solid ${C.line}`,
+          boxShadow: C.shadow,
+          marginBottom: 20,
+          animation: 'slideInLeft 0.25s ease-out',
+          overflow: 'hidden'
         }}
-        onClick={onCloseMobile}
       >
-        <div
-          style={{
-            width: '85%', maxWidth: 360, height: '100%',
-            background: C.card, overflowY: 'auto',
-            boxShadow: '4px 0 24px rgba(0,0,0,0.25)',
-            animation: 'slideInLeft 0.25s ease-out'
-          }}
-          onClick={e => e.stopPropagation()}
-        >
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${C.line}` }}>
-            <span style={{ fontWeight: 900, fontSize: 18, color: C.dark }}>Filtres Yango Deli</span>
-            <button
-              onClick={onCloseMobile}
-              style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: C.bg, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              <X size={16} color={C.text} />
-            </button>
-          </div>
-          {sidebarContent}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${C.line}` }}>
+          <span style={{ fontWeight: 900, fontSize: 18, color: C.dark }}>Filtres de recherche</span>
+          <button
+            onClick={onCloseMobile}
+            style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: C.bg, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          >
+            <X size={16} color={C.text} />
+          </button>
         </div>
+        {sidebarContent}
       </div>
     );
   }

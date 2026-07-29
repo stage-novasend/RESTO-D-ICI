@@ -1,15 +1,18 @@
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Home } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 
 export default function ClientLayout() {
   const { user } = useAuth();
+  const location = useLocation();
+  const isMenu = location.pathname.startsWith('/menu');
 
   return (
     <div className="min-h-screen min-h-dvh flex flex-col" style={{ background: 'var(--color-bg)' }}>
 
       {/* ── Header sticky ── */}
+      {!isMenu && (
       <header
         className="sticky top-0 z-50 border-b shadow-sm"
         style={{
@@ -67,6 +70,7 @@ export default function ClientLayout() {
           </div>
         </div>
       </header>
+      )}
 
       <main className="flex-1 w-full">
         <Outlet />
