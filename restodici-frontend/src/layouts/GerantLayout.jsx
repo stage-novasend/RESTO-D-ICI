@@ -6,6 +6,7 @@
 import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import {
   LayoutDashboard, Package, ClipboardList, AlertTriangle,
   TrendingUp, Settings, LogOut, ChevronRight, UtensilsCrossed, Activity, Menu, X, Tag,
@@ -172,14 +173,19 @@ export default function GerantLayout() {
           })}
         </nav>
 
-        {/* ── Pied de sidebar : info utilisateur + déconnexion ── */}
+        {/* ── Pied de sidebar : info utilisateur + langue + déconnexion ── */}
         <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, borderTop: '1px solid rgba(0,0,0,0.06)', padding: collapsed ? '12px 0' : '12px 10px' }}>
           {!collapsed && (
-            <div style={{ background: 'rgba(0,0,0,0.03)', borderRadius: 9, padding: '8px 12px', marginBottom: 8 }}>
-              <p style={{ fontSize: 10, color: '#9CA3AF', margin: '0 0 2px' }}>Connecté en tant que</p>
-              <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nom}</p>
+            <div style={{ background: 'rgba(0,0,0,0.03)', borderRadius: 9, padding: '8px 12px', marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ overflow: 'hidden' }}>
+                <p style={{ fontSize: 10, color: '#9CA3AF', margin: '0 0 2px' }}>Connecté en tant que</p>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user?.nom}</p>
+              </div>
             </div>
           )}
+          <div style={{ marginBottom: 8, display: 'flex', justifyContent: collapsed ? 'center' : 'flex-start', paddingLeft: collapsed ? 0 : 4 }}>
+            <LanguageSwitcher variant="light" />
+          </div>
           <button
             onClick={handleLogout}
             style={{ display: 'flex', alignItems: 'center', gap: collapsed ? 0 : 10, justifyContent: collapsed ? 'center' : 'flex-start', width: '100%', padding: collapsed ? '10px' : '10px 12px', border: 'none', borderRadius: 9, cursor: 'pointer', background: 'transparent', color: '#9CA3AF', transition: 'all 0.2s' }}

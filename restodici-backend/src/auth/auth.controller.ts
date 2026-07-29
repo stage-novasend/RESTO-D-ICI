@@ -11,6 +11,7 @@ import {
   HttpCode,
   HttpStatus,
   Patch,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
@@ -114,6 +115,9 @@ export class AuthController {
     // Refresh token lu depuis le cookie HttpOnly (fallback body pour compat).
     const token: string =
       req.cookies?.[REFRESH_COOKIE] || (req.body as any)?.refreshToken;
+    if (!token) {
+      throw new UnauthorizedException('Aucune session active');
+    }
     const result = await this.authService.refreshAccessToken(token);
     return this.issueTokens(res, result);
   }

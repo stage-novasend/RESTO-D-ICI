@@ -55,6 +55,16 @@ export function AuthProvider({ children }) {
   useEffect(() => {
     let active = true;
     (async () => {
+      // Pour les visiteurs anonymes (aucun profil stocké), inutile de tenter un /auth/refresh qui échouera en 401
+      if (!getStoredUser()) {
+        if (active) {
+          clearAccessToken();
+          setUser(null);
+          setLoading(false);
+        }
+        return;
+      }
+
       try {
         const { data } = await axios.post(
           `${API_URL}/auth/refresh`,
@@ -64,7 +74,6 @@ export function AuthProvider({ children }) {
         const token = data?.accessToken ?? data?.access_token ?? data?.token;
         if (!token) throw new Error("Pas de token de session");
         setAccessToken(token);
-        // Profil frais = source de vérité ; à défaut on garde le user en cache.
         try {
           const profile = await authService.getProfile();
           if (active && profile) {
@@ -75,7 +84,7 @@ export function AuthProvider({ children }) {
           // profil indisponible : on conserve l'utilisateur mis en cache
         }
       } catch {
-        // Pas de session valide (aucun cookie / expiré) → état déconnecté.
+        // Session expirée ou révoquée → nettoyage propre
         if (active) {
           clearAccessToken();
           localStorage.removeItem("user");

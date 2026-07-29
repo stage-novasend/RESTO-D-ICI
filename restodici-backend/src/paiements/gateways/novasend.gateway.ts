@@ -12,24 +12,40 @@ import {
 import { EXTERNAL_URLS } from '../../config/app-config';
 import { normalizeCiNumber } from '../phone.util';
 
-/** Formate un numéro CI au format international attendu par NovaSend (+225XXXXXXXXXX). */
-function toInternationalCiMsisdn(phone?: string): string | undefined {
+/** Formate un numéro CI au format international E.164 (+225XXXXXXXXXX). */
+export function toInternationalCiMsisdn(phone?: string): string | undefined {
   if (!phone) return undefined;
   const national = normalizeCiNumber(phone); // 0XXXXXXXXX
   return /^0\d{9}$/.test(national) ? `+225${national}` : phone;
 }
 
+/** Normalise les codes d'opérateurs Mobile Money attendus par l'API NovaSend. */
+export function normalizeNovaSendProvider(provider?: string): string {
+  if (!provider) return 'ORANGE';
+  const p = provider.toUpperCase().trim();
+  if (p === 'ORANGE_MONEY' || p === 'ORANGE') return 'ORANGE';
+  if (p === 'MTN_MONEY' || p === 'MTN_MOMO' || p === 'MTN' || p === 'MOMO') return 'MOMO';
+  if (p === 'MOOV_MONEY' || p === 'MOOV') return 'MOOV';
+  if (p === 'WAVE') return 'WAVE';
+  return p;
+}
+
 /**
- * Wrapper NovaSend implementant PaymentGateway.
- * Les clés sont passées via l'Integration chargée depuis la table `integrations`.
- * apiKey est au format "key:secret" (base64 sera calculé lors de l'appel).
- * webhookSecret est utilisé pour la vérification HMAC.
+ * Wrapper NovaSend implémentant PaymentGateway.
+ * Gère le paiement Mobile Money Direct via POST /v1/direct/payin
+ * (Orange Money, MTN MoMo, Moov Money) et les sessions (Wave).
  */
 export class NovaSendGateway implements PaymentGateway {
   readonly name = 'novasend';
-
   private readonly logger = new Logger(NovaSendGateway.name);
-  private readonly BASE = EXTERNAL_URLS.novasend;
+
+  private get baseUrl(): string {
+    if (process.env.NOVASEND_BASE_URL) return process.env.NOVASEND_BASE_URL;
+    if (this.integration.baseUrl && this.integration.baseUrl.includes('novasend')) {
+      return this.integration.baseUrl;
+    }
+    return EXTERNAL_URLS.novasend || 'https://business.novasend.app/v1';
+  }
 
   // Mapping référence → provider pour enrichir le webhook entrant
   private readonly pendingMap = new Map<string, string>();
@@ -49,9 +65,7 @@ export class NovaSendGateway implements PaymentGateway {
   }
 
   verifyWebhook(payload: any, signature?: string): boolean {
-    const secret = this.integration.webhookSecret;
-    // Fail-closed en production : sans secret configuré, un webhook n'est pas
-    // vérifiable → on le refuse. En dev on tolère (simulation locale).
+    const secret = this.integration.webhookSecret || process.env.NOVASEND_WEBHOOK_SECRET;
     if (!secret) return process.env.NODE_ENV !== 'production';
     if (!signature) return false;
     const raw = typeof payload === 'string' ? payload : JSON.stringify(payload);
@@ -59,7 +73,6 @@ export class NovaSendGateway implements PaymentGateway {
       .createHmac('sha256', secret)
       .update(raw)
       .digest('hex');
-    // Comparaison à temps constant (anti-timing).
     const a = Buffer.from(signature);
     const b = Buffer.from(expected);
     return a.length === b.length && crypto.timingSafeEqual(a, b);
@@ -79,8 +92,6 @@ export class NovaSendGateway implements PaymentGateway {
     return {
       transactionId: reference,
       status: normalizedStatus,
-      // Le provider est résolu par la stratégie elle-même (référence trackée à
-      // l'initiation) → le contexte n'a pas à connaître NovaSend.
       provider: this.pendingMap.get(reference),
       metadata,
     };
@@ -89,40 +100,53 @@ export class NovaSendGateway implements PaymentGateway {
   // ── Helpers privés ────────────────────────────────────────────────────────
 
   private get isConfigured(): boolean {
-    return !!(this.integration.apiKey && this.integration.baseUrl !== undefined);
+    return !!(
+      (this.integration.apiKey && this.integration.apiKey.trim().length > 0) ||
+      (process.env.NOVASEND_API_KEY && process.env.NOVASEND_API_SECRET)
+    );
   }
 
   private get credentials(): string {
-    // apiKey stocké au format "key:secret"
-    return Buffer.from(this.integration.apiKey!).toString('base64');
+    const rawKey = (this.integration?.apiKey || process.env.NOVASEND_API_KEY || '').trim();
+    const rawSecret = (process.env.NOVASEND_API_SECRET || '').trim();
+
+    if (rawKey.includes(':')) {
+      return Buffer.from(rawKey).toString('base64');
+    }
+
+    if (rawKey && rawSecret) {
+      return Buffer.from(`${rawKey}:${rawSecret}`).toString('base64');
+    }
+
+    return rawKey ? Buffer.from(rawKey).toString('base64') : '';
   }
 
   private get appUrl(): string {
-    return this.integration.baseUrl || 'http://localhost:5173';
+    return (process.env.FRONTEND_URL || 'http://localhost:5173');
   }
 
   private async callApi(
     reference: string,
     options: InitiatePaymentOptions,
   ): Promise<PaymentGatewayResult> {
-    // Deux flux selon l'opérateur (le msisdn doit être en +225XXXXXXXXXX) :
-    //  - MTN / Moov / Orange → payin DIRECT : demande d'approbation (USSD) sur le téléphone.
-    //  - Wave → SESSION de paiement (lien) : le payin direct échoue pour Wave
-    //    (« Transaction failed ») ; la session renvoie un `paymentUrl` (page/QR).
     const msisdn = toInternationalCiMsisdn(options.phone);
+    const providerCode = normalizeNovaSendProvider(options.provider);
+
     const action = {
       successUrl: options.returnUrl || `${this.appUrl}/paiement/success`,
       failureUrl: `${this.appUrl}/paiement/failure`,
     };
-    const isLinkFlow = options.provider === 'WAVE';
+    const isLinkFlow = providerCode === 'WAVE';
 
     const url = isLinkFlow
-      ? `${this.BASE}/payin/sessions`
-      : `${this.BASE}/direct/payin`;
+      ? `${this.baseUrl}/payin/sessions`
+      : `${this.baseUrl}/direct/payin`;
+
     const payload: Record<string, any> = isLinkFlow
       ? {
           reference,
           amount: options.amount,
+          provider: 'WAVE',
           country: 'CI',
           customerName: options.metadata?.customerName || 'Client',
           ...(msisdn ? { msisdn } : {}),
@@ -133,7 +157,7 @@ export class NovaSendGateway implements PaymentGateway {
           customerName: options.metadata?.customerName || 'Client',
           payin: {
             amount: options.amount,
-            provider: options.provider,
+            provider: providerCode,
             country: 'CI',
             ...(msisdn ? { msisdn } : {}),
             ...(options.metadata?.otp ? { otp: options.metadata.otp } : {}),
@@ -142,6 +166,7 @@ export class NovaSendGateway implements PaymentGateway {
         };
 
     try {
+      this.logger.log(`[NovaSend] Sending ${isLinkFlow ? 'Payin Session' : 'Direct Payin'} (${providerCode}) to ${url} for ${msisdn || 'non-specified phone'}`);
       const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${this.credentials}`,
@@ -150,13 +175,30 @@ export class NovaSendGateway implements PaymentGateway {
         },
         timeout: 15_000,
       });
+      this.logger.log(`[NovaSend] Payin response (${providerCode}): ${JSON.stringify(data)}`);
+
+      const status = String(data?.status || '').toUpperCase();
+      const isSuccess = status === 'SUCCESSFUL' || status === 'SUCCESS';
+
+      // Résolution exhaustive de l'URL de paiement Wave / Session
+      const paymentUrl =
+        data?.paymentUrl ||
+        data?.url ||
+        data?.checkoutUrl ||
+        data?.waveLaunchUrl ||
+        data?.action?.url ||
+        data?.payin?.url ||
+        data?.data?.paymentUrl ||
+        data?.data?.url ||
+        data?.data?.waveLaunchUrl;
+
       return {
-        transactionId: data.id,
-        paymentUrl: data.paymentUrl,
-        status: 'PENDING',
+        transactionId: data?.id || data?.reference || reference,
+        paymentUrl,
+        status: isSuccess ? 'SUCCESS' : 'PENDING',
       };
     } catch (err: any) {
-      this.logger.error('NovaSendGateway API error', err?.response?.data ?? err.message);
+      this.logger.error(`NovaSend API error [${providerCode}] (${url}):`, err?.response?.data ?? err.message);
       throw err;
     }
   }

@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { getAccessToken } from './services/token-store.js';
 import { CartProvider } from './hooks/useCart';
+import { LanguageProvider } from './hooks/useLanguage';
 
 // layouts
 import GerantLayout from './layouts/GerantLayout';
@@ -148,7 +149,8 @@ function GerantDashboardWrapper() {
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
+      <LanguageProvider>
+        <AuthProvider>
         <BrowserRouter>
           <RouteTransition>
           <Suspense fallback={<PageLoader />}>
@@ -269,7 +271,8 @@ export default function App() {
           </Suspense>
           </RouteTransition>
         </BrowserRouter>
-      </AuthProvider>
+        </AuthProvider>
+      </LanguageProvider>
     </QueryClientProvider>
   );
 }
