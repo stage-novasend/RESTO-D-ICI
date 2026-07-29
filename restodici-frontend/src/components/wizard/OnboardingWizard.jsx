@@ -179,7 +179,10 @@ export default function OnboardingWizard() {
   }, [userId, steps.length]);
 
   const dismiss = () => {
-    localStorage.setItem(`wizard_done_${userId}`, '1');
+    if (userId) {
+      localStorage.setItem(`wizard_done_${userId}`, '1');
+      localStorage.setItem(`rdi_ob_${userId}`, '1');
+    }
     setVisible(false);
   };
 

@@ -4,6 +4,3 @@ node_modules/
 dist/
 build/
 *.log
-*.docx
-AUDIT_CODE_*.md
-.vscode/

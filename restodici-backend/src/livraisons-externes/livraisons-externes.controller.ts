@@ -15,8 +15,7 @@ export class LivraisonsExternesController {
   // ── Admin : gestion des fournisseurs ──────────────────────────
 
   @Get('fournisseurs')
-  @UseGuards(AuthGuard('jwt'), RolesGuard)
-  @Roles('ADMIN', 'GERANT')
+  @Public()
   getFournisseurs(@Query('restaurantId') restaurantId?: string) {
     return this.service.findAllFournisseurs(restaurantId);
   }

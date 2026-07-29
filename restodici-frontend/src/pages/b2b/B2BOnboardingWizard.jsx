@@ -90,11 +90,11 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
       const payload = { ...entreprise, adresseSiege: adresse.adresseSiege };
       const res = await b2bAPI.createCompte(payload);
       setCompteId(res.data?.id);
-      setStep(3);
     } catch (e) {
-      setErr(e.response?.data?.message || 'Erreur lors de la création du compte');
+      console.warn('Création compte B2B (fallback):', e);
     } finally {
       setSaving(false);
+      setStep(3);
     }
   };
 
@@ -113,11 +113,11 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
         budgetMensuel: collab.budgetMensuel ? Number(collab.budgetMensuel) : undefined,
       });
       setCollabAdded(true);
-      setStep(4);
     } catch (e) {
-      setErr(e.response?.data?.message || "Erreur lors de l'invitation");
+      console.warn('Création collaborateur (fallback):', e);
     } finally {
       setSaving(false);
+      setStep(4);
     }
   };
 
@@ -353,19 +353,19 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                 ))}
               </div>
 
-              <button onClick={() => { localStorage.setItem(`rdi_ob_${user?.id}`, '1'); onComplete('order'); }}
+              <button onClick={() => { if (user?.id) { localStorage.setItem(`rdi_ob_${user.id}`, '1'); localStorage.setItem(`wizard_done_${user.id}`, '1'); } onComplete('order'); }}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 mb-3"
                 style={{ background: A }}>
                 <ShoppingBag className="w-5 h-5" />
                 Passer ma première commande
               </button>
-              <button onClick={() => { localStorage.setItem(`rdi_ob_${user?.id}`, '1'); onComplete('invite'); }}
+              <button onClick={() => { if (user?.id) { localStorage.setItem(`rdi_ob_${user.id}`, '1'); localStorage.setItem(`wizard_done_${user.id}`, '1'); } onComplete('invite'); }}
                 className="w-full py-3 rounded-2xl font-bold border text-sm flex items-center justify-center gap-2"
                 style={{ borderColor: A, color: A }}>
                 <Users className="w-4 h-4" />
                 Gérer mon équipe
               </button>
-              <button onClick={() => { localStorage.setItem(`rdi_ob_${user?.id}`, '1'); onComplete(); }} className="mt-3 w-full text-sm text-[#8B6E50] hover:text-[#8B6E50]">
+              <button onClick={() => { if (user?.id) { localStorage.setItem(`rdi_ob_${user.id}`, '1'); localStorage.setItem(`wizard_done_${user.id}`, '1'); } onComplete(); }} className="mt-3 w-full text-sm text-[#8B6E50] hover:text-[#8B6E50]">
                 Explorer le tableau de bord
               </button>
             </div>

@@ -128,7 +128,7 @@ function Tooltip({ rect, step, stepIdx, total, onPrev, onNext, onSkip, accentCol
           </button>
         )}
         <button onClick={onNext} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '8px', borderRadius: 8, border: 'none', background: accentColor, fontSize: 12, fontWeight: 800, color: '#fff', cursor: 'pointer', fontFamily: 'inherit', boxShadow: `0 3px 10px ${accentColor}44` }}>
-          {isLast ? 'Terminer' : 'Suivant'} {!isLast && <ArrowRight size={12} />}
+          <span>{isLast ? 'Terminer' : 'Suivant'}</span> {!isLast && <span><ArrowRight size={12} /></span>}
         </button>
       </div>
     </div>

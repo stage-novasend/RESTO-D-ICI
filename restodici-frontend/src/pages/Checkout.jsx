@@ -15,14 +15,10 @@ import orangeMoneyLogo from '../assets/payments/orange-money.svg';
 import mtnMomoLogo from '../assets/payments/mtn-momo.svg';
 import moovMoneyLogo from '../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../assets/payments/carte-bancaire.svg';
+import QRCode from 'qrcode';
 
-// Flags
-// Simulation de paiement : active en dev, désactivée en production.
-// Forçable via VITE_SIMULATE_PAYMENT ('true' / 'false').
-const SIMULATE_PAYMENT =
-  import.meta.env.VITE_SIMULATE_PAYMENT != null
-    ? import.meta.env.VITE_SIMULATE_PAYMENT === 'true'
-    : import.meta.env.DEV;
+// Mode paiement réel 100% API (Aucune simulation locale)
+const SIMULATE_PAYMENT = false;
 // Flip to false when NovaSend card payment is live in CI
 const NOVASEND_CARD_ENABLED = true;
 
@@ -47,11 +43,11 @@ const METHODS_FALLBACK = Object.entries(METHOD_VISUAL_MAP)
   .map(([id, meta]) => ({ id, ...meta }));
 
 const PROVIDER_NOTE = {
-  ORANGE: 'Confirmez la demande de paiement sur votre téléphone. Si vous n\'avez pas reçu la demande, composez #144*82# pour générer un OTP.',
-  MOMO:   'Approuvez la transaction depuis l\'application MTN Mobile Money ou composez *133#.',
-  MOOV:   'Assurez-vous que votre écran est déverrouillé. Approuvez la demande dans votre application.',
-  WAVE:   'Scannez le QR code ou appuyez sur le lien pour ouvrir l\'application Wave.',
-  CARTE:  'Votre paiement par carte est en cours de traitement.',
+  ORANGE: 'Une demande de paiement a été envoyée. Si la confirmation n\'apparaît pas automatiquement, composez #144*82# pour obtenir votre code OTP.',
+  MOMO:   'Une demande de validation Push a été envoyée sur votre mobile MTN. Si elle n\'apparaît pas automatiquement, composez *133#.',
+  MOOV:   'Une demande de validation Push a été envoyée sur votre mobile Moov. Si elle n\'apparaît pas automatiquement, composez *155#.',
+  WAVE:   'Scannez le QR code ou cliquez sur le bouton pour ouvrir l\'application Wave et valider.',
+  CARTE:  'Votre paiement par carte bancaire sécurisée est en cours de traitement.',
 };
 
 const COUNTDOWN_SECS = 90;
@@ -85,6 +81,55 @@ function CountdownRing({ total, current }) {
         {current}
       </text>
     </svg>
+  );
+}
+
+function WaveQRCode({ url }) {
+  const [qrData, setQrData] = useState('');
+
+  useEffect(() => {
+    if (!url) return;
+    QRCode.toDataURL(url, { width: 220, margin: 1, color: { dark: '#0284C7', light: '#FFFFFF' } })
+      .then(setQrData)
+      .catch(() => {});
+  }, [url]);
+
+  if (!qrData) return null;
+
+  return (
+    <div style={{
+      margin: '16px 0',
+      padding: '16px',
+      borderRadius: 18,
+      background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
+      border: '1.5px solid #BAE6FD',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 12,
+      boxShadow: '0 4px 20px rgba(14,165,233,0.12)'
+    }}>
+      <div style={{
+        background: 'white',
+        padding: 12,
+        borderRadius: 16,
+        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        border: '1px solid #E0F2FE',
+      }}>
+        <img src={qrData} alt="QR Code Wave" style={{ width: 170, height: 170, borderRadius: 8, display: 'block' }} />
+      </div>
+      <div style={{ textAlign: 'center' }}>
+        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 800, color: '#0369A1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <span>📷</span> Scannez avec l'application Wave
+        </p>
+        <p style={{ margin: 0, fontSize: 11, color: '#0284C7', fontWeight: 600 }}>
+          Ouvrez Wave sur votre téléphone et pointez la caméra vers ce QR Code pour débiter votre solde
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -402,7 +447,7 @@ export default function CheckoutPage() {
     }, 1000);
   }, []);
 
-  // ── WebSocket ──────────────────────────────────────────────────────────────
+  // ── WebSocket & Polling statut ─────────────────────────────────────────────
   const subscribePaymentSocket = useCallback((orderId) => {
     if (socketRef.current) { socketRef.current.disconnect(); socketRef.current = null; }
     const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -410,7 +455,7 @@ export default function CheckoutPage() {
     socketRef.current = socket;
 
     socket.on('commande.paiement', (payload) => {
-      if (payload?.id === orderId) {
+      if (payload?.id === orderId || payload?.commandeId === orderId) {
         cleanupAll();
         setModalState('success');
         setTimeout(() => navigate(`/suivi/${orderId}`), 2000);
@@ -418,16 +463,38 @@ export default function CheckoutPage() {
     });
 
     socket.on('commande.paiement.echec', (payload) => {
-      if (payload?.id === orderId) {
+      if (payload?.id === orderId || payload?.commandeId === orderId) {
         cleanupAll();
         setModalError(`Paiement refusé — ${payload.reason || 'transaction échouée'}`);
         setModalState('failed');
         setCanRetry(true);
       }
     });
+
+    // Polling de secours toutes les 2s pour s'assurer de ne jamais rater la validation
+    const pollInterval = setInterval(async () => {
+      try {
+        const res = await paiementsAPI.getStatut(orderId);
+        const data = res.data;
+        if (data?.estPaye || data?.status === 'SUCCESS' || data?.status === 'SUCCESSFUL') {
+          clearInterval(pollInterval);
+          cleanupAll();
+          setModalState('success');
+          setTimeout(() => navigate(`/suivi/${orderId}`), 2000);
+        } else if (data?.status === 'FAILED') {
+          clearInterval(pollInterval);
+          cleanupAll();
+          setModalError('Paiement échoué ou annulé.');
+          setModalState('failed');
+          setCanRetry(true);
+        }
+      } catch {}
+    }, 2000);
+
+    return () => clearInterval(pollInterval);
   }, [cleanupAll, navigate]);
 
-  // ── Initier paiement (+ simulation auto si SIMULATE_PAYMENT) ──────────────
+  // ── Initier paiement (+ simulation auto si mode test/simulé) ──────────────
   const doInitiatePayment = useCallback(async (orderId, total) => {
     try {
       const paiRes = await paiementsAPI.initier({
@@ -439,16 +506,20 @@ export default function CheckoutPage() {
         ...(method?.otpRequired && otp.length === 4 ? { otp } : {}),
       });
       if (paiRes.data?.paymentUrl) setPaymentUrl(paiRes.data.paymentUrl);
-    } catch { /* ignore — simulation will confirm anyway */ }
-
-    // Simulation automatique : déclenche le webhook en interne après 2,5 s
-    if (SIMULATE_PAYMENT) {
-      if (simTimerRef.current) clearTimeout(simTimerRef.current);
-      simTimerRef.current = setTimeout(async () => {
-        try {
-          await paiementsAPI.simuler({ commandeId: orderId, provider: method?.provider ?? 'ORANGE' });
-        } catch { /* blocked in production — normal */ }
-      }, 2500);
+      if (paiRes.data?.simulated || SIMULATE_PAYMENT) {
+        if (simTimerRef.current) clearTimeout(simTimerRef.current);
+        simTimerRef.current = setTimeout(async () => {
+          try {
+            await paiementsAPI.simuler({ commandeId: orderId, provider: method?.provider ?? 'ORANGE' });
+          } catch {}
+        }, 2500);
+      }
+    } catch (err) {
+      const raw = err?.response?.data?.message || err?.response?.data;
+      const msg = Array.isArray(raw) ? raw.join(', ') : (typeof raw === 'string' ? raw : 'Erreur d\'initiation du paiement');
+      setModalError(msg);
+      setModalState('failed');
+      setCanRetry(true);
     }
   }, [user, phone, otp, method]);
 
@@ -726,15 +797,23 @@ export default function CheckoutPage() {
             </div>
           </div>
 
-          {/* Security badges */}
-          <div style={{ marginTop: 28 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginBottom: 10 }}>
-              <Lock size={13} color="rgba(255,255,255,0.7)" />
-              <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 12, fontWeight: 600 }}>Paiement 100% sécurisé</span>
+          {/* Security badges & guarantees */}
+          <div style={{ marginTop: 24 }}>
+            <div style={{ padding: '14px 16px', background: 'rgba(0,0,0,0.18)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.15)', fontSize: 11, color: 'rgba(255,255,255,0.85)', lineHeight: 1.5 }}>
+              <p style={{ margin: '0 0 6px', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>📄</span> TVA 18% incluse · Reçu officiel SYSCOHADA instantané
+              </p>
+              <p style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span>🛡️</span> Garantie Resto D'Ici : Remboursement sous 24h
+              </p>
             </div>
-            <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
-              {['SSL', 'NovaSend'].map(badge => (
-                <span key={badge} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.18)', borderRadius: 8, padding: '3px 10px', color: 'rgba(255,255,255,0.6)', fontSize: 10, fontWeight: 700, letterSpacing: '0.06em' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center', marginTop: 14, marginBottom: 8 }}>
+              <Lock size={12} color="rgba(255,255,255,0.8)" />
+              <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 11, fontWeight: 700 }}>Cryptage SSL 256-bit · PCI-DSS Level 1</span>
+            </div>
+            <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
+              {['SSL 256-BIT', 'PCI-DSS', 'NOVASEND CI'].map(badge => (
+                <span key={badge} style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '2px 8px', color: 'rgba(255,255,255,0.7)', fontSize: 9, fontWeight: 800, letterSpacing: '0.05em' }}>
                   {badge}
                 </span>
               ))}
@@ -746,7 +825,7 @@ export default function CheckoutPage() {
         <main style={{ flex: 1, background: '#FFFFFF', padding: '0 0 120px' }}>
 
           {/* Desktop header (hidden on mobile) */}
-          <div className="hidden md:block checkout-fadeup" style={{ padding: '40px 40px 0', marginBottom: 32 }}>
+          <div className="hidden md:block checkout-fadeup" style={{ padding: '32px 40px 0', marginBottom: 28 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 20 }}>
               <div>
                 <h1 style={{ fontSize: 28, fontWeight: 800, color: '#1A0C00', letterSpacing: '-0.04em', margin: '0 0 6px', lineHeight: 1.15 }}>
@@ -976,7 +1055,7 @@ export default function CheckoutPage() {
                         width: '100%',
                         boxSizing: 'border-box',
                         borderRadius: 14,
-                        border: '1.5px solid ' + (phoneOperatorError ? '#EF4444' : '#E8E0D5'),
+                        border: '1.5px solid ' + (phoneOperatorError ? '#EF4444' : isValidCIPhone(phone) ? '#16A34A' : '#E8E0D5'),
                         background: '#FFFFFF',
                         padding: '13px 16px',
                         fontSize: 14,
@@ -991,6 +1070,14 @@ export default function CheckoutPage() {
                       <p style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: '#DC2626', display: 'flex', alignItems: 'flex-start', gap: 6 }}>
                         <AlertCircle size={13} style={{ flexShrink: 0, marginTop: 1 }} /> {phoneOperatorError}
                       </p>
+                    )}
+                    {isValidCIPhone(phone) && !phoneOperatorError && (
+                      <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 10, background: '#F0FDF4', border: '1px solid #BBF7D0', display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <CheckCircle size={14} color="#16A34A" />
+                        <span style={{ fontSize: 12, fontWeight: 700, color: '#15803D' }}>
+                          Numéro {OPERATOR_LABEL[method.provider] || method.name} valide et détecté (+225)
+                        </span>
+                      </div>
                     )}
                   </div>
                 )}
@@ -1162,8 +1249,8 @@ export default function CheckoutPage() {
                   justifyContent: 'center',
                   gap: 8,
                 }}>
-                {primaryEnabled && !otpStepPending && <Lock size={15} style={{ opacity: 0.85 }} />}
-                {primaryLabel}
+                {primaryEnabled && !otpStepPending && <span><Lock size={15} style={{ opacity: 0.85 }} /></span>}
+                <span>{primaryLabel}</span>
               </button>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 12 }}>
                 <ShieldCheck size={12} color="#C4B5A5" />
@@ -1215,10 +1302,12 @@ export default function CheckoutPage() {
             justifyContent: 'center',
             gap: 8,
           }}>
-          {canSubmit && <Lock size={14} style={{ opacity: 0.85 }} />}
-          {isB2B
-            ? `Confirmer · ${formatFCFA(effectiveTotal)}`
-            : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`}
+          {canSubmit && <span><Lock size={14} style={{ opacity: 0.85 }} /></span>}
+          <span>
+            {isB2B
+              ? `Confirmer · ${formatFCFA(effectiveTotal)}`
+              : `Payer ${formatFCFA(effectiveTotal)} · ${method?.shortName}`}
+          </span>
         </button>
       </div>
 
@@ -1343,37 +1432,73 @@ export default function CheckoutPage() {
                     </p>
                   )}
 
-                  <p style={{ fontSize: 12, color: '#9E8B7A', lineHeight: 1.6, margin: '0 0 18px', padding: '0 8px', fontWeight: 600 }}>
+                  <p style={{ fontSize: 12, color: '#9E8B7A', lineHeight: 1.6, margin: '0 0 14px', padding: '0 8px', fontWeight: 600 }}>
                     {paymentUrl
                       ? `Cliquez ci-dessous pour ouvrir la page ${method?.shortName || 'de paiement'} et finaliser. Cette fenêtre se mettra à jour automatiquement.`
                       : (PROVIDER_NOTE[method?.provider] || 'Une demande de paiement a été envoyée sur votre téléphone — validez-la pour confirmer.')}
                   </p>
 
+                  {/* Badges d'instructions de validation manuelle USSD */}
+                  {!paymentUrl && method?.provider === 'MOOV' && (
+                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#EFF6FF', border: '1.5px solid #BFDBFE', textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 800, color: '#1E40AF', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📱</span> Validation Manuelle Moov CI
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#1E3A8A', fontWeight: 600, lineHeight: 1.5 }}>
+                        Si la demande de confirmation n'apparaît pas sur votre écran, composez <strong style={{ color: '#0066CC', fontSize: 13 }}>*155#</strong> sur votre téléphone pour valider le paiement.
+                      </p>
+                    </div>
+                  )}
+
+                  {!paymentUrl && method?.provider === 'MOMO' && (
+                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#FEFCE8', border: '1.5px solid #FEF08A', textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 800, color: '#854D0E', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📱</span> Validation Manuelle MTN CI
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#713F12', fontWeight: 600, lineHeight: 1.5 }}>
+                        Si la demande de confirmation n'apparaît pas sur votre écran, composez <strong style={{ color: '#D97706', fontSize: 13 }}>*133#</strong> sur votre téléphone pour valider le paiement.
+                      </p>
+                    </div>
+                  )}
+
+                  {!paymentUrl && method?.provider === 'ORANGE' && (
+                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#FFF7ED', border: '1.5px solid #FFEDD5', textAlign: 'left' }}>
+                      <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 800, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span>📱</span> Validation OTP Orange CI
+                      </p>
+                      <p style={{ margin: 0, fontSize: 12, color: '#7C2D12', fontWeight: 600, lineHeight: 1.5 }}>
+                        Composez <strong style={{ color: '#EA580C', fontSize: 13 }}>#144*82#</strong> pour générer votre code OTP à 4 chiffres.
+                      </p>
+                    </div>
+                  )}
+
                   {paymentUrl && (
-                    <a
-                      href={paymentUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        width: '100%',
-                        boxSizing: 'border-box',
-                        padding: '15px 22px',
-                        borderRadius: 14,
-                        background: `linear-gradient(135deg, ${ACCENT}, #C2410C)`,
-                        color: 'white',
-                        fontSize: 15,
-                        fontWeight: 800,
-                        textDecoration: 'none',
-                        marginBottom: 18,
-                        boxShadow: `0 8px 24px ${ACCENT}55`,
-                      }}>
-                      <ExternalLink size={17} />
-                      Ouvrir {method?.shortName || 'la page'} pour payer
-                    </a>
+                    <div style={{ width: '100%', marginBottom: 18 }}>
+                      <WaveQRCode url={paymentUrl} />
+                      <a
+                        href={paymentUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                          width: '100%',
+                          boxSizing: 'border-box',
+                          padding: '15px 22px',
+                          borderRadius: 14,
+                          background: `linear-gradient(135deg, ${ACCENT}, #C2410C)`,
+                          color: 'white',
+                          fontSize: 15,
+                          fontWeight: 800,
+                          textDecoration: 'none',
+                          boxShadow: `0 8px 24px ${ACCENT}55`,
+                        }}>
+                        <ExternalLink size={17} />
+                        Ouvrir {method?.shortName || 'la page'} pour payer
+                      </a>
+                    </div>
                   )}
 
                   {/* Progress bar — shrinks as countdown decreases */}
@@ -1387,10 +1512,11 @@ export default function CheckoutPage() {
                     }} />
                   </div>
 
+
                   {canRetry && (
                     <button
                       onClick={handleRetry}
-                      style={{ marginTop: 18, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid #E8E0D5', background: 'white', fontSize: 13, fontWeight: 800, color: '#1A0C00', cursor: 'pointer', transition: 'all 0.2s' }}>
+                      style={{ marginTop: 14, display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', borderRadius: 12, border: '1.5px solid #E8E0D5', background: 'white', fontSize: 13, fontWeight: 800, color: '#1A0C00', cursor: 'pointer', transition: 'all 0.2s' }}>
                       <RefreshCw size={14} />
                       Relancer le paiement
                     </button>

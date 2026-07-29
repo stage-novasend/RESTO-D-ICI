@@ -98,54 +98,46 @@ export default function Login() {
         if (result.requiresTwoFactor && result.tempToken) {
           setTemp(result.tempToken);
           set2FA(true);
-          setSubmit(false);
-          return;
+        } else {
+          setErrors({
+            submit: result.error || 'Identifiants incorrects',
+            verifyEmailCta: result.error?.toLowerCase().includes('vérifi') || false,
+          });
         }
-        setErrors({ submit: result.error || 'Identifiants incorrects' });
         return;
       }
 
       redirectAfterLogin(result.user);
-    } catch (err) {
-      const msg = err.response?.data?.message;
-
-      /* Cas spécial : l'utilisateur n'a pas vérifié son email */
-      if (typeof msg === 'string' && msg.toLowerCase().includes('email non vérifié')) {
-        setErrors({ submit: msg, verifyEmailCta: true });
-      } else {
-        setErrors({ submit: msg || 'Erreur lors de la connexion' });
-      }
+    } catch {
+      setErrors({ submit: 'Impossible de joindre le serveur. Vérifiez votre connexion.' });
     } finally {
       setSubmit(false);
     }
   };
 
   /* ─────────────────────────────────────────────────
-     Vérification du code TOTP (étape 2FA)
+     Soumission du code 2FA (étape secondaire)
+     Valide le code TOTP avec le token temporaire
   ───────────────────────────────────────────────── */
   const handle2FA = async (e) => {
     e.preventDefault();
     if (!twoFactorCode || twoFactorCode.length < 6) {
-      setErrors({ submit: 'Code à 6 chiffres requis' });
+      setErrors({ submit: 'Veuillez saisir un code à 6 chiffres' });
       return;
     }
 
     setSubmit(true);
     try {
       const { authAPI } = await import('../services/api');
-      const res = await authAPI.verify2FALogin(tempToken, twoFactorCode);
+      const res = await authAPI.verify2FALogin(tempToken, twoFactorCode.trim());
+      const { access_token, user } = res.data;
 
-      const userData = res.data?.user;
-      if (!userData) throw new Error('Réponse invalide');
-
-      /* Access token en mémoire (jamais en localStorage) */
-      const token = res.data.accessToken || res.data.access_token || res.data.token;
-      setAccessToken(token);
-      syncUser(userData);
-
-      redirectAfterLogin(userData);
+      setAccessToken(access_token);
+      syncUser(user);
+      redirectAfterLogin(user);
     } catch (err) {
-      setErrors({ submit: err.response?.data?.message || 'Code invalide' });
+      const msg = err.response?.data?.message || 'Code 2FA invalide ou expiré';
+      setErrors({ submit: Array.isArray(msg) ? msg.join(', ') : msg });
     } finally {
       setSubmit(false);
     }
@@ -157,9 +149,9 @@ export default function Login() {
        droite  → image héro (masquée sur mobile)
      ═══════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen min-h-dvh flex" style={{ background: '#FFFFFF' }}>
+    <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF' }}>
 
-      {/* ── Colonne gauche : formulaire ── */}
+      {/* ── Colonne de droite (visuellement) : formulaire ── */}
       <div className="flex-1 flex flex-col justify-center px-5 py-10 sm:px-10 lg:px-16 xl:px-24">
         <div className="w-full max-w-sm mx-auto">
 
@@ -416,12 +408,13 @@ export default function Login() {
         </div>
       </div>
 
-      {/* ── Colonne droite : image héro — masquée sur mobile et tablette ── */}
+      {/* ── Colonne de gauche (visuellement) : image héro — masquée sur mobile et tablette ── */}
       <div className="hidden lg:block relative w-[44%] shrink-0">
         <img
           src="/burger-hero.jpg"
+          onError={e => { e.target.src = 'https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=95&w=1920&auto=format&fit=crop'; }}
           alt="Plat savoureux Restodici"
-          className="absolute inset-0 w-full h-full object-cover object-center"
+          className="absolute inset-0 w-full h-full object-cover object-center contrast-[1.02] brightness-[1.02]"
           loading="eager"
         />
         {/* Dégradé sombre en bas pour rendre le texte lisible */}

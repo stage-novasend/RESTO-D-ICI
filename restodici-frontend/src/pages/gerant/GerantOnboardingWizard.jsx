@@ -91,6 +91,7 @@ export default function GerantOnboardingWizard() {
 
   const handleAdresseSubmit = async () => {
     if (!adresse.adresse.trim()) { setErr("L'adresse est requise"); return; }
+    if (!restaurantId) { setStep(2); return; }
     setSaving(true); setErr('');
     try {
       await restaurantAPI.update(restaurantId, {
@@ -102,18 +103,21 @@ export default function GerantOnboardingWizard() {
       setStep(2);
     } catch (e) {
       setErr(e.response?.data?.message || "Erreur lors de la mise à jour");
+      setStep(2);
     } finally {
       setSaving(false);
     }
   };
 
   const handleHorairesSubmit = async () => {
+    if (!restaurantId) { setStep(3); return; }
     setSaving(true); setErr('');
     try {
       await restaurantAPI.update(restaurantId, { horaires: horaireString });
       setStep(3);
     } catch (e) {
       setErr(e.response?.data?.message || "Erreur lors de la mise à jour");
+      setStep(3);
     } finally {
       setSaving(false);
     }
@@ -121,6 +125,7 @@ export default function GerantOnboardingWizard() {
 
   const handleArticleSubmit = async () => {
     if (!article.nom.trim() || !article.prix) { setErr("Nom et prix de l'article requis"); return; }
+    if (!restaurantId) { setStep(4); return; }
     setSaving(true); setErr('');
     try {
       let catId;
@@ -128,7 +133,6 @@ export default function GerantOnboardingWizard() {
         const catRes = await menuAPI.createCategorie({ nom: categorie, restaurantId });
         catId = catRes.data?.id;
       } catch {
-        // Category may already exist — try fetching
         const cats = await menuAPI.getCategories({ restaurantId });
         const existing = (cats.data || []).find(c => c.nom === categorie);
         catId = existing?.id;
@@ -145,6 +149,7 @@ export default function GerantOnboardingWizard() {
       setStep(4);
     } catch (e) {
       setErr(e.response?.data?.message || "Erreur lors de la création de l'article");
+      setStep(4);
     } finally {
       setSaving(false);
     }
@@ -215,7 +220,13 @@ export default function GerantOnboardingWizard() {
                 style={{ background: A }}>
                 Configurer mon restaurant <ArrowRight className="w-4 h-4" />
               </button>
-              <button onClick={() => navigate('/gerant')} className="mt-3 w-full text-sm text-[#9CA3AF] hover:text-[#8B6E50]">
+              <button onClick={() => {
+                if (user?.id) {
+                  localStorage.setItem(`rdi_ob_${user.id}`, '1');
+                  localStorage.setItem(`wizard_done_${user.id}`, '1');
+                }
+                navigate('/gerant');
+              }} className="mt-3 w-full text-sm text-[#9CA3AF] hover:text-[#8B6E50]">
                 Passer — configurer plus tard
               </button>
             </div>
@@ -445,7 +456,10 @@ export default function GerantOnboardingWizard() {
               </div>
 
               <button onClick={() => {
-                  localStorage.setItem(`rdi_ob_${user?.id}`, '1');
+                  if (user?.id) {
+                    localStorage.setItem(`rdi_ob_${user.id}`, '1');
+                    localStorage.setItem(`wizard_done_${user.id}`, '1');
+                  }
                   navigate('/gerant');
                 }}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"

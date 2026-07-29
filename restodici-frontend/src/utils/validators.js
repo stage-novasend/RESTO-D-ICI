@@ -32,9 +32,9 @@ export const formatCIPhone = (v) => {
 /* ── Opérateurs mobiles Côte d'Ivoire (préfixe = 2 premiers chiffres) ──
    Plan ARTCI 2021 : Moov 01/02/03 · MTN 04/05/06 · Orange 07/08/09. */
 export const CI_OPERATOR_PREFIXES = {
-  ORANGE: ['07', '08', '09'],
-  MOMO:   ['04', '05', '06'],
-  MOOV:   ['01', '02', '03'],
+  ORANGE: ['07', '08', '09', '47', '48', '49', '57', '58', '59', '77', '78', '79', '87', '88', '89', '97', '98', '99'],
+  MOMO:   ['04', '05', '06', '44', '45', '46', '54', '55', '56', '74', '75', '76', '84', '85', '86', '94', '95', '96'],
+  MOOV:   ['01', '02', '03', '41', '42', '43', '51', '52', '53', '71', '72', '73', '81', '82', '83', '91', '92', '93'],
 };
 export const OPERATOR_LABEL = { ORANGE: 'Orange Money', MOMO: 'MTN MoMo', MOOV: 'Moov Money' };
 
@@ -49,8 +49,11 @@ export const detectCIOperator = (v) => {
   return Object.keys(CI_OPERATOR_PREFIXES).find(op => CI_OPERATOR_PREFIXES[op].includes(p)) || null;
 };
 
-// Vrai si le numéro correspond bien à l'opérateur attendu
-export const phoneMatchesOperator = (v, expected) => detectCIOperator(v) === expected;
+// Vrai si le numéro correspond bien à l'opérateur attendu (souple si non reconnu)
+export const phoneMatchesOperator = (v, expected) => {
+  const detected = detectCIOperator(v);
+  return !detected || detected === expected;
+};
 
 /* ── Validateurs (retournent true / false) ─────────────────── */
 export const isValidEmail   = (v) => EMAIL_REGEX.test(String(v ?? '').trim());

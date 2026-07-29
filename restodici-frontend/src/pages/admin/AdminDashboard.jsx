@@ -440,7 +440,7 @@ function OverviewTab() {
             </div>
           </div>
           <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+            <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
                 <tr style={{ background: '#FFF8F0' }}>
                   {['ID', 'Action', 'Utilisateur', 'Date'].map(h => (
@@ -470,7 +470,7 @@ function OverviewTab() {
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
           </div>
         </div>
       </div>
@@ -660,7 +660,7 @@ function UsersTab() {
 
       <div style={{ ...card, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #D1D9E6' }}>
                 {['Nom', 'Email', 'Rôle', 'Restaurant', 'Statut', 'Créé le', 'Action'].map(h => (
@@ -711,7 +711,7 @@ function UsersTab() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
       {/* Pagination */}
@@ -875,7 +875,7 @@ function RestaurantsTab() {
       </div>
       <div style={{ ...card, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #D1D9E6' }}>
                 {['Nom', 'Adresse', 'Téléphone', 'Membres', 'Note', 'Statut', 'Action'].map(h => (
@@ -932,7 +932,7 @@ function RestaurantsTab() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       </div>
       <p style={{ fontSize: 11, color: '#94A3B8', marginTop: 8 }}>{restaurants.length} restaurant{restaurants.length !== 1 ? 's' : ''}</p>
@@ -1131,7 +1131,7 @@ function AuditTab() {
       {/* Table */}
       <div style={{ ...card, overflow: 'hidden' }}>
         <div style={{ overflowX: 'auto' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#FFF8F0', borderBottom: '2px solid #E8EDF5' }}>
                 {['Date', 'Heure', 'Utilisateur', 'Action', 'Restaurant', 'Payload', ''].map(h => (
@@ -1193,7 +1193,7 @@ function AuditTab() {
                 ].filter(Boolean);
               })}
             </tbody>
-          </table>
+          </table></div>
         </div>
         <div style={{ padding: '10px 16px', borderTop: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 11, color: '#94A3B8', margin: 0 }}>{logs.length} entrée{logs.length !== 1 ? 's' : ''} · Journal immuable · Cliquer une ligne pour afficher le payload</p>
@@ -2414,7 +2414,7 @@ function MetriquesTab() {
         {backups.length === 0 ? (
           <p style={{ padding: '20px 20px', color: '#94A3B8', fontSize: 13 }}>Aucun backup disponible.</p>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #E2E8F0' }}>
                 {['Fichier', 'Taille', 'Date'].map(h => (
@@ -2431,7 +2431,7 @@ function MetriquesTab() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -2539,7 +2539,7 @@ function FournisseursTab() {
             <p style={{ margin: 0 }}>Aucun fournisseur pour l'instant</p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #E2E8F0' }}>
                 {['Fournisseur', 'Contact', 'Téléphone', 'Email', 'Délai (j)', 'Statut', 'Actions'].map(h => (
@@ -2579,7 +2579,7 @@ function FournisseursTab() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 
@@ -2688,7 +2688,7 @@ function CommissionsTab() {
           <p style={{ fontSize:14, fontWeight:700, color:'#0F172A', margin:0 }}>Commissions par restaurant</p>
           <span style={{ fontSize:11, color:'#94A3B8', marginLeft:'auto' }}>Taux modifiable — s'applique aux prochaines commandes</span>
         </div>
-        <table style={{ width:'100%', borderCollapse:'collapse' }}>
+        <div className="overflow-x-auto w-full"><table style={{ width:'100%', borderCollapse:'collapse' }}>
           <thead>
             <tr style={{ background:'#EEF2FF', borderBottom:'1px solid #D1D9E6' }}>
               {['Restaurant','Commandes','Total perçu','Taux (%)','Action'].map(h => (
@@ -2742,7 +2742,7 @@ function CommissionsTab() {
               </td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
 
       <p style={{ fontSize:11, color:'#94A3B8', textAlign:'center', margin:0 }}>
@@ -3080,7 +3080,7 @@ function LivraisonsExtTab() {
             <p style={{ margin: '6px 0 0', fontSize: 12 }}>Ajoutez Yango, Gozem, Kooli ou un service custom.</p>
           </div>
         ) : (
-          <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+          <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
               <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #E2E8F0' }}>
                 {['Fournisseur', 'Type', 'URL API', 'Frais défaut', 'Statut', 'Actions'].map(h => (
@@ -3125,7 +3125,7 @@ function LivraisonsExtTab() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         )}
       </div>
 

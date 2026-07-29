@@ -176,7 +176,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                 {collaborateurs.length === 0 ? (
                   <div className="py-8 text-center text-[13px]" style={{ color: '#8B6E50' }}>Aucun collaborateur enregistré</div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead style={{ background: '#F8FAFC' }}>
                       <tr>{['N°','Collaborateur','Email','Budget','Dépensé','Solde','Taux'].map(h => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: ['Budget','Dépensé','Solde','Taux'].includes(h) ? 'right' : h === 'N°' ? 'center' : 'left', fontWeight: 700, color: '#374151', borderBottom: '1px solid rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>{h}</th>
@@ -198,7 +198,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                         );
                       })}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </div>
             </div>
@@ -212,7 +212,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                 {factures.length === 0 ? (
                   <div className="py-8 text-center text-[13px]" style={{ color: '#8B6E50' }}>Aucune facture émise</div>
                 ) : (
-                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                  <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                     <thead style={{ background: '#F8FAFC' }}>
                       <tr>{['N°','Référence','Période','Montant HT','TVA 18%','TTC','Statut'].map(h => (
                         <th key={h} style={{ padding: '10px 12px', textAlign: ['Montant HT','TVA 18%','TTC'].includes(h) ? 'right' : h === 'N°' ? 'center' : 'left', fontWeight: 700, color: '#374151', borderBottom: '1px solid rgba(0,0,0,0.08)', whiteSpace: 'nowrap' }}>{h}</th>
@@ -242,7 +242,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                         );
                       })}
                     </tbody>
-                  </table>
+                  </table></div>
                 )}
               </div>
             </div>
@@ -253,7 +253,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                 <p className="text-white font-bold text-[12px] uppercase tracking-wider">3. Récapitulatif fiscal (SYSCOHADA / DGI-CI)</p>
               </div>
               <div className="rounded-b-xl overflow-hidden border border-t-0" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+                <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
                   <thead style={{ background: '#F8FAFC' }}>
                     <tr>{['Désignation','Base HT','Taux TVA','Montant TVA','Total TTC'].map(h => (
                       <th key={h} style={{ padding: '10px 12px', textAlign: h === 'Désignation' ? 'left' : 'right', fontWeight: 700, color: '#374151', borderBottom: '1px solid rgba(0,0,0,0.08)' }}>{h}</th>
@@ -275,7 +275,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                       <td style={{ padding: '9px 12px', textAlign: 'right', fontWeight: 700, color: '#EA580C' }}>{fcfa(totalTTC)}</td>
                     </tr>
                   </tbody>
-                </table>
+                </table></div>
               </div>
             </div>
 

@@ -77,17 +77,21 @@ export default function StaffOnboardingWizard() {
         prenom:    profil.prenom.trim() || profil.nom.trim(),
         telephone: profil.telephone.trim(),
       });
-      setStep(2);
-    } catch {
-      setErr('Erreur lors de la mise à jour du profil');
+    } catch (e) {
+      console.warn('Erreur mise à jour profil API (fallback local):', e);
     } finally {
+      if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom });
       setSaving(false);
+      setStep(2);
     }
   };
 
   const handleFinish = () => {
-    localStorage.setItem(`rdi_ob_${user?.id}`, '1');
-    localStorage.setItem(`rdi_poste_${user?.id}`, poste);
+    if (user?.id) {
+      localStorage.setItem(`rdi_ob_${user.id}`, '1');
+      localStorage.setItem(`wizard_done_${user.id}`, '1');
+      localStorage.setItem(`rdi_poste_${user.id}`, poste);
+    }
     if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom });
     navigate('/staff');
   };

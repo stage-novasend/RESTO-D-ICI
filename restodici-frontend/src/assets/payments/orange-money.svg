@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 40" width="120" height="40">
-  <!-- Orange brand background pill -->
-  <rect width="120" height="40" rx="8" fill="#FF6600"/>
-  <!-- Orange circle logo -->
-  <circle cx="20" cy="20" r="13" fill="#FFFFFF"/>
-  <circle cx="20" cy="20" r="9" fill="#FF6600"/>
-  <!-- "Orange" text -->
-  <text x="38" y="15" font-family="Arial, sans-serif" font-size="10" font-weight="700" fill="#FFFFFF" letter-spacing="0.3">Orange</text>
-  <!-- "Money" text -->
-  <text x="38" y="28" font-family="Arial, sans-serif" font-size="11" font-weight="900" fill="#FFFFFF" letter-spacing="0.5">Money</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 56" width="160" height="56">
+  <rect width="160" height="56" rx="12" fill="#000000"/>
+  <!-- Orange Square -->
+  <rect x="12" y="12" width="32" height="32" rx="6" fill="#FF6600"/>
+  <rect x="22" y="22" width="12" height="12" rx="2" fill="#FFFFFF"/>
+  
+  <!-- "Orange" Text -->
+  <text x="52" y="26" font-family="'Inter', Arial, sans-serif" font-size="13" font-weight="700" fill="#FF6600" letter-spacing="0.5">Orange</text>
+  <!-- "Money" Text -->
+  <text x="52" y="42" font-family="'Inter', Arial, sans-serif" font-size="15" font-weight="900" fill="#FFFFFF" letter-spacing="0.5">Money</text>
 </svg>

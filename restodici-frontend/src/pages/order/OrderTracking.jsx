@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle, Clock, MapPin, Package,
   ChevronRight, Truck, UtensilsCrossed, XCircle, AlertTriangle,
-  Star, ThumbsUp, ThumbsDown, Send,
+  Star, ThumbsUp, ThumbsDown, Send, Check
 } from 'lucide-react';
 import {
   commandesService,
@@ -31,12 +31,12 @@ const MODE_LABELS = {
 };
 
 const STEPS = [
-  { key: 'RECUE',        label: 'Commande reçue',   icon: CheckCircle, color: '#8B6E50' },
-  { key: 'CONFIRMEE',    label: 'Confirmée',         icon: CheckCircle, color: '#EA580C' },
-  { key: 'EN_PREP',      label: 'En préparation',    icon: Clock,       color: '#EA580C' },
-  { key: 'PRETE',        label: 'Prête',             icon: Package,     color: '#2ECC71' },
-  { key: 'EN_LIVRAISON', label: 'En livraison',      icon: Truck,       color: '#0066CC' },
-  { key: 'LIVREE',       label: 'Livrée',            icon: MapPin,      color: '#2ECC71' },
+  { key: 'RECUE',        label: 'Commande reçue',   icon: CheckCircle,  color: '#8B6E50', activeColor: 'text-orange-500' },
+  { key: 'CONFIRMEE',    label: 'Confirmée',         icon: CheckCircle,  color: '#EA580C', activeColor: 'text-orange-500' },
+  { key: 'EN_PREP',      label: 'En préparation',    icon: Clock,        color: '#EA580C', activeColor: 'text-orange-500' },
+  { key: 'PRETE',        label: 'Prête',             icon: Package,      color: '#2ECC71', activeColor: 'text-emerald-500' },
+  { key: 'EN_LIVRAISON', label: 'En livraison',      icon: Truck,        color: '#0066CC', activeColor: 'text-blue-500' },
+  { key: 'LIVREE',       label: 'Livrée',            icon: MapPin,       color: '#2ECC71', activeColor: 'text-emerald-500' },
 ];
 const STATUS_ORDER = STEPS.map((s) => s.key);
 
@@ -45,7 +45,7 @@ const RATING_LABELS = ['', 'Très mauvais', 'Mauvais', 'Correct', 'Bon', 'Excell
 function StarRating({ value, onChange, readonly = false }) {
   const [hovered, setHovered] = useState(0);
   return (
-    <div className="flex gap-1.5 items-center">
+    <div className="flex gap-2 items-center justify-center py-2">
       {[1, 2, 3, 4, 5].map((star) => {
         const active = star <= (hovered || value);
         return (
@@ -56,10 +56,10 @@ function StarRating({ value, onChange, readonly = false }) {
             onClick={() => !readonly && onChange?.(star)}
             onMouseEnter={() => !readonly && setHovered(star)}
             onMouseLeave={() => !readonly && setHovered(0)}
-            className={`transition-all ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'}`}
+            className={`transition-all duration-300 ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-125'}`}
           >
             <Star
-              className={`w-7 h-7 transition-all ${active ? 'fill-amber-400 text-amber-400' : 'text-[#D9CFC6]'}`}
+              className={`w-9 h-9 transition-colors duration-300 ${active ? 'fill-amber-400 text-amber-400 drop-shadow-[0_2px_8px_rgba(251,191,36,0.4)]' : 'text-gray-200 fill-transparent hover:text-gray-300'}`}
             />
           </button>
         );
@@ -137,7 +137,7 @@ export default function OrderTrackingPage() {
         if (payload?.id === id) {
           setJustUpdated(true);
           void fetchOrder();
-          setTimeout(() => setJustUpdated(false), 2000);
+          setTimeout(() => setJustUpdated(false), 3000);
         }
       });
       socket.on('commande.paiement', (payload) => {
@@ -206,20 +206,25 @@ export default function OrderTrackingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#FFF4ED] flex items-center justify-center">
-        <div className="w-10 h-10 border-[3px] border-[#EA580C] border-t-transparent rounded-full animate-spin" />
+      <div className="min-h-screen bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin shadow-lg" />
+          <p className="text-orange-900/60 font-medium animate-pulse">Chargement du suivi...</p>
+        </div>
       </div>
     );
   }
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-[#FFF4ED] flex flex-col items-center justify-center p-6">
-        <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center border border-[rgba(89,67,42,0.10)] shadow">
-          <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-4" />
-          <p className="font-bold text-[#1A0C00] mb-2">Commande introuvable</p>
-          <p className="text-sm text-[#8B6E50] mb-6">{error || 'Aucune commande trouvée.'}</p>
-          <button onClick={() => navigate('/menu')} className="w-full bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold py-3 px-6 rounded-xl transition">
+      <div className="min-h-screen bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] flex flex-col items-center justify-center p-6">
+        <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 max-w-sm w-full text-center border border-white shadow-xl">
+          <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertTriangle className="w-10 h-10 text-red-500" />
+          </div>
+          <p className="text-xl font-bold text-gray-900 mb-2">Commande introuvable</p>
+          <p className="text-sm text-gray-500 mb-8">{error || 'Aucune commande trouvée.'}</p>
+          <button onClick={() => navigate('/menu')} className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 px-6 rounded-2xl transition-all shadow-md hover:shadow-lg active:scale-95">
             Retour au menu
           </button>
         </div>
@@ -232,325 +237,443 @@ export default function OrderTrackingPage() {
   const currentIdx = STATUS_ORDER.indexOf(order.statut);
   const ModeIcon = MODE_ICONS[order.modeLivraison] || Package;
   const isPaid = order.estPaye;
+  const CurrentStepIcon = STEPS.find((s) => s.key === order.statut)?.icon || Package;
 
   return (
-    <div className="min-h-screen bg-[#FFF4ED]">
+    <div className="min-h-screen bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] font-sans pb-12 selection:bg-orange-200 selection:text-orange-900">
       {/* Payment failure banner */}
       {paymentFailed && !isPaid && (
-        <div className="sticky top-0 z-40 bg-red-600 text-white px-4 py-3 flex items-center gap-3">
+        <div className="bg-red-500 text-white px-4 py-3 flex items-center gap-3 shadow-md animate-in slide-in-from-top-4">
           <XCircle className="w-5 h-5 shrink-0" />
-          <p className="text-sm font-semibold flex-1">Paiement refusé ou expiré. Retournez au panier pour réessayer.</p>
-          <button onClick={() => setPaymentFailed(false)} className="shrink-0 opacity-70 hover:opacity-100">
+          <p className="text-sm font-medium flex-1">Paiement refusé ou expiré. Veuillez réessayer depuis votre panier.</p>
+          <button onClick={() => setPaymentFailed(false)} className="shrink-0 p-1 hover:bg-white/20 rounded-lg transition-colors">
             ✕
           </button>
         </div>
       )}
 
       {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b border-[rgba(89,67,42,0.10)] shadow-sm">
-        <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-white text-[#8B6E50] transition">
+      <header className="sticky top-0 z-40 bg-white/70 backdrop-blur-xl border-b border-orange-900/5 shadow-sm transition-all duration-300">
+        <div className="max-w-3xl mx-auto px-4 h-16 flex items-center gap-4">
+          <button onClick={() => navigate(-1)} className="w-10 h-10 flex items-center justify-center rounded-2xl bg-white hover:bg-orange-50 text-gray-700 hover:text-orange-600 transition-all shadow-sm border border-orange-900/5">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1">
-            <h1 className="font-bold text-[#1A0C00] text-sm leading-tight">Suivi de commande</h1>
-            <p className="text-xs text-[#8B6E50]">#{order.numero}</p>
+            <h1 className="font-bold text-gray-900 text-lg leading-tight">Suivi de commande</h1>
+            <p className="text-xs text-gray-500 font-medium">#{order.numero}</p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             {isPaid && (
-              <span className="text-xs bg-emerald-50 text-emerald-700 font-medium px-2.5 py-1 rounded-full">Payée</span>
+              <div className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-xl border border-emerald-100 shadow-sm">
+                <CheckCircle className="w-3.5 h-3.5" />
+                <span className="text-xs font-bold uppercase tracking-wider">Payée</span>
+              </div>
             )}
             {justUpdated && (
-              <span className="text-xs text-emerald-600 font-medium animate-pulse">Mis à jour</span>
+              <span className="text-xs font-bold text-orange-500 bg-orange-50 px-3 py-1.5 rounded-xl border border-orange-100 shadow-sm animate-pulse">
+                Mise à jour !
+              </span>
             )}
           </div>
         </div>
       </header>
 
-      <main className="max-w-2xl mx-auto px-4 py-6 space-y-4">
-
+      <main className="max-w-3xl mx-auto px-4 py-6 space-y-6">
         {/* Status hero */}
         {isCancelled ? (
-          <div className="space-y-3">
-            <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-center gap-4">
-              <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
-                <XCircle className="w-6 h-6 text-red-500" />
+          <div className="space-y-4 animate-in fade-in zoom-in duration-500">
+            <div className="bg-gradient-to-r from-red-500 to-rose-600 rounded-[2rem] p-6 sm:p-8 text-white shadow-xl shadow-red-500/20 relative overflow-hidden flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6">
+              <div className="absolute top-0 right-0 -mt-8 -mr-8 w-48 h-48 bg-white opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+              <div className="absolute bottom-0 right-1/4 -mb-10 w-32 h-32 bg-rose-400 opacity-20 rounded-full blur-xl pointer-events-none"></div>
+              
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center shrink-0 backdrop-blur-md border border-white/30 shadow-inner">
+                <XCircle className="w-8 h-8 text-white" />
               </div>
-              <div>
-                <p className="font-bold text-red-700">Commande annulée</p>
-                <p className="text-xs text-red-500 mt-0.5">Cette commande a été annulée.</p>
+              <div className="z-10 relative">
+                <p className="text-xs sm:text-sm uppercase tracking-widest font-bold opacity-80 mb-1">Statut</p>
+                <p className="font-extrabold text-2xl sm:text-3xl tracking-tight">Commande annulée</p>
+                <p className="text-sm opacity-90 mt-1.5 text-white/90">Cette commande a été interrompue.</p>
               </div>
             </div>
+            
             {(refundInfo || order.estPaye) && (
-              <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
-                <p className="text-sm font-bold text-blue-700 mb-1">💳 Remboursement en cours</p>
-                <p className="text-xs text-blue-600">
-                  {refundInfo?.amount || order.montantTotal
-                    ? `${formatFCFA(refundInfo?.amount || order.montantTotal)} `
-                    : ''}
-                  seront recrédités sur votre{' '}
-                  {(refundInfo?.mode || order.modePaiement || '').replace('_', ' ').toLowerCase() || 'moyen de paiement'}{' '}
-                  sous <span className="font-bold">24 à 48h</span>.
-                </p>
+              <div className="bg-white rounded-3xl border border-blue-100 p-6 shadow-lg shadow-blue-500/5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+                <div className="flex gap-4 relative z-10">
+                  <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center shrink-0 border border-blue-100">
+                    <span className="text-2xl">💳</span>
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-gray-900 mb-1">Remboursement en cours</h3>
+                    <p className="text-sm text-gray-600 leading-relaxed">
+                      {refundInfo?.amount || order.montantTotal
+                        ? <span className="font-bold text-gray-900">{formatFCFA(refundInfo?.amount || order.montantTotal)} </span>
+                        : ''}
+                      seront recrédités sur votre{' '}
+                      <span className="font-medium text-gray-800">{(refundInfo?.mode || order.modePaiement || '').replace('_', ' ').toLowerCase() || 'moyen de paiement'}</span>{' '}
+                      sous <span className="font-bold text-blue-600">24 à 48h</span>.
+                    </p>
+                  </div>
+                </div>
               </div>
             )}
           </div>
         ) : isDelivered ? (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex items-center gap-4">
-            <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
-              <CheckCircle className="w-6 h-6 text-emerald-500" />
+          <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-[2rem] p-6 sm:p-8 text-white shadow-xl shadow-emerald-500/20 relative overflow-hidden flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6 animate-in fade-in zoom-in duration-500">
+            <div className="absolute top-0 right-0 -mt-10 -mr-10 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+            
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/20 rounded-[1.5rem] flex items-center justify-center shrink-0 backdrop-blur-md border border-white/30 shadow-inner relative">
+              <div className="absolute inset-0 bg-white/10 rounded-[1.5rem] animate-ping opacity-20"></div>
+              <CheckCircle className="w-8 h-8 sm:w-10 sm:h-10 text-white drop-shadow-md" />
             </div>
-            <div>
-              <p className="font-bold text-emerald-700">Commande livrée !</p>
-              <p className="text-xs text-emerald-600 mt-0.5">Nous espérons que tout vous a satisfait.</p>
+            <div className="z-10 relative">
+              <p className="text-xs sm:text-sm uppercase tracking-widest font-bold opacity-80 mb-1">Statut</p>
+              <p className="font-extrabold text-2xl sm:text-3xl tracking-tight drop-shadow-sm">Commande livrée !</p>
+              <p className="text-sm sm:text-base opacity-90 mt-1.5 text-emerald-50">Nous espérons que vous vous régalerez.</p>
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-2xl border border-[rgba(89,67,42,0.10)] p-5 flex items-center gap-4">
-            <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0">
-              <div className="w-5 h-5 border-2 border-[#EA580C] border-t-transparent rounded-full animate-spin" />
-            </div>
-            <div>
-              <p className="font-bold text-[#1A0C00]">
-                {STEPS.find((s) => s.key === order.statut)?.label || order.statut}
-              </p>
-              <p className="text-xs text-[#8B6E50] animate-pulse mt-0.5">Mise à jour en temps réel…</p>
-            </div>
+          <div className="bg-gradient-to-br from-orange-500 via-orange-500 to-amber-500 rounded-[2rem] p-6 sm:p-8 text-white shadow-2xl shadow-orange-500/20 relative overflow-hidden flex flex-col sm:flex-row sm:items-center gap-5 sm:gap-6 animate-in fade-in duration-500 transition-all">
+             <div className="absolute top-0 right-0 -mt-12 -mr-12 w-64 h-64 bg-white opacity-10 rounded-full blur-3xl pointer-events-none"></div>
+             <div className="absolute bottom-0 right-1/4 -mb-10 w-40 h-40 bg-amber-400 opacity-20 rounded-full blur-2xl pointer-events-none"></div>
+             
+             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white/20 rounded-[1.5rem] flex items-center justify-center shrink-0 backdrop-blur-md border border-white/30 shadow-inner relative group">
+               <div className="absolute inset-0 border-[3px] border-white/20 border-t-white rounded-[1.5rem] animate-spin opacity-80" />
+               <CurrentStepIcon className="w-7 h-7 sm:w-9 sm:h-9 text-white drop-shadow-md animate-pulse" />
+             </div>
+             
+             <div className="z-10 relative">
+               <p className="text-xs sm:text-sm uppercase tracking-widest font-bold text-orange-100 mb-1">Statut en direct</p>
+               <p className="font-extrabold text-2xl sm:text-3xl tracking-tight drop-shadow-sm">
+                 {STEPS.find((s) => s.key === order.statut)?.label || order.statut}
+               </p>
+               <p className="text-sm sm:text-base text-orange-50 mt-1.5 flex items-center gap-2">
+                 <span className="w-1.5 h-1.5 rounded-full bg-white animate-ping"></span>
+                 Mise à jour en temps réel…
+               </p>
+             </div>
           </div>
         )}
 
         {/* Cancel button — before preparation */}
         {['RECUE', 'CONFIRMEE'].includes(order.statut) && (
-          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-red-700">Annuler la commande</p>
-              <p className="text-xs text-red-500 mt-0.5">Possible avant le début de la préparation</p>
+          <div className="bg-white rounded-3xl border border-red-100 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-red-50 rounded-xl flex items-center justify-center shrink-0 text-red-500">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-gray-900">Vous avez changé d'avis ?</p>
+                <p className="text-xs text-gray-500 mt-1">Annulation possible avant le début de la préparation.</p>
+              </div>
             </div>
             <button
               onClick={handleCancel}
               disabled={cancelling}
-              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition disabled:opacity-60 shrink-0"
+              className="px-5 py-2.5 rounded-xl bg-red-50 hover:bg-red-500 text-red-600 hover:text-white text-sm font-bold transition-all disabled:opacity-50 disabled:hover:bg-red-50 disabled:hover:text-red-600 shrink-0 w-full sm:w-auto text-center"
             >
-              {cancelling ? 'Annulation…' : 'Annuler'}
+              {cancelling ? 'Annulation…' : 'Annuler la commande'}
             </button>
           </div>
         )}
 
-        {/* Progress steps */}
-        {!isCancelled && (
-          <div className="bg-white rounded-2xl border border-[rgba(89,67,42,0.10)] p-5">
-            <h2 className="font-bold text-[#1A0C00] text-sm mb-5">Progression</h2>
-            <div className="space-y-0">
-              {STEPS.map((step, idx) => {
-                const Icon = step.icon;
-                const done = idx < currentIdx;
-                const current = idx === currentIdx;
-                const isLast = idx === STEPS.length - 1;
-                return (
-                  <div key={step.key} className="flex gap-3">
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all ${done || current ? 'text-white shadow-sm' : 'bg-[#F5F0E8] text-[#8B6E50]/40'}`}
-                        style={done || current ? { background: step.color, transform: current ? 'scale(1.1)' : 'scale(1)' } : {}}
-                      >
-                        <Icon className="w-4 h-4" />
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          {/* Progress steps */}
+          {!isCancelled && (
+            <div className="md:col-span-5 lg:col-span-4 bg-white rounded-[2rem] border border-orange-900/5 p-6 sm:p-8 shadow-sm flex flex-col">
+              <h2 className="font-extrabold text-gray-900 text-lg mb-8 flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-500">
+                  <Clock className="w-4 h-4" />
+                </div>
+                Progression
+              </h2>
+              
+              <div className="relative flex-1 pl-4">
+                {/* Continuous progress line background */}
+                <div className="absolute left-[1.95rem] top-6 bottom-8 w-0.5 bg-gray-100 rounded-full"></div>
+                
+                {/* Active progress line fill */}
+                <div 
+                  className="absolute left-[1.95rem] top-6 w-0.5 bg-gradient-to-b from-orange-400 to-amber-500 rounded-full transition-all duration-700 ease-out"
+                  style={{ 
+                    height: currentIdx <= 0 ? '0%' : 
+                           currentIdx >= STEPS.length - 1 ? 'calc(100% - 2rem)' : 
+                           `${(currentIdx / (STEPS.length - 1)) * 100}%` 
+                  }}
+                ></div>
+
+                <div className="space-y-8 relative">
+                  {STEPS.map((step, idx) => {
+                    const Icon = step.icon;
+                    const isDone = idx < currentIdx;
+                    const isCurrent = idx === currentIdx;
+                    
+                    return (
+                      <div key={step.key} className="flex gap-5 relative group">
+                        <div className="flex flex-col items-center relative z-10">
+                          <div
+                            className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 transition-all duration-500 
+                              ${isDone ? 'bg-orange-500 text-white shadow-md shadow-orange-500/20' : 
+                                isCurrent ? 'bg-white text-orange-500 shadow-xl shadow-orange-500/20 border-2 border-orange-500 scale-110' : 
+                                'bg-gray-50 text-gray-400 border border-gray-100'}`}
+                          >
+                            <Icon className={`w-5 h-5 ${isCurrent ? 'animate-pulse' : ''}`} />
+                            {isDone && (
+                              <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-white flex items-center justify-center">
+                                <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col justify-center pt-1">
+                          <p className={`text-base font-bold transition-colors duration-300
+                            ${isCurrent ? 'text-orange-600' : isDone ? 'text-gray-900' : 'text-gray-400'}`}>
+                            {step.label}
+                          </p>
+                          {isCurrent && (
+                            <p className="text-xs font-medium text-orange-500 mt-1 animate-pulse">En cours...</p>
+                          )}
+                        </div>
                       </div>
-                      {!isLast && (
-                        <div className="w-0.5 my-1 flex-1 min-h-[20px] transition-all" style={{ background: done ? '#EA580C' : '#E5E0D8' }} />
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Right Column: Order Details & Actions */}
+          <div className={`${isCancelled ? 'md:col-span-12' : 'md:col-span-7 lg:col-span-8'} space-y-6`}>
+            
+            {/* Order details / Receipt style */}
+            <div className="bg-white rounded-[2rem] border border-orange-900/5 shadow-sm overflow-hidden relative">
+              <div className="p-6 sm:p-8">
+                <div className="flex items-center justify-between mb-6">
+                  <h2 className="font-extrabold text-gray-900 text-lg flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center text-gray-600">
+                      <CheckCircle className="w-4 h-4" />
+                    </div>
+                    Détails
+                  </h2>
+                  <div className="flex items-center gap-2 bg-gray-50 px-3 py-1.5 rounded-full border border-gray-100">
+                    <ModeIcon className="w-4 h-4 text-gray-500" />
+                    <span className="text-xs font-bold text-gray-700 uppercase tracking-wider">{MODE_LABELS[order.modeLivraison] || order.modeLivraison}</span>
+                  </div>
+                </div>
+
+                {order.restaurant && (
+                  <div className="mb-6 p-4 rounded-2xl bg-gray-50 border border-gray-100 flex items-center gap-4 transition-colors hover:bg-orange-50/50">
+                    <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center border border-gray-100 shrink-0">
+                      <UtensilsCrossed className="w-6 h-6 text-orange-500" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{order.restaurant.nom}</p>
+                      {order.restaurant.telephone && <p className="text-xs text-gray-500 font-medium mt-0.5">{order.restaurant.telephone}</p>}
+                    </div>
+                  </div>
+                )}
+
+                {/* Items List */}
+                <div className="space-y-4 mb-6">
+                  {order.lignes?.map((ligne, idx) => (
+                    <div key={idx} className="flex justify-between items-start group">
+                      <div className="flex gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-gray-50 border border-gray-100 flex items-center justify-center shrink-0 mt-0.5">
+                          <span className="text-xs font-bold text-gray-700">{ligne.quantite}x</span>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 group-hover:text-orange-600 transition-colors">{ligne.article?.nom || 'Article'}</p>
+                          {ligne.instructions && (
+                            <p className="text-xs text-gray-500 mt-1 italic flex items-start gap-1">
+                              <span className="text-orange-400 mt-0.5">↳</span> {ligne.instructions}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900 whitespace-nowrap ml-4">
+                        {formatFCFA(Number(ligne.prixUnitaire ?? 0) * (ligne.quantite ?? 1))}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Dashed separator */}
+                <div className="w-full border-t-2 border-dashed border-gray-200 my-6 relative">
+                  <div className="absolute -left-8 -top-3 w-6 h-6 bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] rounded-full border-r border-gray-100 shadow-inner"></div>
+                  <div className="absolute -right-8 -top-3 w-6 h-6 bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] rounded-full border-l border-gray-100 shadow-inner"></div>
+                </div>
+
+                {/* Totals */}
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-gray-500 font-medium">Sous-total</span>
+                    <span className="font-bold text-gray-900">{formatFCFA(order.montantTotal)}</span>
+                  </div>
+                  {/* Assuming delivery fee is included in total or add logic here if exists */}
+                  <div className="flex justify-between items-end pt-3">
+                    <div>
+                      <span className="block text-lg font-extrabold text-gray-900">Total payé</span>
+                      {isPaid && (
+                        <span className="inline-block mt-1 text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 uppercase tracking-wider">
+                          {order.modePaiement?.replace(/_/g, ' ')}
+                        </span>
                       )}
                     </div>
-                    <div className={`pb-5 ${isLast ? 'pb-0' : ''} flex items-start pt-1.5`}>
-                      <div>
-                        <p className={`text-sm font-semibold ${current ? 'text-[#EA580C]' : done ? 'text-[#1A0C00]' : 'text-[#8B6E50]/40'}`}>
-                          {step.label}
-                        </p>
-                        {current && (
-                          <p className="text-xs text-[#8B6E50] mt-0.5 animate-pulse">En cours…</p>
+                    <span className="text-2xl font-black text-orange-600">{formatFCFA(order.montantTotal)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* ── Delivery confirmation + rating (LIVREE only) ── */}
+            {isDelivered && (
+              <div className="bg-white rounded-[2rem] border border-orange-900/5 p-6 sm:p-8 shadow-sm space-y-6 animate-in slide-in-from-bottom-8 duration-500">
+                {/* Reception confirmation */}
+                {receptionStatus === null && (
+                  <div className="text-center space-y-5">
+                    <div className="w-16 h-16 bg-orange-50 rounded-full flex items-center justify-center mx-auto">
+                      <Package className="w-8 h-8 text-orange-500" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-gray-900 text-lg">Avez-vous bien reçu votre commande ?</h3>
+                      <p className="text-sm text-gray-500 mt-2 max-w-sm mx-auto">Votre retour est précieux pour aider le restaurant à maintenir sa qualité.</p>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-3 pt-2">
+                      <button
+                        onClick={() => handleReception('OUI')}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gray-900 hover:bg-black px-6 py-4 font-bold text-white transition-all shadow-md hover:shadow-lg hover:-translate-y-0.5"
+                      >
+                        <ThumbsUp className="w-5 h-5" /> Oui, bien reçue
+                      </button>
+                      <button
+                        onClick={() => handleReception('NON')}
+                        className="flex-1 flex items-center justify-center gap-2 rounded-2xl border-2 border-gray-100 bg-white hover:bg-gray-50 px-6 py-4 font-bold text-gray-700 transition-all hover:border-gray-200"
+                      >
+                        <ThumbsDown className="w-5 h-5" /> Non, j'ai un souci
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Problem report */}
+                {receptionStatus === 'NON' && (
+                  <div className="rounded-2xl bg-red-50 border border-red-100 p-6 text-center animate-in zoom-in duration-300">
+                    <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <AlertTriangle className="w-6 h-6 text-red-500" />
+                    </div>
+                    <h3 className="text-base font-bold text-red-700">Désolé pour ce désagrément</h3>
+                    <p className="text-sm text-red-600 mt-2">
+                      Veuillez contacter le restaurant immédiatement au <br/>
+                      <span className="font-black text-lg block mt-1">{order.restaurant?.telephone || 'numéro indiqué'}</span>
+                    </p>
+                    <button onClick={() => setReceptionStatus(null)} className="mt-4 px-4 py-2 bg-white rounded-xl text-sm font-bold text-red-600 shadow-sm hover:shadow transition-shadow">
+                      Retour
+                    </button>
+                  </div>
+                )}
+
+                {/* Star rating form */}
+                {receptionStatus === 'OUI' && !ratingDone && showRating && (
+                  <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+                    <div className="text-center">
+                      <h3 className="font-extrabold text-gray-900 text-lg">Notez votre expérience</h3>
+                      <p className="text-sm text-gray-500 mt-1">Qu'avez-vous pensé de votre commande ?</p>
+                    </div>
+                    
+                    <div className="bg-gray-50 rounded-2xl p-6 border border-gray-100">
+                      <StarRating value={rating} onChange={setRating} />
+                      <div className="h-6 text-center mt-2">
+                        {rating > 0 && (
+                          <span className="text-sm font-black text-amber-500 bg-amber-50 px-3 py-1 rounded-full border border-amber-100 uppercase tracking-wide">
+                            {RATING_LABELS[rating]}
+                          </span>
                         )}
                       </div>
                     </div>
+
+                    <div className="space-y-4">
+                      <textarea
+                        value={ratingComment}
+                        onChange={(e) => setRatingComment(e.target.value)}
+                        placeholder="Dites-nous en plus (optionnel)..."
+                        rows={3}
+                        className="w-full rounded-2xl border border-gray-200 bg-white px-5 py-4 text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:border-orange-500 focus:ring-4 focus:ring-orange-500/10 resize-none transition-all shadow-sm"
+                      />
+                      
+                      {ratingError && (
+                        <div className="bg-red-50 text-red-600 text-sm font-semibold px-4 py-3 rounded-xl flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4" /> {ratingError}
+                        </div>
+                      )}
+                      
+                      <div className="flex gap-3">
+                        <button onClick={() => setShowRating(false)} className="px-6 py-3.5 rounded-2xl font-bold text-gray-500 hover:bg-gray-100 transition-colors">
+                          Annuler
+                        </button>
+                        <button
+                          onClick={handleSubmitRating}
+                          disabled={ratingSubmitting || rating === 0}
+                          className="flex-1 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 px-4 py-3.5 font-bold text-white text-sm transition-all shadow-lg shadow-orange-500/20 hover:shadow-orange-500/30 disabled:opacity-50 disabled:shadow-none hover:-translate-y-0.5 active:translate-y-0"
+                        >
+                          {ratingSubmitting ? (
+                            <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <><Send className="w-4 h-4" /> Publier mon avis</>
+                          )}
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+                )}
 
-        {/* Order details */}
-        <div className="bg-white rounded-2xl border border-[rgba(89,67,42,0.10)] overflow-hidden">
-          <div className="px-5 py-4 border-b border-[rgba(89,67,42,0.08)] flex items-center gap-2">
-            <ModeIcon className="w-4 h-4 text-[#8B6E50]" />
-            <span className="text-sm font-semibold text-[#1A0C00]">{MODE_LABELS[order.modeLivraison] || order.modeLivraison}</span>
-            {order.adresseLivraison && <span className="text-xs text-[#8B6E50] ml-1">· {order.adresseLivraison}</span>}
-            <span className="ml-auto text-xs text-[#8B6E50]">{safeFormatDate(order.createdAt)}</span>
-          </div>
+                {/* Rating confirmed state */}
+                {receptionStatus === 'OUI' && ratingDone && (
+                  <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 p-8 text-center animate-in zoom-in duration-500">
+                    <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm border border-emerald-100">
+                      <CheckCircle className="w-8 h-8 text-emerald-500" />
+                    </div>
+                    <h3 className="font-extrabold text-gray-900 text-lg mb-1">Merci pour votre retour !</h3>
+                    <p className="text-sm text-gray-600 mb-6">Votre avis aide la communauté Resto D'Ici.</p>
+                    
+                    <div className="inline-flex flex-col items-center bg-white px-6 py-3 rounded-2xl shadow-sm border border-gray-100">
+                      <div className="flex items-center gap-1.5 pointer-events-none mb-1">
+                        <StarRating value={existingAvis ? existingAvis.note : rating} readonly />
+                      </div>
+                      <span className="text-xs font-bold text-amber-500 uppercase tracking-widest">
+                        {RATING_LABELS[existingAvis ? existingAvis.note : rating]}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
-          <div className="px-5 py-4 space-y-2.5">
-            {order.lignes?.map((ligne, idx) => (
-              <div key={idx} className="flex justify-between text-sm">
-                <span className="text-[#1A0C00]">
-                  <span className="font-semibold">{ligne.quantite}×</span> {ligne.article?.nom || 'Article'}
-                  {ligne.instructions && <span className="block text-xs text-[#8B6E50] italic ml-4">· {ligne.instructions}</span>}
-                </span>
-                <span className="text-[#8B6E50] font-medium ml-4 shrink-0">
-                  {formatFCFA(Number(ligne.prixUnitaire ?? 0) * (ligne.quantite ?? 1))}
-                </span>
+                {/* Show rate button if confirmed but not yet rated */}
+                {receptionStatus === 'OUI' && !ratingDone && !showRating && (
+                  <button
+                    onClick={() => setShowRating(true)}
+                    className="w-full flex items-center justify-center gap-2 rounded-2xl border-2 border-orange-100 bg-orange-50 hover:bg-orange-100 px-6 py-4 font-bold text-orange-600 text-sm transition-all hover:border-orange-200"
+                  >
+                    <Star className="w-5 h-5 text-orange-500 fill-orange-500" /> Laisser un avis au restaurant
+                  </button>
+                )}
               </div>
-            ))}
+            )}
           </div>
-
-          <div className="mx-5 border-t border-[rgba(89,67,42,0.08)]" />
-          <div className="px-5 py-4 flex justify-between items-center">
-            <div>
-              <span className="font-bold text-[#1A0C00]">Total</span>
-              {isPaid && <span className="ml-2 text-xs text-emerald-600 font-medium">· {order.modePaiement?.replace(/_/g, ' ')}</span>}
-            </div>
-            <span className="text-lg font-extrabold text-[#EA580C]">{formatFCFA(order.montantTotal)} FCFA</span>
-          </div>
-
-          {order.restaurant && (
-            <div className="mx-5 mb-4 rounded-xl bg-white px-4 py-3 flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-[#EA580C]/10 flex items-center justify-center">
-                <UtensilsCrossed className="w-4 h-4 text-[#EA580C]" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-semibold text-[#1A0C00]">{order.restaurant.nom}</p>
-                {order.restaurant.telephone && <p className="text-xs text-[#8B6E50]">{order.restaurant.telephone}</p>}
-              </div>
-              {order.restaurant.noteMoyenne > 0 && (
-                <div className="flex items-center gap-1 shrink-0">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                  <span className="text-xs font-semibold text-[#1A0C00]">{Number(order.restaurant.noteMoyenne).toFixed(1)}</span>
-                  <span className="text-xs text-[#8B6E50]">({order.restaurant.nbAvis})</span>
-                </div>
-              )}
-            </div>
-          )}
         </div>
 
-        {/* ── Delivery confirmation + rating (LIVREE only) ── */}
-        {isDelivered && (
-          <div className="bg-white rounded-2xl border border-[rgba(89,67,42,0.10)] p-5 space-y-4">
-
-            {/* Reception confirmation */}
-            {receptionStatus === null && (
-              <>
-                <div>
-                  <p className="font-bold text-[#1A0C00] text-sm">Avez-vous bien reçu votre commande ?</p>
-                  <p className="text-xs text-[#8B6E50] mt-0.5">Votre retour aide le restaurant à s'améliorer.</p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleReception('OUI')}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-3 font-bold text-white text-sm transition"
-                  >
-                    <ThumbsUp className="w-4 h-4" /> Oui, reçue
-                  </button>
-                  <button
-                    onClick={() => handleReception('NON')}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl border border-[rgba(89,67,42,0.12)] bg-white hover:bg-white px-4 py-3 font-bold text-red-500 text-sm transition"
-                  >
-                    <ThumbsDown className="w-4 h-4" /> Non, problème
-                  </button>
-                </div>
-              </>
-            )}
-
-            {/* Problem report */}
-            {receptionStatus === 'NON' && (
-              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3">
-                <p className="text-sm font-semibold text-red-700">Problème signalé</p>
-                <p className="text-xs text-red-500 mt-1">Contactez le restaurant au <span className="font-semibold">{order.restaurant?.telephone || '…'}</span> ou notre support.</p>
-                <button onClick={() => setReceptionStatus(null)} className="mt-2 text-xs text-red-600 underline">← Revenir</button>
-              </div>
-            )}
-
-            {/* Star rating modal */}
-            {receptionStatus === 'OUI' && !ratingDone && showRating && (
-              <div className="space-y-4">
-                <div className="h-px bg-[rgba(89,67,42,0.08)]" />
-                <div>
-                  <p className="font-bold text-[#1A0C00] text-sm">Notez votre expérience</p>
-                  <p className="text-xs text-[#8B6E50] mt-0.5">Votre avis aide les autres clients et le restaurant.</p>
-                </div>
-                <div className="space-y-3">
-                  <StarRating value={rating} onChange={setRating} />
-                  {rating > 0 && (
-                    <p className="text-sm font-semibold text-[#EA580C]">{RATING_LABELS[rating]}</p>
-                  )}
-                  <textarea
-                    value={ratingComment}
-                    onChange={(e) => setRatingComment(e.target.value)}
-                    placeholder="Commentaire optionnel…"
-                    rows={2}
-                    className="w-full rounded-xl border border-[rgba(89,67,42,0.12)] bg-white px-4 py-2.5 text-sm text-[#1A0C00] placeholder-[#8B6E50]/50 outline-none focus:ring-1 focus:ring-[#EA580C]/30 resize-none"
-                  />
-                  {ratingError && <p className="text-xs text-red-600">{ratingError}</p>}
-                  <button
-                    onClick={handleSubmitRating}
-                    disabled={ratingSubmitting || rating === 0}
-                    className="w-full flex items-center justify-center gap-2 rounded-xl bg-[#EA580C] hover:bg-[#C2410C] px-4 py-3 font-bold text-white text-sm transition disabled:opacity-60"
-                  >
-                    {ratingSubmitting ? (
-                      <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <><Send className="w-4 h-4" /> Envoyer mon avis</>
-                    )}
-                  </button>
-                  <button onClick={() => setShowRating(false)} className="w-full text-xs text-[#8B6E50] py-1 hover:text-[#1A0C00] transition">
-                    Plus tard
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Rating confirmed */}
-            {receptionStatus === 'OUI' && ratingDone && (
-              <div className="rounded-xl bg-[#FFF0DF] border border-[rgba(224,78,26,0.1)] px-4 py-4 text-center">
-                <div className="w-10 h-10 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-2">
-                  <CheckCircle className="w-5 h-5 text-emerald-600" />
-                </div>
-                <p className="font-semibold text-[#1A0C00] text-sm">Merci pour votre avis !</p>
-                {existingAvis && (
-                  <div className="mt-2 flex items-center justify-center gap-1">
-                    <StarRating value={existingAvis.note} readonly />
-                    <span className="text-xs text-[#8B6E50] ml-1">{RATING_LABELS[existingAvis.note]}</span>
-                  </div>
-                )}
-                {!existingAvis && rating > 0 && (
-                  <div className="mt-2 flex items-center justify-center gap-1">
-                    <StarRating value={rating} readonly />
-                    <span className="text-xs text-[#8B6E50] ml-1">{RATING_LABELS[rating]}</span>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Show rate button if confirmed but not yet rated */}
-            {receptionStatus === 'OUI' && !ratingDone && !showRating && (
-              <button
-                onClick={() => setShowRating(true)}
-                className="w-full flex items-center justify-center gap-2 rounded-xl border border-[rgba(89,67,42,0.12)] bg-white hover:bg-white px-4 py-3 font-semibold text-[#1A0C00] text-sm transition"
-              >
-                <Star className="w-4 h-4 text-amber-400" /> Noter le restaurant
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Actions */}
-        <div className="flex gap-3 pb-6">
+        {/* Global Bottom Actions */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-4">
           <button
             onClick={() => navigate('/menu')}
-            className="flex-1 bg-white border border-[rgba(89,67,42,0.12)] text-[#1A0C00] font-semibold py-3.5 rounded-xl hover:bg-white transition text-sm"
+            className="flex-1 bg-white border-2 border-gray-100 text-gray-700 font-bold py-4 rounded-2xl hover:bg-gray-50 hover:border-gray-200 transition-all shadow-sm"
           >
-            Commander autre chose
+            Nouvelle commande
           </button>
           <button
             onClick={() => navigate(getClientOrdersPath())}
-            className="flex-1 bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold py-3.5 rounded-xl shadow-sm transition text-sm flex items-center justify-center gap-1.5"
+            className="flex-1 bg-gray-900 hover:bg-black text-white font-bold py-4 rounded-2xl shadow-md transition-all flex items-center justify-center gap-2 hover:-translate-y-0.5"
           >
-            Mes commandes <ChevronRight className="w-4 h-4" />
+            Toutes mes commandes <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </main>
