@@ -4,6 +4,11 @@ export class Payments1784639374032 implements MigrationInterface {
     name = 'Payments1784639374032'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
+        // Idempotence : évite un crash au démarrage si le schéma a déjà été créé
+        // via `synchronize` (sandbox/staging) avant la première exécution des migrations.
+        if (await queryRunner.hasTable('payments')) {
+            return;
+        }
         await queryRunner.query(`CREATE TYPE "public"."payments_status_enum" AS ENUM('PENDING', 'SUCCESS', 'FAILED', 'CANCELLED', 'EXPIRED')`);
         await queryRunner.query(`CREATE TABLE "payments" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "reference" character varying NOT NULL, "provider" character varying NOT NULL, "amount" numeric(10,2) NOT NULL, "currency" character varying NOT NULL DEFAULT 'XOF', "status" "public"."payments_status_enum" NOT NULL DEFAULT 'PENDING', "externalTransactionId" character varying, "paymentUrl" text, "customerName" character varying, "customerPhone" character varying, "customerEmail" character varying, "metadata" jsonb, "commandeId" uuid, "userId" uuid, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "PK_197ab7af18c93fbb0c9b28b4a59" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE INDEX "IDX_866ddee0e17d9385b4e3b86851" ON "payments" ("reference") `);

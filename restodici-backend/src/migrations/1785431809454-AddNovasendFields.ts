@@ -3,6 +3,11 @@ import { MigrationInterface, QueryRunner } from "typeorm";
 export class AddNovasendFields1785431809454 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<void> {
+        // Idempotence : évite un crash au démarrage si la colonne a déjà été créée
+        // via `synchronize` (sandbox/staging) avant la première exécution des migrations.
+        if (await queryRunner.hasColumn('restaurants', 'modeReceptionPaiement')) {
+            return;
+        }
         await queryRunner.query(`ALTER TABLE "restaurants" ADD "modeReceptionPaiement" character varying NOT NULL DEFAULT 'NOVASEND'`);
         await queryRunner.query(`ALTER TABLE "restaurants" ADD "modeReceptionDetails" text`);
     }

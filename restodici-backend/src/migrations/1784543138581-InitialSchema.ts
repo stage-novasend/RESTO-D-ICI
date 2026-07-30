@@ -4,6 +4,14 @@ export class InitialSchema1784543138581 implements MigrationInterface {
     name = 'InitialSchema1784543138581'
 
     public async up(queryRunner: QueryRunner): Promise<void> {
+        // Idempotence : sur les environnements où le schéma a déjà été créé par
+        // `synchronize` (sandbox/staging), la table "users" existe déjà avant même
+        // la première exécution des migrations. Rejouer ce CREATE TABLE ferait planter
+        // le démarrage de l'app (502 permanent) — on saute donc la migration si le schéma
+        // de base est déjà en place.
+        if (await queryRunner.hasTable('users')) {
+            return;
+        }
         await queryRunner.query(`CREATE TABLE "newsletter_subscribers" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "email" character varying(255) NOT NULL, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), CONSTRAINT "UQ_0dc48416511f011f7de7b2a8f83" UNIQUE ("email"), CONSTRAINT "PK_38f9333e9961b2fdb589128d19b" PRIMARY KEY ("id"))`);
         await queryRunner.query(`CREATE TYPE "public"."users_role_enum" AS ENUM('ADMIN', 'GERANT', 'STAFF', 'CLIENT', 'B2B')`);
         await queryRunner.query(`CREATE TABLE "users" ("id" uuid NOT NULL DEFAULT uuid_generate_v4(), "nom" character varying, "prenom" character varying, "email" character varying NOT NULL, "password" character varying NOT NULL, "telephone" character varying, "role" "public"."users_role_enum" NOT NULL DEFAULT 'CLIENT', "actif" boolean NOT NULL DEFAULT true, "emailVerified" boolean NOT NULL DEFAULT false, "emailVerificationToken" character varying, "emailVerificationExpires" TIMESTAMP, "twoFactorEnabled" boolean NOT NULL DEFAULT false, "twoFactorSecret" character varying, "twoFactorBackupCodes" json, "twoFactorTempToken" character varying, "twoFactorTempTokenExpires" TIMESTAMP, "adressesSauvegardees" json, "refreshToken" character varying, "refreshTokenId" character varying, "refreshTokenExpires" TIMESTAMP, "createdAt" TIMESTAMP NOT NULL DEFAULT now(), "updatedAt" TIMESTAMP NOT NULL DEFAULT now(), "restaurantId" uuid, CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "UQ_19be66e444b5c2b9af008d321a0" UNIQUE ("refreshTokenId"), CONSTRAINT "PK_a3ffb1c0c8416b9fc6f907b7433" PRIMARY KEY ("id"))`);

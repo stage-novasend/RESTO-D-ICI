@@ -4,6 +4,11 @@ export class PaymentMethods1784600000000 implements MigrationInterface {
   name = 'PaymentMethods1784600000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    // Idempotence : évite un crash au démarrage si le schéma a déjà été créé
+    // via `synchronize` (sandbox/staging) avant la première exécution des migrations.
+    if (await queryRunner.hasTable('payment_methods')) {
+      return;
+    }
     await queryRunner.query(
       `CREATE TABLE "payment_methods" (
         "id" uuid NOT NULL DEFAULT uuid_generate_v4(),
