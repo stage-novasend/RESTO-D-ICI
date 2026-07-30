@@ -49,8 +49,23 @@ export class MenuController {
   @Get('restaurants')
   @UseInterceptors(CacheInterceptor)
   @CacheTTL(5 * 60 * 1000)
-  getRestaurants() {
-    return this.menuService.getRestaurants();
+  getRestaurants(@Query('withArticles') withArticles?: string) {
+    return this.menuService.getRestaurants(withArticles === 'true');
+  }
+
+  // GET /menu/plats-populaires — Suggestions de recherche de l'accueil.
+  // Plats disponibles les plus commandés. Cache 10 min : un classement de
+  // popularité n'a pas besoin d'être à la seconde, et la requête agrège.
+  @Public()
+  @Get('plats-populaires')
+  @UseInterceptors(CacheInterceptor)
+  @CacheTTL(10 * 60 * 1000)
+  getPlatsPopulaires(@Query('limit') limit?: string) {
+    const parsed = Number.parseInt(limit ?? '', 10);
+    const safeLimit = Number.isFinite(parsed)
+      ? Math.min(Math.max(parsed, 1), 20)
+      : 6;
+    return this.menuService.getPlatsPopulaires(safeLimit);
   }
 
   // GET /menu/promos-actives?restaurantId=xxx&userId=yyy — Offres limitées actives (public)

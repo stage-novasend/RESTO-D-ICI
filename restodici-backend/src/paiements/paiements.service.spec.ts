@@ -291,6 +291,39 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
     );
   });
 
+  // Régression : le statut de succès documenté par NovaSend est `processed`.
+  // Il manquait dans SUCCESS_STATUSES → aucune commande n'était validée.
+  it('marque la commande comme payée sur le statut NovaSend `processed`', async () => {
+    const commande = makeCommande();
+    mockCommandeRepo.findOne.mockResolvedValue(commande);
+    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockNovaSend.getProvider.mockReturnValue('ORANGE');
+
+    await service.handleNovasendWebhook({
+      reference: 'cmd-uuid-1',
+      status: 'processed',
+    });
+
+    expect(mockCommandeRepo.update).toHaveBeenCalledWith(
+      'cmd-uuid-1',
+      expect.objectContaining({ estPaye: true }),
+    );
+  });
+
+  // `processing` = approbation USSD envoyée, le client n'a pas encore validé.
+  it('ne valide PAS la commande sur le statut intermédiaire `processing`', async () => {
+    const commande = makeCommande();
+    mockCommandeRepo.findOne.mockResolvedValue(commande);
+
+    await service.handleNovasendWebhook({
+      reference: 'cmd-uuid-1',
+      status: 'processing',
+    });
+
+    expect(mockCommandeRepo.update).not.toHaveBeenCalled();
+    expect(mockCommandesGateway.emitToKitchen).not.toHaveBeenCalled();
+  });
+
   it('résout le mode de paiement depuis la trace Payment (chemin unifié, sans _provider ni map RAM)', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);

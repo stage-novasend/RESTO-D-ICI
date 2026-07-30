@@ -14,6 +14,7 @@ import { createCommandesSocket } from '../services/commandes.service';
 import { authAPI } from '../services/api';
 import SecurityPanel from '../components/security/SecurityPanel';
 import OnboardingTour from '../components/onboarding/OnboardingTour';
+import { BrandMark } from '../components/shared/BrandLogo';
 
 /* ── Tokens sidebar blanc/orange (couleurs : theme/colors.js) ── */
 import {
@@ -358,7 +359,7 @@ export default function StaffLayout() {
   const currentPage = NAV.find(n => n.exact ? location.pathname === n.to : location.pathname.startsWith(n.to + '/') || location.pathname === n.to)?.label || '';
 
   return (
-    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', background: '#FFF4ED', fontFamily: "'Manrope', Inter, system-ui, sans-serif" }}>
+    <div style={{ display: 'flex', height: '100dvh', overflow: 'hidden', background: '#FFFFFF', fontFamily: "'Manrope', Inter, system-ui, sans-serif" }}>
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }
@@ -375,9 +376,7 @@ export default function StaffLayout() {
         {/* Brand / Logo */}
         <div style={{ padding: '22px 20px 18px', borderBottom: `1px solid ${SIDEBAR_BOR}` }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
-            <div style={{ width: 42, height: 42, borderRadius: 14, background: OG_G, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, boxShadow: `0 4px 16px ${OG}44` }}>
-              <UtensilsCrossed size={20} color="#fff" strokeWidth={2.3} />
-            </div>
+            <BrandMark size={42} shadow style={{ flexShrink: 0 }} />
             <div>
               <p style={{ margin: 0, fontSize: 15, fontWeight: 900, color: SIDE_TEXT_HI, letterSpacing: '-0.02em', lineHeight: 1.2 }}>
                 {user?.restaurant?.nom || "Resto d'ici"}

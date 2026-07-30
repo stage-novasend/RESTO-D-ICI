@@ -20,6 +20,7 @@ import {
   ORANGE, ORANGE_DARK, BORDER_WARM as ORANGE_GLOW, ORANGE_CREAM_2 as ORANGE_LIGHT,
   GREEN_DARK as GREEN, GREEN_MINT as GREEN_BG, GREEN_BORDER,
   RED_STRONG as DANGER, BLUE_BRIGHT as BLUE,
+  PAGE,
 } from '../../theme/colors';
 const SHADOW           = '0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)';
 const SHADOW_MD        = '0 4px 16px rgba(0,0,0,0.10)';
@@ -272,7 +273,7 @@ export default function ServeurPage() {
   const ruptureItems   = articles.filter(a => a.disponible === false);
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: '"Inter", system-ui, -apple-system, sans-serif', position: 'relative' }}>
+    <div style={{ minHeight: '100vh', background: PAGE, fontFamily: '"Inter", system-ui, -apple-system, sans-serif', position: 'relative' }}>
       <style>{`
         @keyframes slide-in  { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
         @keyframes fade-in   { from { opacity:0; } to { opacity:1; } }

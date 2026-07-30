@@ -33,6 +33,7 @@ import {
 import { InitierPaiementDto } from './dto/initier-paiement.dto';
 import { checkPhoneForOperator, isValidCiMobile, normalizeCiNumber } from './phone.util';
 import { PaymentGatewayRegistry } from './gateways/payment-gateway.registry';
+import { isSuccessStatus, isFailedStatus } from './novasend-status.util';
 
 // Correspondance provider NovaSend → enum ModePaiementCommande
 // CARTE sera actif dès que NovaSend supportera les paiements carte
@@ -259,10 +260,11 @@ export class PaiementsService implements OnModuleInit {
     integrationName: string,
     payload: any,
     signature?: string,
+    rawBody?: string,
   ): Promise<void> {
     const gateway = await this.gatewayRegistry.getGateway(integrationName);
 
-    if (!gateway.verifyWebhook(payload, signature)) {
+    if (!gateway.verifyWebhook(payload, signature, rawBody)) {
       this.logger.warn(`Webhook ${integrationName}: signature invalide`);
       return;
     }
@@ -285,13 +287,11 @@ export class PaiementsService implements OnModuleInit {
   async handleNovasendWebhook(body: any): Promise<void> {
     const { reference, status, metadata, _provider } = body;
 
-    // NovaSend renvoie les statuts en minuscules (ex. "successful", "failed").
-    const s = String(status ?? '').toLowerCase();
-    const FAILED_STATUSES  = ['failed', 'expired', 'cancelled', 'declined'];
-    const SUCCESS_STATUSES = ['successful', 'success', 'succeeded', 'completed'];
+    // Statuts NovaSend (minuscules) : processing | processed | failed | expired.
+    // Le succès est `processed` — cf. novasend-status.util.ts.
 
     // Paiement échoué / expiré → notifier via WebSocket sans valider la commande
-    if (FAILED_STATUSES.includes(s)) {
+    if (isFailedStatus(status)) {
       const commandeId = metadata?.commandeId || reference;
       if (!commandeId) return;
       const commande = await this.commandeRepo.findOne({
@@ -312,7 +312,9 @@ export class PaiementsService implements OnModuleInit {
       return;
     }
 
-    if (!SUCCESS_STATUSES.includes(s)) return;
+    // `processing` (approbation USSD en attente) et tout statut inconnu :
+    // on ne valide rien, on attend le webhook terminal.
+    if (!isSuccessStatus(status)) return;
 
     // ── Facture mensuelle B2B ──────────────────────────────────────────────
     const isB2BFacture = String(reference).startsWith('b2b-facture-');

@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { LigneCommande } from '../commandes/entities/ligne-commande.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { MenuService } from './menu.service';
@@ -31,6 +32,11 @@ const mockCategorieRepo = {
 const mockRestaurantRepo = {
   find: jest.fn(),
   findOne: jest.fn(),
+  createQueryBuilder: jest.fn(),
+};
+
+const mockLigneRepo = {
+  createQueryBuilder: jest.fn(),
 };
 
 const mockCacheManager = {
@@ -94,6 +100,7 @@ function buildModule() {
       { provide: getRepositoryToken(Article), useValue: mockArticleRepo },
       { provide: getRepositoryToken(Categorie), useValue: mockCategorieRepo },
       { provide: getRepositoryToken(Restaurant), useValue: mockRestaurantRepo },
+      { provide: getRepositoryToken(LigneCommande), useValue: mockLigneRepo },
       { provide: CACHE_MANAGER, useValue: mockCacheManager },
     ],
   }).compile();
@@ -548,5 +555,66 @@ describe('MenuService bootstrap', () => {
     const module = await buildModule();
     const svc = module.get<MenuService>(MenuService);
     expect(svc).toBeDefined();
+  });
+});
+
+// ─── getPlatsPopulaires() ─────────────────────────────────────────────────────
+
+describe('MenuService getPlatsPopulaires()', () => {
+  let service: MenuService;
+
+  /** Query builder factice : chaque méthode chaînée se retourne elle-même. */
+  const makeQb = (rows: unknown[]) => {
+    const qb: Record<string, jest.Mock> = {};
+    for (const m of [
+      'innerJoin', 'leftJoinAndSelect', 'select', 'addSelect', 'where',
+      'andWhere', 'groupBy', 'orderBy', 'limit',
+    ]) {
+      qb[m] = jest.fn(() => qb);
+    }
+    qb.getRawMany = jest.fn().mockResolvedValue(rows);
+    return qb;
+  };
+
+  beforeEach(async () => {
+    jest.clearAllMocks();
+    const module = await buildModule();
+    service = module.get<MenuService>(MenuService);
+  });
+
+  it('renvoie les plats commandés, du plus commandé au moins commandé', async () => {
+    mockLigneRepo.createQueryBuilder.mockReturnValue(
+      makeQb([
+        { cle: 'garba', nom: 'Garba', total: '42' },
+        { cle: 'alloco', nom: 'Alloco', total: '17' },
+      ]),
+    );
+
+    const res = await service.getPlatsPopulaires(2);
+
+    expect(res).toEqual([
+      { nom: 'Garba', totalCommande: 42 },
+      { nom: 'Alloco', totalCommande: 17 },
+    ]);
+    // Aucun complément nécessaire : la limite est atteinte.
+    expect(mockArticleRepo.createQueryBuilder).not.toHaveBeenCalled();
+  });
+
+  it('complète avec des plats disponibles quand trop peu ont été commandés', async () => {
+    mockLigneRepo.createQueryBuilder.mockReturnValue(
+      makeQb([{ cle: 'garba', nom: 'Garba', total: '5' }]),
+    );
+    mockArticleRepo.createQueryBuilder.mockReturnValue(
+      // « Garba » est déjà classé : il ne doit pas apparaître deux fois.
+      makeQb([{ nom: 'Garba' }, { nom: 'Thiakry' }, { nom: 'Bissap' }]),
+    );
+
+    const res = await service.getPlatsPopulaires(3);
+
+    expect(res).toEqual([
+      { nom: 'Garba', totalCommande: 5 },
+      { nom: 'Thiakry', totalCommande: 0 },
+      { nom: 'Bissap', totalCommande: 0 },
+    ]);
   });
 });

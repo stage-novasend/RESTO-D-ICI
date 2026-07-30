@@ -17,7 +17,11 @@ export interface PaymentGatewayResult {
 export interface PaymentGateway {
   readonly name: string;
   initiate(options: InitiatePaymentOptions): Promise<PaymentGatewayResult>;
-  verifyWebhook(payload: any, signature?: string): boolean;
+  /**
+   * @param rawBody corps brut de la requête — requis pour un HMAC fiable.
+   *                Le `payload` parsé n'est qu'un repli dégradé.
+   */
+  verifyWebhook(payload: any, signature?: string, rawBody?: string): boolean;
   handleWebhook(payload: any): Promise<PaymentWebhookResult>;
 }
 

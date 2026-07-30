@@ -22,14 +22,19 @@ import { buildSyscohadaBlob, buildFactureBlob } from '../../utils/syscohada-pdf'
 import {
   BG, SURFACE as CARD, BROWN_COFFEE as NAVY, BROWN_COFFEE_HOVER as NAVY2,
   TEXT, MUTED_WARM as MUTED, FAINT_WARM as FAINT, BORDER_SLATE as BORDER,
-  BLUE as ORANGE, BLUE_LIGHT as ORANGE_L, BLUE_BRIGHT as ORANGE_D,
+  // Ces trois alias importaient les tokens BLEUS : tout ce que le code appelle
+  // « ORANGE » s'affichait donc en bleu. Ils pointent désormais sur l'orange
+  // de la marque, comme le reste de l'application.
+  ORANGE, ORANGE_TINT as ORANGE_L, ORANGE_DARK as ORANGE_D,
   GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, GREEN_FOREST as GREEN_D,
   RED_STRONG as RED, RED_ROSE as RED_L, AMBER, YELLOW_LIGHT as AMBER_L,
 } from '../../theme/colors';
 
-const SH  = '0 1px 4px rgba(139,110,80,0.10),0 1px 2px rgba(0,0,0,0.04)';
-const SH2 = '0 4px 16px rgba(139,110,80,0.12),0 2px 4px rgba(0,0,0,0.06)';
-const SH3 = '0 20px 40px rgba(139,110,80,0.15),0 4px 8px rgba(0,0,0,0.06)';
+// Ombres neutres (slate), alignées sur le dashboard client. La teinte brune
+// précédente donnait un rendu chaleureux, peu adapté à un outil de gestion.
+const SH  = '0 1px 3px rgba(15,23,42,0.06),0 1px 2px rgba(15,23,42,0.04)';
+const SH2 = '0 4px 12px rgba(15,23,42,0.08),0 2px 4px rgba(15,23,42,0.05)';
+const SH3 = '0 12px 28px rgba(15,23,42,0.12),0 4px 8px rgba(15,23,42,0.06)';
 
 // ── PDF helpers ────────────────────────────────────────────────────────────────
 function downloadBlob(blob, name) {
@@ -43,7 +48,7 @@ function downloadBlob(blob, name) {
 // ── Status map ─────────────────────────────────────────────────────────────────
 const STATUS = {
   EN_ATTENTE:     { label: 'En attente',     color: AMBER,    bg: AMBER_L,  dot: '#FBBF24' },
-  RECUE:          { label: 'Reçue',          color: '#2563EB', bg: '#EFF6FF', dot: '#60A5FA' },
+  RECUE:          { label: 'Reçue',          color: '#EA580C', bg: '#FFF7ED', dot: '#FB923C' },
   CONFIRMEE:      { label: 'Confirmée',      color: GREEN,    bg: GREEN_L,  dot: '#F59E0B' },
   EN_PREP:        { label: 'En préparation', color: AMBER,    bg: AMBER_L,  dot: '#FBBF24' },
   EN_PREPARATION: { label: 'En préparation', color: AMBER,    bg: AMBER_L,  dot: '#FBBF24' },
@@ -102,9 +107,9 @@ const nextDelivery = (freq) => {
 
 // Maps event type to { icon, label, color }
 const NOTIF_TYPES = {
-  'commande.creee':       { type: 'new_order',    label: 'Nouvelle commande',         color: '#2563EB', iconBg: '#EFF6FF' },
-  'commande.nouvelle':    { type: 'new_order',    label: 'Nouvelle commande',         color: '#2563EB', iconBg: '#EFF6FF' },
-  'commande.b2b.nouvelle':{ type: 'new_order',    label: 'Commande B2B créée',        color: '#2563EB', iconBg: '#EFF6FF' },
+  'commande.creee':       { type: 'new_order',    label: 'Nouvelle commande',         color: '#EA580C', iconBg: '#FFF7ED' },
+  'commande.nouvelle':    { type: 'new_order',    label: 'Nouvelle commande',         color: '#EA580C', iconBg: '#FFF7ED' },
+  'commande.b2b.nouvelle':{ type: 'new_order',    label: 'Commande B2B créée',        color: '#EA580C', iconBg: '#FFF7ED' },
   'commande.statut':      { type: 'status',       label: 'Statut mis à jour',         color: ORANGE,    iconBg: ORANGE_L  },
   'commande.b2b.statut':  { type: 'status',       label: 'Statut commande B2B',       color: ORANGE,    iconBg: ORANGE_L  },
   'paiement.confirme':    { type: 'payment',      label: 'Paiement confirmé',         color: GREEN,     iconBg: GREEN_L   },
@@ -154,9 +159,10 @@ function CostCenterChart({ data, total }) {
     const labels = Object.keys(data).length > 0 ? Object.keys(data) : ['Aucune commande'];
     const values = Object.keys(data).length > 0 ? Object.values(data) : [1];
     
-    // Corporate colors (Slate & Navy & Blue shades)
-    const bgColors = Object.keys(data).length > 0 
-      ? ['#1E3A8A', '#3B82F6', '#60A5FA', '#93C5FD', '#1E40AF', '#475569']
+    // Dégradé terracotta de la marque, complété de neutres. Aucun bleu :
+    // la teinte doit rester cohérente avec le reste de l'application.
+    const bgColors = Object.keys(data).length > 0
+      ? ['#9A3412', '#C2410C', '#EA580C', '#FB923C', '#FDBA74', '#78716C']
       : ['#E2E8F0'];
 
     chartInstance.current = new Chart(ctx, {
@@ -1473,7 +1479,7 @@ export default function B2BDashboard() {
       <div className="flex-1 flex flex-col overflow-hidden">
 
         {/* Top bar — blanc */}
-        <header className="shrink-0" style={{ background: '#FFF4ED', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
+        <header className="shrink-0" style={{ background: '#FFFFFF', borderBottom: '1px solid rgba(0,0,0,0.07)' }}>
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${ORANGE} 0%, #FFB800 50%, ${ORANGE} 100%)`, pointerEvents: 'none' }} />
           <div className="h-16 px-4 lg:px-6 flex items-center gap-4">
             {/* Hamburger mobile */}
@@ -1961,7 +1967,7 @@ export default function B2BDashboard() {
                       <p className="text-[12px] text-slate-500 font-medium mt-0.5">Mois en cours</p>
                     </div>
                     {Object.keys(centerCounts).length > 0 && (
-                      <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: '#EFF6FF', color: '#2563EB' }}>
+                      <span className="text-[11px] font-bold px-3 py-1.5 rounded-lg" style={{ background: '#FFF7ED', color: '#C2410C' }}>
                         {Object.keys(centerCounts).length} centres
                       </span>
                     )}
@@ -1989,7 +1995,7 @@ export default function B2BDashboard() {
                 <div className="flex items-center gap-2">
                   <Link to="/b2b/order?mode=schedule"
                     className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition hover:opacity-80"
-                    style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+                    style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
                     <CalendarDays className="w-4 h-4" /> Planifier
                   </Link>
                   <Link to="/b2b/order?mode=instant"
@@ -2058,8 +2064,8 @@ export default function B2BDashboard() {
                         else navigate(`/suivi/${o.id}`);
                       }}>
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                        style={{ background: isGroupee ? '#EFF6FF' : ORANGE_L }}>
-                        <ShoppingBag className="w-4.5 h-4.5" style={{ color: isGroupee ? '#3B82F6' : ORANGE }} />
+                        style={{ background: isGroupee ? '#F5F5F4' : ORANGE_L }}>
+                        <ShoppingBag className="w-4.5 h-4.5" style={{ color: isGroupee ? '#78716C' : ORANGE }} />
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-[13px] font-bold truncate" style={{ color: TEXT }}>
@@ -2611,7 +2617,7 @@ export default function B2BDashboard() {
                       GENERATION_FACTURE: 'Génération facture', PAIEMENT_FACTURE: 'Paiement facture',
                     };
                     const COLORS = {
-                      CONNEXION: { bg: '#EFF6FF', color: '#2563EB' },
+                      CONNEXION: { bg: '#F5F5F4', color: '#57534E' },
                       CREATION_COLLABORATEUR: { bg: GREEN_L, color: GREEN },
                       CREATION_COMMANDE_GROUPEE: { bg: ORANGE_L, color: ORANGE },
                       VALIDATION_BUDGET: { bg: AMBER_L, color: AMBER },

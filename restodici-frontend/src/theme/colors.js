@@ -13,8 +13,13 @@ export const ORANGE      = '#EA580C'; // CTA principal
 export const ORANGE_DARK = '#C2410C'; // hover / dégradé foncé
 export const ORANGE_LIGHT = '#FFF4ED'; // fond orange clair (surfaces)
 
-/* ── Fonds & surfaces ── */
-export const BG      = '#FFF4ED'; // fond de page (orange clair)
+/* ── Fonds & surfaces ──
+   PAGE  = fond de page, blanc pur.
+   BG    = remplissage discret (inputs, survols, zébrures de tableaux,
+           vignettes vides). Neutre : sur une page blanche, il doit rester
+           visible sans réintroduire de teinte orangée. */
+export const PAGE    = '#FFFFFF'; // fond de page (blanc)
+export const BG      = '#F1F5F9'; // remplissage discret (slate-100)
 export const SURFACE = '#FFFFFF'; // cartes / panneaux
 export const CARD    = '#FFFFFF';
 
@@ -126,7 +131,7 @@ export const GRADIENT_ORANGE = `linear-gradient(135deg, ${ORANGE}, ${ORANGE_DARK
 /* ── Objet regroupé (import unique pratique) ── */
 export const COLORS = {
   orange: ORANGE, orangeDark: ORANGE_DARK, orangeLight: ORANGE_LIGHT,
-  bg: BG, surface: SURFACE, card: CARD,
+  page: PAGE, bg: BG, surface: SURFACE, card: CARD,
   text: TEXT, textDark: TEXT_DARK, textMuted: TEXT_MUTED, navy: NAVY, navy2: NAVY2,
   border: BORDER, borderSoft: BORDER_SOFT,
   yellow: YELLOW, yellowLight: YELLOW_LIGHT, gold: GOLD,

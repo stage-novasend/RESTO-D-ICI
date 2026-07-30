@@ -30,6 +30,7 @@ import {
   ORANGE, ORANGE_DARK, BORDER_WARM as ORANGE_GLOW, ORANGE_CREAM_2 as ORANGE_LIGHT,
   GREEN_DARK as GREEN, GREEN_BRIGHT as GREEN_LIGHT, GREEN_MINT as GREEN_BG, GREEN_BORDER,
   GREEN_GLOW, RED_STRONG as DANGER, DANGER_GLOW, BLUE_BRIGHT as BLUE, PURPLE, AMBER,
+  PAGE,
 } from '../../theme/colors';
 const SHADOW         = '0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)';
 const SHADOW_MD      = '0 4px 16px rgba(0,0,0,0.10)';
@@ -872,7 +873,7 @@ export default function StaffDashboard() {
   // ── Loading state ──
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: BG }}>
+      <div className="min-h-screen flex items-center justify-center" style={{ background: PAGE }}>
         <div className="text-center">
           <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4" style={{ background: ORANGE }}>
             <UtensilsCrossed className="w-7 h-7 text-white" />
@@ -885,7 +886,7 @@ export default function StaffDashboard() {
   }
 
   return (
-    <div className="min-h-screen" style={{ background: BG }}>
+    <div className="min-h-screen" style={{ background: PAGE }}>
       <style>{`
         @keyframes slideIn {
           from { transform: translateX(100%); opacity: 0; }
@@ -1048,7 +1049,7 @@ export default function StaffDashboard() {
         {/* Top bar */}
         <div
           className="sticky top-0 z-30 flex items-center justify-between px-5 py-3"
-          style={{ background: '#FFF4ED', borderBottom: `1px solid ${BORDER}` }}
+          style={{ background: '#FFFFFF', borderBottom: `1px solid ${BORDER}` }}
         >
           {/* Left */}
           <div className="flex items-center gap-3">

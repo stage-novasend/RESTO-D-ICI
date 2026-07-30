@@ -7,6 +7,7 @@ import { useEffect, useState } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
+import { BrandMark } from '../components/shared/BrandLogo';
 import {
   LayoutDashboard, Package, ClipboardList, AlertTriangle,
   TrendingUp, Settings, LogOut, ChevronRight, UtensilsCrossed, Activity, Menu, X, Tag,
@@ -72,7 +73,7 @@ export default function GerantLayout() {
   };
 
   return (
-    <div className={`flex min-h-screen ${darkMode ? 'bg-[#0C1220]' : 'bg-[#FFF4ED]'}`}>
+    <div className={`flex min-h-screen ${darkMode ? 'bg-[#0C1220]' : 'bg-white'}`}>
       {/* ── Styles dynamiques : corrections mode sombre ── */}
       <style>{`
         .gerant-theme-dark [class*='bg-white'] { background: rgba(139,110,80,0.88) !important; color: #e2e8f0; }
@@ -105,9 +106,7 @@ export default function GerantLayout() {
           {!collapsed ? (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EA580C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
-                </div>
+                <BrandMark size={36} style={{ flexShrink: 0 }} />
                 <div>
                   <p style={{ fontSize: 9, fontWeight: 700, color: '#EA580C', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
                   <p style={{ fontSize: 15, fontWeight: 800, color: '#1F2937', margin: 0, lineHeight: 1.2 }}>Resto d'ici</p>
@@ -122,9 +121,7 @@ export default function GerantLayout() {
             </div>
           ) : (
             <div style={{ display: 'flex', justifyContent: 'center' }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EA580C', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
-              </div>
+              <BrandMark size={36} />
             </div>
           )}
         </div>
@@ -223,9 +220,7 @@ export default function GerantLayout() {
           {/* Réutilise le même contenu que la sidebar bureau */}
           <div style={{ padding: '20px 20px', borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-              <div style={{ width: 36, height: 36, borderRadius: 10, background: '#EA580C', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
-              </div>
+              <BrandMark size={36} style={{ flexShrink: 0 }} />
               <div>
                 <p style={{ fontSize: 9, fontWeight: 700, color: '#EA580C', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
                 <p style={{ fontSize: 15, fontWeight: 800, color: '#1F2937', margin: 0, lineHeight: 1.2 }}>Resto d'ici</p>

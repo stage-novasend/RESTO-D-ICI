@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { menuAPI, newsletterAPI } from "../services/api";
 import FilterSidebar from "../components/menu/FilterSidebar";
+import { BrandMark } from "../components/shared/BrandLogo";
 import LanguageSwitcher from "../components/shared/LanguageSwitcher";
 import { useAuth } from "../hooks/useAuth";
 
@@ -48,14 +49,8 @@ const KENTE = ["#EA580C", "#F59E0B", "#160E08", "#C2410C"];
 const serif = "'Playfair Display', Georgia, serif";
 const sans  = "'Manrope', system-ui, sans-serif";
 
-const QUICK_SEARCH_CHIPS = [
-  { label: "Garba Thon", query: "garba" },
-  { label: "Poulet Braisé", query: "poulet" },
-  { label: "Attiéké Poisson", query: "attiéké" },
-  { label: "Alloco", query: "alloco" },
-  { label: "Jus de Bissap", query: "bissap" },
-  { label: "Formules B2B", query: "b2b" },
-];
+/* Nombre de restaurants mis en avant sur l'accueil (2 rangées de 3 en desktop). */
+const HOME_TOP_COUNT = 6;
 
 const CSS = `
 @keyframes kfpulse    { 0%,100%{opacity:1} 50%{opacity:0.55} }
@@ -144,7 +139,7 @@ function Nav() {
   return (
     <nav style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
-      background: scrolled ? "rgba(255, 253, 249, 0.94)" : "rgba(22, 14, 8, 0.45)",
+      background: scrolled ? "rgba(255, 255, 255, 0.94)" : "rgba(22, 14, 8, 0.45)",
       backdropFilter: "blur(20px)",
       boxShadow: scrolled ? "0 4px 30px rgba(234, 88, 12, 0.08)" : "none",
       transition: "all 0.35s ease",
@@ -155,14 +150,7 @@ function Nav() {
         
         {/* Brand */}
         <a href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 14,
-            background: "linear-gradient(135deg, #EA580C, #F59E0B)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            boxShadow: "0 4px 18px rgba(234,88,12,0.4)"
-          }}>
-            <UtensilsCrossed style={{ width: 22, height: 22, color: "#fff" }} />
-          </div>
+          <BrandMark size={42} shadow />
           <div>
             <span style={{ fontFamily: serif, fontWeight: 900, color: scrolled ? T.dark : "#fff", fontSize: 23, letterSpacing: "-0.02em", display: "block" }}>
               Resto d'ici
@@ -241,7 +229,7 @@ function Nav() {
 }
 
 /* ─── Hero Cinematic & Flottant ─── */
-function CatalogHero({ search, onSearch, resultCount, hasQuery }) {
+function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
   const HERO_IMAGES = [
     "/hero-home.png",
     "/hero-home-2.png",
@@ -384,27 +372,36 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery }) {
             </div>
           </motion.div>
 
-          {/* Quick Search Chips */}
-          <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
-            <span style={{ fontFamily: sans, fontSize: 12, color: "rgba(255,255,255,0.65)", alignSelf: "center", fontWeight: 600 }}>
-              Suggestions :
-            </span>
-            {QUICK_SEARCH_CHIPS.map(chip => (
-              <button
-                key={chip.label}
-                onClick={() => onSearch(chip.query)}
-                style={{
-                  fontFamily: sans, fontSize: 12, fontWeight: 700, color: "#fff",
-                  background: search === chip.query ? T.accent : "rgba(255,255,255,0.16)",
-                  border: "1px solid rgba(255,255,255,0.25)", borderRadius: 100,
-                  padding: "6px 14px", cursor: "pointer", backdropFilter: "blur(10px)",
-                  transition: "all 0.2s"
-                }}
-              >
-                {chip.label}
-              </button>
-            ))}
-          </div>
+          {/* Suggestions : plats disponibles les plus commandés (API). Rien
+              n'est affiché tant que la liste n'est pas chargée — mieux vaut
+              aucune suggestion qu'une suggestion qui ne mène nulle part. */}
+          {suggestions.length > 0 && (
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", flexWrap: "wrap" }}>
+              <span style={{ fontFamily: sans, fontSize: 12, color: "rgba(255,255,255,0.65)", alignSelf: "center", fontWeight: 600 }}>
+                Les plus commandés :
+              </span>
+              {suggestions.map(plat => (
+                <button
+                  key={plat.nom}
+                  onClick={() => onSearch(plat.nom)}
+                  title={
+                    plat.totalCommande > 0
+                      ? `${plat.totalCommande} fois commandé ces 90 derniers jours`
+                      : "Disponible à la commande"
+                  }
+                  style={{
+                    fontFamily: sans, fontSize: 12, fontWeight: 700, color: "#fff",
+                    background: search === plat.nom ? T.accent : "rgba(255,255,255,0.16)",
+                    border: "1px solid rgba(255,255,255,0.25)", borderRadius: 100,
+                    padding: "6px 14px", cursor: "pointer", backdropFilter: "blur(10px)",
+                    transition: "all 0.2s"
+                  }}
+                >
+                  {plat.nom}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Live Trust Bar Badges at Bottom of Hero */}
@@ -471,7 +468,10 @@ function Pillars() {
 /* ─── Carte Restaurant Ultra-Stylisée ─── */
 function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDish }) {
   const [hov, setHov] = useState(false);
-  const rating = Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : "4.8";
+  /* Note réelle uniquement : un restaurant sans avis n'affiche pas de note
+     inventée, il est signalé comme nouveau. */
+  const nbAvis = Number(restaurant.nbAvis || 0);
+  const rating = nbAvis > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
   const time   = restaurant.deliveryTime || (20 + (idx % 4) * 5) + "–" + (30 + (idx % 4) * 5) + " min";
 
   return (
@@ -498,8 +498,17 @@ function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDi
         
         {/* Rating Badge */}
         <div style={{ position: "absolute", top: 14, left: 14, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(8px)", borderRadius: 12, padding: "5px 12px", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(0,0,0,0.15)" }}>
-          <Star size={14} fill={T.yellow} color={T.yellow} />
-          <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: T.dark }}>{rating}</span>
+          {rating ? (
+            <>
+              <Star size={14} fill={T.yellow} color={T.yellow} />
+              <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: T.dark }}>{rating}</span>
+              <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 600, color: T.muted }}>
+                ({nbAvis})
+              </span>
+            </>
+          ) : (
+            <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, color: T.accent }}>Nouveau</span>
+          )}
         </div>
 
         {/* Status Badge */}
@@ -588,7 +597,8 @@ function Catalog({
   fastDeliveryOnly, onFastDeliveryChange,
   sortBy, onSortByChange,
   onResetFilters, activeFiltersCount,
-  results, query, onOpenResto, onOpenDish
+  results, totalCount, hiddenCount, onSeeMore,
+  query, onOpenResto, onOpenDish
 }) {
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
 
@@ -657,10 +667,12 @@ function Catalog({
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
               <div>
                 <h2 style={{ fontFamily: serif, fontSize: 26, color: T.dark, fontWeight: 900, margin: 0 }}>
-                  {query ? `Résultats pour « ${query} »` : "Restaurants recommandés à Abidjan"}
+                  {query ? `Résultats pour « ${query} »` : "Les mieux notés à Abidjan"}
                 </h2>
                 <p style={{ fontFamily: sans, fontSize: 13, color: T.muted, margin: "4px 0 0" }}>
-                  {results.length} restaurant{results.length !== 1 ? "s" : ""} disponible{results.length !== 1 ? "s" : ""} en livraison
+                  {hiddenCount > 0
+                    ? `Notre sélection de ${results.length} adresses sur ${totalCount} disponibles en livraison`
+                    : `${results.length} restaurant${results.length !== 1 ? "s" : ""} disponible${results.length !== 1 ? "s" : ""} en livraison`}
                 </p>
               </div>
 
@@ -698,19 +710,43 @@ function Catalog({
                 </button>
               </div>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
-                {results.map(({ restaurant, matchedDishes }, idx) => (
-                  <RestaurantCard
-                    key={restaurant.id || idx}
-                    restaurant={restaurant}
-                    idx={idx}
-                    matched={matchedDishes}
-                    query={query}
-                    onOpenResto={onOpenResto}
-                    onOpenDish={onOpenDish}
-                  />
-                ))}
-              </div>
+              <>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))", gap: 28 }}>
+                  {results.map(({ restaurant, matchedDishes }, idx) => (
+                    <RestaurantCard
+                      key={restaurant.id || idx}
+                      restaurant={restaurant}
+                      idx={idx}
+                      matched={matchedDishes}
+                      query={query}
+                      onOpenResto={onOpenResto}
+                      onOpenDish={onOpenDish}
+                    />
+                  ))}
+                </div>
+
+                {hiddenCount > 0 && (
+                  <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10, marginTop: 40 }}>
+                    <button
+                      onClick={onSeeMore}
+                      style={{
+                        display: "inline-flex", alignItems: "center", gap: 10,
+                        fontFamily: sans, fontSize: 15, fontWeight: 800, color: T.accent,
+                        background: "#fff", border: `1.5px solid ${T.accent}`, borderRadius: 50,
+                        padding: "14px 32px", cursor: "pointer", transition: "all 0.18s"
+                      }}
+                      onMouseEnter={e => { e.currentTarget.style.background = T.accent; e.currentTarget.style.color = "#fff"; }}
+                      onMouseLeave={e => { e.currentTarget.style.background = "#fff"; e.currentTarget.style.color = T.accent; }}
+                    >
+                      Voir plus de restaurants
+                      <ArrowRight size={18} />
+                    </button>
+                    <span style={{ fontFamily: sans, fontSize: 13, color: T.muted }}>
+                      {hiddenCount} autre{hiddenCount !== 1 ? "s" : ""} établissement{hiddenCount !== 1 ? "s" : ""} à découvrir
+                    </span>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -948,9 +984,7 @@ function Footer() {
           {/* Brand info */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
-              <div style={{ width: 40, height: 40, borderRadius: 12, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <UtensilsCrossed size={20} color="#fff" />
-              </div>
+              <BrandMark size={40} />
               <span style={{ fontFamily: serif, fontSize: 24, fontWeight: 900, color: "#fff" }}>Resto d'ici</span>
             </div>
             <p style={{ fontFamily: sans, fontSize: 13.5, color: "rgba(255,255,255,0.65)", lineHeight: 1.65, margin: "0 0 20px" }}>
@@ -1033,15 +1067,18 @@ export default function Home() {
   const [freeDeliveryOnly, setFreeDeliveryOnly] = useState(false);
   const [fastDeliveryOnly, setFastDeliveryOnly] = useState(false);
   const [sortBy,           setSortBy]           = useState("recommended");
+  const [suggestions,      setSuggestions]      = useState([]);
 
   useEffect(() => {
     let active = true;
     (async () => {
       setLoading(true);
       try {
-        const [rRes, cRes] = await Promise.allSettled([
-          menuAPI.getRestaurants(),
+        const [rRes, cRes, pRes] = await Promise.allSettled([
+          // withArticles : l'accueil recherche aussi par nom de plat
+          menuAPI.getRestaurants({ withArticles: true }),
           menuAPI.getCategories(),
+          menuAPI.getPlatsPopulaires(6),
         ]);
 
         if (!active) return;
@@ -1054,8 +1091,16 @@ export default function Home() {
           ? (Array.isArray(cRes.value?.data) ? cRes.value.data : cRes.value?.data?.categories || [])
           : [];
 
+        /* Suggestions de recherche : plats réellement disponibles et les plus
+           commandés. Si l'appel échoue, on n'affiche aucune suggestion plutôt
+           qu'une liste figée qui mènerait à des recherches vides. */
+        const platsPopulaires = pRes.status === "fulfilled" && Array.isArray(pRes.value?.data)
+          ? pRes.value.data
+          : [];
+
         setRestaurants(restoList);
         setTypes(catList.map(c => ({ nom: c.nom, count: c.articlesCount || 5 })));
+        setSuggestions(platsPopulaires);
       } catch (e) {
         console.error("Home loading error:", e);
       } finally {
@@ -1096,8 +1141,12 @@ export default function Home() {
       .map(r => {
         if (selectedRestoId !== "__all__" && r.id !== selectedRestoId) return null;
 
-        const rating = Number(r.noteMoyenne || 4.5);
-        if (minRating > 0 && rating < minRating) return null;
+        /* Filtrer sur la note réelle : un restaurant sans avis ne doit pas
+           passer un filtre « 4★ et plus » grâce à une note par défaut. */
+        if (minRating > 0) {
+          if (Number(r.nbAvis || 0) === 0) return null;
+          if (Number(r.noteMoyenne || 0) < minRating) return null;
+        }
 
         const articles = r.articles || [];
         let matchedDishes = [];
@@ -1112,6 +1161,29 @@ export default function Home() {
       })
       .filter(Boolean);
   }, [restaurants, selectedRestoId, minRating, search]);
+
+  /* La page d'accueil ne montre qu'une sélection : les mieux notés.
+     Dès qu'une recherche ou un filtre est actif, on affiche la totalité des
+     correspondances — tronquer des résultats de recherche serait trompeur. */
+  const isBrowsing = activeFiltersCount > 0;
+
+  /* Un établissement sans aucun avis n'a pas sa place sous « Les mieux notés » :
+     sa note vaut 0 et ne reflète rien. On ne classe donc que ceux qui ont été
+     notés (note décroissante, puis nombre d'avis pour départager un 5,0 sur
+     1 avis d'un 4,7 sur 3 avis). Si le catalogue est trop jeune pour qu'un
+     classement ait du sens, on retombe sur les premiers résultats. */
+  const topRatedResults = useMemo(() => {
+    const rated = filteredResults
+      .filter(r => Number(r.restaurant.nbAvis || 0) > 0)
+      .sort((a, b) =>
+        Number(b.restaurant.noteMoyenne || 0) - Number(a.restaurant.noteMoyenne || 0) ||
+        Number(b.restaurant.nbAvis || 0) - Number(a.restaurant.nbAvis || 0)
+      );
+    return rated.length >= 3 ? rated : filteredResults;
+  }, [filteredResults]);
+
+  const visibleResults = isBrowsing ? filteredResults : topRatedResults.slice(0, HOME_TOP_COUNT);
+  const hiddenCount    = filteredResults.length - visibleResults.length;
 
   const handleOpenResto = (resto) => {
     navigate(`/menu?restaurantId=${resto.id}`);
@@ -1130,6 +1202,7 @@ export default function Home() {
         onSearch={setSearch}
         resultCount={filteredResults.length}
         hasQuery={Boolean(search.trim())}
+        suggestions={suggestions}
       />
       <Pillars />
       <PaymentLogosBar />
@@ -1153,7 +1226,10 @@ export default function Home() {
         onSortByChange={setSortBy}
         onResetFilters={handleResetFilters}
         activeFiltersCount={activeFiltersCount}
-        results={filteredResults}
+        results={visibleResults}
+        totalCount={filteredResults.length}
+        hiddenCount={hiddenCount}
+        onSeeMore={() => navigate('/menu')}
         query={search}
         onOpenResto={handleOpenResto}
         onOpenDish={handleOpenDish}

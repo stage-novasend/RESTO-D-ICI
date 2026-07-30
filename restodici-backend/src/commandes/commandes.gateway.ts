@@ -37,6 +37,16 @@ export class CommandesGateway {
     this.server.to('role:ADMIN').emit(event, data);
   }
 
+  /**
+   * Diffuse aux seuls administrateurs. Sert aux changements de périmètre
+   * admin (configuration, comptes, restaurants, moyens de paiement) : ils ne
+   * concernent pas les gérants, mais doivent parvenir aux autres admins
+   * connectés pour que leurs écrans restent synchronisés.
+   */
+  emitToAdmins(event: string, data: any) {
+    this.server.to('role:ADMIN').emit(event, data);
+  }
+
   private extractToken(client: Socket): string | null {
     const authToken = client.handshake?.auth?.token;
     if (typeof authToken === 'string' && authToken.trim()) {

@@ -19,6 +19,10 @@ import { PaiementsService } from './paiements.service';
 import { InitierPaiementDto } from './dto/initier-paiement.dto';
 import { NovaSendProvider } from './novasend.service';
 import { Public } from '../auth/decorators/public.decorator';
+import {
+  extractSignature,
+  verifyNovaSendSignature,
+} from './webhook-signature.util';
 import * as crypto from 'crypto';
 
 @SkipThrottle()
@@ -77,33 +81,28 @@ export class PaiementsController {
   @Public() // authentifié par signature HMAC, pas par JWT
   @Post('webhook/novasend')
   @HttpCode(HttpStatus.OK)
-  async novasendWebhook(
-    @Body() body: any,
-    // NovaSend envoie la signature HMAC-SHA256 dans l'en-tête X-Webhook-Signature.
-    @Headers('x-webhook-signature') sigHeader: string,
-    @Req() req: any,
-  ) {
+  async novasendWebhook(@Body() body: any, @Req() req: any) {
     // [SÉCURITÉ] Signature obligatoire — webhook rejeté sans secret ou signature (audit §3.2)
     const secret = this.config.get<string>('NOVASEND_WEBHOOK_SECRET');
     if (!secret) {
       this.logger.error('NOVASEND_WEBHOOK_SECRET non configuré — webhook rejeté');
       return { status: 'misconfigured' };
     }
-    if (!sigHeader) {
+
+    // NovaSend signe avec `X-Signature-Value` (cf. doc §Webhooks) ; on accepte
+    // aussi l'ancien `X-Webhook-Signature` par tolérance.
+    const signature = extractSignature(req.headers);
+    if (!signature) {
       this.logger.warn('Novasend webhook: signature absente');
       return { status: 'invalid_signature' };
     }
-    const raw = req.rawBody?.toString() ?? JSON.stringify(body);
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(raw)
-      .digest('hex');
-    const sigA = Buffer.from(sigHeader);
-    const sigB = Buffer.from(expected);
-    if (sigA.length !== sigB.length || !crypto.timingSafeEqual(sigA, sigB)) {
+
+    const raw = req.rawBody?.toString('utf8') ?? JSON.stringify(body);
+    if (!verifyNovaSendSignature(raw, signature, secret)) {
       this.logger.warn('Novasend webhook: signature invalide');
       return { status: 'invalid_signature' };
     }
+
     this.logger.log(`Novasend webhook: ${JSON.stringify(body).slice(0, 200)}`);
     await this.paiementsService.handleNovasendWebhook(body);
     return { status: 'ok' };
@@ -153,12 +152,19 @@ export class PaiementsController {
   async genericWebhook(
     @Param('integrationName') integrationName: string,
     @Body() body: any,
-    @Headers('x-signature-value') sigHeader: string,
+    @Req() req: any,
   ) {
     this.logger.log(
       `Webhook [${integrationName}]: ${JSON.stringify(body).slice(0, 200)}`,
     );
-    await this.paiementsService.handleWebhook(integrationName, body, sigHeader);
+    // Le corps BRUT est transmis à la stratégie : re-sérialiser le JSON parsé
+    // changerait l'ordre des clés et invaliderait le HMAC.
+    await this.paiementsService.handleWebhook(
+      integrationName,
+      body,
+      extractSignature(req.headers),
+      req.rawBody?.toString('utf8'),
+    );
     return { status: 'ok' };
   }
 }

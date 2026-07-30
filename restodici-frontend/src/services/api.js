@@ -119,7 +119,16 @@ export const menuAPI = {
   // Alias maintenu pour les fichiers qui utilisent menuAPI.get(...)
   get: (params) => menuAPI.getAll(params),
 
-  getRestaurants: () => api.get("/menu/restaurants"),
+  // withArticles : joint les plats disponibles (nécessaire pour rechercher
+  // par nom de plat sans une requête par restaurant).
+  getRestaurants: ({ withArticles = false } = {}) =>
+    api.get("/menu/restaurants", {
+      params: withArticles ? { withArticles: true } : undefined,
+    }),
+
+  // Plats disponibles les plus commandés — suggestions de recherche de l'accueil
+  getPlatsPopulaires: (limit = 6) =>
+    api.get("/menu/plats-populaires", { params: { limit } }),
 
   getByRestaurant: (restaurantId, params = {}) =>
     api.get(`/menu/restaurant/${restaurantId}`, { params }),

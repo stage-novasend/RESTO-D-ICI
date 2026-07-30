@@ -11,6 +11,7 @@ import { restaurantAPI, menuAPI } from '../../services/api';
 import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG } from '../../utils/validators';
 
 import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
+import { BrandMark } from '../../components/shared/BrandLogo';
 
 const STEPS = ['Bienvenue', 'Adresse & carte', "Horaires d'ouverture", 'Menu & articles', "C'est parti !"];
 
@@ -166,9 +167,7 @@ export default function GerantOnboardingWizard() {
         {/* Header */}
         <div className="px-8 pt-8 pb-6" style={{ background: 'linear-gradient(135deg, #181A20 0%, #3A1000 100%)' }}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: A }}>
-              <UtensilsCrossed className="w-5 h-5 text-white" />
-            </div>
+            <BrandMark size={40} className="shrink-0" />
             <div>
               <p className="font-bold text-white text-base leading-tight">Resto d'ici</p>
               <p className="text-[10px] text-white/40 font-semibold tracking-widest uppercase">Espace Gérant</p>

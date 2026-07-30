@@ -10,6 +10,7 @@ import {
   ORANGE, ORANGE_CREAM as ORANGE_L, ORANGE_WARM as ORANGE_D,
   GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, GREEN_FOREST as GREEN_D,
   RED_STRONG as RED, RED_ROSE as RED_L,
+  PAGE,
 } from '../../theme/colors';
 const SH     = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';
 const SH2    = '0 4px 16px rgba(139,110,80,0.10),0 2px 4px rgba(139,110,80,0.06)';
@@ -162,7 +163,7 @@ export default function B2BTeams() {
   const totalSpent  = collabs.reduce((s, c) => s + Number(c.depenseActuelle || 0), 0);
 
   return (
-    <div className="min-h-screen" style={{ background: BG }}>
+    <div className="min-h-screen" style={{ background: PAGE }}>
 
       {/* Header — unified white/orange */}
       <div className="sticky top-0 z-10 bg-white" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>

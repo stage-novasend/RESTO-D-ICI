@@ -25,6 +25,9 @@ import {
 
 /* ── Palette (couleurs : theme/colors.js) et constantes ── */
 import { ORANGE as ACCENT } from '../../theme/colors';
+import {
+  AdminRealtimeProvider, useAdminRevision, useAdminRealtimeStatus,
+} from '../../hooks/useAdminRealtime';
 const ROLES  = ['ADMIN', 'GERANT', 'STAFF', 'CLIENT', 'B2B'];
 const ROLE_COLOR = {
   ADMIN:  { bg: 'rgba(99,102,241,0.10)', text: '#6366F1', chart: '#6366F1' },
@@ -41,7 +44,7 @@ const inputStyle = {
   borderRadius: 10, fontSize: 15, outline: 'none', boxSizing: 'border-box', background: '#fff',
 };
 const labelStyle = { fontSize: 13, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 6 };
-const card = { background: '#fff', borderRadius: 16, border: '1px solid #D1D9E6', boxShadow: '0 1px 3px rgba(234,88,12,0.06), 0 4px 16px rgba(234,88,12,0.08)', overflow: 'hidden' };
+const card = { background: '#fff', borderRadius: 16, border: '1px solid #D1D9E6', boxShadow: '0 1px 3px rgba(234,88,12,0.06), 0 4px 16px rgba(234,88,12,0.08)', overflow: 'hidden', transition: 'transform 0.2s ease, box-shadow 0.2s ease' };
 
 /* ── Composants utilitaires ── */
 function RoleBadge({ role }) {
@@ -306,11 +309,16 @@ function ActivityHeatmap({ heatmap }) {
 
 /* ══════════════════ TAB: VUE D'ENSEMBLE ══════════════════ */
 function OverviewTab() {
+  const revision = useAdminRevision();
   const [stats,   setStats]   = useState(null);
   const [charts,  setCharts]  = useState(null);
   const [loading, setLoading] = useState(true);
   const [secAlerts, setSecAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const { user } = useAuth();
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
+  const adminName = [user?.prenom, user?.nom].filter(Boolean).join(' ') || 'Admin';
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -322,7 +330,7 @@ function OverviewTab() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, revision]);
 
   useEffect(() => {
     const SECURITY_ACTIONS = new Set(['LOGIN_FAILED', 'UNAUTHORIZED_ACCESS', 'INVALID_TOKEN', 'SUSPICIOUS_ACTIVITY']);
@@ -342,6 +350,28 @@ function OverviewTab() {
 
   return (
     <div>
+      {/* ── Accueil personnalisé ── */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        style={{
+          background: 'linear-gradient(135deg, rgba(234,88,12,0.08) 0%, rgba(234,88,12,0.02) 100%)',
+          borderRadius: 20, padding: '28px 32px', marginBottom: 24,
+          border: '1px solid rgba(234,88,12,0.12)',
+          position: 'relative', overflow: 'hidden',
+        }}
+      >
+        <div style={{ position: 'absolute', top: -40, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(234,88,12,0.06)' }} />
+        <div style={{ position: 'absolute', bottom: -30, right: 60, width: 80, height: 80, borderRadius: '50%', background: 'rgba(234,88,12,0.04)' }} />
+        <p style={{ fontSize: 26, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.03em', position: 'relative' }}>
+          {greeting}, {adminName} 👋
+        </p>
+        <p style={{ fontSize: 14, color: '#64748B', margin: '6px 0 0', fontWeight: 500, position: 'relative' }}>
+          Voici le résumé de votre plateforme — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+        </p>
+      </motion.div>
+
       {/* Refresh */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
         <button onClick={load} disabled={loading} style={{ background: '#F1F5F9', border: 'none', borderRadius: 8, padding: '7px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: '#475569', fontSize: 12, fontWeight: 600 }}>
@@ -351,11 +381,11 @@ function OverviewTab() {
       </div>
 
       {/* ── KPI Cards (Flowdex row) ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(210px, 1fr))', gap: 14, marginBottom: 20 }}>
-        <KpiCard featured label="Utilisateurs" value={total} trend="+100%" trendUp sub="plateforme" color={ACCENT} />
-        <KpiCard label="Restaurants"    value={stats?.restaurants?.total}  trend={`${stats?.restaurants?.active ?? 0} actifs`}  trendUp sub=""           color="#059669" />
-        <KpiCard label="B2B en attente" value={stats?.b2b?.pending}        trend={stats?.b2b?.pending > 0 ? 'À valider' : 'Aucun'} trendUp={false} sub="" color="#D97706" />
-        <KpiCard label="Logs d'audit"   value={stats?.audit?.total}        trend="total"  trendUp sub="enregistrements"  color="#7C3AED" />
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
+        <KpiCard featured label="Utilisateurs" value={total} trend="+100%" trendUp sub="plateforme" color={ACCENT} icon={Users} />
+        <KpiCard label="Restaurants"    value={stats?.restaurants?.total}  trend={`${stats?.restaurants?.active ?? 0} actifs`}  trendUp sub=""           color="#059669" icon={UtensilsCrossed} />
+        <KpiCard label="B2B en attente" value={stats?.b2b?.pending}        trend={stats?.b2b?.pending > 0 ? 'À valider' : 'Aucun'} trendUp={false} sub="" color="#D97706" icon={Building2} />
+        <KpiCard label="Logs d'audit"   value={stats?.audit?.total}        trend="total"  trendUp sub="enregistrements"  color="#7C3AED" icon={ScrollText} />
       </div>
 
       {/* ── Row 2 : Barchart + Heatmap ── */}
@@ -491,7 +521,7 @@ function OverviewTab() {
           ].map((s, i) => (
             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, background: s.ok ? '#F0FDF4' : '#FEF2F2', borderRadius: 10, padding: '8px 14px', border: `1px solid ${s.ok ? '#BBF7D0' : '#FECACA'}` }}>
               {s.ok
-                ? <CheckCircle style={{ width: 14, height: 14, color: '#16A34A' }} />
+                ? <span style={{ position: 'relative', display: 'inline-flex' }}><span className="admin-pulse-dot" /><CheckCircle style={{ width: 14, height: 14, color: '#16A34A', position: 'relative' }} /></span>
                 : <XCircle    style={{ width: 14, height: 14, color: '#EA580C' }} />
               }
               <span style={{ fontSize: 12, fontWeight: 600, color: s.ok ? '#15803D' : '#B91C1C' }}>{s.label}</span>
@@ -552,6 +582,7 @@ function OverviewTab() {
 
 /* ══════════════════ TAB: UTILISATEURS ══════════════════ */
 function UsersTab() {
+  const revision = useAdminRevision();
   const [users, setUsers]           = useState([]);
   const [loading, setLoading]       = useState(true);
   const [search, setSearch]         = useState('');
@@ -585,7 +616,7 @@ function UsersTab() {
 
   // Retour à la page 1 quand on change de filtre/recherche.
   useEffect(() => { setPage(1); }, [roleFilter, search]);
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, revision]);
 
   const toggle = async (id) => { try { await adminAPI.toggleUser(id); load(); } catch { /* ignore */ } };
 
@@ -819,6 +850,7 @@ function UsersTab() {
 
 /* ══════════════════ TAB: RESTAURANTS ══════════════════ */
 function RestaurantsTab() {
+  const revision = useAdminRevision();
   const [restaurants, setRestaurants] = useState([]);
   const [loading, setLoading]         = useState(true);
   const [showModal, setShowModal]     = useState(false);
@@ -835,7 +867,7 @@ function RestaurantsTab() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, revision]);
 
   const toggle = async (id) => { try { await adminAPI.toggleRestaurant(id); load(); } catch { /* ignore */ } };
 
@@ -1014,6 +1046,7 @@ const ACTION_STYLE = (action = '') => {
 };
 
 function AuditTab() {
+  const revision = useAdminRevision();
   const [logs, setLogs]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [action, setAction]     = useState('');
@@ -1039,7 +1072,7 @@ function AuditTab() {
     finally { setLoading(false); }
   }, [action, userId, from, to, limit]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, revision]);
 
   const today    = logs.filter(l => new Date(l.createdAt).toDateString() === new Date().toDateString()).length;
   const distinct = new Set(logs.map(l => l.userId)).size;
@@ -1605,6 +1638,7 @@ function IntegrationModal({ initial, onClose, onSave }) {
 }
 
 function ConfigTab() {
+  const revision = useAdminRevision();
   const { user } = useAuth();
   const [configs, setConfigs]         = useState([]);
   const [loading, setLoading]         = useState(true);
@@ -1644,7 +1678,7 @@ function ConfigTab() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { loadConfig(); }, [loadConfig]);
+  useEffect(() => { loadConfig(); }, [loadConfig, revision]);
 
   const saveKey = async (key, value) => {
     setSaving(s => ({ ...s, [key]: true }));
@@ -2162,13 +2196,14 @@ function B2BPendingBanner() {
 
 /* ══════════════════ Bannière — Factures en contestation ══════════════════ */
 function ContestationsBanner() {
+  const revision = useAdminRevision();
   const [factures, setFactures]     = useState([]);
   const [processing, setProcessing] = useState({});
   const [noteModal, setNoteModal]   = useState(null); // { id, accept }
   const [note, setNote]             = useState('');
 
   const load = () => adminAPI.getContestations().then(r => setFactures(r.data || [])).catch(() => {});
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [revision]);
 
   const resolve = async (id, accepted) => {
     setProcessing(p => ({ ...p, [id]: true }));
@@ -2449,6 +2484,7 @@ function MetriquesTab() {
 const EMPTY_FOURN = { nom: '', contact: '', telephone: '', email: '', adresse: '', delaiLivraison: '', articlesRef: '', notes: '' };
 
 function FournisseursTab() {
+  const revision = useAdminRevision();
   const [list, setList]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [modal, setModal]       = useState(null); // null | 'create' | { ...fournisseur }
@@ -2463,7 +2499,7 @@ function FournisseursTab() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, revision]);
 
   const openCreate = () => { setForm(EMPTY_FOURN); setModal('create'); };
   const openEdit   = (f)  => { setForm({ ...f, delaiLivraison: f.delaiLivraison ?? '', articlesRef: f.articlesRef ?? '', notes: f.notes ?? '' }); setModal(f); };
@@ -2626,6 +2662,7 @@ function FournisseursTab() {
 
 /* ══════════════════ COMMISSIONS TAB ══════════════════ */
 function CommissionsTab() {
+  const revision = useAdminRevision();
   const [data, setData]       = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
@@ -2639,7 +2676,7 @@ function CommissionsTab() {
     finally { setLoading(false); }
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [revision]);
 
   const handleSaveTaux = async (id) => {
     setSaving(true);
@@ -2753,7 +2790,8 @@ function CommissionsTab() {
 }
 
 /* ══════════════════ TAB: NOTIFICATIONS ══════════════════ */
-function NotificationsTab() {
+function AlertesTab() {
+  const revision = useAdminRevision();
   const [items,   setItems]   = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter,  setFilter]  = useState('all');
@@ -2818,7 +2856,7 @@ function NotificationsTab() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, revision]);
 
   const ACTION_LABELS = {
     LOGIN_FAILED:          'Tentative de connexion échouée',
@@ -2863,11 +2901,11 @@ function NotificationsTab() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h2 style={{ fontSize: 17, fontWeight: 700, color: '#0F172A', margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Bell style={{ width: 18, height: 18, color: ACCENT }} />
-            Centre de notifications
+            <AlertTriangle style={{ width: 18, height: 18, color: '#DC2626' }} />
+            Alertes système
           </h2>
           <p style={{ fontSize: 11, color: '#64748B', margin: 0 }}>
-            {items.length} événement{items.length > 1 ? 's' : ''} — actualisation auto toutes les 30s
+            {items.length} alerte{items.length > 1 ? 's' : ''} sur l'ensemble du système — actualisation auto toutes les 30s
           </p>
         </div>
         <button onClick={load} disabled={loading}
@@ -2906,12 +2944,12 @@ function NotificationsTab() {
         {loading ? (
           <div style={{ padding: 60, textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>
             <RefreshCw style={{ width: 22, height: 22, margin: '0 auto 8px', display: 'block', animation: 'spin 1s linear infinite' }} />
-            Chargement des notifications…
+            Chargement des alertes…
           </div>
         ) : displayed.length === 0 ? (
           <div style={{ padding: 60, textAlign: 'center', color: '#94A3B8' }}>
-            <Bell style={{ width: 28, height: 28, margin: '0 auto 10px', display: 'block', color: '#CBD5E1' }} />
-            <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Aucune notification</p>
+            <AlertTriangle style={{ width: 28, height: 28, margin: '0 auto 10px', display: 'block', color: '#CBD5E1' }} />
+            <p style={{ fontSize: 13, fontWeight: 600, margin: 0 }}>Aucune alerte détectée</p>
           </div>
         ) : (
           <div style={{ maxHeight: 640, overflowY: 'auto' }}>
@@ -2991,6 +3029,7 @@ const TYPE_LIVRAISON = ['YANGO', 'GOZEM', 'KOOLI', 'JUMIA_FOOD', 'CUSTOM'];
 const EMPTY_LIV = { nom: '', type: 'CUSTOM', apiUrl: '', rechercheUrl: '', apiKey: '', webhookCallbackUrl: '', fraisLivraisonDefaut: '', createOrderEndpoint: '', trackingEndpoint: '', estimateEndpoint: '', fieldMapping: '', actif: true };
 
 function LivraisonsExtTab() {
+  const revision = useAdminRevision();
   const [list, setList]       = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal]     = useState(null);
@@ -3006,7 +3045,7 @@ function LivraisonsExtTab() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { load(); }, [load, revision]);
 
   const openCreate = () => { setForm(EMPTY_LIV); setModal('create'); };
   const openEdit   = (f)  => { setForm({ ...f, apiKey: '', fraisLivraisonDefaut: f.fraisLivraisonDefaut ?? '', fieldMapping: f.fieldMapping ? JSON.stringify(f.fieldMapping, null, 2) : '' }); setFmError(''); setModal(f); };
@@ -3236,7 +3275,7 @@ function LivraisonsExtTab() {
 /* ══════════════════ TABS ══════════════════ */
 const TABS = [
   { id: 'overview',       label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: 'notifications',  label: 'Notifications',  icon: Bell },
+  { id: 'alertes',  label: 'Alertes',        icon: AlertTriangle },
   { id: 'users',          label: 'Utilisateurs',   icon: Users },
   { id: 'restaurants',    label: 'Restaurants',    icon: UtensilsCrossed },
   { id: 'fournisseurs',   label: 'Fournisseurs',   icon: Truck },
@@ -3249,20 +3288,75 @@ const TABS = [
 ];
 
 /* ═══ AdminDashboard — Composant principal ═══ */
-export default function AdminDashboard() {
+/* Témoin de l'état du flux temps réel : l'admin doit pouvoir distinguer
+   « aucune activité » de « flux coupé, les chiffres sont peut-être périmés ». */
+function RealtimeIndicator() {
+  const { connected, lastEvent } = useAdminRealtimeStatus();
+
+  return (
+    <div
+      title={
+        connected
+          ? "Les données se rafraîchissent automatiquement à chaque événement du système."
+          : "Flux temps réel interrompu — les données affichées peuvent être périmées. Rechargez la page."
+      }
+      style={{
+        display: 'flex', alignItems: 'center', gap: 8,
+        padding: '7px 14px', borderRadius: 99,
+        background: connected ? '#F0FDF4' : '#FEF2F2',
+        border: `1px solid ${connected ? '#BBF7D0' : '#FECACA'}`,
+      }}
+    >
+      <span style={{
+        width: 8, height: 8, borderRadius: '50%',
+        background: connected ? '#16A34A' : '#DC2626',
+        boxShadow: connected ? '0 0 0 3px rgba(22,163,74,0.15)' : 'none',
+      }} />
+      <span style={{ fontSize: 12, fontWeight: 700, color: connected ? '#15803D' : '#B91C1C' }}>
+        {connected ? 'Temps réel actif' : 'Hors ligne'}
+      </span>
+      {connected && lastEvent && (
+        <span style={{ fontSize: 11, color: '#64748B', fontWeight: 500 }}>
+          · maj {new Date(lastEvent.at).toLocaleTimeString('fr-FR')}
+        </span>
+      )}
+    </div>
+  );
+}
+
+/* Le provider temps réel doit envelopper les onglets : il est monté par
+   AdminDashboard ci-dessous, ce composant en est le consommateur. */
+function AdminDashboardInner() {
   const location = useLocation();
   const navigate = useNavigate();
   const tab = new URLSearchParams(location.search).get('tab') || 'overview';
   const goTab = (id) => navigate(id === 'overview' ? '/admin' : `/admin?tab=${id}`);
 
   return (
-    <div style={{ background: '#FFFFFF', minHeight: '100vh', padding: '24px 16px' }}>
+    <div style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #FDF8F4 50%, #F9F9FB 100%)', minHeight: '100vh', padding: '24px 16px' }}>
+    <style>{`
+      @keyframes adminPulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(2); opacity: 0; }
+      }
+      .admin-pulse-dot {
+        position: absolute;
+        inset: -1px;
+        border-radius: 50%;
+        background: rgba(22,163,74,0.35);
+        animation: adminPulse 2s ease-in-out infinite;
+      }
+    `}</style>
     <div style={{ maxWidth: 1300, margin: '0 auto' }}>
 
       {/* Header */}
       <div style={{
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 28, paddingBottom: 24, borderBottom: '1px solid #E2E8F0',
+        marginBottom: 28, padding: '20px 24px', borderRadius: 20,
+        background: 'rgba(255,255,255,0.72)',
+        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+        border: '1px solid rgba(234,88,12,0.1)',
+        boxShadow: '0 2px 16px rgba(234,88,12,0.06), 0 1px 3px rgba(0,0,0,0.04)',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{
@@ -3282,6 +3376,8 @@ export default function AdminDashboard() {
             </p>
           </div>
         </div>
+
+        <RealtimeIndicator />
       </div>
 
       {tab === 'overview' && <B2BPendingBanner />}
@@ -3323,7 +3419,7 @@ export default function AdminDashboard() {
         transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
       >
         {tab === 'overview'       && <OverviewTab />}
-        {tab === 'notifications'  && <NotificationsTab />}
+        {tab === 'alertes'  && <AlertesTab />}
         {tab === 'users'          && <UsersTab />}
         {tab === 'restaurants'    && <RestaurantsTab />}
         {tab === 'fournisseurs'   && <FournisseursTab />}
@@ -3338,5 +3434,13 @@ export default function AdminDashboard() {
       <OnboardingWizard />
     </div>
     </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <AdminRealtimeProvider>
+      <AdminDashboardInner />
+    </AdminRealtimeProvider>
   );
 }

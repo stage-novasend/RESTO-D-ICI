@@ -6,6 +6,7 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
 import { Mail, Lock, Eye, EyeOff, CheckCircle, UtensilsCrossed, ArrowLeft } from 'lucide-react';
+import { BrandMark } from '../components/shared/BrandLogo';
 import { useAuth } from '../hooks/useAuth';
 import { setAccessToken } from '../services/token-store.js';
 import { isValidEmail, MSG } from '../utils/validators';
@@ -167,12 +168,7 @@ export default function Login() {
 
           {/* Logo Restodici */}
           <div className="flex items-center gap-2.5 mb-10">
-            <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center"
-              style={{ background: '#EA580C' }}
-            >
-              <UtensilsCrossed className="w-[18px] h-[18px] text-white" />
-            </div>
+            <BrandMark size={36} />
             <span className="font-bold text-lg" style={{ color: '#1A0C00' }}>
               Resto d'ici
             </span>

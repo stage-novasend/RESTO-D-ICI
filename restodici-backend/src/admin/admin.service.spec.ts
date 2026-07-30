@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
+import { CommandesGateway } from '../commandes/commandes.gateway';
 import {
   ConflictException,
   NotFoundException,
@@ -27,6 +28,9 @@ describe('AdminService', () => {
   const integRepo: any = {};
   const factureRepo: any = {};
   const paymentRepo: any = {};
+  // Le service diffuse les changements aux admins connectés : on vérifie
+  // seulement qu'il n'explose pas, la diffusion est testée de bout en bout.
+  const gatewayMock: any = { emitToAdmins: jest.fn(), emitToManagers: jest.fn() };
 
   beforeEach(async () => {
     Object.assign(userRepo, {
@@ -81,6 +85,7 @@ describe('AdminService', () => {
         { provide: getRepositoryToken(CommissionPlateforme), useValue: {} },
         { provide: getRepositoryToken(FactureMensuelleB2B), useValue: factureRepo },
         { provide: getRepositoryToken(PaymentMethod), useValue: paymentRepo },
+        { provide: CommandesGateway, useValue: gatewayMock },
       ],
     }).compile();
     service = module.get(AdminService);

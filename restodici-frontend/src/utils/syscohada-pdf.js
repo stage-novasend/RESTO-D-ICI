@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const NAVY   = [15, 23, 42];       // #0F172A
-const ORANGE = [255, 140, 0];      // #EA580C
+const ORANGE = [255, 140, 0];      // #FF8C00 — filet d'accent de l'en-tête uniquement
 const GREEN  = [22, 163, 74];      // #16A34A
 const GRAY   = [100, 116, 139];    // #64748B
 const LIGHT  = [248, 250, 252];    // #F8FAFC
@@ -48,9 +48,11 @@ function addPageHeader(doc, title, subtitle = '') {
   doc.text('Plateforme de restauration B2B · Côte d\'Ivoire', 14, 18);
   doc.text('contact@restodici.ci · www.restodici.ci', 14, 23);
 
-  // Document type pill (right)
-  doc.setFillColor(...ORANGE);
-  doc.roundedRect(W - 60, 7, 48, 14, 3, 3, 'F');
+  // Type de document (droite) — cartouche filaire : un en-tête comptable
+  // n'a pas besoin d'un aplat de couleur pour être lisible.
+  doc.setDrawColor(...WHITE);
+  doc.setLineWidth(0.4);
+  doc.rect(W - 60, 7, 48, 14, 'S');
   doc.setTextColor(...WHITE);
   doc.setFontSize(8);
   doc.setFont('helvetica', 'bold');
@@ -84,7 +86,8 @@ function addInfoBlock(doc, leftLines, rightLines, y) {
 
   doc.setFillColor(...LIGHT);
   doc.setDrawColor(...GRAY);
-  doc.roundedRect(14, y, W - 28, 26, 2, 2, 'FD');
+  doc.setLineWidth(0.2);
+  doc.rect(14, y, W - 28, 26, 'FD');
 
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
@@ -288,7 +291,7 @@ export function buildSyscohadaBlob(collabs, factures, compte, monthlyExp) {
         { content: fcfa(totalHT), styles: { fontStyle: 'bold', halign: 'right' } },
         { content: '18 %', styles: { halign: 'center' } },
         { content: fcfa(totalTVA), styles: { fontStyle: 'bold', halign: 'right' } },
-        { content: fcfa(totalTTC), styles: { fontStyle: 'bold', halign: 'right', textColor: ORANGE } },
+        { content: fcfa(totalTTC), styles: { fontStyle: 'bold', halign: 'right', textColor: NAVY } },
       ],
     ],
     theme: 'grid',
@@ -433,13 +436,19 @@ export function buildFactureBlob(facture, compte) {
   y = doc.lastAutoTable.finalY + 8;
 
   // ── Statut paiement ────────────────────────────────────────────────────────
+  doc.setFillColor(...WHITE);
+  doc.setDrawColor(...(isPaid ? GREEN : RED));
+  doc.setLineWidth(0.4);
+  doc.rect(14, y, W - 28, 12, 'FD');
   doc.setFillColor(...(isPaid ? GREEN : RED));
-  doc.roundedRect(14, y, W - 28, 12, 2, 2, 'F');
-  doc.setTextColor(...WHITE);
+  doc.rect(14, y, 2, 12, 'F');
+  doc.setTextColor(...(isPaid ? GREEN : RED));
   doc.setFontSize(9);
   doc.setFont('helvetica', 'bold');
   doc.text(
-    isPaid ? '✓  FACTURE PAYÉE — Reçu officiel de paiement' : '⏳  EN ATTENTE DE PAIEMENT — Non libératoire',
+    isPaid
+      ? 'FACTURE PAYÉE — Reçu officiel de paiement'
+      : 'EN ATTENTE DE PAIEMENT — Non libératoire',
     W / 2, y + 8,
     { align: 'center' }
   );
@@ -524,11 +533,14 @@ export function buildFinanceReportBlob(period, restaurantName, summary = {}, exp
   // ── Barre visuelle marge ───────────────────────────────────────────────────
   const barW = W - 28;
   doc.setFillColor(240, 242, 245);
-  doc.roundedRect(14, y, barW, 8, 2, 2, 'F');
+  doc.rect(14, y, barW, 8, 'F');
   const fillW = Math.max(0, Math.min(marg, 100)) / 100 * barW;
   const fillColor = marg >= 20 ? GREEN : marg >= 10 ? AMBER : RED;
   doc.setFillColor(...fillColor);
-  doc.roundedRect(14, y, fillW, 8, 2, 2, 'F');
+  doc.rect(14, y, fillW, 8, 'F');
+  doc.setDrawColor(...GRAY);
+  doc.setLineWidth(0.2);
+  doc.rect(14, y, barW, 8, 'S');
   doc.setTextColor(...NAVY);
   doc.setFontSize(7);
   doc.setFont('helvetica', 'bold');
@@ -687,7 +699,7 @@ export function buildBonCommandeBlob({ num, restaurantNom, restaurantAdresse, fo
       body: [
         ['', '', '',
           { content: 'TOTAL ESTIME (HT)', styles: { fontStyle: 'bold', halign: 'right' } },
-          { content: `${Math.round(totalHT).toLocaleString('fr-FR')} FCFA`, styles: { fontStyle: 'bold', halign: 'right', textColor: ORANGE } },
+          { content: `${Math.round(totalHT).toLocaleString('fr-FR')} FCFA`, styles: { fontStyle: 'bold', halign: 'right', textColor: NAVY } },
         ],
       ],
       theme: 'plain',

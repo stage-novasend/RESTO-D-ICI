@@ -2,6 +2,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Resend } from 'resend';
+import {
+  EMAIL_LOGO_PNG_BASE64,
+  EMAIL_LOGO_CID,
+  EMAIL_LOGO_FILENAME,
+} from './logo-asset';
 
 interface SendMailOptions {
   to: string;
@@ -42,6 +47,97 @@ export class EmailService {
     }
   }
 
+  /**
+   * Enveloppe commune à tous les emails transactionnels.
+   *
+   * Le logo est joint au message en pièce intégrée et référencé par `cid:`.
+   * Il ne dépend donc d'aucune URL : une variable FRONTEND_URL mal renseignée
+   * en production ne peut pas produire d'image cassée, et les clients qui
+   * bloquent les images distantes (Gmail, Outlook) l'affichent quand même.
+   * Le SVG est exclu : la plupart des clients de messagerie le suppriment.
+   *
+   * L'en-tête utilise une couleur unie et l'attribut `bgcolor` : Outlook
+   * ignore `linear-gradient`, ce qui laissait le texte blanc sur fond blanc.
+   */
+  private renderShell(params: {
+    title: string;
+    heading: string;
+    /** Corps du message, en HTML compatible email (tableaux, styles inline). */
+    body: string;
+    /** Mention sous le nom de marque, ex. « Espace Entreprise ». */
+    subtitle?: string;
+  }): string {
+    const { title, heading, body, subtitle } = params;
+
+    return `<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+</head>
+<body style="margin:0;padding:0;background:#f4f1ec;font-family:Arial,Helvetica,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" role="presentation" style="background:#f4f1ec;padding:40px 0;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" role="presentation" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
+          <tr>
+            <td bgcolor="#1A0C00" style="background-color:#1A0C00;padding:32px 40px;text-align:center;">
+              <img src="cid:${EMAIL_LOGO_CID}" width="56" height="56" alt="Resto d'ici"
+                   style="display:block;margin:0 auto 14px;border:0;outline:none;text-decoration:none;" />
+              <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Resto d'ici</h1>
+              ${subtitle ? `<p style="color:rgba(255,255,255,0.55);margin:4px 0 0;font-size:13px;">${subtitle}</p>` : ''}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:40px;">
+              <h2 style="color:#1A0C00;font-size:20px;margin:0 0 16px;font-weight:700;">${heading}</h2>
+              ${body}
+            </td>
+          </tr>
+          <tr>
+            <td style="background:#FAF6F0;padding:20px 40px;text-align:center;border-top:1px solid #f0e8df;">
+              <p style="color:#8B6E50;font-size:12px;margin:0;">
+                © ${new Date().getFullYear()} Resto d'ici · Plateforme digitale restaurant
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+  }
+
+  /**
+   * Pièce jointe du logo, à concaténer aux pièces jointes d'un envoi.
+   * Renvoie un tableau vide si le HTML ne référence pas le logo, pour ne pas
+   * alourdir inutilement un message qui ne l'affiche pas.
+   */
+  private logoAttachment(html: string) {
+    if (!html.includes(`cid:${EMAIL_LOGO_CID}`)) return [];
+    return [
+      {
+        filename: EMAIL_LOGO_FILENAME,
+        content: EMAIL_LOGO_PNG_BASE64,
+        contentType: 'image/png',
+        contentId: EMAIL_LOGO_CID,
+      },
+    ];
+  }
+
+  /** Bouton d'action principal, centré. */
+  private renderButton(href: string, label: string): string {
+    return `<p style="text-align:center;margin:0 0 32px;">
+                <a href="${href}"
+                   style="display:inline-block;background:#EA580C;color:#ffffff;font-size:15px;font-weight:700;
+                          text-decoration:none;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;">
+                  ${label}
+                </a>
+              </p>`;
+  }
+
   private extractLink(html: string): string | null {
     return (
       html.match(/href="(https?:\/\/localhost[^"]+)"/)?.[1] ??
@@ -71,11 +167,16 @@ export class EmailService {
       return;
     }
 
+    /* Le logo voyage avec le message : aucune URL à résoudre côté
+       destinataire, donc aucune image cassée possible si FRONTEND_URL est mal
+       renseignée, et affichage garanti chez les clients qui bloquent les
+       images distantes. */
     const { data, error } = await this.resend.emails.send({
       from: this.from,
       to: options.to,
       subject: options.subject,
       html: options.html,
+      attachments: this.logoAttachment(options.html),
     });
 
     if (error) {
@@ -102,59 +203,20 @@ export class EmailService {
   ): Promise<void> {
     const resetLink = `${frontendUrl}/reset-password?token=${token}`;
 
-    const html = `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Réinitialisation de mot de passe</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f1ec;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ec;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
-          <tr>
-            <td style="background:linear-gradient(135deg,#11100d,#2B1500);padding:36px 40px;text-align:center;">
-              <div style="display:inline-block;background:#E04E1A;width:44px;height:44px;border-radius:12px;text-align:center;line-height:44px;font-size:22px;font-weight:900;color:#fff;margin-bottom:12px;">R</div>
-              <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Resto d'ici</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px;">
-              <h2 style="color:#11100d;font-size:20px;margin:0 0 16px;font-weight:700;">Réinitialisation de mot de passe</h2>
-              <p style="color:#64574A;font-size:15px;line-height:1.7;margin:0 0 28px;">
+    const html = this.renderShell({
+      title: 'Réinitialisation de mot de passe',
+      heading: 'Réinitialisation de mot de passe',
+      body: `<p style="color:#64574A;font-size:15px;line-height:1.7;margin:0 0 28px;">
                 Vous avez demandé une réinitialisation de votre mot de passe. Cliquez sur le bouton ci-dessous pour en choisir un nouveau.
               </p>
-              <p style="text-align:center;margin:0 0 32px;">
-                <a href="${resetLink}"
-                   style="display:inline-block;background:#E04E1A;color:#ffffff;font-size:15px;font-weight:700;
-                          text-decoration:none;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;">
-                  Réinitialiser mon mot de passe
-                </a>
-              </p>
-              <p style="color:#999;font-size:13px;line-height:1.6;margin:0 0 8px;">
+              ${this.renderButton(resetLink, 'Réinitialiser mon mot de passe')}
+              <p style="color:#8B8B8B;font-size:13px;line-height:1.6;margin:0 0 8px;">
                 Ce lien est valable pendant <strong>1 heure</strong>. Après ce délai, vous devrez faire une nouvelle demande.
               </p>
-              <p style="color:#999;font-size:13px;line-height:1.6;margin:0;">
+              <p style="color:#8B8B8B;font-size:13px;line-height:1.6;margin:0;">
                 Si vous n'avez pas demandé de réinitialisation, ignorez simplement cet email.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#FAF6F0;padding:20px 40px;text-align:center;border-top:1px solid #f0e8df;">
-              <p style="color:#C58A55;font-size:12px;margin:0;">
-                © ${new Date().getFullYear()} Resto d'ici · Plateforme digitale restaurant
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+              </p>`,
+    });
 
     await this.sendMail({
       to: email,
@@ -173,58 +235,25 @@ export class EmailService {
   ): Promise<void> {
     const acceptLink = `${frontendUrl}/b2b/invitation/${token}`;
 
-    const html = `
-<!DOCTYPE html>
-<html lang="fr">
-<head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" /></head>
-<body style="margin:0;padding:0;background:#f4f1ec;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ec;padding:40px 0;">
-    <tr><td align="center">
-      <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
-        <tr>
-          <td style="background:linear-gradient(135deg,#11100d,#2B1500);padding:36px 40px;text-align:center;">
-            <div style="display:inline-block;background:#E04E1A;width:44px;height:44px;border-radius:12px;text-align:center;line-height:44px;font-size:22px;font-weight:900;color:#fff;margin-bottom:12px;">R</div>
-            <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Resto d'ici</h1>
-            <p style="color:rgba(255,255,255,0.5);margin:4px 0 0;font-size:13px;">Espace Entreprise</p>
-          </td>
-        </tr>
-        <tr>
-          <td style="padding:40px;">
-            <h2 style="color:#11100d;font-size:20px;margin:0 0 12px;font-weight:700;">Vous avez été invité(e) !</h2>
-            <p style="color:#64574A;font-size:15px;line-height:1.7;margin:0 0 8px;">
+    const html = this.renderShell({
+      title: `${nomInviteur} vous invite à rejoindre ${entreprise}`,
+      subtitle: 'Espace Entreprise',
+      heading: 'Vous avez été invité(e) !',
+      body: `<p style="color:#64574A;font-size:15px;line-height:1.7;margin:0 0 8px;">
               Bonjour <strong>${nomCollaborateur}</strong>,
             </p>
             <p style="color:#64574A;font-size:15px;line-height:1.7;margin:0 0 28px;">
               <strong>${nomInviteur}</strong> vous invite à rejoindre l'espace entreprise de <strong>${entreprise}</strong> sur Resto d'ici.
               Cliquez sur le bouton ci-dessous pour créer votre compte et accepter l'invitation.
             </p>
-            <p style="text-align:center;margin:0 0 32px;">
-              <a href="${acceptLink}"
-                 style="display:inline-block;background:#E04E1A;color:#ffffff;font-size:15px;font-weight:700;
-                        text-decoration:none;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;">
-                Accepter l'invitation
-              </a>
-            </p>
-            <p style="color:#999;font-size:13px;line-height:1.6;margin:0 0 8px;">
+            ${this.renderButton(acceptLink, "Accepter l'invitation")}
+            <p style="color:#8B8B8B;font-size:13px;line-height:1.6;margin:0 0 8px;">
               Ce lien est valable pendant <strong>7 jours</strong>.
             </p>
-            <p style="color:#999;font-size:13px;line-height:1.6;margin:0;">
+            <p style="color:#8B8B8B;font-size:13px;line-height:1.6;margin:0;">
               Si vous ne connaissez pas ${entreprise}, ignorez cet email.
-            </p>
-          </td>
-        </tr>
-        <tr>
-          <td style="background:#FAF6F0;padding:20px 40px;text-align:center;border-top:1px solid #f0e8df;">
-            <p style="color:#C58A55;font-size:12px;margin:0;">
-              © ${new Date().getFullYear()} Resto d'ici · Plateforme digitale restaurant
-            </p>
-          </td>
-        </tr>
-      </table>
-    </td></tr>
-  </table>
-</body>
-</html>`;
+            </p>`,
+    });
 
     await this.sendMail({
       to: email,
@@ -240,59 +269,20 @@ export class EmailService {
   ): Promise<void> {
     const verifyLink = `${frontendUrl}/verify-email?token=${token}`;
 
-    const html = `
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Vérification de votre email</title>
-</head>
-<body style="margin:0;padding:0;background:#f4f1ec;font-family:Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ec;padding:40px 0;">
-    <tr>
-      <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
-          <tr>
-            <td style="background:linear-gradient(135deg,#11100d,#2B1500);padding:36px 40px;text-align:center;">
-              <div style="display:inline-block;background:#E04E1A;width:44px;height:44px;border-radius:12px;text-align:center;line-height:44px;font-size:22px;font-weight:900;color:#fff;margin-bottom:12px;">R</div>
-              <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;letter-spacing:-0.3px;">Resto d'ici</h1>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:40px;">
-              <h2 style="color:#11100d;font-size:20px;margin:0 0 16px;font-weight:700;">Confirmez votre adresse email</h2>
-              <p style="color:#64574A;font-size:15px;line-height:1.7;margin:0 0 28px;">
+    const html = this.renderShell({
+      title: 'Vérification de votre email',
+      heading: 'Confirmez votre adresse email',
+      body: `<p style="color:#64574A;font-size:15px;line-height:1.7;margin:0 0 28px;">
                 Bienvenue sur Resto d'ici ! Pour finaliser la création de votre compte, confirmez votre adresse email en cliquant sur le bouton ci-dessous.
               </p>
-              <p style="text-align:center;margin:0 0 32px;">
-                <a href="${verifyLink}"
-                   style="display:inline-block;background:#E04E1A;color:#ffffff;font-size:15px;font-weight:700;
-                          text-decoration:none;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;">
-                  Vérifier mon email
-                </a>
-              </p>
-              <p style="color:#999;font-size:13px;line-height:1.6;margin:0 0 8px;">
+              ${this.renderButton(verifyLink, 'Vérifier mon email')}
+              <p style="color:#8B8B8B;font-size:13px;line-height:1.6;margin:0 0 8px;">
                 Ce lien est valable pendant <strong>24 heures</strong>.
               </p>
-              <p style="color:#999;font-size:13px;line-height:1.6;margin:0;">
+              <p style="color:#8B8B8B;font-size:13px;line-height:1.6;margin:0;">
                 Si vous n'avez pas créé de compte sur Resto d'ici, ignorez simplement cet email.
-              </p>
-            </td>
-          </tr>
-          <tr>
-            <td style="background:#FAF6F0;padding:20px 40px;text-align:center;border-top:1px solid #f0e8df;">
-              <p style="color:#C58A55;font-size:12px;margin:0;">
-                © ${new Date().getFullYear()} Resto d'ici · Plateforme digitale restaurant
-              </p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`;
+              </p>`,
+    });
 
     await this.sendMail({
       to: email,
@@ -355,8 +345,9 @@ export class EmailService {
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
         <!-- HEADER -->
-        <tr><td style="background:linear-gradient(135deg,#11100d,#2B1500);padding:36px 40px;text-align:center;">
-          <div style="display:inline-block;background:#E04E1A;width:44px;height:44px;border-radius:12px;text-align:center;line-height:44px;font-size:22px;font-weight:900;color:#fff;margin-bottom:12px;">R</div>
+        <tr><td bgcolor="#1A0C00" style="background-color:#1A0C00;padding:32px 40px;text-align:center;">
+          <img src="cid:${EMAIL_LOGO_CID}" width="56" height="56" alt="Resto d'ici"
+               style="display:block;margin:0 auto 14px;border:0;outline:none;text-decoration:none;" />
           <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Resto d'ici</h1>
           <p style="color:rgba(255,255,255,0.55);margin:4px 0 0;font-size:13px;">Reçu de paiement${restaurantNom ? ' · ' + restaurantNom : ''}</p>
         </td></tr>
@@ -414,7 +405,7 @@ export class EmailService {
         }
         <!-- FOOTER -->
         <tr><td style="background:#FAF6F0;padding:20px 40px;text-align:center;border-top:1px solid #f0e8df;">
-          <p style="color:#C58A55;font-size:12px;margin:0;">Merci de votre confiance ! · © ${new Date().getFullYear()} Resto d'ici</p>
+          <p style="color:#8B6E50;font-size:12px;margin:0;">Merci de votre confiance ! · © ${new Date().getFullYear()} Resto d'ici</p>
         </td></tr>
       </table>
     </td></tr>
@@ -439,13 +430,12 @@ export class EmailService {
       to,
       subject: `Votre reçu de commande #${numero} — Resto d'ici`,
       html,
-      ...(pdfBuffer
-        ? {
-            attachments: [
-              { filename: `recu-${numero}.pdf`, content: pdfBuffer },
-            ],
-          }
-        : {}),
+      attachments: [
+        ...this.logoAttachment(html),
+        ...(pdfBuffer
+          ? [{ filename: `recu-${numero}.pdf`, content: pdfBuffer }]
+          : []),
+      ],
     });
 
     if (error) {
@@ -489,8 +479,9 @@ export class EmailService {
   <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f1ec;padding:40px 0;">
     <tr><td align="center">
       <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.07);">
-        <tr><td style="background:linear-gradient(135deg,#11100d,#2B1500);padding:36px 40px;text-align:center;">
-          <div style="display:inline-block;background:#E04E1A;width:44px;height:44px;border-radius:12px;text-align:center;line-height:44px;font-size:22px;font-weight:900;color:#fff;margin-bottom:12px;">R</div>
+        <tr><td bgcolor="#1A0C00" style="background-color:#1A0C00;padding:32px 40px;text-align:center;">
+          <img src="cid:${EMAIL_LOGO_CID}" width="56" height="56" alt="Resto d'ici"
+               style="display:block;margin:0 auto 14px;border:0;outline:none;text-decoration:none;" />
           <h1 style="color:#fff;margin:0;font-size:22px;font-weight:700;">Resto d'ici</h1>
           <p style="color:rgba(255,255,255,0.55);margin:4px 0 0;font-size:13px;">Facture mensuelle — Espace Entreprise</p>
         </td></tr>
@@ -527,7 +518,7 @@ export class EmailService {
           </p>
         </td></tr>
         <tr><td style="background:#FAF6F0;padding:20px 40px;text-align:center;border-top:1px solid #f0e8df;">
-          <p style="color:#C58A55;font-size:12px;margin:0;">© ${new Date().getFullYear()} Resto d'ici · Plateforme digitale restaurant</p>
+          <p style="color:#8B6E50;font-size:12px;margin:0;">© ${new Date().getFullYear()} Resto d'ici · Plateforme digitale restaurant</p>
         </td></tr>
       </table>
     </td></tr>
@@ -548,6 +539,7 @@ export class EmailService {
       to,
       subject: `Votre facture mensuelle ${mois} ${annee} — Resto d'ici`,
       html,
+      attachments: this.logoAttachment(html),
     });
 
     if (error) {

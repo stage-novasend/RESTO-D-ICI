@@ -8,7 +8,7 @@ import {
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { formatFCFA } from '../utils/formatters';
-import { CI_PHONE_PATTERN, MSG, isValidCIPhone, phoneMatchesOperator, OPERATOR_LABEL, CI_OPERATOR_PREFIXES } from '../utils/validators';
+import { CI_PHONE_PATTERN, MSG, isValidCIPhone, phoneMatchesOperator, OPERATOR_LABEL } from '../utils/validators';
 import { commandesService, createCommandesSocket } from '../services/commandes.service';
 import { paiementsAPI, promosAPI } from '../services/api';
 import orangeMoneyLogo from '../assets/payments/orange-money.svg';
@@ -18,7 +18,6 @@ import carteBancaireLogo from '../assets/payments/carte-bancaire.svg';
 import QRCode from 'qrcode';
 
 // Mode paiement réel 100% API (Aucune simulation locale)
-const SIMULATE_PAYMENT = false;
 // Flip to false when NovaSend card payment is live in CI
 const NOVASEND_CARD_ENABLED = true;
 
@@ -506,14 +505,6 @@ export default function CheckoutPage() {
         ...(method?.otpRequired && otp.length === 4 ? { otp } : {}),
       });
       if (paiRes.data?.paymentUrl) setPaymentUrl(paiRes.data.paymentUrl);
-      if (paiRes.data?.simulated || SIMULATE_PAYMENT) {
-        if (simTimerRef.current) clearTimeout(simTimerRef.current);
-        simTimerRef.current = setTimeout(async () => {
-          try {
-            await paiementsAPI.simuler({ commandeId: orderId, provider: method?.provider ?? 'ORANGE' });
-          } catch {}
-        }, 2500);
-      }
     } catch (err) {
       const raw = err?.response?.data?.message || err?.response?.data;
       const msg = Array.isArray(raw) ? raw.join(', ') : (typeof raw === 'string' ? raw : 'Erreur d\'initiation du paiement');
@@ -616,7 +607,7 @@ export default function CheckoutPage() {
   const requiresOperatorMatch = ['ORANGE', 'MOMO', 'MOOV'].includes(method?.provider);
   const phoneOperatorError =
     requiresOperatorMatch && isValidCIPhone(phone) && !phoneMatchesOperator(phone, method.provider)
-      ? `Ce numéro n'est pas un numéro ${OPERATOR_LABEL[method.provider]} (préfixe attendu : ${CI_OPERATOR_PREFIXES[method.provider].join(', ')}).`
+      ? `Ce numéro n'est pas un numéro ${OPERATOR_LABEL[method.provider]}. Veuillez entrer un numéro valide.`
       : '';
 
   const canSubmit = isB2B || (() => {
@@ -650,7 +641,7 @@ export default function CheckoutPage() {
 
       {/* ── Mobile header (sticky, hidden on md+) ─────────────────────────── */}
       <header className="md:hidden sticky top-0 z-30"
-        style={{ background: 'rgba(255,250,243,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(234,88,12,0.10)' }}>
+        style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(234,88,12,0.10)' }}>
         <div className="px-4 h-14 flex items-center gap-3 max-w-lg mx-auto">
           <button onClick={() => navigate('/cart')}
             style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(234,88,12,0.08)', border: 'none', cursor: 'pointer', color: '#EA580C' }}>
@@ -659,11 +650,7 @@ export default function CheckoutPage() {
           <h1 style={{ fontWeight: 800, fontSize: 17, color: '#1A0C00', letterSpacing: '-0.03em', margin: 0 }}>
             {isB2B ? 'Confirmer la commande' : 'Paiement'}
           </h1>
-          {SIMULATE_PAYMENT && !isB2B && (
-            <span style={{ marginLeft: 'auto', fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 8, background: '#FEF3C7', color: '#92400E' }}>
-              MODE TEST
-            </span>
-          )}
+
         </div>
       </header>
 
@@ -835,11 +822,7 @@ export default function CheckoutPage() {
                   {isB2B ? 'Votre commande sera facturée en fin de mois' : 'Choisissez votre mode de paiement'}
                 </p>
               </div>
-              {SIMULATE_PAYMENT && !isB2B && (
-                <span style={{ fontSize: 10, fontWeight: 700, padding: '5px 12px', borderRadius: 8, background: '#FEF3C7', color: '#92400E', flexShrink: 0, marginTop: 4, letterSpacing: '0.04em' }}>
-                  MODE TEST
-                </span>
-              )}
+
             </div>
             <div style={{ height: 1, background: 'linear-gradient(90deg, rgba(234,88,12,0.18) 0%, transparent 100%)' }} />
           </div>
@@ -1271,7 +1254,7 @@ export default function CheckoutPage() {
         right: 0,
         padding: '10px 16px env(safe-area-inset-bottom, 20px)',
         paddingBottom: 'max(20px, env(safe-area-inset-bottom, 20px))',
-        background: 'rgba(255,250,243,0.97)',
+        background: 'rgba(255,255,255,0.97)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
         borderTop: '1px solid rgba(234,88,12,0.10)',

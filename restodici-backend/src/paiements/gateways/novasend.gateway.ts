@@ -1,8 +1,9 @@
 import { Logger } from '@nestjs/common';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
-import * as crypto from 'crypto';
 import { Integration } from '../../common/entities/integration.entity';
+import { verifyNovaSendSignature } from '../webhook-signature.util';
+import { isSuccessStatus, isFailedStatus } from '../novasend-status.util';
 import {
   PaymentGateway,
   InitiatePaymentOptions,
@@ -64,30 +65,31 @@ export class NovaSendGateway implements PaymentGateway {
     return this.callApi(reference, options);
   }
 
-  verifyWebhook(payload: any, signature?: string): boolean {
-    const secret = this.integration.webhookSecret || process.env.NOVASEND_WEBHOOK_SECRET;
-    if (!secret) return process.env.NODE_ENV !== 'production';
-    if (!signature) return false;
-    const raw = typeof payload === 'string' ? payload : JSON.stringify(payload);
-    const expected = crypto
-      .createHmac('sha256', secret)
-      .update(raw)
-      .digest('hex');
-    const a = Buffer.from(signature);
-    const b = Buffer.from(expected);
-    return a.length === b.length && crypto.timingSafeEqual(a, b);
+  verifyWebhook(payload: any, signature?: string, rawBody?: string): boolean {
+    const secret =
+      this.integration.webhookSecret || process.env.NOVASEND_WEBHOOK_SECRET;
+    // [SÉCURITÉ] Fail-closed en toutes circonstances. Un endpoint webhook est
+    // public (ngrok en staging) : sans secret, n'importe qui pourrait POSTer
+    // {reference, status:'processed'} et valider une commande sans payer.
+    if (!secret) {
+      this.logger.error(
+        'NOVASEND_WEBHOOK_SECRET absent — webhook rejeté (fail-closed)',
+      );
+      return false;
+    }
+    // Corps brut si disponible ; sinon repli dégradé sur le JSON re-sérialisé.
+    const raw =
+      rawBody ??
+      (typeof payload === 'string' ? payload : JSON.stringify(payload));
+    return verifyNovaSendSignature(raw, signature, secret);
   }
 
   async handleWebhook(payload: any): Promise<PaymentWebhookResult> {
     const { reference, status, metadata } = payload;
 
-    const s = String(status ?? '').toLowerCase();
-    const FAILED_STATUSES = ['failed', 'expired', 'cancelled', 'declined'];
-    const SUCCESS_STATUSES = ['successful', 'success', 'succeeded', 'completed'];
-
     let normalizedStatus: 'SUCCESS' | 'FAILED' | 'PENDING' = 'PENDING';
-    if (SUCCESS_STATUSES.includes(s)) normalizedStatus = 'SUCCESS';
-    else if (FAILED_STATUSES.includes(s)) normalizedStatus = 'FAILED';
+    if (isSuccessStatus(status)) normalizedStatus = 'SUCCESS';
+    else if (isFailedStatus(status)) normalizedStatus = 'FAILED';
 
     return {
       transactionId: reference,
@@ -236,8 +238,9 @@ export class NovaSendGateway implements PaymentGateway {
         }
       }
 
-      this.logger.error(`NovaSend API error [${providerCode}] (${url}):`, err?.response?.data ?? err.message);
-      throw err;
+      const errorMsg = err?.response?.data || err.message;
+      this.logger.error(`NovaSend API error [${providerCode}] (${url}):`, JSON.stringify(errorMsg));
+      throw new Error(JSON.stringify(errorMsg));
     }
   }
 

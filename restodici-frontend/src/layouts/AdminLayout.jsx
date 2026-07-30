@@ -8,13 +8,14 @@ import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Users, UtensilsCrossed, ScrollText,
   Download, Settings, LogOut, X, Menu,
-  Truck, BarChart2, Percent, Bell, Activity,
+  Truck, BarChart2, Percent, Bell, Activity, AlertTriangle,
 } from 'lucide-react';
 import { ORANGE as ACCENT } from '../theme/colors';
+import { BrandMark } from '../components/shared/BrandLogo';
 
 const MENU_ITEMS = [
   { id: 'overview',      label: "Vue d'ensemble",  icon: LayoutDashboard, path: '/admin' },
-  { id: 'notifications', label: 'Notifications',   icon: Bell,            path: '/admin?tab=notifications' },
+  { id: 'alertes', label: 'Alertes système', icon: AlertTriangle,    path: '/admin?tab=alertes' },
   { id: 'users',         label: 'Utilisateurs',    icon: Users,           path: '/admin?tab=users' },
   { id: 'restaurants',   label: 'Restaurants',     icon: UtensilsCrossed, path: '/admin?tab=restaurants' },
   { id: 'fournisseurs',  label: 'Fournisseurs',    icon: Truck,           path: '/admin?tab=fournisseurs' },
@@ -132,7 +133,7 @@ export default function AdminLayout() {
   const handleMouseLeave = useCallback(() => setMouseY(null), []);
 
   return (
-    <div style={{ minHeight: '100dvh', background: '#FFF4ED' }}>
+    <div style={{ minHeight: '100dvh', background: '#FFFFFF' }}>
 
       <style>{`
         @keyframes dockIn {
@@ -180,11 +181,9 @@ export default function AdminLayout() {
         {/* ── Logo / Icône app ── */}
         <div style={{
           width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-          background: 'linear-gradient(135deg, #EA580C 0%, #F8A020 100%)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          boxShadow: '0 4px 16px rgba(255,140,0,0.45), inset 0 1px 0 rgba(255,255,255,0.2)',
         }}>
-          <UtensilsCrossed style={{ width: 20, height: 20, color: '#fff' }} />
+          <BrandMark size={38} shadow />
         </div>
 
         <DockSep />
@@ -224,9 +223,7 @@ export default function AdminLayout() {
             style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(24px)', borderRight: '1px solid rgba(0,0,0,0.08)' }}>
             <div style={{ padding: '20px 16px', borderBottom: '1px solid rgba(0,0,0,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg, #EA580C, #F8A020)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(255,140,0,0.35)' }}>
-                  <UtensilsCrossed style={{ width: 18, height: 18, color: '#fff' }} />
-                </div>
+                <BrandMark size={36} shadow />
                 <div>
                   <p style={{ fontSize: 9, fontWeight: 700, color: ACCENT, textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Admin</p>
                   <p style={{ fontSize: 15, fontWeight: 800, color: '#1F2937', margin: 0 }}>Resto d'ici</p>

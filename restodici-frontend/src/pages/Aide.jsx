@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UtensilsCrossed, ChevronDown, Search, ShoppingBag, CreditCard, Building2, Headphones, ArrowRight } from 'lucide-react';
+import BrandLogo from '../components/shared/BrandLogo';
 import MiniFooter from '../components/shared/MiniFooter';
 
 const T = { accent: '#EA580C', accentD: '#C2410C', bg: '#FFFFFF', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
@@ -11,12 +12,7 @@ function MiniNav() {
   return (
     <nav style={{ background: '#fff', borderBottom: '1px solid rgba(255,140,0,0.12)', position: 'sticky', top: 0, zIndex: 50 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <div style={{ width: 36, height: 36, borderRadius: 10, background: `linear-gradient(135deg, ${T.accent}, #FFB800)`, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 12px ${T.accent}40` }}>
-            <UtensilsCrossed style={{ width: 17, height: 17, color: '#fff' }} />
-          </div>
-          <span style={{ fontFamily: serif, fontWeight: 800, color: T.dark, fontSize: 18 }}>Resto d'ici</span>
-        </Link>
+        <BrandLogo size={34} to="/" />
         <Link to="/" style={{ fontFamily: sans, fontSize: 13, color: T.muted, textDecoration: 'none', fontWeight: 500 }}>← Accueil</Link>
       </div>
     </nav>

@@ -142,13 +142,13 @@ function ReceiptModal({ order, onClose, onDownload }) {
       body{font-family:'Inter',system-ui,sans-serif;max-width:400px;margin:24px auto;color:#0F172A;padding:0 16px}
       .rc-brand{font-size:20px;font-weight:800;margin:0}
       .rc-sub{font-size:12px;color:#64748B;margin:2px 0 0}
-      .rc-pill{display:inline-block;font-size:11px;font-weight:700;color:#16A34A;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:99px;padding:3px 10px;margin:10px 0}
+      .rc-pill{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#15803D;border:1px solid #86EFAC;border-radius:3px;padding:3px 8px;margin:10px 0}
       .rc-meta{display:flex;justify-content:space-between;font-size:12px;color:#475569;margin:4px 0}
       .rc-meta b{color:#0F172A;font-weight:700}
-      .rc-divider{border:none;border-top:1px dashed #CBD5E1;margin:12px 0}
+      .rc-divider{border:none;border-top:1px solid #CBD5E1;margin:12px 0}
       .rc-row{display:flex;justify-content:space-between;font-size:13px;margin:6px 0}
       .rc-tot{display:flex;justify-content:space-between;font-size:12px;color:#64748B;margin:4px 0}
-      .rc-ttc{display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:${ACCENT};margin-top:8px}
+      .rc-ttc{display:flex;justify-content:space-between;font-size:16px;font-weight:800;color:#0F172A;margin-top:10px;padding-top:10px;border-top:2px solid #0F172A}
       .rc-foot{font-size:10px;color:#94A3B8;text-align:center;margin-top:20px;line-height:1.5}
     </style></head><body>${content}</body></html>`);
     win.document.close(); win.print();
@@ -158,16 +158,18 @@ function ReceiptModal({ order, onClose, onDownload }) {
     <>
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(3px)', zIndex: 999 }} />
       <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, pointerEvents: 'none' }}>
-        <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden border border-slate-200"
-          style={{ pointerEvents: 'auto', animation: 'slideInUp 0.25s ease-out' }}>
-          <div className="px-5 py-4 flex items-center justify-between" style={{ background: DARK_NAVY }}>
+        {/* Document comptable : pas d'animation d'entrée, angles peu marqués,
+            aucun aplat de couleur décoratif. */}
+        <div className="bg-white rounded-md w-full max-w-sm shadow-xl overflow-hidden border border-slate-300"
+          style={{ pointerEvents: 'auto' }}>
+          <div className="px-5 py-4 flex items-center justify-between border-b-2" style={{ background: DARK_NAVY, borderBottomColor: '#334155' }}>
             <div>
               <h3 className="text-white font-bold text-sm flex items-center gap-2">
-                <Receipt className="w-4 h-4 text-orange-400" /> Reçu officiel de paiement
+                <Receipt className="w-4 h-4 text-slate-300" /> Reçu officiel de paiement
               </h3>
               <p className="text-slate-400 text-xs">Commande N° {order.numero}</p>
             </div>
-            <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded-lg transition"><X className="w-4 h-4" /></button>
+            <button onClick={onClose} className="text-slate-400 hover:text-white p-1 rounded"><X className="w-4 h-4" /></button>
           </div>
           <div className="p-5 max-h-[70vh] overflow-y-auto">
             <div ref={printRef}>
@@ -177,13 +179,13 @@ function ReceiptModal({ order, onClose, onDownload }) {
                   <p className="rc-sub" style={{ margin: '2px 0 0', fontSize: 12, color: '#64748B' }}>Reçu de transaction · Resto d'ici</p>
                 </div>
                 {paye && (
-                  <span className="rc-pill flex items-center gap-1" style={{ display: 'inline-flex', fontSize: 11, fontWeight: 700, color: '#16A34A', background: '#ECFDF5', border: '1px solid #A7F3D0', borderRadius: 99, padding: '3px 10px' }}>
+                  <span className="rc-pill flex items-center gap-1" style={{ display: 'inline-flex', fontSize: 10.5, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: '#15803D', background: 'transparent', border: '1px solid #86EFAC', borderRadius: 3, padding: '3px 8px' }}>
                     <CheckCircle2 className="w-3 h-3" /> Payé
                   </span>
                 )}
               </div>
 
-              <hr className="rc-divider" style={{ border: 'none', borderTop: '1px dashed #CBD5E1', margin: '12px 0' }} />
+              <hr className="rc-divider" style={{ border: 'none', borderTop: '1px solid #CBD5E1', margin: '12px 0' }} />
 
               {[
                 ['Date & Heure', date],
@@ -196,7 +198,7 @@ function ReceiptModal({ order, onClose, onDownload }) {
                 </div>
               ))}
 
-              <hr className="rc-divider" style={{ border: 'none', borderTop: '1px dashed #CBD5E1', margin: '12px 0' }} />
+              <hr className="rc-divider" style={{ border: 'none', borderTop: '1px solid #CBD5E1', margin: '12px 0' }} />
 
               {(order.lignes || []).map((l, i) => (
                 <div key={i} className="rc-row" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, margin: '6px 0' }}>
@@ -205,7 +207,7 @@ function ReceiptModal({ order, onClose, onDownload }) {
                 </div>
               ))}
 
-              <hr className="rc-divider" style={{ border: 'none', borderTop: '1px dashed #CBD5E1', margin: '12px 0' }} />
+              <hr className="rc-divider" style={{ border: 'none', borderTop: '1px solid #CBD5E1', margin: '12px 0' }} />
 
               <div className="rc-tot" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748B', margin: '4px 0' }}>
                 <span>Sous-total HT</span><span>{formatFCFA(totalHT)}</span>
@@ -213,7 +215,7 @@ function ReceiptModal({ order, onClose, onDownload }) {
               <div className="rc-tot" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#64748B', margin: '4px 0' }}>
                 <span>TVA (18%)</span><span>{formatFCFA(tva)}</span>
               </div>
-              <div className="rc-ttc" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: ACCENT, marginTop: 8 }}>
+              <div className="rc-ttc" style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: '#0F172A', marginTop: 10, paddingTop: 10, borderTop: '2px solid #0F172A' }}>
                 <span>Total TTC</span><span>{formatFCFA(total)}</span>
               </div>
 
@@ -225,12 +227,12 @@ function ReceiptModal({ order, onClose, onDownload }) {
           </div>
           <div className="px-5 pb-5 pt-2 flex gap-3 border-t border-slate-100 bg-slate-50">
             <button onClick={handlePrint}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-semibold text-xs border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 transition">
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded font-semibold text-xs border border-slate-300 bg-white text-slate-700 hover:bg-slate-100">
               <Printer className="w-3.5 h-3.5" /> Imprimer
             </button>
             <button onClick={() => onDownload(order.id)}
-              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl font-bold text-xs text-white shadow-sm transition hover:opacity-90"
-              style={{ background: ACCENT }}>
+              className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded font-bold text-xs text-white hover:opacity-90"
+              style={{ background: DARK_NAVY }}>
               <Download className="w-3.5 h-3.5" /> Télécharger PDF
             </button>
           </div>

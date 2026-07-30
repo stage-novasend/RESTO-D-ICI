@@ -8,13 +8,20 @@ import { Article } from './entities/article.entity';
 import { Categorie } from './entities/categorie.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity'; // ✅ Import
 import { AuditLog } from '../common/entities/audit-log.entity';
+import { LigneCommande } from '../commandes/entities/ligne-commande.entity';
 import { AuditService } from '../common/audit.service';
 import { PromosModule } from '../promos/promos.module';
 
 @Module({
   imports: [
     CacheModule.register(),
-    TypeOrmModule.forFeature([Article, Categorie, Restaurant, AuditLog]),
+    TypeOrmModule.forFeature([
+      Article,
+      Categorie,
+      Restaurant,
+      AuditLog,
+      LigneCommande,
+    ]),
     PromosModule,
   ],
   controllers: [MenuController],

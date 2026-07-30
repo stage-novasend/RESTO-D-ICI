@@ -8,12 +8,13 @@ import { formatFCFA } from '../../utils/formatters';
 import {
   BG, SURFACE as CARD, TEXT, MUTED_WARM as MUTED, MUTED_WARM as FAINT, BORDER_SOFT as BORDER,
   ORANGE as ACC, ORANGE_PEACH as ACL,
+  PAGE,
 } from '../../theme/colors';
 const SH = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';
 
 const STATUS = {
   EN_ATTENTE:     { label: 'En attente',     color: '#D97706', bg: '#FFFBEB', dot: '#FBBF24' },
-  RECUE:          { label: 'Reçue',          color: '#2563EB', bg: '#EFF6FF', dot: '#60A5FA' },
+  RECUE:          { label: 'Reçue',          color: '#EA580C', bg: '#FFF7ED', dot: '#FB923C' },
   CONFIRMEE:      { label: 'Confirmée',      color: '#059669', bg: '#ECFDF5', dot: '#34D399' },
   EN_PREP:        { label: 'En préparation', color: '#D97706', bg: '#FFFBEB', dot: '#FBBF24' },
   EN_PREPARATION: { label: 'En préparation', color: '#D97706', bg: '#FFFBEB', dot: '#FBBF24' },
@@ -63,7 +64,7 @@ export default function B2BOrders() {
   const shown  = filter === 'active' ? active : filter === 'done' ? done : orders;
 
   return (
-    <div className="min-h-screen" style={{ background: BG }}>
+    <div className="min-h-screen" style={{ background: PAGE }}>
 
       {/* Page header — unified white/orange */}
       <div className="sticky top-0 z-10 bg-white" style={{ borderBottom: '1px solid rgba(0,0,0,0.07)', boxShadow: '0 1px 6px rgba(0,0,0,0.04)' }}>
@@ -87,7 +88,7 @@ export default function B2BOrders() {
             <div className="flex items-center gap-2">
               <Link to="/b2b/order?mode=schedule"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition hover:opacity-80"
-                style={{ background: '#EFF6FF', color: '#2563EB', border: '1px solid #BFDBFE' }}>
+                style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
                 <CalendarDays className="w-3.5 h-3.5" /> Planifier
               </Link>
               <Link to="/b2b/order?mode=instant"
@@ -182,8 +183,8 @@ export default function B2BOrders() {
                 onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                 onClick={() => navigate(isGroupee ? `/b2b/suivi/${o.id}` : `/suivi/${o.id}`)}>
                 <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
-                  style={{ background: isGroupee ? '#EFF6FF' : ACL }}>
-                  <ShoppingBag className="w-4 h-4" style={{ color: isGroupee ? '#3B82F6' : ACC }} />
+                  style={{ background: isGroupee ? '#F5F5F4' : ACL }}>
+                  <ShoppingBag className="w-4 h-4" style={{ color: isGroupee ? '#78716C' : ACC }} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-[13px] font-semibold truncate" style={{ color: TEXT }}>

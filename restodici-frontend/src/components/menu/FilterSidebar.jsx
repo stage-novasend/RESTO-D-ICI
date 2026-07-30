@@ -21,9 +21,9 @@ const C = {
   muted:   '#7A5E3A',
   mutedL:  '#B09070',
   card:    '#FFFFFF',
-  bg:      '#FFF4ED',
-  line:    'rgba(234,88,12,0.14)',
-  shadow:  '0 8px 30px rgba(234,88,12,0.08)',
+  bg:      '#F1F5F9', // remplissage discret (neutre, visible sur page blanche)
+  line:    '#E2E8F0',
+  shadow:  '0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06)',
 };
 
 const sans = "'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif";

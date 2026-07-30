@@ -16,7 +16,7 @@ export default function ClientLayout() {
       <header
         className="sticky top-0 z-50 border-b shadow-sm"
         style={{
-          background: 'rgba(255,250,243,0.96)',
+          background: 'rgba(255,255,255,0.96)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           borderColor: 'var(--color-line)',

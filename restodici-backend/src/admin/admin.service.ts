@@ -19,6 +19,7 @@ import {
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 import { PaymentMethod } from '../paiements/entities/payment-method.entity';
+import { CommandesGateway } from '../commandes/commandes.gateway';
 import { paginationParams, buildPaginated } from '../common/pagination/pagination';
 
 /* ── Clés de config avec leurs métadonnées ── */
@@ -227,7 +228,21 @@ export class AdminService {
     private factureRepo: Repository<FactureMensuelleB2B>,
     @InjectRepository(PaymentMethod)
     private paymentMethodRepo: Repository<PaymentMethod>,
+    private commandesGateway: CommandesGateway,
   ) {}
+
+  /**
+   * Signale aux admins connectés qu'une donnée de leur périmètre a changé.
+   * Le payload reste volontairement minimal : le client recharge la ressource
+   * concernée plutôt que de reconstruire son état depuis l'événement.
+   */
+  private notifyAdmins(resource: string, detail?: Record<string, unknown>) {
+    this.commandesGateway.emitToAdmins('admin.data.changed', {
+      resource,
+      ...detail,
+      at: new Date().toISOString(),
+    });
+  }
 
   async getStats() {
     const [
@@ -343,6 +358,7 @@ export class AdminService {
     }
 
     const saved = await this.userRepo.save(user);
+    this.notifyAdmins('users', { id: saved.id, created: true });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _p, ...result } = saved as any;
     return result;
@@ -381,6 +397,7 @@ export class AdminService {
     }
 
     const saved = await this.userRepo.save(user);
+    this.notifyAdmins('users', { id: saved.id });
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _p, ...result } = saved as any;
     return result;
@@ -391,6 +408,7 @@ export class AdminService {
     if (!user) throw new NotFoundException('Utilisateur introuvable');
     user.actif = !user.actif;
     await this.userRepo.save(user);
+    this.notifyAdmins('users', { id: user.id, actif: user.actif });
     return { id: user.id, actif: user.actif };
   }
 
@@ -400,6 +418,7 @@ export class AdminService {
       .update()
       .set({ actif: true, emailVerified: true })
       .execute();
+    this.notifyAdmins('users', { bulk: true });
     return { updated: result.affected ?? 0 };
   }
 
@@ -419,7 +438,9 @@ export class AdminService {
     description?: string;
   }) {
     const r = this.restaurantRepo.create({ ...dto, actif: true });
-    return this.restaurantRepo.save(r);
+    const created = await this.restaurantRepo.save(r);
+    this.notifyAdmins('restaurants', { id: created.id, created: true });
+    return created;
   }
 
   async updateRestaurant(
@@ -435,7 +456,9 @@ export class AdminService {
     const r = await this.restaurantRepo.findOne({ where: { id } });
     if (!r) throw new NotFoundException('Restaurant introuvable');
     Object.assign(r, dto);
-    return this.restaurantRepo.save(r);
+    const updated = await this.restaurantRepo.save(r);
+    this.notifyAdmins('restaurants', { id: updated.id });
+    return updated;
   }
 
   async toggleRestaurant(id: string) {
@@ -443,6 +466,7 @@ export class AdminService {
     if (!r) throw new NotFoundException('Restaurant introuvable');
     r.actif = !r.actif;
     await this.restaurantRepo.save(r);
+    this.notifyAdmins('restaurants', { id: r.id, actif: r.actif });
     return { id: r.id, actif: r.actif };
   }
 
@@ -710,6 +734,7 @@ export class AdminService {
     entry.value = value;
     entry.updatedBy = adminId;
     const saved = await this.configRepo.save(entry);
+    this.notifyAdmins('config', { key: saved.key });
     return { key: saved.key, updatedAt: saved.updatedAt };
   }
 
@@ -751,6 +776,10 @@ export class AdminService {
       throw new NotFoundException('Moyen de paiement introuvable');
     method.enabled = !method.enabled;
     const saved = await this.paymentMethodRepo.save(method);
+    this.notifyAdmins('payment-methods', {
+      id: saved.id,
+      enabled: saved.enabled,
+    });
     return { id: saved.id, enabled: saved.enabled };
   }
 
@@ -870,6 +899,7 @@ export class AdminService {
       createdBy: adminId,
     });
     const saved = await this.integrationRepo.save(entity);
+    this.notifyAdmins('integrations', { id: saved.id, created: true });
     return this.maskIntegration(saved);
   }
 
@@ -895,6 +925,7 @@ export class AdminService {
 
     Object.assign(entity, dto);
     const saved = await this.integrationRepo.save(entity);
+    this.notifyAdmins('integrations', { id: saved.id });
     return this.maskIntegration(saved);
   }
 
@@ -902,6 +933,7 @@ export class AdminService {
     const entity = await this.integrationRepo.findOne({ where: { id } });
     if (!entity) throw new NotFoundException('Intégration introuvable');
     await this.integrationRepo.remove(entity);
+    this.notifyAdmins('integrations', { id, deleted: true });
     return { deleted: id };
   }
 
@@ -1001,6 +1033,7 @@ export class AdminService {
       throw new BadRequestException('Taux invalide (0-50%)');
     restaurant.tauxCommission = taux;
     await this.restaurantRepo.save(restaurant);
+    this.notifyAdmins('commissions', { restaurantId, tauxCommission: taux });
     return { restaurantId, tauxCommission: taux };
   }
 

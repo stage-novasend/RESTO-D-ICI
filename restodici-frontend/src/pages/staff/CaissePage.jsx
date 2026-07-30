@@ -10,6 +10,8 @@ import orangeMoneyLogo from '../../assets/payments/orange-money.svg';
 import mtnMomoLogo from '../../assets/payments/mtn-momo.svg';
 import moovMoneyLogo from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
+import wavelogo from '../../assets/payments/wave.svg';
+import especesLogo from '../../assets/payments/especes.svg';
 
 // ── Tokens — miroir StaffDashboard (couleurs : theme/colors.js) ──────────────
 import {
@@ -73,9 +75,9 @@ const NOVASEND_CARD_ENABLED = false;
 // Tous les modes digitaux passent par NovaSend /v1/payin/sessions → paymentUrl + QR
 // Carte : TPE physique pour l'instant, NovaSend digital quand NOVASEND_CARD_ENABLED = true
 const PAY_MODES = [
-  { id: 'ESPECES',       label: 'Espèces',      logo: null,             isDigital: false,                   provider: null    },
+  { id: 'ESPECES',       label: 'Espèces',      logo: especesLogo,      isDigital: false,                   provider: null    },
   { id: 'CHEQUE',        label: 'Chèque',       logo: null,             isDigital: false,                   provider: null    },
-  { id: 'WAVE',          label: 'Wave',          logo: null,             isDigital: true,                    provider: 'WAVE'  },
+  { id: 'WAVE',          label: 'Wave',          logo: wavelogo,        isDigital: true,                    provider: 'WAVE'  },
   { id: 'NOVASEND',      label: 'NovaSend',      logo: null,             isDigital: true,                    provider: 'NOVASEND' },
   { id: 'ORANGE_MONEY',  label: 'Orange Money',  logo: orangeMoneyLogo,  isDigital: true,                    provider: 'ORANGE'},
   { id: 'MTN_MONEY',     label: 'MTN MoMo',      logo: mtnMomoLogo,      isDigital: true,                    provider: 'MOMO'  },
@@ -85,11 +87,23 @@ const PAY_MODES = [
 
 const MODE_LABEL = { SUR_PLACE: 'Sur place', EMPORTER: 'À emporter', LIVRAISON: 'Livraison' };
 
-// 3 boutons principaux du terminal
-const TERMINAL_MODES = [
-  { id: 'ESPECES',      label: 'Espèces',      Icon: Banknote    },
-  { id: 'CHEQUE',       label: 'Chèque',       Icon: FileText    },
-  { id: 'ORANGE_MONEY', label: 'Mobile Money', Icon: Smartphone  },
+/* Terminal de caisse.
+   CDC §9.3 « Paiement caisse » : le règlement au comptoir couvre espèces et
+   chèque (acteur Caissier) — ils forment la rangée principale.
+   CDC §9.3 « Mobile Money » énumère Orange Money, MTN MoMo, Wave et Moov
+   Money : chaque portefeuille est donc sélectionnable individuellement. Un
+   bouton « Mobile Money » unique enregistrait auparavant tout paiement comme
+   ORANGE_MONEY, ce qui faussait le mode réellement encaissé. */
+const TERMINAL_CASH_MODES = [
+  { id: 'ESPECES', label: 'Espèces', Icon: Banknote, logo: especesLogo },
+  { id: 'CHEQUE',  label: 'Chèque',  Icon: FileText, logo: null },
+];
+
+const TERMINAL_WALLET_MODES = [
+  { id: 'ORANGE_MONEY', label: 'Orange Money', Icon: Smartphone, logo: orangeMoneyLogo },
+  { id: 'MTN_MONEY',    label: 'MTN MoMo',     Icon: Smartphone, logo: mtnMomoLogo },
+  { id: 'MOOV_MONEY',   label: 'Moov Money',   Icon: Smartphone, logo: moovMoneyLogo },
+  { id: 'WAVE',         label: 'Wave',         Icon: Smartphone, logo: wavelogo },
 ];
 
 const STATUT_META = {
@@ -104,6 +118,32 @@ const STATUT_META = {
 
 
 // ── StatusPill (B2B style) ────────────────────────────────────────────────────
+/* Bouton de mode de paiement du terminal.
+   Affiche le logo officiel du moyen quand il existe (les SVG de
+   assets/payments), sinon le pictogramme monochrome — le chèque n'a pas de
+   logo de marque, un glyphe est plus honnête qu'une image générique. */
+function PayModeButton({ mode, selected, onSelect }) {
+  return (
+    <button
+      onClick={onSelect}
+      title={mode.label}
+      style={{
+        flex: 1, padding: '10px 6px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
+        background: selected ? PRIMARY_LIGHT : CARD,
+        border: `1.5px solid ${selected ? 'rgba(255,140,0,0.35)' : BORDER}`,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+        transition: 'all 0.14s',
+        boxShadow: selected ? '0 2px 10px rgba(255,140,0,0.18)' : 'none',
+      }}
+    >
+      {mode.logo
+        ? <img src={mode.logo} alt="" style={{ height: 22, width: 'auto', objectFit: 'contain', opacity: selected ? 1 : 0.72 }} />
+        : <mode.Icon size={20} color={selected ? PRIMARY : MUTED} />}
+      <span style={{ fontSize: 11, fontWeight: 700, color: selected ? PRIMARY_CONTAINER : NAVY }}>{mode.label}</span>
+    </button>
+  );
+}
+
 function StatusPill({ statut }) {
   const s = STATUT_META[statut] || { bg: BG, color: MUTED, dot: BORDER, label: statut };
   return (
@@ -787,28 +827,37 @@ export default function CaissePage() {
                 </p>
               </div>
 
-              {/* 3 boutons mode paiement */}
-              <div style={{ display: 'flex', gap: 8 }}>
-                {TERMINAL_MODES.map(m => {
-                  const sel = payMode === m.id;
-                  return (
-                    <button
+              {/* Modes de paiement — comptoir (CDC §9.3) puis portefeuilles */}
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {TERMINAL_CASH_MODES.map(m => (
+                    <PayModeButton
                       key={m.id}
-                      onClick={() => { setPayMode(m.id); setMontant(''); }}
-                      style={{
-                        flex: 1, padding: '12px 6px', borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
-                        background: sel ? PRIMARY_LIGHT : CARD,
-                        border: `1.5px solid ${sel ? 'rgba(255,140,0,0.35)' : BORDER}`,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-                        transition: 'all 0.14s',
-                        boxShadow: sel ? `0 2px 10px rgba(255,140,0,0.18)` : 'none',
-                      }}
-                    >
-                      <m.Icon size={18} color={sel ? PRIMARY : MUTED} />
-                      <span style={{ fontSize: 11, fontWeight: 700, color: sel ? PRIMARY_CONTAINER : NAVY }}>{m.label}</span>
-                    </button>
-                  );
-                })}
+                      mode={m}
+                      selected={payMode === m.id}
+                      onSelect={() => { setPayMode(m.id); setMontant(''); }}
+                    />
+                  ))}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ flex: 1, height: 1, background: BORDER }} />
+                  <span style={{ fontSize: 9, fontWeight: 700, color: FAINT, textTransform: 'uppercase', letterSpacing: '0.16em' }}>
+                    Mobile Money
+                  </span>
+                  <div style={{ flex: 1, height: 1, background: BORDER }} />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 8 }}>
+                  {TERMINAL_WALLET_MODES.map(m => (
+                    <PayModeButton
+                      key={m.id}
+                      mode={m}
+                      selected={payMode === m.id}
+                      onSelect={() => { setPayMode(m.id); setMontant(''); }}
+                    />
+                  ))}
+                </div>
               </div>
 
               {/* Montant reçu + Rendu (non-digital) */}

@@ -24,16 +24,18 @@
   --color-primary-glow:  rgba(255,140,0,0.3);
 
   /* ── Surfaces ─────────────────────────────────────────── */
-  --surface-base:    #FFF4ED;
+  --surface-base:    #FFFFFF;
   --surface-card:    #FFFFFF;
   --surface-raised:  #FFFFFF;
   --surface-overlay: rgba(61,21,0,0.45);
 
   /* ── Light mode surfaces (backward compat) ───────────── */
-  --color-bg:            #FFF4ED;
-  --color-bg-alt:        #FFEBDD;
+  /* Fond de page blanc pur ; les surfaces « alt » restent neutres pour
+     rester visibles sur ce blanc (inputs, survols, zébrures). */
+  --color-bg:            #FFFFFF;
+  --color-bg-alt:        #F1F5F9;
   --color-surface:       #FFFFFF;
-  --color-surface-alt:   #FFF4ED;
+  --color-surface-alt:   #F1F5F9;
 
   /* ── Dark mode surfaces (used when .dark class present) ── */
   --color-dark-bg:       #1A0C00;
@@ -124,11 +126,12 @@ html {
   scroll-behavior: smooth;           /* défilement fluide au clic sur ancre */
   text-size-adjust: 100%;            /* empêche iOS de grossir le texte à tort */
   -webkit-text-size-adjust: 100%;
-  background-color: #FFF4ED;
+  -webkit-tap-highlight-color: transparent;
+  background-color: #FFFFFF;
 }
 
 body {
-  background-color: #FFF4ED;
+  background-color: #FFFFFF;
   color: var(--color-text);
   font-family: 'Manrope', 'Inter', system-ui, sans-serif;
   font-weight: 600;
@@ -136,6 +139,10 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100dvh;               /* dvh évite le bug de hauteur sur mobile */
   overflow-x: hidden;               /* évite le défilement horizontal parasite */
+}
+
+a, button, input, select, textarea {
+  touch-action: manipulation;
 }
 
 /* ── Transition de page — fondu rapide sur chaque changement de route ── */

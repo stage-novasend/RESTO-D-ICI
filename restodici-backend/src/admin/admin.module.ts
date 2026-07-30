@@ -9,6 +9,7 @@ import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
 import { SystemConfig } from '../common/entities/system-config.entity';
 import { Integration } from '../common/entities/integration.entity';
 import { AuthModule } from '../auth/auth.module';
+import { CommandesModule } from '../commandes/commandes.module';
 import { BackupService } from './backup.service';
 import { SlaService } from './sla.service';
 import { SlaIncident } from './entities/sla-incident.entity';
@@ -31,6 +32,7 @@ import { PaymentMethod } from '../paiements/entities/payment-method.entity';
       PaymentMethod,
     ]),
     AuthModule,
+    CommandesModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, BackupService, SlaService],

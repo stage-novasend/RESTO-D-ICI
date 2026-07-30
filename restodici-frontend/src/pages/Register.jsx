@@ -6,6 +6,7 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { Mail, Lock, User, Store, Phone, Building2, ChefHat, UtensilsCrossed } from "lucide-react";
+import { BrandMark } from "../components/shared/BrandLogo";
 import { useAuth } from "../hooks/useAuth";
 import { validateField, MSG, EMAIL_PATTERN, CI_PHONE_PATTERN } from "../utils/validators";
 
@@ -127,9 +128,7 @@ export default function Register() {
 
           {/* ── Logo ── */}
           <div className="flex items-center gap-2.5 mb-8">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: '#EA580C' }}>
-              <UtensilsCrossed style={{ width: 18, height: 18, color: 'white' }} />
-            </div>
+            <BrandMark size={36} />
             <span className="font-bold text-lg" style={{ color: '#1A0C00' }}>Resto d'ici</span>
           </div>
 

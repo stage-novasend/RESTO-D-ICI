@@ -206,7 +206,7 @@ export default function OrderTrackingPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] flex items-center justify-center">
+      <div className="min-h-screen bg-white flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin shadow-lg" />
           <p className="text-orange-900/60 font-medium animate-pulse">Chargement du suivi...</p>
@@ -217,7 +217,7 @@ export default function OrderTrackingPage() {
 
   if (error || !order) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
         <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 max-w-sm w-full text-center border border-white shadow-xl">
           <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
             <AlertTriangle className="w-10 h-10 text-red-500" />
@@ -240,7 +240,7 @@ export default function OrderTrackingPage() {
   const CurrentStepIcon = STEPS.find((s) => s.key === order.statut)?.icon || Package;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] font-sans pb-12 selection:bg-orange-200 selection:text-orange-900">
+    <div className="min-h-screen bg-white font-sans pb-12 selection:bg-orange-200 selection:text-orange-900">
       {/* Payment failure banner */}
       {paymentFailed && !isPaid && (
         <div className="bg-red-500 text-white px-4 py-3 flex items-center gap-3 shadow-md animate-in slide-in-from-top-4">
@@ -500,8 +500,8 @@ export default function OrderTrackingPage() {
 
                 {/* Dashed separator */}
                 <div className="w-full border-t-2 border-dashed border-gray-200 my-6 relative">
-                  <div className="absolute -left-8 -top-3 w-6 h-6 bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] rounded-full border-r border-gray-100 shadow-inner"></div>
-                  <div className="absolute -right-8 -top-3 w-6 h-6 bg-gradient-to-br from-[#FFF4ED] to-[#FFEBE0] rounded-full border-l border-gray-100 shadow-inner"></div>
+                  <div className="absolute -left-8 -top-3 w-6 h-6 bg-white rounded-full border-r border-gray-100 shadow-inner"></div>
+                  <div className="absolute -right-8 -top-3 w-6 h-6 bg-white rounded-full border-l border-gray-100 shadow-inner"></div>
                 </div>
 
                 {/* Totals */}

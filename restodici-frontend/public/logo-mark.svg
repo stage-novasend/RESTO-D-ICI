@@ -1,10 +1,9 @@
 <!--
-  favicon.svg — marque Resto d'ici, identique à logo-mark.svg et au composant
-  src/components/shared/BrandLogo.jsx.
+  logo-mark.svg — marque Resto d'ici telle qu'affichée dans l'en-tête de la
+  page d'accueil : carré arrondi en dégradé orange, couverts croisés blancs.
 
-  Un seul logo dans toute l'application : carré arrondi en dégradé orange,
-  couverts croisés blancs. Toute modification doit être reportée dans les trois
-  emplacements, puis le logo des emails régénéré (`npm run email:logo`).
+  Sert de source unique au logo des emails transactionnels
+  (restodici-backend/src/email/logo-asset.ts, régénéré via `npm run email:logo`).
 
   Le tracé des couverts reprend l'icône « utensils-crossed » de lucide-react
   (licence ISC), mise à l'échelle depuis sa grille d'origine de 24×24.
@@ -17,8 +16,10 @@
     </linearGradient>
   </defs>
 
+  <!-- Fond : rayon proportionnel à celui de l'accueil (14 px pour 42 px) -->
   <rect x="0" y="0" width="128" height="128" rx="43" fill="url(#markBg)"/>
 
+  <!-- Couverts croisés : grille lucide 24×24 centrée et agrandie ×3,2 -->
   <g transform="translate(25.6, 25.6) scale(3.2)"
      fill="none" stroke="#FFFFFF" stroke-width="2"
      stroke-linecap="round" stroke-linejoin="round">

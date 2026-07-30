@@ -7,6 +7,7 @@ import {
   Search, X, UtensilsCrossed, Star, Clock, Heart, ArrowLeft,
   ShoppingCart, Plus, Minus, Store, AlertCircle, MapPin, ChevronRight,
   Truck, Package, Navigation, Trash2, SlidersHorizontal, RotateCcw,
+  Flame, History, Utensils,
 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
@@ -18,10 +19,12 @@ import FilterSidebar from '../components/menu/FilterSidebar';
 import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { formatFCFA } from '../utils/formatters';
 import { getArticleImage } from '../utils/articleImage';
+import { BrandMark } from '../components/shared/BrandLogo';
 
 /* ── Design tokens ── */
 const C = {
-  bg:     '#FFF4ED',
+  page:   '#FFFFFF', // fond de page (blanc pur)
+  bg:     '#F1F5F9', // remplissage discret : inputs, survols, vignettes vides
   card:   '#FFFFFF',
   accent: '#EA580C',
   aD:     '#C2410C',
@@ -33,11 +36,13 @@ const C = {
   text:   '#3B2409',
   muted:  '#7A5E3A',
   faint:  '#D1D1D6',
-  line:   'rgba(234,88,12,0.14)',
+  line:   '#E2E8F0',
   nav:    '#FFFFFF',
-  sh:     '0 2px 14px rgba(234,88,12,0.07)',
-  shM:    '0 6px 24px rgba(234,88,12,0.12)',
-  shL:    '0 14px 44px rgba(234,88,12,0.18)',
+  // Ombres neutres : sur fond blanc, une carte blanche ne tient plus que
+  // par son ombre et sa bordure — l'ombre orangée d'avant ne suffisait pas.
+  sh:     '0 1px 2px rgba(15,23,42,0.06), 0 2px 10px rgba(15,23,42,0.05)',
+  shM:    '0 2px 6px rgba(15,23,42,0.07), 0 8px 24px rgba(15,23,42,0.08)',
+  shL:    '0 4px 12px rgba(15,23,42,0.08), 0 16px 44px rgba(15,23,42,0.12)',
 };
 const sans = "'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif";
 
@@ -124,14 +129,7 @@ function buildDynCats(articles, catList) {
 function Logo() {
   return (
     <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-      <div style={{
-        width: 36, height: 36, borderRadius: 10,
-        background: 'linear-gradient(135deg, #EA580C, #FFB800)',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        boxShadow: '0 4px 12px #EA580C44',
-      }}>
-        <UtensilsCrossed size={18} color="#fff" strokeWidth={2.5} />
-      </div>
+      <BrandMark size={36} shadow />
       <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, letterSpacing: '-0.04em' }}>
         <span style={{ color: '#EA580C' }}>Resto</span>
         <span style={{ color: '#1C1C1E' }}>&nbsp;d'ici</span>
@@ -283,7 +281,9 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
 function RestaurantCard({ restaurant, idx, onSelect, matched, favorites, onFav, distance }) {
   const [hov, setHov] = useState(false);
   const img = restaurant.logo || restaurant.coverImage || restaurant.photoUrl || fallback(idx, 480);
-  const rating = (Number(restaurant.noteMoyenne) > 0 ? Number(restaurant.noteMoyenne) : 0).toFixed(1);
+  // Note réelle uniquement : sans avis, on n'affiche pas un « 0.0 » trompeur.
+  const nbAvis = Number(restaurant.nbAvis || 0);
+  const rating = nbAvis > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
   const time   = restaurant.deliveryTime || (20 + (idx % 4) * 5) + '–' + (30 + (idx % 4) * 5) + ' min';
   const isFav  = favorites?.includes(restaurant.id);
   const isOpen = restaurant.isOpen !== false;
@@ -302,7 +302,9 @@ function RestaurantCard({ restaurant, idx, onSelect, matched, favorites, onFav, 
         transition: 'all 0.22s cubic-bezier(.4,0,.2,1)',
         opacity: isOpen ? 1 : 0.68,
         animation: 'fadeUp 0.35s ease both',
-        border: `1px solid ${C.line}`
+        // La carte est blanche sur une page blanche : la bordure se renforce
+        // au survol pour accompagner l'élévation.
+        border: `1px solid ${hov ? '#CBD5E1' : C.line}`
       }}
     >
       <div style={{ position: 'relative', height: 180, overflow: 'hidden' }}>
@@ -322,7 +324,11 @@ function RestaurantCard({ restaurant, idx, onSelect, matched, favorites, onFav, 
           </button>
         </div>
         <div style={{ position: 'absolute', bottom: 10, left: 12, right: 12, display: 'flex', justifyContent: 'space-between' }}>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 12, fontWeight: 700, color: '#fff' }}><Star size={12} fill={C.yellow} color={C.yellow} /> {rating}</span>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 12, fontWeight: 700, color: '#fff' }}>
+            {rating
+              ? <><Star size={12} fill={C.yellow} color={C.yellow} /> {rating} <span style={{ fontWeight: 500, opacity: 0.75 }}>({nbAvis})</span></>
+              : 'Nouveau'}
+          </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {distance != null && distance !== Infinity && <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 11, color: 'rgba(255,255,255,0.9)' }}><MapPin size={11} color="rgba(255,255,255,0.8)" /> {distance < 1 ? '< 1 km' : distance.toFixed(1) + ' km'}</span>}
             <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 11, color: 'rgba(255,255,255,0.9)' }}><Clock size={11} color="rgba(255,255,255,0.8)" /> {time}</span>
@@ -1027,7 +1033,7 @@ export default function MenuPage() {
   };
 
   return (
-    <div style={{ background: C.bg, minHeight: '100dvh', fontFamily: sans }}>
+    <div style={{ background: C.page, minHeight: '100dvh', fontFamily: sans }}>
       <style>{CSS}</style>
 
       {/* ═══ Mode découverte ═══ */}
@@ -1274,7 +1280,7 @@ export default function MenuPage() {
                 {loading && (
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(270px, 1fr))', gap: 20 }}>
                     {[...Array(6)].map((_, i) => (
-                      <div key={i} style={{ background: C.card, borderRadius: 22, overflow: 'hidden', boxShadow: C.sh }}>
+                      <div key={i} style={{ background: C.card, borderRadius: 22, overflow: 'hidden', boxShadow: C.sh, border: `1px solid ${C.line}` }}>
                         <SK w="100%" h={180} r={0} />
                         <div style={{ padding: '14px', display: 'flex', flexDirection: 'column', gap: 8 }}><SK w="70%" h={16} /><SK w="50%" h={12} /><SK w="100%" h={36} r={12} /></div>
                       </div>
@@ -1362,10 +1368,10 @@ export default function MenuPage() {
 
       {/* ═══ Overlay restaurant ═══ */}
       {selectedResto && (
-        <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: C.bg, fontFamily: sans, display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'overlayIn 0.25s ease both' }}>
+        <div style={{ position: 'fixed', inset: 0, zIndex: 150, background: C.page, fontFamily: sans, display: 'flex', flexDirection: 'column', overflow: 'hidden', animation: 'overlayIn 0.25s ease both' }}>
 
           {/* Unified Dynamic Top Bar for Restaurant Menu */}
-          <div style={{ background: 'rgba(255,253,249,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid ' + C.line, boxShadow: '0 8px 30px rgba(234,88,12,0.06)', flexShrink: 0, position: 'relative', zIndex: 10 }}>
+          <div style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid ' + C.line, boxShadow: '0 8px 30px rgba(15,23,42,0.06)', flexShrink: 0, position: 'relative', zIndex: 10 }}>
             <div style={{ padding: '0 24px', height: 86, display: 'flex', alignItems: 'center', gap: 20 }}>
               
               {/* Back Button */}

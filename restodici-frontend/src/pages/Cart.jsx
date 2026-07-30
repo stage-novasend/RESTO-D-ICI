@@ -6,7 +6,7 @@ import {
   Truck, User,
 } from 'lucide-react';
 import { formatFCFA } from '../utils/formatters';
-import { ORANGE, ORANGE_D, NAVY, BG, BORDER_WARM_14 as BORDER, MUTED_TAUPE as MUTED } from '../theme/colors';
+import { ORANGE, ORANGE_D, NAVY, PAGE, BORDER_WARM_14 as BORDER, MUTED_TAUPE as MUTED } from '../theme/colors';
 
 const MODE_META = {
   SUR_PLACE: { label: 'Sur place',   Icon: Store,    color: '#059669', bg: '#F0FDF4' },
@@ -64,12 +64,12 @@ export default function CartPage() {
   const payLabel     = PAYMENT_LABELS[order.paymentMethod] ?? order.paymentMethod ?? 'Paiement mobile';
 
   return (
-    <div style={{ minHeight: '100vh', background: BG, fontFamily: "'Inter', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: PAGE, fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ── Header sticky ── */}
       <header style={{
         position: 'sticky', top: 0, zIndex: 30,
-        background: 'rgba(255,250,243,0.95)', backdropFilter: 'blur(12px)',
+        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(12px)',
         borderBottom: `1px solid ${BORDER}`, boxShadow: '0 1px 8px rgba(0,0,0,0.05)',
       }}>
         <div style={{ maxWidth: 720, margin: '0 auto', padding: '0 16px', height: 56, display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -250,7 +250,7 @@ export default function CartPage() {
       <div style={{
         position: 'fixed', bottom: 0, left: 0, right: 0,
         padding: '14px 16px env(safe-area-inset-bottom, 12px)',
-        background: 'rgba(255,250,243,0.96)', backdropFilter: 'blur(12px)',
+        background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)',
         borderTop: `1px solid ${BORDER}`, zIndex: 40,
       }}>
         <div style={{ maxWidth: 720, margin: '0 auto' }}>

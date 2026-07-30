@@ -4,6 +4,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
+import viteCompression from 'vite-plugin-compression';
+
 // Mapping module → nom du chunk vendor (Rolldown attend une fonction)
 const VENDOR_CHUNKS = {
   'react':            'vendor-react',
@@ -23,6 +25,8 @@ const VENDOR_CHUNKS = {
 export default defineConfig({
   plugins: [
     react(),
+    viteCompression({ algorithm: 'gzip', ext: '.gz' }),
+    viteCompression({ algorithm: 'brotliCompress', ext: '.br' }),
     VitePWA({
       registerType: 'autoUpdate',
       includeAssets: ['favicon.svg', 'icons.svg'],

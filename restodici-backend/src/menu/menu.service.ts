@@ -11,6 +11,8 @@ import { Repository } from 'typeorm';
 import { Article, CibleEnum } from './entities/article.entity';
 import { Categorie } from './entities/categorie.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
+import { LigneCommande } from '../commandes/entities/ligne-commande.entity';
+import { StatutCommande } from '../commandes/entities/commande.entity';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { CreateCategorieDto } from './dto/create-categorie.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
@@ -27,8 +29,77 @@ export class MenuService {
     @InjectRepository(Categorie) private categorieRepo: Repository<Categorie>,
     @InjectRepository(Restaurant)
     private restaurantRepo: Repository<Restaurant>,
+    @InjectRepository(LigneCommande)
+    private ligneRepo: Repository<LigneCommande>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
+
+  /**
+   * Plats les plus commandés, restreints à ceux réellement commandables.
+   *
+   * Sert les suggestions de recherche de la page d'accueil : proposer un plat
+   * indisponible, ou d'un restaurant fermé, enverrait l'utilisateur sur une
+   * recherche vide.
+   *
+   * Le regroupement se fait sur le nom du plat (insensible à la casse) et non
+   * sur son identifiant : « Garba » existe chez plusieurs restaurants et doit
+   * compter comme une seule suggestion.
+   *
+   * Les commandes annulées sont exclues — elles ne traduisent aucune
+   * popularité. La fenêtre glissante évite qu'un plat retiré de la carte il y a
+   * un an domine indéfiniment le classement.
+   */
+  async getPlatsPopulaires(limit = 6, windowDays = 90) {
+    const since = new Date();
+    since.setDate(since.getDate() - windowDays);
+
+    const rows = await this.ligneRepo
+      .createQueryBuilder('ligne')
+      .innerJoin('ligne.commande', 'commande')
+      .innerJoin('ligne.article', 'article')
+      .innerJoin('article.restaurant', 'restaurant')
+      .select('LOWER(article.nom)', 'cle')
+      .addSelect('MIN(article.nom)', 'nom')
+      .addSelect('SUM(ligne.quantite)', 'total')
+      .where('commande.statut != :annulee', { annulee: StatutCommande.ANNULEE })
+      .andWhere('commande.createdAt >= :since', { since })
+      .andWhere('article.disponible = true')
+      .andWhere('restaurant.actif = true')
+      .groupBy('LOWER(article.nom)')
+      .orderBy('SUM(ligne.quantite)', 'DESC')
+      .limit(limit)
+      .getRawMany<{ cle: string; nom: string; total: string }>();
+
+    const populaires = rows.map((r) => ({
+      nom: r.nom,
+      totalCommande: Number(r.total),
+    }));
+
+    if (populaires.length >= limit) return populaires;
+
+    /* Catalogue trop jeune (ou fenêtre trop courte) pour remplir la liste :
+       on complète avec des plats disponibles, signalés comme non encore
+       commandés plutôt que présentés comme populaires. */
+    const dejaPris = new Set(populaires.map((p) => p.nom.toLowerCase()));
+    const complement = await this.articleRepo
+      .createQueryBuilder('article')
+      .innerJoin('article.restaurant', 'restaurant')
+      .select('MIN(article.nom)', 'nom')
+      .where('article.disponible = true')
+      .andWhere('restaurant.actif = true')
+      .groupBy('LOWER(article.nom)')
+      .orderBy('MIN(article.nom)', 'ASC')
+      .limit(limit * 3)
+      .getRawMany<{ nom: string }>();
+
+    for (const { nom } of complement) {
+      if (populaires.length >= limit) break;
+      if (dejaPris.has(nom.toLowerCase())) continue;
+      populaires.push({ nom, totalCommande: 0 });
+    }
+
+    return populaires;
+  }
 
   //  GET /menu — Affichage client avec filtres (US-01, US-03, RG-02)
   async getMenu(
@@ -424,12 +495,52 @@ export class MenuService {
   }
 
   //  GET /menu/restaurants — Liste des restaurants actifs (pour le client B2C)
-  async getRestaurants(): Promise<Restaurant[]> {
-    return this.restaurantRepo.find({
-      where: { actif: true },
-      select: ['id', 'nom', 'logo', 'adresse', 'telephone', 'noteMoyenne', 'nbAvis'],
-      order: { nom: 'ASC' },
-    });
+  /**
+   * @param withArticles joint les plats disponibles de chaque restaurant.
+   *   Désactivé par défaut : la charge utile légère sert la plupart des écrans.
+   *   L'accueil en a besoin pour rechercher par nom de plat sans multiplier les
+   *   requêtes (une par restaurant).
+   */
+  async getRestaurants(withArticles = false): Promise<Restaurant[]> {
+    if (!withArticles) {
+      return this.restaurantRepo.find({
+        where: { actif: true },
+        select: [
+          'id',
+          'nom',
+          'logo',
+          'adresse',
+          'telephone',
+          'noteMoyenne',
+          'nbAvis',
+        ],
+        order: { nom: 'ASC' },
+      });
+    }
+
+    return this.restaurantRepo
+      .createQueryBuilder('restaurant')
+      .leftJoinAndSelect(
+        'restaurant.articles',
+        'article',
+        'article.disponible = true',
+      )
+      .select([
+        'restaurant.id',
+        'restaurant.nom',
+        'restaurant.logo',
+        'restaurant.adresse',
+        'restaurant.telephone',
+        'restaurant.noteMoyenne',
+        'restaurant.nbAvis',
+        'article.id',
+        'article.nom',
+        'article.prix',
+        'article.photoUrl',
+      ])
+      .where('restaurant.actif = true')
+      .orderBy('restaurant.nom', 'ASC')
+      .getMany();
   }
 
   //  GET /menu/restaurant/:id — Menu d'un restaurant spécifique (pour client B2C)
