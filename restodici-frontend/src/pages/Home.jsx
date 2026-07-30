@@ -1431,11 +1431,13 @@ export default function Home() {
   const hiddenCount = filteredResults.length - visibleResults.length;
 
   const handleOpenResto = (resto) => {
-    navigate(`/menu?restaurantId=${resto.id}`);
+    // Menu.jsx lit les paramètres `resto` (id restaurant) et `plat` (nom du
+    // plat à présélectionner dans la recherche) — pas `restaurantId`/`dishId`.
+    navigate(`/menu?resto=${resto.id}`);
   };
 
   const handleOpenDish = (resto, dish) => {
-    navigate(`/menu?restaurantId=${resto.id}&dishId=${dish.id}`);
+    navigate(`/menu?resto=${resto.id}&plat=${encodeURIComponent(dish.nom)}`);
   };
 
   return (

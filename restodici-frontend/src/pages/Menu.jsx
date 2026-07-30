@@ -89,6 +89,15 @@ const CSS = `
 @media(min-width:901px){
   .rd-menu-mobile-filter-btn { display: none !important; }
 }
+@media(max-width:820px){
+  /* Barre du haut de la page restaurant : back + infos + recherche + panier
+     tenaient tous sur une seule ligne de 86px sans jamais rétrécir —
+     ça débordait largement un écran de téléphone. On l'empile sur 2 lignes. */
+  .menu-resto-topbar { flex-wrap: wrap !important; height: auto !important; padding: 14px 16px !important; gap: 12px !important; }
+  .menu-resto-info { border-right: none !important; padding-right: 0 !important; margin-right: 0 !important; }
+  .menu-resto-search { order: 3; flex: 1 1 100% !important; max-width: none !important; }
+  .menu-resto-cart-btn { padding: 0 16px !important; }
+}
 `;
 
 function SK({ w = '100%', h = 16, r = 8 }) {
@@ -1042,7 +1051,7 @@ export default function MenuPage() {
           <div style={{ position: 'sticky', top: 0, zIndex: 100, background: C.nav, borderBottom: '1px solid ' + C.line, boxShadow: C.sh }}>
             <div style={{ padding: '0 clamp(12px,4vw,28px)', height: 64, display: 'flex', alignItems: 'center', gap: 16 }}>
               <Logo />
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 16px', height: 42, maxWidth: 540, position: 'relative' }}>
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 16px', height: 42, maxWidth: 540, position: 'relative' }}>
                 <Search size={16} color={C.accent} />
                 <input 
                   type="text" 
@@ -1052,7 +1061,7 @@ export default function MenuPage() {
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => setTimeout(() => setIsSearchFocused(false), 200)}
                   onKeyDown={handleSearchSubmit}
-                  style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent' }} 
+                  style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent' }}
                 />
                 {discoSearch && <button onClick={() => { setDiscoSearch(''); setIsSearchFocused(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
                 
@@ -1372,8 +1381,8 @@ export default function MenuPage() {
 
           {/* Unified Dynamic Top Bar for Restaurant Menu */}
           <div style={{ background: 'rgba(255,255,255,0.92)', backdropFilter: 'blur(20px)', borderBottom: '1px solid ' + C.line, boxShadow: '0 8px 30px rgba(15,23,42,0.06)', flexShrink: 0, position: 'relative', zIndex: 10 }}>
-            <div style={{ padding: '0 24px', height: 86, display: 'flex', alignItems: 'center', gap: 20 }}>
-              
+            <div className="menu-resto-topbar" style={{ padding: '0 24px', height: 86, display: 'flex', alignItems: 'center', gap: 20 }}>
+
               {/* Back Button */}
               <button onClick={() => { setSelectedResto(null); setMenuData([]); }} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }}>
                 <div style={{ width: 44, height: 44, borderRadius: 14, background: '#fff', border: '1.5px solid ' + C.line, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.05)', transition: 'all 0.2s' }}
@@ -1384,7 +1393,7 @@ export default function MenuPage() {
               </button>
 
               {/* Restaurant Info (Logo + Name + Meta) */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0, borderRight: '1px solid ' + C.line, paddingRight: 20, marginRight: 10 }}>
+              <div className="menu-resto-info" style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0, borderRight: '1px solid ' + C.line, paddingRight: 20, marginRight: 10 }}>
                 <div style={{ width: 54, height: 54, borderRadius: 16, overflow: 'hidden', flexShrink: 0, background: C.bg, boxShadow: '0 4px 14px rgba(0,0,0,0.08)' }}>
                   <img src={selectedResto.logo || selectedResto.photoUrl || fallback(0, 120)} alt={selectedResto.nom} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.src = fallback(0, 120); }} />
                 </div>
@@ -1407,14 +1416,14 @@ export default function MenuPage() {
               </div>
 
               {/* Search Bar */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid rgba(234,88,12,0.15)', borderRadius: 50, padding: '0 18px', height: 46, width: '100%', maxWidth: 340, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div className="menu-resto-search" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid rgba(234,88,12,0.15)', borderRadius: 50, padding: '0 18px', height: 46, width: '100%', maxWidth: 340, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
                 <Search size={16} color={C.accent} />
-                <input type="text" placeholder={'Rechercher un plat…'} value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent', fontWeight: 600 }} />
+                <input type="text" placeholder={'Rechercher un plat…'} value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent', fontWeight: 600 }} />
                 {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
               </div>
 
               {/* Cart Button */}
-              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : '#fff', border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.dark, borderRadius: 50, padding: '0 24px', height: 46, fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 8px 24px rgba(234,88,12,0.3)' : '0 4px 12px rgba(0,0,0,0.04)', transition: 'all 0.2s', transform: 'translateY(0)' }}
+              <button className="menu-resto-cart-btn" onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : '#fff', border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.dark, borderRadius: 50, padding: '0 24px', height: 46, fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 8px 24px rgba(234,88,12,0.3)' : '0 4px 12px rgba(0,0,0,0.04)', transition: 'all 0.2s', transform: 'translateY(0)' }}
                       onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                       onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <ShoppingCart size={17} color={cartCount > 0 ? '#fff' : C.accent} />

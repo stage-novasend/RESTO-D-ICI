@@ -128,6 +128,12 @@ html {
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
   background-color: #FFFFFF;
+  /* Les tiroirs position:fixed (CartDrawer, etc.) sont positionnés par rapport
+     au viewport, pas à <body> : le overflow-x:hidden de body ne les clippe
+     pas quand ils sont translateX(100%) hors écran. Sans cette règle sur
+     <html>, ils élargissent silencieusement le scrollWidth du document et
+     rendent la page "swipable" horizontalement sur mobile. */
+  overflow-x: hidden;
 }
 
 body {
