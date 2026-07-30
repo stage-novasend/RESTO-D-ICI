@@ -728,6 +728,11 @@ export default function CaissePage() {
 
   return (
     <div style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .caisse-main-grid { grid-template-columns: 1fr !important; }
+        }
+      `}</style>
 
       {/* Toast */}
       {toast && (
@@ -738,7 +743,7 @@ export default function CaissePage() {
         </div>
       )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="caisse-main-grid" style={{ display: 'grid', gridTemplateColumns: '360px 1fr', gap: 20, alignItems: 'start' }}>
 
         {/* ── Liste commandes ── */}
         <div style={{ background: CARD, borderRadius: 20, border: `1px solid ${BORDER}`, overflow: 'hidden', boxShadow: SH }}>

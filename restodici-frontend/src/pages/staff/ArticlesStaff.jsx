@@ -217,10 +217,10 @@ export default function ArticlesStaff() {
         ))}
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20, alignItems: 'start' }}>
+      <div className="articles-staff-grid" style={{ display: 'grid', gridTemplateColumns: '220px 1fr', gap: 20, alignItems: 'start' }}>
 
         {/* ── Sidebar catégories ── */}
-        <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 20, padding: '14px 0', position: 'sticky', top: 76, boxShadow: SH2 }}>
+        <div className="articles-staff-cats" style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 20, padding: '14px 0', position: 'sticky', top: 76, boxShadow: SH2 }}>
           <p style={{ margin: '0 16px 10px', fontSize: 11, textTransform: 'uppercase', fontWeight: 700, color: T.onSurfaceVariant, letterSpacing: '0.12em' }}>
             Catégories
           </p>
@@ -277,7 +277,13 @@ export default function ArticlesStaff() {
         </div>
       </div>
 
-      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      <style>{`
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @media (max-width: 860px) {
+          .articles-staff-grid { grid-template-columns: 1fr !important; }
+          .articles-staff-cats { position: static !important; }
+        }
+      `}</style>
     </div>
   );
 }

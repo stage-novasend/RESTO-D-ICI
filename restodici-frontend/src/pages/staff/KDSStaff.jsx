@@ -735,6 +735,15 @@ export default function KDSStaff() {
           0%, 100% { border-color: #FFBDAD; box-shadow: 0 4px 20px rgba(186,26,26,0.12); }
           50% { border-color: #BA1A1A; box-shadow: 0 4px 24px rgba(186,26,26,0.32); }
         }
+        @media (max-width: 900px) {
+          /* 4 colonnes à largeur fixe scrollent horizontalement plutôt que
+             de s'écraser à ~85px et devenir illisibles. */
+          .kds-columns-grid {
+            grid-template-columns: repeat(4, minmax(260px, 1fr)) !important;
+            overflow-x: auto;
+            padding-bottom: 8px;
+          }
+        }
       `}</style>
 
 
@@ -783,7 +792,7 @@ export default function KDSStaff() {
       ) : (
         <>
           {/* ── 4 COLONNES ACTIVES ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'start', marginBottom: 28 }}>
+          <div className="kds-columns-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, alignItems: 'start', marginBottom: 28 }}>
             {grouped.map(col => (
               <KDSColumn key={col.id} col={col} orders={col.orders} onAction={onAction} onPay={onPay} saving={saving}
                 onDragStart={setDraggedId}

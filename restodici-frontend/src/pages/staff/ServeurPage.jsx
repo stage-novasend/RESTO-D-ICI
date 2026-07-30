@@ -283,6 +283,9 @@ export default function ServeurPage() {
         ::-webkit-scrollbar { width: 4px; height: 4px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.12); border-radius: 4px; }
+        @media (max-width: 900px) {
+          .serveur-work-grid { grid-template-columns: 1fr !important; }
+        }
       `}</style>
 
       {/* ── Toast ── */}
@@ -440,7 +443,7 @@ export default function ServeurPage() {
         {/* ══════════════════════════════════
             ZONE DE TRAVAIL — 2 colonnes
            ══════════════════════════════════ */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'start' }}>
+        <div className="serveur-work-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: 20, alignItems: 'start' }}>
 
           {/* ── PANNEAU MENU ── */}
           <div>

@@ -622,7 +622,7 @@ function B2BProfileDrawer({ user, onClose, profileForm, setProfileForm, onSave, 
       <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 200, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(3px)', WebkitBackdropFilter: 'blur(3px)' }} />
       <div style={{
         position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 201,
-        width: 360, background: CARD, boxShadow: SH3,
+        width: 'min(360px, 100vw)', background: CARD, boxShadow: SH3,
         display: 'flex', flexDirection: 'column',
         animation: 'b2b-drawer-in 240ms cubic-bezier(.4,0,.2,1)',
         fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",

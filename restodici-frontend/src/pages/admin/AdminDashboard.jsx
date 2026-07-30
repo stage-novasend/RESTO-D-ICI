@@ -462,7 +462,7 @@ function OverviewTab() {
       </div>
 
       {/* ── Row 3 : Donut rôles + Logs récents ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16, marginBottom: 20 }}>
+      <div className="admin-roles-logs-grid" style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16, marginBottom: 20 }}>
         {/* Donut */}
         <div style={card}>
           <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0' }}>
@@ -3475,6 +3475,9 @@ function AdminDashboardInner() {
         border-radius: 50%;
         background: rgba(22,163,74,0.35);
         animation: adminPulse 2s ease-in-out infinite;
+      }
+      @media (max-width: 860px) {
+        .admin-roles-logs-grid { grid-template-columns: 1fr !important; }
       }
     `}</style>
       <div style={{ maxWidth: 1300, margin: '0 auto' }}>
