@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   UtensilsCrossed, ArrowRight, Check, Star, Search, Truck, Clock,
   Mail, X, Zap, Smartphone, ShieldCheck, SlidersHorizontal, Building2,
-  Sparkles, ChevronRight, User, ShoppingBag
+  Sparkles, ChevronRight, User, ShoppingBag, Menu
 } from "lucide-react";
 import { menuAPI, newsletterAPI } from "../services/api";
 import FilterSidebar from "../components/menu/FilterSidebar";
@@ -69,6 +69,14 @@ const CSS = `
 @media (min-width: 901px) {
   .rd-mobile-filter-btn { display: none !important; }
 }
+.rd-nav-burger { display: none; }
+@media (max-width: 860px) {
+  .rd-nav-links-desktop { display: none !important; }
+  .rd-nav-actions-desktop { display: none !important; }
+  .rd-nav-burger { display: flex !important; }
+  .rd-nav-inner { padding: 0 16px !important; }
+  .rd-nav-brand-sub { display: none !important; }
+}
 `;
 
 const FOOD_IMGS = [
@@ -119,6 +127,7 @@ function KS({ h = 4 }) {
 function Nav() {
   const { t } = useLanguage();
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -127,6 +136,12 @@ function Nav() {
     window.addEventListener("scroll", fn, { passive: true });
     return () => window.removeEventListener("scroll", fn);
   }, []);
+
+  // Empêche le scroll de fond quand le menu mobile est ouvert.
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
 
   const role = user?.role?.toUpperCase();
 
@@ -138,7 +153,14 @@ function Nav() {
     return '/menu';
   };
 
+  const navLinks = [
+    { href: "#catalogue", label: t('restaurants'), icon: null },
+    { href: "/register?type=b2b", label: t('b2b_space'), icon: Building2 },
+    { href: "/aide", label: t('help'), icon: null },
+  ];
+
   return (
+    <>
     <nav style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
       background: scrolled ? "rgba(255, 255, 255, 0.94)" : "rgba(22, 14, 8, 0.45)",
@@ -148,31 +170,31 @@ function Nav() {
       borderBottom: scrolled ? "1px solid rgba(234,88,12,0.12)" : "1px solid rgba(255,255,255,0.1)",
     }}>
       <KS h={3} />
-      <div style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <div className="rd-nav-inner" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
 
         {/* Brand */}
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none" }}>
+        <a href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", minWidth: 0 }}>
           <BrandMark size={42} shadow />
-          <div>
-            <span style={{ fontFamily: serif, fontWeight: 900, color: scrolled ? T.dark : "#fff", fontSize: 23, letterSpacing: "-0.02em", display: "block" }}>
+          <div style={{ minWidth: 0 }}>
+            <span style={{ fontFamily: serif, fontWeight: 900, color: scrolled ? T.dark : "#fff", fontSize: 23, letterSpacing: "-0.02em", display: "block", whiteSpace: "nowrap" }}>
               Resto d'ici
             </span>
-            <span style={{ fontFamily: sans, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.18em", color: scrolled ? T.accent : T.yellowL }}>
+            <span className="rd-nav-brand-sub" style={{ fontFamily: sans, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.18em", color: scrolled ? T.accent : T.yellowL, whiteSpace: "nowrap" }}>
               {t('abidjan_gastro')}
             </span>
           </div>
         </a>
 
-        {/* Links */}
-        <div className="hidden md:flex" style={{ gap: 32, alignItems: "center" }}>
+        {/* Links (desktop) */}
+        <div className="rd-nav-links-desktop" style={{ display: "flex", gap: 32, alignItems: "center" }}>
           <a href="#catalogue" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700 }}>{t('restaurants')}</a>
           <a href="/register?type=b2b" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
             <Building2 size={15} color={scrolled ? T.accent : T.yellowL} />{t('b2b_space')}</a>
           <a href="/aide" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700 }}>{t('help')}</a>
         </div>
 
-        {/* Actions */}
-        <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+        {/* Actions (desktop) */}
+        <div className="rd-nav-actions-desktop" style={{ display: "flex", gap: 12, alignItems: "center", flexShrink: 0 }}>
           <LanguageSwitcher variant={scrolled ? "light" : "dark"} />
 
           {user ? (
@@ -216,8 +238,115 @@ function Nav() {
             </>
           )}
         </div>
+
+        {/* Burger (mobile) */}
+        <button
+          className="rd-nav-burger"
+          onClick={() => setMobileOpen(true)}
+          aria-label={t('menu_button')}
+          style={{
+            alignItems: "center", justifyContent: "center",
+            width: 42, height: 42, borderRadius: 12, flexShrink: 0,
+            border: `1.5px solid ${scrolled ? "rgba(26,12,0,0.15)" : "rgba(255,255,255,0.35)"}`,
+            background: scrolled ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.1)",
+            color: scrolled ? T.dark : "#fff", cursor: "pointer",
+          }}
+        >
+          <Menu size={20} />
+        </button>
       </div>
     </nav>
+
+      {/* Drawer mobile — rendu hors de <nav> : le backdropFilter sur <nav>
+          crée un containing block pour les descendants position:fixed,
+          ce qui limitait le drawer à la hauteur de la navbar (75px). */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+            onClick={(e) => e.target === e.currentTarget && setMobileOpen(false)}
+          >
+            <motion.div
+              initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 26 }}
+              style={{
+                position: "absolute", top: 0, right: 0, bottom: 0, width: "82%", maxWidth: 340,
+                background: "#fff", overflowY: "auto", padding: 24, display: "flex", flexDirection: "column", gap: 24,
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                  <BrandMark size={34} shadow />
+                  <span style={{ fontFamily: serif, fontWeight: 900, color: T.dark, fontSize: 18 }}>Resto d'ici</span>
+                </div>
+                <button onClick={() => setMobileOpen(false)} style={{ background: "none", border: "none", cursor: "pointer", color: T.muted, padding: 6 }}>
+                  <X size={22} />
+                </button>
+              </div>
+
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {navLinks.map(link => {
+                  const Icon = link.icon;
+                  return (
+                    <a
+                      key={link.href}
+                      href={link.href}
+                      onClick={() => setMobileOpen(false)}
+                      style={{
+                        display: "flex", alignItems: "center", gap: 10, textDecoration: "none",
+                        fontFamily: sans, fontSize: 16, fontWeight: 700, color: T.text,
+                        padding: "14px 4px", borderBottom: `1px solid ${T.line}`,
+                      }}
+                    >
+                      {Icon && <Icon size={17} color={T.accent} />}{link.label}
+                    </a>
+                  );
+                })}
+              </div>
+
+              <div>
+                <p style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.12em", color: T.mutedL, margin: "0 0 10px" }}>{t('language')}</p>
+                <LanguageSwitcher />
+              </div>
+
+              <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 10 }}>
+                {user ? (
+                  <button
+                    onClick={() => { setMobileOpen(false); navigate(getDashboardPath()); }}
+                    style={{
+                      fontFamily: sans, fontSize: 14, fontWeight: 800, padding: "14px 22px", borderRadius: 50,
+                      cursor: "pointer", color: "#fff", background: "linear-gradient(135deg, #EA580C, #C2410C)",
+                      border: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    }}
+                  ><User size={16} /> {t('my_space')} ({role})</button>
+                ) : (
+                  <>
+                    <a
+                      href="/login"
+                      onClick={() => setMobileOpen(false)}
+                      style={{
+                        fontFamily: sans, fontSize: 14, fontWeight: 700, textDecoration: "none", textAlign: "center",
+                        padding: "13px 22px", borderRadius: 50, color: T.dark, background: "transparent",
+                        border: "1.5px solid rgba(26,12,0,0.2)",
+                      }}
+                    >{t('login')}</a>
+                    <a
+                      href="/register"
+                      onClick={() => setMobileOpen(false)}
+                      style={{
+                        fontFamily: sans, fontSize: 14, fontWeight: 800, textDecoration: "none", textAlign: "center",
+                        padding: "13px 22px", borderRadius: 50, color: "#fff",
+                        background: "linear-gradient(135deg, #10B981, #059669)", border: "none",
+                      }}
+                    >{t('register')}</a>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
   );
 }
 
@@ -225,9 +354,9 @@ function Nav() {
 function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
   const { t } = useLanguage();
   const HERO_IMAGES = [
-    "/hero-home.png",
-    "/hero-home-2.png",
-    "/hero-home-3.png"
+    "/hero-home.jpg",
+    "/hero-home-2.jpg",
+    "/hero-home-3.jpg"
   ];
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 

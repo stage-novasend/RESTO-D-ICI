@@ -21,7 +21,10 @@ const UKFlag = () => (
   </svg>
 );
 
-export default function LanguageSwitcher({ style = {}, className = '' }) {
+/* `variant` n'affecte pas encore la couleur (le fond orange reste lisible
+   partout) — seul le libellé texte se cache sous 480px pour éviter que le
+   switcher ne fasse déborder la topbar sur mobile (flags seuls affichés). */
+export default function LanguageSwitcher({ style = {}, className = '', variant }) {
   const { lang, setLang } = useLanguage();
 
   const isFr = lang === 'fr';
@@ -29,7 +32,8 @@ export default function LanguageSwitcher({ style = {}, className = '' }) {
 
   return (
     <div
-      className={`inline-flex items-center select-none ${className}`}
+      className={`rd-lang-switch inline-flex items-center select-none ${className}`}
+      data-variant={variant}
       style={{
         backgroundColor: '#EA580C',
         borderRadius: '9999px',
@@ -37,9 +41,17 @@ export default function LanguageSwitcher({ style = {}, className = '' }) {
         display: 'inline-flex',
         alignItems: 'center',
         boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
+        flexShrink: 0,
         ...style,
       }}
     >
+      <style>{`
+        @media (max-width: 480px) {
+          .rd-lang-switch .rd-lang-label { display: none; }
+          .rd-lang-switch button { padding: 7px 10px !important; gap: 0 !important; }
+        }
+      `}</style>
+
       {/* FRANCAIS button */}
       <button
         type="button"
@@ -65,7 +77,7 @@ export default function LanguageSwitcher({ style = {}, className = '' }) {
         }}
       >
         <FrenchFlag />
-        <span>FRANCAIS</span>
+        <span className="rd-lang-label">FRANCAIS</span>
       </button>
 
       {/* ENGLISH button */}
@@ -93,7 +105,7 @@ export default function LanguageSwitcher({ style = {}, className = '' }) {
         }}
       >
         <UKFlag />
-        <span>ENGLISH</span>
+        <span className="rd-lang-label">ENGLISH</span>
       </button>
     </div>
   );

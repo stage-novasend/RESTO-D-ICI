@@ -8,7 +8,7 @@ import { useAuth } from '../hooks/useAuth';
 import {
   ChefHat, CreditCard, UtensilsCrossed, Package,
   Bell, LogOut, X, User, Shield, CheckCircle, AlertCircle,
-  Flame, ChevronRight,
+  Flame, ChevronRight, Menu,
 } from 'lucide-react';
 import { createCommandesSocket } from '../services/commandes.service';
 import { authAPI } from '../services/api';
@@ -299,6 +299,7 @@ export default function StaffLayout() {
   const [notifOpen,   setNotifOpen]   = useState(false);
   const [drawer,      setDrawer]      = useState(false);
   const [logoutModal, setLogoutModal] = useState(false);
+  const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const tourKey  = user?.id ? `tour_staff_${user.id}` : null;
   const [showTour, setShowTour] = useState(false);
@@ -366,12 +367,19 @@ export default function StaffLayout() {
         .snav-item:hover { background: rgba(255,140,0,0.08) !important; color: #1A0C00 !important; }
         .snav-logout:hover { background: rgba(220,38,38,0.07) !important; color: #DC2626 !important; }
         .snav-bell:hover { background: rgba(255,140,0,0.1) !important; }
+        @media (max-width: 1023px) {
+          .staff-topbar { padding-left: 60px !important; }
+          .staff-badge-text { display: none; }
+        }
       `}</style>
 
       {/* ══════════════════════════════════════
-          SIDEBAR BLANC / ORANGE
+          SIDEBAR BLANC / ORANGE — bureau uniquement (lg+).
+          Sur mobile/tablette elle est remplacée par le tiroir ci-dessous :
+          un aside en largeur fixe ne peut pas rester affiché sur un écran
+          de téléphone sans écraser tout le contenu.
       ══════════════════════════════════════ */}
-      <aside style={{ width: 240, flexShrink: 0, background: SIDEBAR_BG, display: 'flex', flexDirection: 'column', height: '100%', borderRight: `1px solid ${SIDEBAR_BOR}` }}>
+      <aside className="hidden lg:flex" style={{ width: 240, flexShrink: 0, background: SIDEBAR_BG, flexDirection: 'column', height: '100%', borderRight: `1px solid ${SIDEBAR_BOR}` }}>
 
         {/* Brand / Logo */}
         <div style={{ padding: '22px 20px 18px', borderBottom: `1px solid ${SIDEBAR_BOR}` }}>
@@ -480,13 +488,83 @@ export default function StaffLayout() {
 
       </aside>
 
+      {/* ── Bouton hamburger — mobile/tablette uniquement ── */}
+      <button
+        className="lg:hidden fixed top-3 left-3 z-30 w-9 h-9 flex items-center justify-center rounded-xl shadow-sm"
+        style={{ background: CARD, border: `1px solid ${BORDER}` }}
+        onClick={() => setMobileNavOpen(true)}
+        aria-label="Menu"
+      >
+        <Menu size={17} color={OG} />
+      </button>
+
+      {/* ── Sidebar mobile — tiroir plein écran (lg:hidden) ── */}
+      {mobileNavOpen && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/50 lg:hidden" onClick={() => setMobileNavOpen(false)} />
+          <aside className="fixed left-0 top-0 bottom-0 z-50 w-72 flex flex-col lg:hidden" style={{ background: SIDEBAR_BG }}>
+            <div style={{ padding: '20px 18px', borderBottom: `1px solid ${SIDEBAR_BOR}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 11 }}>
+                <BrandMark size={38} shadow style={{ flexShrink: 0 }} />
+                <div>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: SIDE_TEXT_HI, lineHeight: 1.2 }}>
+                    {user?.restaurant?.nom || "Resto d'ici"}
+                  </p>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 8, fontWeight: 800, color: OG, background: OG_L, border: `1px solid ${OG}30`, padding: '3px 8px', borderRadius: 99, letterSpacing: '0.16em', textTransform: 'uppercase', marginTop: 4 }}>
+                    <Flame size={8} />STAFF
+                  </span>
+                </div>
+              </div>
+              <button onClick={() => setMobileNavOpen(false)} style={{ background: 'rgba(0,0,0,0.05)', border: 'none', cursor: 'pointer', borderRadius: 8, padding: 6 }}>
+                <X size={16} color={SIDE_TEXT} />
+              </button>
+            </div>
+
+            <nav style={{ flex: 1, padding: '14px 10px', display: 'flex', flexDirection: 'column', gap: 2, overflowY: 'auto' }}>
+              {NAV.map(({ to, label, icon: Icon, exact }) => {
+                const active = exact
+                  ? location.pathname === to
+                  : location.pathname === to || location.pathname.startsWith(to + '/');
+                return (
+                  <NavLink key={to} to={to} onClick={() => setMobileNavOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px',
+                      borderRadius: 12, textDecoration: 'none',
+                      background: active ? OG_L : 'transparent',
+                      color: active ? SIDE_TEXT_HI : SIDE_TEXT,
+                      fontSize: 14, fontWeight: active ? 700 : 500,
+                    }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: active ? OG_G : 'rgba(255,140,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: active ? `0 3px 10px ${OG}55` : 'none' }}>
+                      <Icon size={14} color={active ? '#fff' : SIDE_TEXT} strokeWidth={active ? 2.3 : 1.8} />
+                    </div>
+                    <span style={{ flex: 1 }}>{label}</span>
+                    {active && <ChevronRight size={13} color={OG} style={{ flexShrink: 0 }} />}
+                  </NavLink>
+                );
+              })}
+            </nav>
+
+            <div style={{ borderTop: `1px solid ${SIDEBAR_BOR}`, padding: '10px' }}>
+              <button
+                onClick={() => { setMobileNavOpen(false); setLogoutModal(true); }}
+                style={{ display: 'flex', alignItems: 'center', gap: 11, padding: '12px 13px', borderRadius: 12, background: 'transparent', border: 'none', cursor: 'pointer', color: SIDE_TEXT, width: '100%' }}>
+                <div style={{ width: 32, height: 32, borderRadius: 10, background: 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <LogOut size={14} color={SIDE_TEXT} strokeWidth={1.8} />
+                </div>
+                <span style={{ fontSize: 14, fontWeight: 500 }}>Se déconnecter</span>
+              </button>
+            </div>
+          </aside>
+        </>
+      )}
+
       {/* ══════════════════════════════════════
           ZONE PRINCIPALE
       ══════════════════════════════════════ */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Topbar blanc */}
-        <header style={{ height: 56, flexShrink: 0, background: CARD, borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', boxShadow: SH }}>
+        <header className="staff-topbar" style={{ height: 56, flexShrink: 0, background: CARD, borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', boxShadow: SH }}>
           {/* Fil d'ariane / page courante */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>Staff</span>
@@ -496,8 +574,8 @@ export default function StaffLayout() {
 
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             {unreadCount > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 700, background: RED_L, color: RED, border: '1px solid #FECACA', padding: '5px 12px', borderRadius: 99 }}>
-                {unreadCount} nouvelle{unreadCount > 1 ? 's' : ''} commande{unreadCount > 1 ? 's' : ''}
+              <span style={{ fontSize: 11, fontWeight: 700, background: RED_L, color: RED, border: '1px solid #FECACA', padding: '5px 12px', borderRadius: 99, whiteSpace: 'nowrap' }}>
+                {unreadCount}<span className="staff-badge-text"> nouvelle{unreadCount > 1 ? 's' : ''} commande{unreadCount > 1 ? 's' : ''}</span>
               </span>
             )}
 

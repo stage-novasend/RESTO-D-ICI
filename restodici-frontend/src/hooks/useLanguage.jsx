@@ -28,7 +28,9 @@ const TRANSLATIONS = {
     my_space: "Mon Espace",
     restaurants: "Restaurants",
     abidjan_gastro: "Abidjan · Gastronomie",
-    
+    menu_button: "Menu",
+    language: "Langue",
+
     // Home & Catalogue
     abidjan_ci: "Abidjan · Côte d'Ivoire",
     hero_title: "Le meilleur d'Abidjan, <br /><em style='color: #F59E0B; font-style: italic'>livré à votre table.</em>",
@@ -204,7 +206,9 @@ const TRANSLATIONS = {
     my_space: "My Space",
     restaurants: "Restaurants",
     abidjan_gastro: "Abidjan · Gastronomy",
-    
+    menu_button: "Menu",
+    language: "Language",
+
     // Home & Catalogue
     abidjan_ci: "Abidjan · Ivory Coast",
     hero_title: "Abidjan's Finest, <br /><em style='color: #F59E0B; font-style: italic'>delivered to your table.</em>",
