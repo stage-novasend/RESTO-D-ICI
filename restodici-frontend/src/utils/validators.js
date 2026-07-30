@@ -80,11 +80,21 @@ export const MSG = {
 export const extractErrorMessage = (err, fallback = 'Une erreur est survenue') => {
   if (!err) return fallback;
   if (typeof err === 'string') return err;
+  
+  // Si le serveur proxy (Nginx) renvoie une erreur 502/503/504, il renvoie souvent du HTML
+  if (err.response?.status >= 500 && typeof err.response?.data === 'string' && err.response.data.includes('<html')) {
+    return 'Le serveur est temporairement indisponible. Veuillez réessayer.';
+  }
+
   const msg = err.response?.data?.message ?? err.response?.data?.error ?? err.response?.data;
   if (Array.isArray(msg)) {
     return msg.join('. ');
   }
   if (typeof msg === 'string' && msg.trim()) {
+    // Sécurité supplémentaire : on refuse d'afficher du code HTML brut (venant d'une page d'erreur Nginx ou autre)
+    if (msg.trim().startsWith('<') && msg.includes('>')) {
+      return fallback;
+    }
     return msg;
   }
   if (err.message && typeof err.message === 'string') {
