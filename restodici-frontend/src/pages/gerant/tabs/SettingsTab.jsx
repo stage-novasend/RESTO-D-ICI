@@ -21,6 +21,15 @@ export default function SettingsTab({ restaurantId, user }) {
     newZone: { nom: "", lat: defaultLat, lng: defaultLng },
     latitude: defaultLat,
     longitude: defaultLng,
+    modeReceptionPaiement: "NOVASEND",
+    modeReceptionDetails: {
+      operator: "WAVE",
+      telephone: "",
+      nomBanque: "",
+      titulaireCompte: "",
+      ibanRib: "",
+      novasendAccountId: "",
+    },
     darkMode: localStorage.getItem("darkMode") === "true",
   });
   const [staffAccounts, setStaffAccounts] = useState([]);
@@ -100,11 +109,12 @@ export default function SettingsTab({ restaurantId, user }) {
     if (file.size > 5 * 1024 * 1024) { alert("Taille max : 5 Mo"); return; }
     setUploadingLogo(true);
     try {
-      const res = await uploadsAPI.uploadImage(file);
+      const res = await uploadsAPI.uploadImage(file, 'logos');
       setSettings(p => ({ ...p, logo: res.data.url }));
-    } catch {
-      const localUrl = URL.createObjectURL(file);
-      setSettings(p => ({ ...p, logo: localUrl }));
+    } catch (err) {
+      // Logo précédent conservé : une URL blob: locale serait enregistrée en base
+      // et deviendrait un lien mort dès le rechargement.
+      alert(err?.response?.data?.message || "Erreur lors de l'upload du logo. Vérifiez la configuration S3.");
     } finally {
       setUploadingLogo(false);
     }
@@ -198,6 +208,8 @@ export default function SettingsTab({ restaurantId, user }) {
           },
           latitude: Number(profile.latitude) || defaultLat,
           longitude: Number(profile.longitude) || defaultLng,
+          modeReceptionPaiement: profile.modeReceptionPaiement || prev.modeReceptionPaiement,
+          modeReceptionDetails: profile.modeReceptionDetails || prev.modeReceptionDetails,
         }));
         syncStoredUserRestaurant(profile);
       } catch (error) {
@@ -247,6 +259,8 @@ export default function SettingsTab({ restaurantId, user }) {
         latitude: settings.latitude,
         longitude: settings.longitude,
         deliveryZones: settings.zonesLivraison,
+        modeReceptionPaiement: settings.modeReceptionPaiement,
+        modeReceptionDetails: settings.modeReceptionDetails,
       };
 
       const response = await restaurantAPI.update(restaurantId, payload);
@@ -269,6 +283,8 @@ export default function SettingsTab({ restaurantId, user }) {
           : prev.zonesLivraison,
         latitude: Number(savedProfile.latitude) || prev.latitude,
         longitude: Number(savedProfile.longitude) || prev.longitude,
+        modeReceptionPaiement: savedProfile.modeReceptionPaiement || prev.modeReceptionPaiement,
+        modeReceptionDetails: savedProfile.modeReceptionDetails || prev.modeReceptionDetails,
       }));
       setSettingsSaved(true);
       setTimeout(() => setSettingsSaved(false), 2500);
@@ -402,6 +418,7 @@ export default function SettingsTab({ restaurantId, user }) {
 
   const SEC_NAV = [
     { id: 'sec-profil',    label: 'Profil',      emoji: '🏠' },
+    { id: 'sec-versement', label: 'Versements',  emoji: '💳' },
     { id: 'sec-horaires',  label: 'Horaires',    emoji: '🕐' },
     { id: 'sec-livraison', label: 'Livraison',   emoji: '📍' },
     { id: 'sec-apparence', label: 'Apparence',   emoji: '🎨' },
@@ -563,6 +580,148 @@ export default function SettingsTab({ restaurantId, user }) {
                 />
               </div>
             </div>
+          </div>
+
+          {/* ── Mode de versement des recettes ── */}
+          <div id="sec-versement" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-versement' ? '' : 'none' }}>
+            <div className="mb-5">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#EA580C' }}>Finances & Reversements</p>
+              <h3 className="mt-1 text-base font-bold text-[#1A0C00]">Mode de réception de vos paiements</h3>
+              <p className="mt-0.5 text-xs text-[#8B6E50]">Choisissez comment RESTO D'ICI vous reverse la part nette de vos ventes.</p>
+            </div>
+
+            {/* Grille des 3 choix */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+              {[
+                {
+                  id: 'NOVASEND',
+                  title: 'Compte NovaSend',
+                  desc: 'Réception directe sur votre compte marchand NovaSend partenaire.',
+                  icon: '⚡',
+                },
+                {
+                  id: 'MOBILE_MONEY',
+                  title: 'Mobile Money',
+                  desc: "Reversement automatique vers votre Wave, Orange, MTN ou Moov.",
+                  icon: '📱',
+                },
+                {
+                  id: 'BANCAIRE',
+                  title: 'Compte Bancaire',
+                  desc: 'Virement bancaire direct sur le compte de votre restaurant.',
+                  icon: '🏛️',
+                },
+              ].map(option => {
+                const active = settings.modeReceptionPaiement === option.id;
+                return (
+                  <div
+                    key={option.id}
+                    onClick={() => setSettings(p => ({ ...p, modeReceptionPaiement: option.id }))}
+                    className={`cursor-pointer rounded-2xl p-4 border transition-all ${
+                      active ? 'border-[#EA580C] bg-[#FFF0DF]/50 shadow-md ring-2 ring-[#EA580C]/30' : 'border-gray-200 bg-white hover:border-[#EA580C]/40'
+                    }`}
+                  >
+                    <div className="text-2xl mb-2">{option.icon}</div>
+                    <p className="font-bold text-sm text-[#1A0C00]">{option.title}</p>
+                    <p className="text-xs text-[#8B6E50] mt-1 leading-snug">{option.desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Formulaires secondaires selon le choix */}
+            {settings.modeReceptionPaiement === 'MOBILE_MONEY' && (
+              <div className="p-4 rounded-xl border bg-[#FDF8F3] space-y-4" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
+                <p className="text-xs font-bold text-[#EA580C] uppercase tracking-wider">Détails Mobile Money</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#374151] mb-1">Opérateur *</label>
+                    <select
+                      value={settings.modeReceptionDetails?.operator || 'WAVE'}
+                      onChange={e => setSettings(p => ({
+                        ...p,
+                        modeReceptionDetails: { ...p.modeReceptionDetails, operator: e.target.value }
+                      }))}
+                      className={inputCls} style={inputStyle}
+                    >
+                      <option value="WAVE">Wave CI</option>
+                      <option value="ORANGE">Orange Money CI</option>
+                      <option value="MTN">MTN Mobile Money CI</option>
+                      <option value="MOOV">Moov Money CI</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#374151] mb-1">Numéro de téléphone *</label>
+                    <input
+                      type="tel"
+                      value={settings.modeReceptionDetails?.telephone || ''}
+                      onChange={e => setSettings(p => ({
+                        ...p,
+                        modeReceptionDetails: { ...p.modeReceptionDetails, telephone: e.target.value }
+                      }))}
+                      placeholder="+225 07 00 00 00 00"
+                      className={inputCls} style={inputStyle}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settings.modeReceptionPaiement === 'BANCAIRE' && (
+              <div className="p-4 rounded-xl border bg-[#FDF8F3] space-y-4" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
+                <p className="text-xs font-bold text-[#EA580C] uppercase tracking-wider">Coordonnées Bancaires (RIB / IBAN)</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#374151] mb-1">Nom de la Banque *</label>
+                    <input
+                      type="text"
+                      value={settings.modeReceptionDetails?.nomBanque || ''}
+                      onChange={e => setSettings(p => ({
+                        ...p,
+                        modeReceptionDetails: { ...p.modeReceptionDetails, nomBanque: e.target.value }
+                      }))}
+                      placeholder="Ex: NSIA Banque, SGCI, Ecobank..."
+                      className={inputCls} style={inputStyle}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#374151] mb-1">Titulaire du Compte *</label>
+                    <input
+                      type="text"
+                      value={settings.modeReceptionDetails?.titulaireCompte || ''}
+                      onChange={e => setSettings(p => ({
+                        ...p,
+                        modeReceptionDetails: { ...p.modeReceptionDetails, titulaireCompte: e.target.value }
+                      }))}
+                      placeholder="Nom de l'entreprise ou du gérant"
+                      className={inputCls} style={inputStyle}
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-semibold text-[#374151] mb-1">RIB / IBAN / Numéro de compte *</label>
+                    <input
+                      type="text"
+                      value={settings.modeReceptionDetails?.ibanRib || ''}
+                      onChange={e => setSettings(p => ({
+                        ...p,
+                        modeReceptionDetails: { ...p.modeReceptionDetails, ibanRib: e.target.value }
+                      }))}
+                      placeholder="CI000 00000 00000000000 00"
+                      className={inputCls} style={inputStyle}
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {settings.modeReceptionPaiement === 'NOVASEND' && (
+              <div className="p-4 rounded-xl border bg-[#FDF8F3]" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
+                <p className="text-xs font-bold text-[#EA580C] uppercase tracking-wider mb-1">Intégration NovaSend Direct</p>
+                <p className="text-xs text-[#8B6E50]">
+                  Les règlements sont crédités directement sur le compte marchand NovaSend partenaire configuré sur la plateforme.
+                </p>
+              </div>
+            )}
           </div>
 
           {/* Horaires */}

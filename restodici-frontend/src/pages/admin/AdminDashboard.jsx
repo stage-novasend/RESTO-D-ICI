@@ -10,7 +10,8 @@ import Chart from 'chart.js/auto';
 import { adminAPI, authAPI, fournisseursAPI, livraisonsExtAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
 import OnboardingWizard from '../../components/wizard/OnboardingWizard';
-import { EMAIL_PATTERN, CI_PHONE_PATTERN, URL_PATTERN, MSG } from '../../utils/validators';
+import AdminOnboardingWizard from './AdminOnboardingWizard';
+import { EMAIL_PATTERN, CI_PHONE_PATTERN, URL_PATTERN, MSG, extractErrorMessage } from '../../utils/validators';
 import {
   Users, UtensilsCrossed, ScrollText, Download, Settings,
   RefreshCw, ToggleLeft, ToggleRight, Plus, X, Check,
@@ -22,29 +23,43 @@ import {
   CreditCard, Smartphone, Mail, BarChart2, Webhook, Truck, Pencil, Trash2,
   Percent, TrendingUp as TrendUp, MessageSquareWarning, UserCheck,
 } from 'lucide-react';
-
-/* ── Palette (couleurs : theme/colors.js) et constantes ── */
-import { ORANGE as ACCENT } from '../../theme/colors';
 import {
   AdminRealtimeProvider, useAdminRevision, useAdminRealtimeStatus,
 } from '../../hooks/useAdminRealtime';
-const ROLES  = ['ADMIN', 'GERANT', 'STAFF', 'CLIENT', 'B2B'];
+
+/* ── Palette (couleurs : theme/colors.js) et constantes ── */
+/* ── Palette d'Administration Exécutive (Navy, Sapphire Blue, Emerald, Indigo) ── */
+const ACCENT = '#0F172A';
+const ROYAL_BLUE = '#2563EB';
+const EMERALD = '#059669';
+const INDIGO = '#4F46E5';
+const VIOLET = '#7C3AED';
+
+const ROLES = ['ADMIN', 'GERANT', 'STAFF', 'CLIENT', 'B2B'];
 const ROLE_COLOR = {
-  ADMIN:  { bg: 'rgba(99,102,241,0.10)', text: '#6366F1', chart: '#6366F1' },
-  GERANT: { bg: '#FEF3C7', text: '#92400E', chart: '#F59E0B' },
-  STAFF:  { bg: '#DCFCE7', text: '#166534', chart: '#10B981' },
-  CLIENT: { bg: '#F0F9FF', text: '#0369A1', chart: '#0EA5E9' },
-  B2B:    { bg: '#F3E8FF', text: '#6B21A8', chart: '#A855F7' },
+  ADMIN: { bg: '#EEF2FF', text: '#3730A3', chart: '#4F46E5' },
+  GERANT: { bg: '#ECFDF5', text: '#065F46', chart: '#059669' },
+  STAFF: { bg: '#F1F5F9', text: '#1E293B', chart: '#64748B' },
+  CLIENT: { bg: '#EFF6FF', text: '#1E40AF', chart: '#2563EB' },
+  B2B: { bg: '#F5F3FF', text: '#5B21B6', chart: '#7C3AED' },
 };
 const DAY_LABELS = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
 
 /* ── Styles partagés (inputs, cartes) ── */
 const inputStyle = {
-  width: '100%', padding: '12px 16px', border: '1px solid #E2E8F0',
-  borderRadius: 10, fontSize: 15, outline: 'none', boxSizing: 'border-box', background: '#fff',
+  width: '100%', padding: '12px 16px', border: '1.5px solid #CBD5E1',
+  borderRadius: 12, fontSize: 14, outline: 'none', boxSizing: 'border-box', background: '#FFFFFF',
+  color: '#0F172A', fontWeight: 500, transition: 'all 0.15s ease',
 };
-const labelStyle = { fontSize: 13, fontWeight: 700, color: '#374151', display: 'block', marginBottom: 6 };
-const card = { background: '#fff', borderRadius: 16, border: '1px solid #D1D9E6', boxShadow: '0 1px 3px rgba(234,88,12,0.06), 0 4px 16px rgba(234,88,12,0.08)', overflow: 'hidden', transition: 'transform 0.2s ease, box-shadow 0.2s ease' };
+const labelStyle = { fontSize: 13, fontWeight: 700, color: '#1E293B', display: 'block', marginBottom: 6 };
+const card = {
+  background: '#FFFFFF',
+  borderRadius: 18,
+  border: '1px solid #CBD5E1',
+  boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.08), 0 2px 6px -1px rgba(15, 23, 42, 0.04)',
+  overflow: 'hidden',
+  transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+};
 
 /* ── Composants utilitaires ── */
 function RoleBadge({ role }) {
@@ -56,7 +71,7 @@ function SectionHeader({ title, onRefresh, loading }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <div style={{ width: 4, height: 24, borderRadius: 3, background: `linear-gradient(180deg, ${ACCENT}, ${ACCENT}88)` }} />
+        <div style={{ width: 4, height: 24, borderRadius: 3, background: 'linear-gradient(180deg, #2563EB, #0F172A)' }} />
         <h2 style={{ fontSize: 17, fontWeight: 800, color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>{title}</h2>
       </div>
       {onRefresh && (
@@ -136,7 +151,7 @@ function KpiCard({ label, value, sub, trend, trendUp, color = ACCENT, icon: Icon
 /* ══════════════════ Graphique barres — Inscriptions & Activité ══════════════════ */
 function BarComboChart({ usersByDay, auditByDay }) {
   const canvasRef = useRef(null);
-  const chartRef  = useRef(null);
+  const chartRef = useRef(null);
 
   useEffect(() => {
     if (!canvasRef.current || !usersByDay?.length) return;
@@ -155,14 +170,14 @@ function BarComboChart({ usersByDay, auditByDay }) {
           {
             label: 'Inscriptions',
             data: usersByDay.map(d => d.count),
-            backgroundColor: 'rgba(234,88,12,0.40)',
+            backgroundColor: 'rgba(37,99,235,0.75)',
             borderRadius: 6,
             borderSkipped: false,
           },
           {
             label: 'Actions audit',
             data: auditByDay.map(d => d.count),
-            backgroundColor: 'rgba(234,88,12,0.85)',
+            backgroundColor: 'rgba(15,23,42,0.85)',
             borderRadius: 6,
             borderSkipped: false,
           },
@@ -174,7 +189,7 @@ function BarComboChart({ usersByDay, auditByDay }) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#973100',
+            backgroundColor: '#0F172A',
             titleColor: '#F9F9FC',
             bodyColor: '#CBD5E1',
             padding: 10,
@@ -205,7 +220,7 @@ function BarComboChart({ usersByDay, auditByDay }) {
 /* ══════════════════ Graphique donut — Répartition des rôles ══════════════════ */
 function DonutRolesChart({ roleDist }) {
   const canvasRef = useRef(null);
-  const chartRef  = useRef(null);
+  const chartRef = useRef(null);
 
   useEffect(() => {
     if (!canvasRef.current || !roleDist?.length) return;
@@ -216,7 +231,7 @@ function DonutRolesChart({ roleDist }) {
       data: {
         labels: roleDist.map(r => r.role),
         datasets: [{
-          data:            roleDist.map(r => r.count),
+          data: roleDist.map(r => r.count),
           backgroundColor: roleDist.map(r => ROLE_COLOR[r.role]?.chart || '#94A3B8'),
           borderWidth: 3,
           borderColor: '#fff',
@@ -252,8 +267,8 @@ function ActivityHeatmap({ heatmap }) {
     return <div style={{ textAlign: 'center', padding: 32, color: '#94A3B8', fontSize: 12 }}>Données insuffisantes</div>;
   }
 
-  const hours   = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
-  const maxVal  = Math.max(...heatmap.map(h => h.count), 1);
+  const hours = [9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20];
+  const maxVal = Math.max(...heatmap.map(h => h.count), 1);
 
   const getCount = (dow, hour) => {
     const found = heatmap.find(h => h.dow === dow && h.hour === hour);
@@ -261,12 +276,12 @@ function ActivityHeatmap({ heatmap }) {
   };
 
   const getColor = (count) => {
-    if (count === 0) return '#FFF5EB';
+    if (count === 0) return '#F8FAFC';
     const intensity = count / maxVal;
-    if (intensity < 0.25) return '#FFD9A3';
-    if (intensity < 0.5)  return '#FFB347';
-    if (intensity < 0.75) return '#FF9500';
-    return '#EA580C';
+    if (intensity < 0.25) return '#DBEAFE';
+    if (intensity < 0.5) return '#93C5FD';
+    if (intensity < 0.75) return '#3B82F6';
+    return '#1D4ED8';
   };
 
   return (
@@ -298,7 +313,7 @@ function ActivityHeatmap({ heatmap }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, justifyContent: 'flex-end' }}>
         <span style={{ fontSize: 10, color: '#94A3B8' }}>Peu</span>
-        {['#FFF5EB', '#FFD9A3', '#FFB347', '#FF9500', '#EA580C'].map(c => (
+        {['#F8FAFC', '#DBEAFE', '#93C5FD', '#3B82F6', '#1D4ED8'].map(c => (
           <div key={c} style={{ width: 14, height: 14, borderRadius: 3, background: c }} />
         ))}
         <span style={{ fontSize: 10, color: '#94A3B8' }}>Beaucoup</span>
@@ -310,11 +325,13 @@ function ActivityHeatmap({ heatmap }) {
 /* ══════════════════ TAB: VUE D'ENSEMBLE ══════════════════ */
 function OverviewTab() {
   const revision = useAdminRevision();
-  const [stats,   setStats]   = useState(null);
-  const [charts,  setCharts]  = useState(null);
+  const [stats, setStats] = useState(null);
+  const [charts, setCharts] = useState(null);
   const [loading, setLoading] = useState(true);
   const [secAlerts, setSecAlerts] = useState([]);
   const [alertsLoading, setAlertsLoading] = useState(false);
+  const [healthChecks, setHealthChecks] = useState([]);
+  const [healthLoading, setHealthLoading] = useState(true);
   const { user } = useAuth();
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Bonjour' : hour < 18 ? 'Bon après-midi' : 'Bonsoir';
@@ -333,12 +350,24 @@ function OverviewTab() {
   useEffect(() => { load(); }, [load, revision]);
 
   useEffect(() => {
-    const SECURITY_ACTIONS = new Set(['LOGIN_FAILED', 'UNAUTHORIZED_ACCESS', 'INVALID_TOKEN', 'SUSPICIOUS_ACTIVITY']);
+    const fetchHealth = () => {
+      setHealthLoading(true);
+      adminAPI.getHealthChecks()
+        .then(r => setHealthChecks(r.data || []))
+        .catch(() => setHealthChecks([{ label: 'API Backend', ok: false }]))
+        .finally(() => setHealthLoading(false));
+    };
+    fetchHealth();
+    const iv = setInterval(fetchHealth, 60000);
+    return () => clearInterval(iv);
+  }, []);
+
+  useEffect(() => {
     const fetchAlerts = () => {
       setAlertsLoading(true);
       adminAPI.getAuditLogs({ limit: 50 })
-        .then(r => setSecAlerts((r.data || []).filter(l => SECURITY_ACTIONS.has(l.action)).slice(0, 10)))
-        .catch(() => {})
+        .then(r => setSecAlerts((r.data || []).slice(0, 10)))
+        .catch(() => { })
         .finally(() => setAlertsLoading(false));
     };
     fetchAlerts();
@@ -356,18 +385,19 @@ function OverviewTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
         style={{
-          background: 'linear-gradient(135deg, rgba(234,88,12,0.08) 0%, rgba(234,88,12,0.02) 100%)',
+          background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
           borderRadius: 20, padding: '28px 32px', marginBottom: 24,
-          border: '1px solid rgba(234,88,12,0.12)',
-          position: 'relative', overflow: 'hidden',
+          border: '1px solid #334155',
+          boxShadow: '0 8px 30px rgba(15, 23, 42, 0.12)',
+          position: 'relative', overflow: 'hidden', color: '#FFFFFF',
         }}
       >
-        <div style={{ position: 'absolute', top: -40, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(234,88,12,0.06)' }} />
-        <div style={{ position: 'absolute', bottom: -30, right: 60, width: 80, height: 80, borderRadius: '50%', background: 'rgba(234,88,12,0.04)' }} />
-        <p style={{ fontSize: 26, fontWeight: 900, color: '#0F172A', margin: 0, letterSpacing: '-0.03em', position: 'relative' }}>
+        <div style={{ position: 'absolute', top: -40, right: -20, width: 140, height: 140, borderRadius: '50%', background: 'rgba(255,255,255,0.04)' }} />
+        <div style={{ position: 'absolute', bottom: -30, right: 60, width: 80, height: 80, borderRadius: '50%', background: 'rgba(255,255,255,0.03)' }} />
+        <p style={{ fontSize: 26, fontWeight: 900, color: '#FFFFFF', margin: 0, letterSpacing: '-0.03em', position: 'relative' }}>
           {greeting}, {adminName} 👋
         </p>
-        <p style={{ fontSize: 14, color: '#64748B', margin: '6px 0 0', fontWeight: 500, position: 'relative' }}>
+        <p style={{ fontSize: 14, color: '#94A3B8', margin: '6px 0 0', fontWeight: 500, position: 'relative' }}>
           Voici le résumé de votre plateforme — {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
         </p>
       </motion.div>
@@ -382,10 +412,10 @@ function OverviewTab() {
 
       {/* ── KPI Cards (Flowdex row) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 16, marginBottom: 24 }}>
-        <KpiCard featured label="Utilisateurs" value={total} trend="+100%" trendUp sub="plateforme" color={ACCENT} icon={Users} />
-        <KpiCard label="Restaurants"    value={stats?.restaurants?.total}  trend={`${stats?.restaurants?.active ?? 0} actifs`}  trendUp sub=""           color="#059669" icon={UtensilsCrossed} />
-        <KpiCard label="B2B en attente" value={stats?.b2b?.pending}        trend={stats?.b2b?.pending > 0 ? 'À valider' : 'Aucun'} trendUp={false} sub="" color="#D97706" icon={Building2} />
-        <KpiCard label="Logs d'audit"   value={stats?.audit?.total}        trend="total"  trendUp sub="enregistrements"  color="#7C3AED" icon={ScrollText} />
+        <KpiCard featured label="Utilisateurs" value={total} trend="+100%" trendUp sub="plateforme" color="#2563EB" icon={Users} />
+        <KpiCard label="Restaurants" value={stats?.restaurants?.total} trend={`${stats?.restaurants?.active ?? 0} actifs`} trendUp sub="" color="#059669" icon={UtensilsCrossed} />
+        <KpiCard label="B2B en attente" value={stats?.b2b?.pending} trend={stats?.b2b?.pending > 0 ? 'À valider' : 'Aucun'} trendUp={false} sub="" color="#D97706" icon={Building2} />
+        <KpiCard label="Logs d'audit" value={stats?.audit?.total} trend="total" trendUp sub="enregistrements" color="#7C3AED" icon={ScrollText} />
       </div>
 
       {/* ── Row 2 : Barchart + Heatmap ── */}
@@ -398,7 +428,7 @@ function OverviewTab() {
               <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0' }}>7 derniers jours</p>
             </div>
             <div style={{ display: 'flex', gap: 12 }}>
-              {[{ color: 'rgba(234,88,12,0.40)', label: 'Inscriptions' }, { color: 'rgba(234,88,12,0.85)', label: 'Audit' }].map(l => (
+              {[{ color: 'rgba(37,99,235,0.75)', label: 'Inscriptions' }, { color: 'rgba(15,23,42,0.85)', label: 'Audit' }].map(l => (
                 <div key={l.label} style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <div style={{ width: 10, height: 10, borderRadius: 3, background: l.color }} />
                   <span style={{ fontSize: 11, color: '#64748B' }}>{l.label}</span>
@@ -472,7 +502,7 @@ function OverviewTab() {
           <div style={{ overflowX: 'auto' }}>
             <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
               <thead>
-                <tr style={{ background: '#FFF8F0' }}>
+                <tr style={{ background: '#F8FAFC' }}>
                   {['ID', 'Action', 'Utilisateur', 'Date'].map(h => (
                     <th key={h} style={{ padding: '9px 14px', fontSize: 10, fontWeight: 700, color: '#64748B', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                   ))}
@@ -491,7 +521,12 @@ function OverviewTab() {
                   >
                     <td style={{ padding: '9px 14px', fontFamily: 'monospace', fontSize: 11, color: '#94A3B8' }}>#{log.id?.slice(0, 6)}</td>
                     <td style={{ padding: '9px 14px' }}>
-                      <span style={{ background: 'rgba(234,88,12,0.10)', color: '#EA580C', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{log.action}</span>
+                      {(() => {
+                        const isNovasend = log.action?.toLowerCase().includes('novasend');
+                        return (
+                          <span style={{ background: isNovasend ? 'rgba(22,163,74,0.10)' : 'rgba(234,88,12,0.10)', color: isNovasend ? '#16A34A' : '#EA580C', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{log.action}</span>
+                        );
+                      })()}
                     </td>
                     <td style={{ padding: '9px 14px', fontFamily: 'monospace', fontSize: 11, color: '#64748B' }}>{log.userId?.slice(0, 8)}…</td>
                     <td style={{ padding: '9px 14px', fontSize: 11, color: '#94A3B8', whiteSpace: 'nowrap' }}>
@@ -505,26 +540,22 @@ function OverviewTab() {
         </div>
       </div>
 
-      {/* ── Santé système ── */}
+      {/* ── Santé système (dynamique) ── */}
       <div style={card}>
-        <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0' }}>
+        <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Santé système</p>
+          <span style={{ fontSize: 10, color: '#94A3B8' }}>· rafraîchi toutes les 60s</span>
         </div>
-        <div style={{ padding: '12px 20px', display: 'flex', flexWrap: 'wrap', gap: 10 }}>
-          {[
-            { label: 'API Backend NestJS',         ok: true },
-            { label: 'PostgreSQL',                  ok: true },
-            { label: 'WebSocket Gateway',           ok: true },
-            { label: 'Cache Redis',                 ok: true },
-            { label: 'Novasend (paiements)',         ok: false },
-            { label: 'Firebase FCM',                ok: true },
-          ].map((s, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 7, background: s.ok ? '#F0FDF4' : '#FEF2F2', borderRadius: 10, padding: '8px 14px', border: `1px solid ${s.ok ? '#BBF7D0' : '#FECACA'}` }}>
+        <div style={{ padding: '14px 20px', display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+          {healthLoading && healthChecks.length === 0 ? (
+            <p style={{ color: '#94A3B8', fontSize: 12 }}>Vérification en cours…</p>
+          ) : healthChecks.map((s, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, background: s.ok ? '#F0FDF4' : '#FEF2F2', borderRadius: 10, padding: '8px 14px', border: `1px solid ${s.ok ? '#BBF7D0' : '#FECACA'}` }}>
               {s.ok
                 ? <span style={{ position: 'relative', display: 'inline-flex' }}><span className="admin-pulse-dot" /><CheckCircle style={{ width: 14, height: 14, color: '#16A34A', position: 'relative' }} /></span>
-                : <XCircle    style={{ width: 14, height: 14, color: '#EA580C' }} />
+                : <XCircle style={{ width: 14, height: 14, color: '#DC2626' }} />
               }
-              <span style={{ fontSize: 12, fontWeight: 600, color: s.ok ? '#15803D' : '#B91C1C' }}>{s.label}</span>
+              <span style={{ fontSize: 12, fontWeight: 700, color: s.ok ? '#15803D' : '#B91C1C' }}>{s.label}</span>
             </div>
           ))}
         </div>
@@ -580,32 +611,66 @@ function OverviewTab() {
   );
 }
 
+function ConfirmDeleteModal({ target, onClose, onConfirm, deleting }) {
+  if (!target) return null;
+  const isUser = target.type === 'user';
+  const name = isUser
+    ? [target.item.prenom, target.item.nom].filter(Boolean).join(' ') || target.item.email
+    : target.item.nom;
+
+  return (
+    <div onClick={onClose} className="fade-in" style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(3px)' }}>
+      <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.25)' }}>
+        <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FEE2E2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <AlertTriangle style={{ width: 24, height: 24 }} />
+        </div>
+        <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#0F172A' }}>
+          Supprimer {isUser ? 'ce compte utilisateur' : 'ce restaurant'} ?
+        </h3>
+        <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5, margin: '0 0 20px' }}>
+          Êtes-vous sûr de vouloir supprimer définitivement <strong style={{ color: '#0F172A' }}>{name}</strong> ? Cette action est irréversible et supprimera l'ensemble de ses données.
+        </p>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose} disabled={deleting} style={{ flex: 1, background: '#F1F5F9', color: '#475569', border: 'none', borderRadius: 10, padding: '11px 0', cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>
+            Annuler
+          </button>
+          <button onClick={onConfirm} disabled={deleting} style={{ flex: 1, background: '#DC2626', color: '#fff', border: 'none', borderRadius: 10, padding: '11px 0', cursor: deleting ? 'not-allowed' : 'pointer', fontWeight: 700, fontSize: 13, opacity: deleting ? 0.7 : 1 }}>
+            {deleting ? 'Suppression…' : 'Supprimer'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ══════════════════ TAB: UTILISATEURS ══════════════════ */
 function UsersTab() {
   const revision = useAdminRevision();
-  const [users, setUsers]           = useState([]);
-  const [loading, setLoading]       = useState(true);
-  const [search, setSearch]         = useState('');
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
-  const [showModal, setShowModal]   = useState(false);
-  const [form, setForm]             = useState({ nom: '', prenom: '', email: '', password: '', role: 'CLIENT', telephone: '', restaurantId: '' });
-  const [saving, setSaving]         = useState(false);
-  const [formError, setFormError]   = useState('');
-  const [editUser, setEditUser]     = useState(null);
-  const [editForm, setEditForm]     = useState({});
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ nom: '', prenom: '', email: '', password: '', role: 'CLIENT', telephone: '', restaurantId: '' });
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState('');
+  const [editUser, setEditUser] = useState(null);
+  const [editForm, setEditForm] = useState({});
   const [editSaving, setEditSaving] = useState(false);
-  const [editError, setEditError]   = useState('');
+  const [editError, setEditError] = useState('');
   const [activating, setActivating] = useState(false);
-  const [page, setPage]             = useState(1);
-  const [meta, setMeta]             = useState({ total: 0, totalPages: 1 });
+  const [page, setPage] = useState(1);
+  const [meta, setMeta] = useState({ total: 0, totalPages: 1 });
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
   const LIMIT = 20;
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page, limit: LIMIT };
-      if (roleFilter) params.role   = roleFilter;
-      if (search)     params.search = search;
+      if (roleFilter) params.role = roleFilter;
+      if (search) params.search = search;
       const r = await adminAPI.getUsers(params);
       // Réponse paginée { items, total, page, limit, totalPages }
       setUsers(r.data.items ?? r.data);
@@ -681,7 +746,7 @@ function UsersTab() {
           </select>
           <ChevronDown style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', width: 13, height: 13, color: '#94A3B8', pointerEvents: 'none' }} />
         </div>
-        <button onClick={() => setShowModal(true)} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
+        <button onClick={() => setShowModal(true)} style={{ background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
           <Plus style={{ width: 14, height: 14 }} /> Créer
         </button>
         <button onClick={activerTous} disabled={activating} style={{ background: '#10B981', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: activating ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600, opacity: activating ? 0.7 : 1 }}>
@@ -693,20 +758,20 @@ function UsersTab() {
         <div style={{ overflowX: 'auto' }}>
           <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #D1D9E6' }}>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
                 {['Nom', 'Email', 'Rôle', 'Restaurant', 'Statut', 'Créé le', 'Action'].map(h => (
                   <th key={h} style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loading && users.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#94A3B8' }}>Chargement…</td></tr>
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF7ED', borderRadius: 0 }}>
-                      <Users style={{ width: 48, height: 48, marginBottom: 12, color: '#973100', opacity: 0.4 }} />
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#F8FAFC', borderRadius: 0 }}>
+                      <Users style={{ width: 48, height: 48, marginBottom: 12, color: '#94A3B8', opacity: 0.4 }} />
                       <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Aucun utilisateur trouvé</p>
                       <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>Essayez de modifier les filtres ou créez un premier compte.</p>
                     </div>
@@ -714,7 +779,7 @@ function UsersTab() {
                 </tr>
               ) : users.map(u => (
                 <tr key={u.id} style={{ borderBottom: '1px solid #E2E8F0' }}
-                  onMouseEnter={e => { e.currentTarget.style.background = '#F9F9FC'; }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#F8FAFC'; }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
                 >
                   <td style={{ padding: '10px 14px', fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{[u.prenom, u.nom].filter(Boolean).join(' ') || '—'}</td>
@@ -722,7 +787,7 @@ function UsersTab() {
                   <td style={{ padding: '10px 14px' }}><RoleBadge role={u.role} /></td>
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#64748B' }}>{u.restaurant?.nom || '—'}</td>
                   <td style={{ padding: '10px 14px' }}>
-                    <span style={{ background: u.actif ? '#DCFCE7' : '#FEE2E2', color: u.actif ? '#166534' : '#991B1B', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
+                    <span style={{ background: u.actif ? '#DCFCE7' : '#F1F5F9', color: u.actif ? '#166534' : '#475569', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>
                       {u.actif ? 'Actif' : 'Inactif'}
                     </span>
                   </td>
@@ -731,11 +796,14 @@ function UsersTab() {
                   </td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button onClick={() => openEdit(u)} title="Modifier" style={{ background: 'rgba(234,88,12,0.10)', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => openEdit(u)} title="Modifier" style={{ background: '#F1F5F9', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: '#475569', display: 'flex', alignItems: 'center' }}>
                         <Pencil style={{ width: 14, height: 14 }} />
                       </button>
-                      <button onClick={() => toggle(u.id)} title={u.actif ? 'Désactiver' : 'Activer'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: u.actif ? '#EA580C' : '#16A34A' }}>
+                      <button onClick={() => toggle(u.id)} title={u.actif ? 'Désactiver' : 'Activer'} style={{ background: 'none', border: 'none', cursor: 'pointer', color: u.actif ? '#64748B' : '#16A34A' }}>
                         {u.actif ? <ToggleRight style={{ width: 20, height: 20 }} /> : <ToggleLeft style={{ width: 20, height: 20 }} />}
+                      </button>
+                      <button onClick={() => setDeleteTarget({ type: 'user', item: u })} title="Supprimer définitivement" style={{ background: '#FEE2E2', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}>
+                        <Trash2 style={{ width: 14, height: 14 }} />
                       </button>
                     </div>
                   </td>
@@ -770,79 +838,97 @@ function UsersTab() {
 
       {showModal && (
         <>
-          <div onClick={() => setShowModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199, animation: 'fadeIn 0.2s ease' }} />
+          <div onClick={() => setShowModal(false)} className="fade-in" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199 }} />
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, pointerEvents: 'none' }}>
-          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', animation: 'fadeUp 0.22s ease both', pointerEvents: 'auto' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Créer un utilisateur</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
+            <div className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', pointerEvents: 'auto' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Créer un utilisateur</h3>
+                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
+              </div>
+              <form onSubmit={handleCreate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div><label style={labelStyle}>Nom *</label><input required value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} placeholder="Diallo" /></div>
+                  <div><label style={labelStyle}>Prénom</label><input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} style={inputStyle} placeholder="Moussa" /></div>
+                </div>
+                <div><label style={labelStyle}>Email *</label><input required type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
+                <div><label style={labelStyle}>Mot de passe * (min. 8)</label><input required type="password" minLength={8} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} style={inputStyle} /></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div><label style={labelStyle}>Rôle *</label><select required value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>{ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
+                  <div><label style={labelStyle}>Téléphone</label><input type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} placeholder="+225 07 00 00 00 00" /></div>
+                </div>
+                {(form.role === 'GERANT' || form.role === 'STAFF') && (
+                  <div><label style={labelStyle}>ID Restaurant</label><input value={form.restaurantId} onChange={e => setForm(f => ({ ...f, restaurantId: e.target.value }))} style={inputStyle} placeholder="UUID" /></div>
+                )}
+                {formError && <p style={{ color: '#E11D48', fontSize: 12, margin: 0 }}>{formError}</p>}
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
+                  <button type="submit" disabled={saving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: '#0F172A', opacity: saving ? 0.7 : 1 }}>{saving ? 'Création…' : 'Créer'}</button>
+                </div>
+              </form>
             </div>
-            <form onSubmit={handleCreate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div><label style={labelStyle}>Nom *</label><input required value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} placeholder="Diallo" /></div>
-                <div><label style={labelStyle}>Prénom</label><input value={form.prenom} onChange={e => setForm(f => ({ ...f, prenom: e.target.value }))} style={inputStyle} placeholder="Moussa" /></div>
-              </div>
-              <div><label style={labelStyle}>Email *</label><input required type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
-              <div><label style={labelStyle}>Mot de passe * (min. 8)</label><input required type="password" minLength={8} value={form.password} onChange={e => setForm(f => ({ ...f, password: e.target.value }))} style={inputStyle} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div><label style={labelStyle}>Rôle *</label><select required value={form.role} onChange={e => setForm(f => ({ ...f, role: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>{ROLES.map(r => <option key={r} value={r}>{r}</option>)}</select></div>
-                <div><label style={labelStyle}>Téléphone</label><input type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} placeholder="+225 07 00 00 00 00" /></div>
-              </div>
-              {(form.role === 'GERANT' || form.role === 'STAFF') && (
-                <div><label style={labelStyle}>ID Restaurant</label><input value={form.restaurantId} onChange={e => setForm(f => ({ ...f, restaurantId: e.target.value }))} style={inputStyle} placeholder="UUID" /></div>
-              )}
-              {formError && <p style={{ color: '#EA580C', fontSize: 12, margin: 0 }}>{formError}</p>}
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
-                <button type="submit" disabled={saving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: saving ? 0.7 : 1 }}>{saving ? 'Création…' : 'Créer'}</button>
-              </div>
-            </form>
-          </div>
           </div>
         </>
       )}
 
       {editUser && (
         <>
-          <div onClick={() => setEditUser(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199, animation: 'fadeIn 0.2s ease' }} />
+          <div onClick={() => setEditUser(null)} className="fade-in" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199 }} />
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, pointerEvents: 'none' }}>
-          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', animation: 'fadeUp 0.22s ease both', pointerEvents: 'auto' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Modifier l'utilisateur</h3>
-                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94A3B8' }}>{editUser.email}</p>
-              </div>
-              <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
-            </div>
-            <form onSubmit={handleUpdate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div><label style={labelStyle}>Nom *</label><input required value={editForm.nom} onChange={e => setEditForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} /></div>
-                <div><label style={labelStyle}>Prénom</label><input value={editForm.prenom} onChange={e => setEditForm(f => ({ ...f, prenom: e.target.value }))} style={inputStyle} /></div>
-              </div>
-              <div><label style={labelStyle}>Email *</label><input required type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+            <div className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', pointerEvents: 'auto' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
-                  <label style={labelStyle}>Rôle *</label>
-                  <select required value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
-                    {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
-                  </select>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Modifier l'utilisateur</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94A3B8' }}>{editUser.email}</p>
                 </div>
-                <div><label style={labelStyle}>Téléphone</label><input type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={editForm.telephone} onChange={e => setEditForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} /></div>
+                <button onClick={() => setEditUser(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
               </div>
-              {(editForm.role === 'GERANT' || editForm.role === 'STAFF') && (
-                <div><label style={labelStyle}>ID Restaurant</label><input value={editForm.restaurantId} onChange={e => setEditForm(f => ({ ...f, restaurantId: e.target.value }))} style={inputStyle} placeholder="UUID du restaurant" /></div>
-              )}
-              {editError && <p style={{ color: '#EA580C', fontSize: 12, margin: 0 }}>{editError}</p>}
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button type="button" onClick={() => setEditUser(null)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
-                <button type="submit" disabled={editSaving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: editSaving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: editSaving ? 0.7 : 1 }}>
-                  {editSaving ? 'Sauvegarde…' : 'Enregistrer'}
-                </button>
-              </div>
-            </form>
-          </div>
+              <form onSubmit={handleUpdate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div><label style={labelStyle}>Nom *</label><input required value={editForm.nom} onChange={e => setEditForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Prénom</label><input value={editForm.prenom} onChange={e => setEditForm(f => ({ ...f, prenom: e.target.value }))} style={inputStyle} /></div>
+                </div>
+                <div><label style={labelStyle}>Email *</label><input required type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div>
+                    <label style={labelStyle}>Rôle *</label>
+                    <select required value={editForm.role} onChange={e => setEditForm(f => ({ ...f, role: e.target.value }))} style={{ ...inputStyle, cursor: 'pointer' }}>
+                      {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                    </select>
+                  </div>
+                  <div><label style={labelStyle}>Téléphone</label><input type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={editForm.telephone} onChange={e => setEditForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} /></div>
+                </div>
+                {(editForm.role === 'GERANT' || editForm.role === 'STAFF') && (
+                  <div><label style={labelStyle}>ID Restaurant</label><input value={editForm.restaurantId} onChange={e => setEditForm(f => ({ ...f, restaurantId: e.target.value }))} style={inputStyle} placeholder="UUID du restaurant" /></div>
+                )}
+                {editError && <p style={{ color: '#E11D48', fontSize: 12, margin: 0 }}>{editError}</p>}
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  <button type="button" onClick={() => setEditUser(null)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
+                  <button type="submit" disabled={editSaving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: editSaving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: '#0F172A', opacity: editSaving ? 0.7 : 1 }}>
+                    {editSaving ? 'Sauvegarde…' : 'Enregistrer'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </>
+      )}
+
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          target={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          deleting={deleting}
+          onConfirm={async () => {
+            setDeleting(true);
+            try {
+              await adminAPI.deleteUser(deleteTarget.item.id);
+              setDeleteTarget(null);
+              load();
+            } catch (err) {
+              alert(extractErrorMessage(err, 'Erreur lors de la suppression'));
+            } finally { setDeleting(false); }
+          }}
+        />
       )}
     </div>
   );
@@ -852,14 +938,16 @@ function UsersTab() {
 function RestaurantsTab() {
   const revision = useAdminRevision();
   const [restaurants, setRestaurants] = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [showModal, setShowModal]     = useState(false);
-  const [form, setForm]               = useState({ nom: '', telephone: '', adresse: '', email: '', description: '' });
-  const [saving, setSaving]           = useState(false);
-  const [editResto, setEditResto]     = useState(null);
-  const [editForm, setEditForm]       = useState({});
-  const [editSaving, setEditSaving]   = useState(false);
-  const [editError, setEditError]     = useState('');
+  const [loading, setLoading] = useState(true);
+  const [showModal, setShowModal] = useState(false);
+  const [form, setForm] = useState({ nom: '', telephone: '', adresse: '', email: '', description: '' });
+  const [saving, setSaving] = useState(false);
+  const [editResto, setEditResto] = useState(null);
+  const [editForm, setEditForm] = useState({});
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -901,7 +989,7 @@ function RestaurantsTab() {
     <div>
       <SectionHeader title="Gestion des restaurants" onRefresh={load} loading={loading} />
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 16 }}>
-        <button onClick={() => setShowModal(true)} style={{ background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
+        <button onClick={() => setShowModal(true)} style={{ background: '#0F172A', color: '#fff', border: 'none', borderRadius: 8, padding: '8px 14px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 600 }}>
           <Plus style={{ width: 14, height: 14 }} /> Nouveau restaurant
         </button>
       </div>
@@ -909,14 +997,14 @@ function RestaurantsTab() {
         <div style={{ overflowX: 'auto' }}>
           <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #D1D9E6' }}>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
                 {['Nom', 'Adresse', 'Téléphone', 'Membres', 'Note', 'Statut', 'Action'].map(h => (
                   <th key={h} style={{ padding: '10px 14px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loading && restaurants.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: 32, textAlign: 'center', color: '#94A3B8' }}>Chargement…</td></tr>
               ) : restaurants.length === 0 ? (
                 <tr>
@@ -938,16 +1026,16 @@ function RestaurantsTab() {
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#475569' }}>{r.telephone}</td>
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#475569' }}>{r.users?.length ?? 0}</td>
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#475569' }}>
-                    <div style={{ display:'flex', flexDirection:'column', gap:2 }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:4 }}>
-                        <span style={{ fontWeight:700, color: Number(r.noteMoyenne||0) >= 4 ? '#16A34A' : Number(r.noteMoyenne||0) >= 3 ? '#D97706' : '#EA580C' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontWeight: 700, color: Number(r.noteMoyenne || 0) >= 4 ? '#16A34A' : Number(r.noteMoyenne || 0) >= 3 ? '#D97706' : '#EA580C' }}>
                           {Number(r.noteMoyenne || 0).toFixed(1)}
                         </span>
-                        <span style={{ color:'#F59E0B', fontSize:13, letterSpacing:1 }}>
+                        <span style={{ color: '#F59E0B', fontSize: 13, letterSpacing: 1 }}>
                           {'★'.repeat(Math.round(r.noteMoyenne || 0))}{'☆'.repeat(Math.max(0, 5 - Math.round(r.noteMoyenne || 0)))}
                         </span>
                       </div>
-                      <span style={{ fontSize:10, color:'#94A3B8' }}>{r.nbAvis || 0} avis</span>
+                      <span style={{ fontSize: 10, color: '#94A3B8' }}>{r.nbAvis || 0} avis</span>
                     </div>
                   </td>
                   <td style={{ padding: '10px 14px' }}><span style={{ background: r.actif ? '#DCFCE7' : '#FEE2E2', color: r.actif ? '#166534' : '#991B1B', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{r.actif ? 'Actif' : 'Inactif'}</span></td>
@@ -958,6 +1046,9 @@ function RestaurantsTab() {
                       </button>
                       <button onClick={() => toggle(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: r.actif ? '#EA580C' : '#16A34A' }}>
                         {r.actif ? <ToggleRight style={{ width: 20, height: 20 }} /> : <ToggleLeft style={{ width: 20, height: 20 }} />}
+                      </button>
+                      <button onClick={() => setDeleteTarget({ type: 'restaurant', item: r })} title="Supprimer définitivement" style={{ background: '#FEE2E2', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}>
+                        <Trash2 style={{ width: 14, height: 14 }} />
                       </button>
                     </div>
                   </td>
@@ -971,61 +1062,79 @@ function RestaurantsTab() {
 
       {showModal && (
         <>
-          <div onClick={() => setShowModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199, animation: 'fadeIn 0.2s ease' }} />
+          <div onClick={() => setShowModal(false)} className="fade-in" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199 }} />
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, pointerEvents: 'none' }}>
-          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', animation: 'fadeUp 0.22s ease both', pointerEvents: 'auto' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Nouveau restaurant</h3>
-              <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
+            <div className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', pointerEvents: 'auto' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Nouveau restaurant</h3>
+                <button onClick={() => setShowModal(false)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
+              </div>
+              <form onSubmit={handleCreate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div><label style={labelStyle}>Nom *</label><input required value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} placeholder="Le Maquis du Carrefour" /></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div><label style={labelStyle}>Téléphone *</label><input required type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Email</label><input type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
+                </div>
+                <div><label style={labelStyle}>Adresse *</label><input required value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} /></div>
+                <div><label style={labelStyle}>Description</label><textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...inputStyle, minHeight: 64, resize: 'vertical' }} /></div>
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
+                  <button type="submit" disabled={saving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: saving ? 0.7 : 1 }}>{saving ? 'Création…' : 'Créer'}</button>
+                </div>
+              </form>
             </div>
-            <form onSubmit={handleCreate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div><label style={labelStyle}>Nom *</label><input required value={form.nom} onChange={e => setForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} placeholder="Le Maquis du Carrefour" /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div><label style={labelStyle}>Téléphone *</label><input required type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={form.telephone} onChange={e => setForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} /></div>
-                <div><label style={labelStyle}>Email</label><input type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
-              </div>
-              <div><label style={labelStyle}>Adresse *</label><input required value={form.adresse} onChange={e => setForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} /></div>
-              <div><label style={labelStyle}>Description</label><textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} style={{ ...inputStyle, minHeight: 64, resize: 'vertical' }} /></div>
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button type="button" onClick={() => setShowModal(false)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
-                <button type="submit" disabled={saving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: saving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: saving ? 0.7 : 1 }}>{saving ? 'Création…' : 'Créer'}</button>
-              </div>
-            </form>
-          </div>
           </div>
         </>
       )}
 
       {editResto && (
         <>
-          <div onClick={() => setEditResto(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199, animation: 'fadeIn 0.2s ease' }} />
+          <div onClick={() => setEditResto(null)} className="fade-in" style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.45)', backdropFilter: 'blur(2px)', zIndex: 199 }} />
           <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, pointerEvents: 'none' }}>
-          <div style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', animation: 'fadeUp 0.22s ease both', pointerEvents: 'auto' }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div>
-                <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Modifier le restaurant</h3>
-                <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94A3B8' }}>{editResto.nom}</p>
+            <div className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.2)', pointerEvents: 'auto' }}>
+              <div style={{ padding: '20px 24px', borderBottom: '1px solid #E2E8F0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: '#0F172A' }}>Modifier le restaurant</h3>
+                  <p style={{ margin: '2px 0 0', fontSize: 11, color: '#94A3B8' }}>{editResto.nom}</p>
+                </div>
+                <button onClick={() => setEditResto(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
               </div>
-              <button onClick={() => setEditResto(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 18, height: 18 }} /></button>
+              <form onSubmit={handleUpdate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                <div><label style={labelStyle}>Nom *</label><input required value={editForm.nom} onChange={e => setEditForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} /></div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  <div><label style={labelStyle}>Téléphone *</label><input required type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={editForm.telephone} onChange={e => setEditForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} /></div>
+                  <div><label style={labelStyle}>Email</label><input type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
+                </div>
+                <div><label style={labelStyle}>Adresse *</label><input required value={editForm.adresse} onChange={e => setEditForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} /></div>
+                {editError && <p style={{ color: '#EA580C', fontSize: 12, margin: 0 }}>{editError}</p>}
+                <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
+                  <button type="button" onClick={() => setEditResto(null)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
+                  <button type="submit" disabled={editSaving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: editSaving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: editSaving ? 0.7 : 1 }}>
+                    {editSaving ? 'Sauvegarde…' : 'Enregistrer'}
+                  </button>
+                </div>
+              </form>
             </div>
-            <form onSubmit={handleUpdate} style={{ padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-              <div><label style={labelStyle}>Nom *</label><input required value={editForm.nom} onChange={e => setEditForm(f => ({ ...f, nom: e.target.value }))} style={inputStyle} /></div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                <div><label style={labelStyle}>Téléphone *</label><input required type="tel" inputMode="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} value={editForm.telephone} onChange={e => setEditForm(f => ({ ...f, telephone: e.target.value }))} style={inputStyle} /></div>
-                <div><label style={labelStyle}>Email</label><input type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
-              </div>
-              <div><label style={labelStyle}>Adresse *</label><input required value={editForm.adresse} onChange={e => setEditForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} /></div>
-              {editError && <p style={{ color: '#EA580C', fontSize: 12, margin: 0 }}>{editError}</p>}
-              <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                <button type="button" onClick={() => setEditResto(null)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
-                <button type="submit" disabled={editSaving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: editSaving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: editSaving ? 0.7 : 1 }}>
-                  {editSaving ? 'Sauvegarde…' : 'Enregistrer'}
-                </button>
-              </div>
-            </form>
-          </div>
           </div>
         </>
+      )}
+
+      {deleteTarget && (
+        <ConfirmDeleteModal
+          target={deleteTarget}
+          onClose={() => setDeleteTarget(null)}
+          deleting={deleting}
+          onConfirm={async () => {
+            setDeleting(true);
+            try {
+              await adminAPI.deleteRestaurant(deleteTarget.item.id);
+              setDeleteTarget(null);
+              load();
+            } catch (err) {
+              alert(extractErrorMessage(err, 'Erreur lors de la suppression'));
+            } finally { setDeleting(false); }
+          }}
+        />
       )}
     </div>
   );
@@ -1035,9 +1144,9 @@ function RestaurantsTab() {
 /* ── Badge couleur par famille d'action ── */
 const ACTION_STYLE = (action = '') => {
   const a = action.toUpperCase();
-  if (a.includes('LOGIN') || a.includes('AUTH'))    return { bg: '#DCFCE7', text: '#166534' };
+  if (a.includes('LOGIN') || a.includes('AUTH')) return { bg: '#DCFCE7', text: '#166534' };
   if (a.includes('DELETE') || a.includes('REMOVE')) return { bg: '#FEE2E2', text: '#991B1B' };
-  if (a.includes('CREATE') || a.includes('ADD'))    return { bg: 'rgba(234,88,12,0.10)', text: '#EA580C' };
+  if (a.includes('CREATE') || a.includes('ADD')) return { bg: 'rgba(234,88,12,0.10)', text: '#EA580C' };
   if (a.includes('UPDATE') || a.includes('PATCH') || a.includes('EDIT')) return { bg: '#FEF3C7', text: '#92400E' };
   if (a.includes('EXPORT') || a.includes('DOWNLOAD')) return { bg: '#F3E8FF', text: '#6B21A8' };
   if (a.includes('VALIDER') || a.includes('APPROVE')) return { bg: '#D1FAE5', text: '#065F46' };
@@ -1047,13 +1156,13 @@ const ACTION_STYLE = (action = '') => {
 
 function AuditTab() {
   const revision = useAdminRevision();
-  const [logs, setLogs]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [action, setAction]     = useState('');
-  const [from, setFrom]         = useState('');
-  const [to, setTo]             = useState('');
-  const [userId, setUserId]     = useState('');
-  const [limit, setLimit]       = useState(100);
+  const [logs, setLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [action, setAction] = useState('');
+  const [from, setFrom] = useState('');
+  const [to, setTo] = useState('');
+  const [userId, setUserId] = useState('');
+  const [limit, setLimit] = useState(100);
   const [expanded, setExpanded] = useState({});
   const [exporting, setExporting] = useState(false);
 
@@ -1074,11 +1183,11 @@ function AuditTab() {
 
   useEffect(() => { load(); }, [load, revision]);
 
-  const today    = logs.filter(l => new Date(l.createdAt).toDateString() === new Date().toDateString()).length;
+  const today = logs.filter(l => new Date(l.createdAt).toDateString() === new Date().toDateString()).length;
   const distinct = new Set(logs.map(l => l.userId)).size;
   const topAction = logs.length
     ? Object.entries(logs.reduce((acc, l) => { acc[l.action] = (acc[l.action] || 0) + 1; return acc; }, {}))
-        .sort((a, b) => b[1] - a[1])[0]?.[0]
+      .sort((a, b) => b[1] - a[1])[0]?.[0]
     : '—';
 
   const fmt = (iso) => {
@@ -1089,10 +1198,10 @@ function AuditTab() {
   const exportCSV = async () => {
     setExporting(true);
     try {
-      const r    = await adminAPI.exportAudit({ action: action || undefined, from: from || undefined, to: to || undefined });
+      const r = await adminAPI.exportAudit({ action: action || undefined, from: from || undefined, to: to || undefined });
       const blob = new Blob([r.data], { type: 'text/csv;charset=utf-8;' });
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a'); a.href = url; a.download = `audit-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = `audit-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
       URL.revokeObjectURL(url);
     } finally { setExporting(false); }
   };
@@ -1106,7 +1215,7 @@ function AuditTab() {
             <div style={{ width: 4, height: 20, borderRadius: 2, background: ACCENT, flexShrink: 0 }} />
             <h2 style={{ fontSize: 16, fontWeight: 700, color: '#0F172A', margin: 0 }}>Journaux d'audit</h2>
           </div>
-          <p style={{ fontSize: 11, color: '#64748B', margin: 0 }}>Traçabilité immuable de toutes les actions critiques</p>
+          <p style={{ fontSize: 11, color: '#64748B', margin: 0 }}>Traçabilité dynamique et en temps réel de toutes les actions</p>
         </div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={exportCSV} disabled={exporting} style={{ background: '#F1F5F9', border: '1px solid #E2E8F0', borderRadius: 8, padding: '7px 14px', cursor: 'pointer', fontWeight: 600, fontSize: 12, display: 'flex', alignItems: 'center', gap: 6, color: '#475569' }}>
@@ -1173,7 +1282,7 @@ function AuditTab() {
               </tr>
             </thead>
             <tbody>
-              {loading ? (
+              {loading && logs.length === 0 ? (
                 <tr><td colSpan={7} style={{ padding: 40, textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>Chargement…</td></tr>
               ) : logs.length === 0 ? (
                 <tr>
@@ -1229,8 +1338,7 @@ function AuditTab() {
           </table></div>
         </div>
         <div style={{ padding: '10px 16px', borderTop: '1px solid #F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <p style={{ fontSize: 11, color: '#94A3B8', margin: 0 }}>{logs.length} entrée{logs.length !== 1 ? 's' : ''} · Journal immuable · Cliquer une ligne pour afficher le payload</p>
-          <span style={{ fontSize: 10, background: '#DCFCE7', color: '#166534', borderRadius: 5, padding: '2px 8px', fontWeight: 700 }}>IMMUABLE</span>
+          <p style={{ fontSize: 11, color: '#94A3B8', margin: 0 }}>{logs.length} entrée{logs.length !== 1 ? 's' : ''} · Cliquer une ligne pour afficher le payload</p>
         </div>
       </div>
     </div>
@@ -1239,16 +1347,16 @@ function AuditTab() {
 
 /* ══════════════════ TAB: EXPORTS ══════════════════ */
 function ExportsTab() {
-  const today     = new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
   const firstOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().slice(0, 10);
 
-  const [dlState,      setDlState]      = useState({});
-  const [history,      setHistory]      = useState(() => {
+  const [dlState, setDlState] = useState({});
+  const [history, setHistory] = useState(() => {
     try { return JSON.parse(localStorage.getItem('admin_export_history') || '[]'); } catch { return []; }
   });
-  const [sysPeriod,    setSysPeriod]    = useState('monthly');
-  const [auditFrom,    setAuditFrom]    = useState(firstOfMonth);
-  const [auditTo,      setAuditTo]      = useState(today);
+  const [sysPeriod, setSysPeriod] = useState('monthly');
+  const [auditFrom, setAuditFrom] = useState(firstOfMonth);
+  const [auditTo, setAuditTo] = useState(today);
 
   const pushHistory = (entry) => {
     const next = [entry, ...history].slice(0, 20);
@@ -1265,7 +1373,7 @@ function ExportsTab() {
   const download = async (key, apiFn, filename, label) => {
     setDlState(s => ({ ...s, [key]: 'loading' }));
     try {
-      const r    = await apiFn();
+      const r = await apiFn();
       const blob = new Blob([r.data], { type: 'text/csv;charset=utf-8;' });
       triggerDownload(blob, filename);
       pushHistory({ name: filename, ts: new Date().toISOString(), label });
@@ -1282,13 +1390,13 @@ function ExportsTab() {
 
   const BtnIcon = ({ state }) => {
     if (state === 'loading') return <RefreshCw style={{ width: 14, height: 14, animation: 'spin 1s linear infinite' }} />;
-    if (state === 'done')    return <CheckCircle style={{ width: 14, height: 14 }} />;
-    if (state === 'error')   return <XCircle style={{ width: 14, height: 14 }} />;
+    if (state === 'done') return <CheckCircle style={{ width: 14, height: 14 }} />;
+    if (state === 'error') return <XCircle style={{ width: 14, height: 14 }} />;
     return <Download style={{ width: 14, height: 14 }} />;
   };
 
   const btnBg = (key, base) => {
-    if (dlState[key] === 'done')  return '#059669';
+    if (dlState[key] === 'done') return '#059669';
     if (dlState[key] === 'error') return '#DC2626';
     return base;
   };
@@ -1399,7 +1507,7 @@ function ExportsTab() {
             <div style={{ background: '#F0FDF4', borderRadius: 10, padding: '10px 14px', marginBottom: 14, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
               {[
                 { label: 'Format', value: 'CSV UTF-8 (BOM)' },
-                { label: 'Intégrité', value: 'Immuable' },
+                { label: 'Intégrité', value: 'Protégé' },
                 { label: 'Colonnes', value: 'Date · Heure · User · Action · Restaurant · Payload' },
                 { label: 'Limite', value: '5 000 entrées / export' },
               ].map(f => (
@@ -1419,7 +1527,7 @@ function ExportsTab() {
           </div>
           <div style={{ padding: '10px 20px', background: '#F0FDF4', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
             <Info style={{ width: 13, height: 13, color: '#059669', flexShrink: 0, marginTop: 1 }} />
-            <p style={{ fontSize: 11, color: '#065F46', margin: 0, lineHeight: 1.5 }}>Le journal en base est immuable. Cet export est une copie d'archivage — le journal source reste intact.</p>
+            <p style={{ fontSize: 11, color: '#065F46', margin: 0, lineHeight: 1.5 }}>Cet export est une copie d'archivage — le journal source reste intact en base de données.</p>
           </div>
         </div>
       </div>
@@ -1507,9 +1615,10 @@ const TYPE_ICON = {
 const CDC_NAMES = new Set(['Novasend', 'Firebase FCM', 'Twilio SMS', 'Resend (Email)', 'NovaSMS', 'Dobi Livraison']);
 
 function IntegrationDynamicCard({ integration, onToggle, onEdit, onDelete, onTest, testResult, testing }) {
-  const color  = TYPE_COLOR[integration.type] || '#64748B';
-  const Icon   = TYPE_ICON[integration.type] || Zap;
-  const isCdc  = CDC_NAMES.has(integration.name);
+  const isNovasend = integration.name.toLowerCase().includes('novasend');
+  const color = isNovasend ? '#16A34A' : TYPE_COLOR[integration.type] || '#64748B';
+  const Icon = TYPE_ICON[integration.type] || Zap;
+  const isCdc = CDC_NAMES.has(integration.name);
 
   return (
     <div style={{ ...card, marginBottom: 10, border: isCdc ? `1.5px solid ${color}28` : '1px solid #D1D9E6', overflow: 'hidden' }}>
@@ -1582,7 +1691,7 @@ function IntegrationModal({ initial, onClose, onSave }) {
 
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(2px)' }}>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.22)', animation: 'fadeUp 0.22s ease both' }}>
+      <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 640, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.22)' }}>
         <div style={{ padding: '20px 28px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#0F172A' }}>{initial?.id ? 'Modifier' : 'Nouvelle'} intégration</h3>
           <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer' }}><X style={{ width: 20, height: 20, color: '#64748B' }} /></button>
@@ -1640,25 +1749,25 @@ function IntegrationModal({ initial, onClose, onSave }) {
 function ConfigTab() {
   const revision = useAdminRevision();
   const { user } = useAuth();
-  const [configs, setConfigs]         = useState([]);
-  const [loading, setLoading]         = useState(true);
-  const [saving, setSaving]           = useState({});
-  const [pwForm, setPwForm]           = useState({ current: '', next: '', confirm: '' });
-  const [pwMsg, setPwMsg]             = useState(null);
-  const [pwSaving, setPwSaving]       = useState(false);
-  const [secEdits, setSecEdits]       = useState({});
+  const [configs, setConfigs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState({});
+  const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
+  const [pwMsg, setPwMsg] = useState(null);
+  const [pwSaving, setPwSaving] = useState(false);
+  const [secEdits, setSecEdits] = useState({});
   const [integrations, setIntegrations] = useState([]);
-  const [payMethods, setPayMethods]   = useState([]);
+  const [payMethods, setPayMethods] = useState([]);
   const [payToggling, setPayToggling] = useState({});
-  const [modal, setModal]             = useState(null); // null | {} | {id,…}
+  const [modal, setModal] = useState(null); // null | {} | {id,…}
   const [testResults, setTestResults] = useState({});
-  const [testing, setTesting]         = useState({});
+  const [testing, setTesting] = useState({});
   const [twoFAEnabled, setTwoFAEnabled] = useState(!!user?.twoFactorEnabled);
-  const [twoFAStep, setTwoFAStep]     = useState(0); // 0=idle, 1=qr, 2=done
-  const [twoFAData, setTwoFAData]     = useState(null);
-  const [twoFACode, setTwoFACode]     = useState('');
+  const [twoFAStep, setTwoFAStep] = useState(0); // 0=idle, 1=qr, 2=done
+  const [twoFAData, setTwoFAData] = useState(null);
+  const [twoFACode, setTwoFACode] = useState('');
   const [twoFASaving, setTwoFASaving] = useState(false);
-  const [twoFAMsg, setTwoFAMsg]       = useState(null);
+  const [twoFAMsg, setTwoFAMsg] = useState(null);
 
   const loadConfig = useCallback(async () => {
     setLoading(true);
@@ -1798,21 +1907,14 @@ function ConfigTab() {
   );
 
   const CFG_TABS = [
-    { id: 'plateforme',   label: 'Plateforme',    icon: Building2 },
-    { id: 'securite',     label: 'Sécurité',      icon: Lock },
-    { id: 'integrations', label: 'Intégrations',  icon: Zap },
-    { id: 'paiements',    label: 'Paiements',     icon: CreditCard },
-    { id: 'compte',       label: 'Compte admin',  icon: Shield },
+    { id: 'plateforme', label: 'Plateforme', icon: Building2 },
+    { id: 'securite', label: 'Sécurité', icon: Lock },
+    { id: 'integrations', label: 'Intégrations', icon: Zap },
+    { id: 'paiements', label: 'Paiements', icon: CreditCard },
+    { id: 'compte', label: 'Compte admin', icon: Shield },
   ];
 
-  const Field = ({ label, children }) => (
-    <div style={{ marginBottom: 14 }}>
-      <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>{label}</label>
-      {children}
-    </div>
-  );
-
-  const Inp = ({ k, type = 'text', placeholder = '', suffix }) => (
+  const Inp = (k, type = 'text', placeholder = '', suffix = null) => (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
       <input type={type} placeholder={placeholder}
         value={secEdits[k] ?? ''}
@@ -1822,26 +1924,19 @@ function ConfigTab() {
     </div>
   );
 
-  const SaveBtn = ({ onClick, loading: l, label = 'Enregistrer', color = ACCENT }) => (
-    <button onClick={onClick} disabled={l}
-      style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: color, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: l ? 'not-allowed' : 'pointer', opacity: l ? 0.65 : 1, marginTop: 4 }}>
-      <Save style={{ width: 13, height: 13 }} /> {l ? 'Enregistrement…' : label}
-    </button>
-  );
-
   return (
     <div style={{ display: 'flex', gap: 0, ...card, overflow: 'hidden', minHeight: 480 }}>
 
       {/* ── Sidebar navigation ── */}
-      <div style={{ width: 160, borderRight: '1px solid #E2E8F0', background: '#F9F9FC', padding: '8px 0', flexShrink: 0 }}>
+      <div style={{ width: 180, borderRight: '1px solid #CBD5E1', background: '#F8FAFC', padding: '12px 0', flexShrink: 0 }}>
         {CFG_TABS.map(t => {
           const Icon = t.icon;
           const active = cfgTab === t.id;
           return (
             <button key={t.id} onClick={() => setCfgTab(t.id)}
-              style={{ display: 'flex', alignItems: 'center', gap: 9, width: '100%', padding: '10px 16px', border: 'none', background: active ? '#FFF7ED' : 'transparent', cursor: 'pointer', borderLeft: `3px solid ${active ? ACCENT : 'transparent'}`, transition: 'all 0.15s' }}>
-              <Icon style={{ width: 14, height: 14, color: active ? ACCENT : '#64748B', flexShrink: 0 }} />
-              <span style={{ fontSize: 12, fontWeight: active ? 700 : 500, color: active ? '#0F172A' : '#475569', textAlign: 'left' }}>{t.label}</span>
+              style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '11px 18px', border: 'none', background: active ? '#FFFFFF' : 'transparent', cursor: 'pointer', borderLeft: `4px solid ${active ? '#2563EB' : 'transparent'}`, boxShadow: active ? '0 2px 8px rgba(0,0,0,0.04)' : 'none', transition: 'all 0.15s' }}>
+              <Icon style={{ width: 15, height: 15, color: active ? '#2563EB' : '#64748B', flexShrink: 0 }} />
+              <span style={{ fontSize: 13, fontWeight: active ? 700 : 500, color: active ? '#0F172A' : '#475569', textAlign: 'left' }}>{t.label}</span>
             </button>
           );
         })}
@@ -1855,16 +1950,18 @@ function ConfigTab() {
           <div>
             <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 18px' }}>Identité légale</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              {Field({ label: 'Nom commercial', children: Inp({ k: 'platform_nom', placeholder: "Resto d'ici" }) })}
-              {Field({ label: 'Adresse siège', children: Inp({ k: 'platform_adresse', placeholder: "Abidjan, Côte d'Ivoire" }) })}
-              {Field({ label: 'NIF', children: Inp({ k: 'platform_nif', placeholder: 'NIF : CI-ABJ-XXXX-XXX' }) })}
-              {Field({ label: 'RCCM', children: Inp({ k: 'platform_rccm', placeholder: 'RCCM : CI-ABJ-XXXX-X-XXX' }) })}
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Nom commercial</label>{Inp('platform_nom', 'text', "Resto d'ici")}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Adresse siège</label>{Inp('platform_adresse', 'text', "Abidjan, Côte d'Ivoire")}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>NIF</label>{Inp('platform_nif', 'text', 'NIF : CI-ABJ-XXXX-XXX')}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>RCCM</label>{Inp('platform_rccm', 'text', 'RCCM : CI-ABJ-XXXX-X-XXX')}</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              {Field({ label: 'Fuseau horaire', children: Inp({ k: 'timezone', placeholder: 'Africa/Abidjan' }) })}
-              {Field({ label: 'Devise', children: Inp({ k: 'currency', placeholder: 'FCFA' }) })}
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Fuseau horaire</label>{Inp('timezone', 'text', 'Africa/Abidjan')}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Devise</label>{Inp('currency', 'text', 'FCFA')}</div>
             </div>
-            <SaveBtn onClick={saveSecurityFields} loading={saving.security} label="Enregistrer" />
+            <button onClick={saveSecurityFields} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
+              <Save style={{ width: 13, height: 13 }} /> {saving.security ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
           </div>
         )}
 
@@ -1873,13 +1970,15 @@ function ConfigTab() {
           <div>
             <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 18px' }}>Politiques d'accès</p>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              {Field({ label: 'JWT TTL', children: Inp({ k: 'jwt_ttl_hours', type: 'number', placeholder: '24', suffix: 'heures' }) })}
-              {Field({ label: 'Coût bcrypt', children: Inp({ k: 'bcrypt_cost', type: 'number', placeholder: '12' }) })}
-              {Field({ label: 'Rate limit /auth', children: Inp({ k: 'rate_limit_auth', type: 'number', placeholder: '10', suffix: 'req/min' }) })}
-              {Field({ label: 'Rate limit global', children: Inp({ k: 'rate_limit_global', type: 'number', placeholder: '100', suffix: 'req/min' }) })}
-              {Field({ label: 'Rétention backups', children: Inp({ k: 'backup_retention_days', type: 'number', placeholder: '90', suffix: 'jours' }) })}
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>JWT TTL</label>{Inp('jwt_ttl_hours', 'number', '24', 'heures')}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Coût bcrypt</label>{Inp('bcrypt_cost', 'number', '12')}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Rate limit /auth</label>{Inp('rate_limit_auth', 'number', '10', 'req/min')}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Rate limit global</label>{Inp('rate_limit_global', 'number', '100', 'req/min')}</div>
+              <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Rétention backups</label>{Inp('backup_retention_days', 'number', '90', 'jours')}</div>
             </div>
-            <SaveBtn onClick={saveSecurityFields} loading={saving.security} label="Enregistrer" />
+            <button onClick={saveSecurityFields} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
+              <Save style={{ width: 13, height: 13 }} /> {saving.security ? 'Enregistrement…' : 'Enregistrer'}
+            </button>
           </div>
         )}
 
@@ -1973,23 +2072,44 @@ function ConfigTab() {
         {/* ── COMPTE ADMIN ── */}
         {cfgTab === 'compte' && (
           <div>
+            <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 18px' }}>Paramètres financiers</p>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '0 20px', marginBottom: 24 }}>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Numéro de réception Novasend</label>
+                <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                  <input type="tel" placeholder="ex: 07XXXXXXXX" value={secEdits['ADMIN_NOVASEND_NUMBER'] ?? ''}
+                    onChange={e => setSecEdits(s => ({ ...s, ADMIN_NOVASEND_NUMBER: e.target.value }))}
+                    style={{ ...inputStyle, flex: 1, color: '#0F172A', fontWeight: 500 }} />
+                </div>
+                <p style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>Numéro utilisé pour recevoir les commissions de la plateforme.</p>
+              </div>
+              <button onClick={saveSecurityFields} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
+                <Save style={{ width: 13, height: 13 }} /> {saving.security ? 'Enregistrement…' : 'Enregistrer le numéro'}
+              </button>
+            </div>
+
+            <div style={{ borderTop: '1px solid #E2E8F0', margin: '22px 0 18px' }} />
+
             <p style={{ fontSize: 13, fontWeight: 800, color: '#0F172A', margin: '0 0 18px' }}>Mot de passe</p>
-            {Field({ label: 'Mot de passe actuel', children: (
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Mot de passe actuel</label>
               <input type="password" placeholder="••••••••" value={pwForm.current}
                 onChange={e => setPwForm(p => ({ ...p, current: e.target.value }))}
                 style={{ ...inputStyle, color: '#0F172A', fontWeight: 500 }} />
-            ) })}
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 20px' }}>
-              {Field({ label: 'Nouveau mot de passe', children: (
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Nouveau mot de passe</label>
                 <input type="password" placeholder="Min. 8 caractères" value={pwForm.next}
                   onChange={e => setPwForm(p => ({ ...p, next: e.target.value }))}
                   style={{ ...inputStyle, color: '#0F172A', fontWeight: 500 }} />
-              ) })}
-              {Field({ label: 'Confirmer', children: (
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Confirmer</label>
                 <input type="password" placeholder="••••••••" value={pwForm.confirm}
                   onChange={e => setPwForm(p => ({ ...p, confirm: e.target.value }))}
                   style={{ ...inputStyle, color: '#0F172A', fontWeight: 500 }} />
-              ) })}
+              </div>
             </div>
             {pwMsg && (
               <div style={{ padding: '8px 12px', borderRadius: 8, background: pwMsg.ok ? '#DCFCE7' : '#FEE2E2', color: pwMsg.ok ? '#166534' : '#991B1B', fontSize: 12, fontWeight: 700, marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1997,7 +2117,9 @@ function ConfigTab() {
                 {pwMsg.text}
               </div>
             )}
-            <SaveBtn onClick={handleChangePassword} loading={pwSaving} label="Changer le mot de passe" color="#059669" />
+            <button onClick={handleChangePassword} disabled={pwSaving} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: '#059669', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: pwSaving ? 'not-allowed' : 'pointer', opacity: pwSaving ? 0.65 : 1, marginTop: 4 }}>
+              <Save style={{ width: 13, height: 13 }} /> {pwSaving ? 'Enregistrement…' : 'Changer le mot de passe'}
+            </button>
 
             <div style={{ borderTop: '1px solid #E2E8F0', margin: '22px 0 18px' }} />
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -2031,11 +2153,13 @@ function ConfigTab() {
                 <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#FFF5EB', border: '1px solid rgba(234,88,12,0.2)', borderRadius: 6, padding: '6px 10px', marginBottom: 12, wordBreak: 'break-all', color: '#EA580C', letterSpacing: '0.1em' }}>
                   {twoFAData.secret}
                 </div>
-                {Field({ label: 'Code de vérification', children: (
-                  <input type="text" inputMode="numeric" maxLength={6} placeholder="000000" value={twoFACode}
-                    onChange={e => setTwoFACode(e.target.value.replace(/\D/g, ''))}
-                    style={{ ...inputStyle, letterSpacing: '0.4em', fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#0F172A' }} />
-                ) })}
+                {Field({
+                  label: 'Code de vérification', children: (
+                    <input type="text" inputMode="numeric" maxLength={6} placeholder="000000" value={twoFACode}
+                      onChange={e => setTwoFACode(e.target.value.replace(/\D/g, ''))}
+                      style={{ ...inputStyle, letterSpacing: '0.4em', fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#0F172A' }} />
+                  )
+                })}
                 <button onClick={handleEnable2FA} disabled={twoFASaving || twoFACode.length !== 6}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: (twoFASaving || twoFACode.length !== 6) ? 0.55 : 1 }}>
                   <Check style={{ width: 13, height: 13 }} />
@@ -2071,20 +2195,20 @@ function ConfigTab() {
 
 /* ══════════════════ PANNEAU MAINTENANCE ══════════════════ */
 const PURGE_TARGETS = [
-  { key: 'audit',          label: "Logs d'audit",            color: '#7C3AED', bg: '#F5F3FF' },
-  { key: 'commandes',      label: 'Historique commandes',    color: '#DC2626', bg: '#FEF2F2' },
-  { key: 'livraisons',     label: 'Livraisons externes',     color: '#EA580C', bg: '#FFF7ED' },
-  { key: 'notifications',  label: 'Notifications',           color: '#0284C7', bg: '#F0F9FF' },
+  { key: 'audit', label: "Logs d'audit", color: '#7C3AED', bg: '#F5F3FF' },
+  { key: 'commandes', label: 'Historique commandes', color: '#DC2626', bg: '#FEF2F2' },
+  { key: 'livraisons', label: 'Livraisons externes', color: '#EA580C', bg: '#FFF7ED' },
+  { key: 'notifications', label: 'Notifications', color: '#0284C7', bg: '#F0F9FF' },
 ];
 
 function MaintenancePanel() {
-  const [before,  setBefore]  = useState('');
-  const [busy,    setBusy]    = useState({});
+  const [before, setBefore] = useState('');
+  const [busy, setBusy] = useState({});
   const [results, setResults] = useState({});
 
   const purge = async (target) => {
     const label = target === 'all' ? 'TOUTES les données listées' : PURGE_TARGETS.find(t => t.key === target)?.label || target;
-    const msg   = before
+    const msg = before
       ? `Supprimer les données "${label}" antérieures au ${new Date(before).toLocaleDateString('fr-FR')} ?`
       : `Supprimer TOUT l'historique "${label}" sans limite de date ?`;
     if (!window.confirm(msg + '\n\nCette action est irréversible.')) return;
@@ -2126,7 +2250,7 @@ function MaintenancePanel() {
         {PURGE_TARGETS.map(({ key, label, color, bg }) => (
           <div key={key} style={{ background: bg, borderRadius: 12, padding: '14px 16px', border: `1px solid ${color}22` }}>
             <p style={{ margin: '0 0 10px', fontSize: 13, fontWeight: 700, color }}>{label}</p>
-            {results[key]?.ok === true  && <p style={{ margin: '0 0 8px', fontSize: 11, color: '#059669', fontWeight: 600 }}>✓ {results[key].count} ligne(s) supprimée(s)</p>}
+            {results[key]?.ok === true && <p style={{ margin: '0 0 8px', fontSize: 11, color: '#059669', fontWeight: 600 }}>✓ {results[key].count} ligne(s) supprimée(s)</p>}
             {results[key]?.ok === false && <p style={{ margin: '0 0 8px', fontSize: 11, color: '#DC2626', fontWeight: 600 }}>✗ Erreur lors de la purge</p>}
             <button
               onClick={() => purge(key)}
@@ -2153,10 +2277,10 @@ function MaintenancePanel() {
 
 /* ══════════════════ Bannière — Commandes B2B en attente ══════════════════ */
 function B2BPendingBanner() {
-  const [pending, setPending]       = useState([]);
+  const [pending, setPending] = useState([]);
   const [processing, setProcessing] = useState({});
 
-  useEffect(() => { adminAPI.getPendingB2B().then(r => setPending(r.data)).catch(() => {}); }, []);
+  useEffect(() => { adminAPI.getPendingB2B().then(r => setPending(r.data)).catch(() => { }); }, []);
 
   const validate = async (id, approved) => {
     setProcessing(p => ({ ...p, [id]: true }));
@@ -2197,12 +2321,12 @@ function B2BPendingBanner() {
 /* ══════════════════ Bannière — Factures en contestation ══════════════════ */
 function ContestationsBanner() {
   const revision = useAdminRevision();
-  const [factures, setFactures]     = useState([]);
+  const [factures, setFactures] = useState([]);
   const [processing, setProcessing] = useState({});
-  const [noteModal, setNoteModal]   = useState(null); // { id, accept }
-  const [note, setNote]             = useState('');
+  const [noteModal, setNoteModal] = useState(null); // { id, accept }
+  const [note, setNote] = useState('');
 
-  const load = () => adminAPI.getContestations().then(r => setFactures(r.data || [])).catch(() => {});
+  const load = () => adminAPI.getContestations().then(r => setFactures(r.data || [])).catch(() => { });
   useEffect(() => { load(); }, [revision]);
 
   const resolve = async (id, accepted) => {
@@ -2219,7 +2343,7 @@ function ContestationsBanner() {
 
   return (
     <>
-      <div style={{ background: '#FFF8F0', border: '1px solid rgba(234,88,12,0.2)', borderRadius: 14, padding: '14px 18px', marginBottom: 20 }}>
+      <div style={{ background: '#FFFFFF', border: '1px solid #E2E8F0', borderRadius: 14, padding: '14px 18px', marginBottom: 20 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
           <AlertTriangle style={{ width: 16, height: 16, color: '#6366F1' }} />
           <span style={{ fontSize: 13, fontWeight: 700, color: '#3730A3' }}>
@@ -2288,11 +2412,11 @@ function ContestationsBanner() {
 
 /* ══════════════════ MÉTRIQUES SYSTÈME ══════════════════ */
 function MetriquesTab() {
-  const [metrics, setMetrics]   = useState(null);
-  const [stats, setStats]       = useState(null);
-  const [backups, setBackups]   = useState([]);
+  const [metrics, setMetrics] = useState(null);
+  const [stats, setStats] = useState(null);
+  const [backups, setBackups] = useState([]);
   const [backupRunning, setBackupRunning] = useState(false);
-  const [loading, setLoading]   = useState(true);
+  const [loading, setLoading] = useState(true);
   const [refreshAt, setRefreshAt] = useState(Date.now());
   const [apiResponseMs, setApiResponseMs] = useState(null);
 
@@ -2308,7 +2432,7 @@ function MetriquesTab() {
         setApiResponseMs(Date.now() - t0);
         setMetrics(m.data); setStats(s.data); setBackups(Array.isArray(b.data) ? b.data : []);
       })
-      .catch(() => {})
+      .catch(() => { })
       .finally(() => setLoading(false));
   }, [refreshAt]);
 
@@ -2451,7 +2575,7 @@ function MetriquesTab() {
         ) : (
           <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #E2E8F0' }}>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
                 {['Fichier', 'Taille', 'Date'].map(h => (
                   <th key={h} style={{ padding: '8px 16px', fontSize: 10, fontWeight: 700, color: '#94A3B8', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
@@ -2485,12 +2609,12 @@ const EMPTY_FOURN = { nom: '', contact: '', telephone: '', email: '', adresse: '
 
 function FournisseursTab() {
   const revision = useAdminRevision();
-  const [list, setList]         = useState([]);
-  const [loading, setLoading]   = useState(true);
-  const [modal, setModal]       = useState(null); // null | 'create' | { ...fournisseur }
-  const [form, setForm]         = useState(EMPTY_FOURN);
-  const [saving, setSaving]     = useState(false);
-  const [search, setSearch]     = useState('');
+  const [list, setList] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [modal, setModal] = useState(null); // null | 'create' | { ...fournisseur }
+  const [form, setForm] = useState(EMPTY_FOURN);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -2502,7 +2626,7 @@ function FournisseursTab() {
   useEffect(() => { load(); }, [load, revision]);
 
   const openCreate = () => { setForm(EMPTY_FOURN); setModal('create'); };
-  const openEdit   = (f)  => { setForm({ ...f, delaiLivraison: f.delaiLivraison ?? '', articlesRef: f.articlesRef ?? '', notes: f.notes ?? '' }); setModal(f); };
+  const openEdit = (f) => { setForm({ ...f, delaiLivraison: f.delaiLivraison ?? '', articlesRef: f.articlesRef ?? '', notes: f.notes ?? '' }); setModal(f); };
 
   const handleSave = async () => {
     setSaving(true);
@@ -2567,7 +2691,7 @@ function FournisseursTab() {
 
       {/* Table */}
       <div style={card}>
-        {loading ? (
+        {loading && filtered.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>Chargement…</div>
         ) : filtered.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>
@@ -2577,7 +2701,7 @@ function FournisseursTab() {
         ) : (
           <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #E2E8F0' }}>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
                 {['Fournisseur', 'Contact', 'Téléphone', 'Email', 'Délai (j)', 'Statut', 'Actions'].map(h => (
                   <th key={h} style={{ padding: '10px 16px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.05em' }}>{h}</th>
                 ))}
@@ -2622,7 +2746,7 @@ function FournisseursTab() {
       {/* Modal create/edit */}
       {modal !== null && (
         <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(2px)' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.22)', animation: 'fadeUp 0.22s ease both' }}>
+          <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.22)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 24px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>{modal === 'create' ? 'Nouveau fournisseur' : `Modifier — ${modal.nom}`}</h3>
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 20, height: 20 }} /></button>
@@ -2663,11 +2787,11 @@ function FournisseursTab() {
 /* ══════════════════ COMMISSIONS TAB ══════════════════ */
 function CommissionsTab() {
   const revision = useAdminRevision();
-  const [data, setData]       = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [newTaux, setNewTaux] = useState('');
-  const [saving, setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -2689,92 +2813,92 @@ function CommissionsTab() {
   };
 
   if (loading) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center', height:200 }}>
-      <RefreshCw style={{ width:22, height:22, color: ACCENT, animation:'spin 1s linear infinite' }} />
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: 200 }}>
+      <RefreshCw style={{ width: 22, height: 22, color: ACCENT, animation: 'spin 1s linear infinite' }} />
     </div>
   );
 
   const kpis = [
-    { label:'Total commissions perçues', value: `${(data?.totalCommissions ?? 0).toLocaleString('fr-FR')} FCFA`, icon: CreditCard, color:'#10B981', bg:'#ECFDF5' },
-    { label:'Commissions ce mois',       value: `${(data?.commissionsMois ?? 0).toLocaleString('fr-FR')} FCFA`, icon: TrendingUp, color:'#EA580C', bg:'#FEF2F2' },
-    { label:'Commandes facturées',        value: data?.totalCommandes ?? 0,                                        icon: BarChart2,  color:'#EA580C', bg:'rgba(234,88,12,0.08)' },
+    { label: 'Total commissions perçues', value: `${(data?.totalCommissions ?? 0).toLocaleString('fr-FR')} FCFA`, icon: CreditCard, color: '#10B981', bg: '#ECFDF5' },
+    { label: 'Commissions ce mois', value: `${(data?.commissionsMois ?? 0).toLocaleString('fr-FR')} FCFA`, icon: TrendingUp, color: '#EA580C', bg: '#FEF2F2' },
+    { label: 'Commandes facturées', value: data?.totalCommandes ?? 0, icon: BarChart2, color: '#EA580C', bg: 'rgba(234,88,12,0.08)' },
   ];
 
   return (
-    <div style={{ display:'flex', flexDirection:'column', gap:20 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
       {/* KPIs */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14 }}>
         {kpis.map(({ label, value, icon: Icon, color, bg }) => (
-          <div key={label} style={{ background:'#fff', borderRadius:14, padding:'20px 22px', border:'1px solid #D1D9E6', display:'flex', alignItems:'center', gap:14 }}>
-            <div style={{ width:44, height:44, borderRadius:12, background:bg, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
-              <Icon style={{ width:20, height:20, color }} />
+          <div key={label} style={{ background: '#fff', borderRadius: 14, padding: '20px 22px', border: '1px solid #D1D9E6', display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ width: 44, height: 44, borderRadius: 12, background: bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <Icon style={{ width: 20, height: 20, color }} />
             </div>
             <div>
-              <p style={{ fontSize:20, fontWeight:800, color:'#0F172A', margin:0 }}>{value}</p>
-              <p style={{ fontSize:11, color:'#64748B', margin:0, marginTop:2 }}>{label}</p>
+              <p style={{ fontSize: 20, fontWeight: 800, color: '#0F172A', margin: 0 }}>{value}</p>
+              <p style={{ fontSize: 11, color: '#64748B', margin: 0, marginTop: 2 }}>{label}</p>
             </div>
           </div>
         ))}
       </div>
 
       {/* Tableau par restaurant */}
-      <div style={{ background:'#fff', borderRadius:14, border:'1px solid #D1D9E6', overflow:'hidden' }}>
-        <div style={{ padding:'16px 20px', borderBottom:'1px solid #D1D9E6', display:'flex', alignItems:'center', gap:8 }}>
-          <Percent style={{ width:16, height:16, color: ACCENT }} />
-          <p style={{ fontSize:14, fontWeight:700, color:'#0F172A', margin:0 }}>Commissions par restaurant</p>
-          <span style={{ fontSize:11, color:'#94A3B8', marginLeft:'auto' }}>Taux modifiable — s'applique aux prochaines commandes</span>
+      <div style={{ background: '#fff', borderRadius: 14, border: '1px solid #D1D9E6', overflow: 'hidden' }}>
+        <div style={{ padding: '16px 20px', borderBottom: '1px solid #D1D9E6', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <Percent style={{ width: 16, height: 16, color: ACCENT }} />
+          <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: 0 }}>Commissions par restaurant</p>
+          <span style={{ fontSize: 11, color: '#94A3B8', marginLeft: 'auto' }}>Taux modifiable — s'applique aux prochaines commandes</span>
         </div>
-        <div className="overflow-x-auto w-full"><table style={{ width:'100%', borderCollapse:'collapse' }}>
+        <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
           <thead>
-            <tr style={{ background:'#EEF2FF', borderBottom:'1px solid #D1D9E6' }}>
-              {['Restaurant','Commandes','Total perçu','Taux (%)','Action'].map(h => (
-                <th key={h} style={{ padding:'10px 16px', textAlign:'left', fontSize:11, fontWeight:700, color:'#64748B', textTransform:'uppercase', letterSpacing:'0.06em' }}>{h}</th>
+            <tr style={{ background: '#EEF2FF', borderBottom: '1px solid #D1D9E6' }}>
+              {['Restaurant', 'Commandes', 'Total perçu', 'Taux (%)', 'Action'].map(h => (
+                <th key={h} style={{ padding: '10px 16px', textAlign: 'left', fontSize: 11, fontWeight: 700, color: '#64748B', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
               ))}
             </tr>
           </thead>
           <tbody>
             {(data?.parRestaurant ?? []).map((r, i, arr) => (
-              <tr key={r.restaurantId} style={{ borderBottom: i < arr.length-1 ? '1px solid #F1F5F9' : 'none' }}>
-                <td style={{ padding:'12px 16px', fontSize:13, fontWeight:600, color:'#0F172A' }}>{r.nom}</td>
-                <td style={{ padding:'12px 16px', fontSize:13, color:'#334155' }}>{r.totalCommandes}</td>
-                <td style={{ padding:'12px 16px', fontSize:13, fontWeight:700, color:'#10B981' }}>{r.totalCommissions.toLocaleString('fr-FR')} FCFA</td>
-                <td style={{ padding:'12px 16px' }}>
+              <tr key={r.restaurantId} style={{ borderBottom: i < arr.length - 1 ? '1px solid #F1F5F9' : 'none' }}>
+                <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 600, color: '#0F172A' }}>{r.nom}</td>
+                <td style={{ padding: '12px 16px', fontSize: 13, color: '#334155' }}>{r.totalCommandes}</td>
+                <td style={{ padding: '12px 16px', fontSize: 13, fontWeight: 700, color: '#10B981' }}>{r.totalCommissions.toLocaleString('fr-FR')} FCFA</td>
+                <td style={{ padding: '12px 16px' }}>
                   {editing === r.restaurantId ? (
                     <input
                       type="number" value={newTaux} min={0} max={50} step={0.5}
                       onChange={e => setNewTaux(e.target.value)}
-                      style={{ width:70, padding:'4px 8px', border:`1px solid ${ACCENT}`, borderRadius:7, fontSize:13, outline:'none' }}
+                      style={{ width: 70, padding: '4px 8px', border: `1px solid ${ACCENT}`, borderRadius: 7, fontSize: 13, outline: 'none' }}
                     />
                   ) : (
-                    <span style={{ display:'inline-flex', alignItems:'center', gap:4, background:'rgba(234,88,12,0.10)', color: ACCENT, borderRadius:20, padding:'3px 10px', fontSize:12, fontWeight:700 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(234,88,12,0.10)', color: ACCENT, borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
                       {r.tauxCommission}%
                     </span>
                   )}
                 </td>
-                <td style={{ padding:'12px 16px' }}>
+                <td style={{ padding: '12px 16px' }}>
                   {editing === r.restaurantId ? (
-                    <div style={{ display:'flex', gap:6 }}>
+                    <div style={{ display: 'flex', gap: 6 }}>
                       <button onClick={() => handleSaveTaux(r.restaurantId)} disabled={saving}
-                        style={{ padding:'5px 12px', background: ACCENT, color:'#fff', border:'none', borderRadius:7, fontSize:12, fontWeight:600, cursor:'pointer', opacity: saving ? 0.6 : 1 }}>
+                        style={{ padding: '5px 12px', background: ACCENT, color: '#fff', border: 'none', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer', opacity: saving ? 0.6 : 1 }}>
                         {saving ? '…' : 'Sauver'}
                       </button>
                       <button onClick={() => setEditing(null)}
-                        style={{ padding:'5px 10px', background:'#F1F5F9', color:'#64748B', border:'none', borderRadius:7, fontSize:12, cursor:'pointer' }}>
+                        style={{ padding: '5px 10px', background: '#F1F5F9', color: '#64748B', border: 'none', borderRadius: 7, fontSize: 12, cursor: 'pointer' }}>
                         ✕
                       </button>
                     </div>
                   ) : (
                     <button onClick={() => { setEditing(r.restaurantId); setNewTaux(String(r.tauxCommission)); }}
-                      style={{ display:'flex', alignItems:'center', gap:5, padding:'5px 12px', background:'#F9F9FC', border:'1px solid #E2E8F0', borderRadius:7, fontSize:12, color:'#334155', cursor:'pointer', fontWeight:500 }}>
-                      <Pencil style={{ width:12, height:12 }} /> Modifier
+                      style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '5px 12px', background: '#F9F9FC', border: '1px solid #E2E8F0', borderRadius: 7, fontSize: 12, color: '#334155', cursor: 'pointer', fontWeight: 500 }}>
+                      <Pencil style={{ width: 12, height: 12 }} /> Modifier
                     </button>
                   )}
                 </td>
               </tr>
             ))}
             {(data?.parRestaurant ?? []).length === 0 && (
-              <tr><td colSpan={5} style={{ padding:'40px 16px', textAlign:'center', color:'#94A3B8', fontSize:13 }}>
+              <tr><td colSpan={5} style={{ padding: '40px 16px', textAlign: 'center', color: '#94A3B8', fontSize: 13 }}>
                 Aucune commission enregistrée — les commandes livrées génèrent automatiquement les commissions.
               </td></tr>
             )}
@@ -2782,7 +2906,7 @@ function CommissionsTab() {
         </table></div>
       </div>
 
-      <p style={{ fontSize:11, color:'#94A3B8', textAlign:'center', margin:0 }}>
+      <p style={{ fontSize: 11, color: '#94A3B8', textAlign: 'center', margin: 0 }}>
         Commission prélevée automatiquement à chaque commande marquée <strong>LIVREE</strong> · Taux par défaut 8%
       </p>
     </div>
@@ -2792,17 +2916,17 @@ function CommissionsTab() {
 /* ══════════════════ TAB: NOTIFICATIONS ══════════════════ */
 function AlertesTab() {
   const revision = useAdminRevision();
-  const [items,   setItems]   = useState([]);
+  const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter,  setFilter]  = useState('all');
+  const [filter, setFilter] = useState('all');
 
   const CATEGORIES = {
-    security:    { label: 'Sécurité',    color: '#DC2626', bg: '#FEF2F2', icon: Shield },
-    b2b:         { label: 'B2B',         color: '#7C3AED', bg: '#F5F3FF', icon: Building2 },
-    user:        { label: 'Utilisateur', color: '#EA580C', bg: '#FFF5EB', icon: Users },
-    payment:     { label: 'Paiement',    color: '#059669', bg: '#F0FDF4', icon: CreditCard },
-    system:      { label: 'Système',     color: '#D97706', bg: '#FFFBEB', icon: Zap },
-    restaurant:  { label: 'Restaurant',  color: '#0891B2', bg: '#F0F9FF', icon: UtensilsCrossed },
+    security: { label: 'Sécurité', color: '#DC2626', bg: '#FEF2F2', icon: Shield },
+    b2b: { label: 'B2B', color: '#7C3AED', bg: '#F5F3FF', icon: Building2 },
+    user: { label: 'Utilisateur', color: '#EA580C', bg: '#FFF5EB', icon: Users },
+    payment: { label: 'Paiement', color: '#059669', bg: '#F0FDF4', icon: CreditCard },
+    system: { label: 'Système', color: '#D97706', bg: '#FFFBEB', icon: Zap },
+    restaurant: { label: 'Restaurant', color: '#0891B2', bg: '#F0F9FF', icon: UtensilsCrossed },
   };
 
   const SEC_ACTIONS = new Set(['LOGIN_FAILED', 'UNAUTHORIZED_ACCESS', 'INVALID_TOKEN', 'SUSPICIOUS_ACTIVITY', 'BRUTE_FORCE']);
@@ -2859,27 +2983,27 @@ function AlertesTab() {
   useEffect(() => { load(); }, [load, revision]);
 
   const ACTION_LABELS = {
-    LOGIN_FAILED:          'Tentative de connexion échouée',
-    UNAUTHORIZED_ACCESS:   'Accès non autorisé détecté',
-    INVALID_TOKEN:         'Token JWT invalide',
-    SUSPICIOUS_ACTIVITY:   'Activité suspecte',
-    BRUTE_FORCE:           'Attaque brute-force détectée',
-    PAIEMENT_RECU:         'Paiement reçu',
-    PAIEMENT_ECHOUE:       'Paiement échoué',
-    REMBOURSEMENT:         'Remboursement effectué',
-    PAIEMENT_INITIE:       'Paiement initié',
-    B2B_CREATED:           'Nouveau compte B2B créé',
-    B2B_APPROVED:          'Compte B2B approuvé',
-    B2B_REJECTED:          'Compte B2B rejeté',
-    B2B_ORDER:             'Commande B2B passée',
-    B2B_INVOICE:           'Facture B2B générée',
-    B2B_PENDING:           'Compte B2B en attente de validation',
-    USER_CREATED:          'Nouvel utilisateur inscrit',
-    USER_UPDATED:          'Profil utilisateur modifié',
-    REGISTER:              'Inscription effectuée',
-    RESTAURANT_CREATED:    'Nouveau restaurant ajouté',
-    RESTAURANT_UPDATED:    'Restaurant mis à jour',
-    RESTAURANT_DISABLED:   'Restaurant désactivé',
+    LOGIN_FAILED: 'Tentative de connexion échouée',
+    UNAUTHORIZED_ACCESS: 'Accès non autorisé détecté',
+    INVALID_TOKEN: 'Token JWT invalide',
+    SUSPICIOUS_ACTIVITY: 'Activité suspecte',
+    BRUTE_FORCE: 'Attaque brute-force détectée',
+    PAIEMENT_RECU: 'Paiement reçu',
+    PAIEMENT_ECHOUE: 'Paiement échoué',
+    REMBOURSEMENT: 'Remboursement effectué',
+    PAIEMENT_INITIE: 'Paiement initié',
+    B2B_CREATED: 'Nouveau compte B2B créé',
+    B2B_APPROVED: 'Compte B2B approuvé',
+    B2B_REJECTED: 'Compte B2B rejeté',
+    B2B_ORDER: 'Commande B2B passée',
+    B2B_INVOICE: 'Facture B2B générée',
+    B2B_PENDING: 'Compte B2B en attente de validation',
+    USER_CREATED: 'Nouvel utilisateur inscrit',
+    USER_UPDATED: 'Profil utilisateur modifié',
+    REGISTER: 'Inscription effectuée',
+    RESTAURANT_CREATED: 'Nouveau restaurant ajouté',
+    RESTAURANT_UPDATED: 'Restaurant mis à jour',
+    RESTAURANT_DISABLED: 'Restaurant désactivé',
   };
 
   const displayed = filter === 'all' ? items : items.filter(i => i.type === filter);
@@ -2918,9 +3042,11 @@ function AlertesTab() {
       {/* Filtres par catégorie */}
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 20 }}>
         <button onClick={() => setFilter('all')}
-          style={{ padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+          style={{
+            padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
             background: filter === 'all' ? ACCENT : '#F1F5F9',
-            color: filter === 'all' ? '#fff' : '#475569' }}>
+            color: filter === 'all' ? '#fff' : '#475569'
+          }}>
           Tout ({items.length})
         </button>
         {Object.entries(CATEGORIES).map(([key, cat]) => {
@@ -2929,9 +3055,11 @@ function AlertesTab() {
           if (!count) return null;
           return (
             <button key={key} onClick={() => setFilter(key)}
-              style={{ display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
+              style={{
+                display: 'flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 20, border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 700,
                 background: filter === key ? cat.color : cat.bg,
-                color: filter === key ? '#fff' : cat.color }}>
+                color: filter === key ? '#fff' : cat.color
+              }}>
               <Icon style={{ width: 12, height: 12 }} />
               {cat.label} ({count})
             </button>
@@ -2960,9 +3088,11 @@ function AlertesTab() {
               const isB2BPending = item.source === 'b2b';
               return (
                 <div key={item.id}
-                  style={{ display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 20px',
+                  style={{
+                    display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 20px',
                     borderBottom: i < displayed.length - 1 ? '1px solid #F1F5F9' : 'none',
-                    background: isB2BPending ? '#FFFBEB' : (i % 2 === 0 ? '#fff' : '#FAFBFF') }}>
+                    background: isB2BPending ? '#FFFBEB' : (i % 2 === 0 ? '#fff' : '#FAFBFF')
+                  }}>
 
                   {/* Icône catégorie */}
                   <div style={{ width: 36, height: 36, borderRadius: 10, background: cat.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -3030,13 +3160,13 @@ const EMPTY_LIV = { nom: '', type: 'CUSTOM', apiUrl: '', rechercheUrl: '', apiKe
 
 function LivraisonsExtTab() {
   const revision = useAdminRevision();
-  const [list, setList]       = useState([]);
+  const [list, setList] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [modal, setModal]     = useState(null);
-  const [form, setForm]       = useState(EMPTY_LIV);
-  const [saving, setSaving]         = useState(false);
-  const [showKey, setShowKey]       = useState({});
-  const [fmError, setFmError]       = useState('');
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState(EMPTY_LIV);
+  const [saving, setSaving] = useState(false);
+  const [showKey, setShowKey] = useState({});
+  const [fmError, setFmError] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -3048,7 +3178,7 @@ function LivraisonsExtTab() {
   useEffect(() => { load(); }, [load, revision]);
 
   const openCreate = () => { setForm(EMPTY_LIV); setModal('create'); };
-  const openEdit   = (f)  => { setForm({ ...f, apiKey: '', fraisLivraisonDefaut: f.fraisLivraisonDefaut ?? '', fieldMapping: f.fieldMapping ? JSON.stringify(f.fieldMapping, null, 2) : '' }); setFmError(''); setModal(f); };
+  const openEdit = (f) => { setForm({ ...f, apiKey: '', fraisLivraisonDefaut: f.fraisLivraisonDefaut ?? '', fieldMapping: f.fieldMapping ? JSON.stringify(f.fieldMapping, null, 2) : '' }); setFmError(''); setModal(f); };
 
   const handleSave = async () => {
     if (!form.nom.trim()) return;
@@ -3064,8 +3194,8 @@ function LivraisonsExtTab() {
         fraisLivraisonDefaut: form.fraisLivraisonDefaut ? Number(form.fraisLivraisonDefaut) : undefined,
         fieldMapping: parsedMapping ?? null,
         createOrderEndpoint: form.createOrderEndpoint || null,
-        trackingEndpoint:    form.trackingEndpoint    || null,
-        estimateEndpoint:    form.estimateEndpoint    || null,
+        trackingEndpoint: form.trackingEndpoint || null,
+        estimateEndpoint: form.estimateEndpoint || null,
       };
       if (!payload.apiKey) delete payload.apiKey;
       if (modal === 'create') await livraisonsExtAPI.createFournisseur(payload);
@@ -3110,7 +3240,7 @@ function LivraisonsExtTab() {
       </div>
 
       <div style={card}>
-        {loading ? (
+        {loading && list.length === 0 ? (
           <div style={{ padding: 40, textAlign: 'center', color: '#94A3B8' }}>Chargement…</div>
         ) : list.length === 0 ? (
           <div style={{ padding: 48, textAlign: 'center', color: '#94A3B8' }}>
@@ -3121,7 +3251,7 @@ function LivraisonsExtTab() {
         ) : (
           <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#FFF8F0', borderBottom: '1px solid #E2E8F0' }}>
+              <tr style={{ background: '#F8FAFC', borderBottom: '1px solid #E2E8F0' }}>
                 {['Fournisseur', 'Type', 'URL API', 'Frais défaut', 'Statut', 'Actions'].map(h => (
                   <th key={h} style={{ padding: '10px 16px', fontSize: 11, fontWeight: 700, color: '#64748B', textAlign: 'left', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>{h}</th>
                 ))}
@@ -3170,7 +3300,7 @@ function LivraisonsExtTab() {
 
       {modal !== null && (
         <div onClick={() => setModal(null)} style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(2px)' }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.22)', animation: 'fadeUp 0.22s ease both' }}>
+          <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 680, maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 24px 80px rgba(0,0,0,0.22)' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '20px 28px', borderBottom: '1px solid #E2E8F0' }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0F172A', margin: 0 }}>{modal === 'create' ? 'Nouveau fournisseur livraison' : `Modifier — ${modal.nom}`}</h3>
               <button onClick={() => setModal(null)} style={{ border: 'none', background: 'transparent', cursor: 'pointer', color: '#94A3B8' }}><X style={{ width: 20, height: 20 }} /></button>
@@ -3274,17 +3404,17 @@ function LivraisonsExtTab() {
 
 /* ══════════════════ TABS ══════════════════ */
 const TABS = [
-  { id: 'overview',       label: "Vue d'ensemble", icon: LayoutDashboard },
-  { id: 'alertes',  label: 'Alertes',        icon: AlertTriangle },
-  { id: 'users',          label: 'Utilisateurs',   icon: Users },
-  { id: 'restaurants',    label: 'Restaurants',    icon: UtensilsCrossed },
-  { id: 'fournisseurs',   label: 'Fournisseurs',   icon: Truck },
-  { id: 'livraisons',    label: 'Livraisons ext.',  icon: Truck },
-  { id: 'metriques',      label: 'Métriques',      icon: Activity },
-  { id: 'audit',          label: 'Audit',          icon: ScrollText },
-  { id: 'commissions',    label: 'Commissions',    icon: Percent },
-  { id: 'exports',        label: 'Exports',        icon: Download },
-  { id: 'config',         label: 'Configuration',  icon: Settings },
+  { id: 'overview', label: "Vue d'ensemble", icon: LayoutDashboard },
+  { id: 'alertes', label: 'Alertes', icon: AlertTriangle },
+  { id: 'users', label: 'Utilisateurs', icon: Users },
+  { id: 'restaurants', label: 'Restaurants', icon: UtensilsCrossed },
+  { id: 'fournisseurs', label: 'Fournisseurs', icon: Truck },
+  { id: 'livraisons', label: 'Livraisons ext.', icon: Truck },
+  { id: 'metriques', label: 'Métriques', icon: Activity },
+  { id: 'audit', label: 'Audit', icon: ScrollText },
+  { id: 'commissions', label: 'Commissions', icon: Percent },
+  { id: 'exports', label: 'Exports', icon: Download },
+  { id: 'config', label: 'Configuration', icon: Settings },
 ];
 
 /* ═══ AdminDashboard — Composant principal ═══ */
@@ -3333,8 +3463,8 @@ function AdminDashboardInner() {
   const goTab = (id) => navigate(id === 'overview' ? '/admin' : `/admin?tab=${id}`);
 
   return (
-    <div style={{ background: 'linear-gradient(180deg, #FFFFFF 0%, #FDF8F4 50%, #F9F9FB 100%)', minHeight: '100vh', padding: '24px 16px' }}>
-    <style>{`
+    <div style={{ background: '#FFFFFF', minHeight: '100vh', padding: '24px 16px' }}>
+      <style>{`
       @keyframes adminPulse {
         0%, 100% { transform: scale(1); opacity: 0.5; }
         50% { transform: scale(2); opacity: 0; }
@@ -3347,92 +3477,96 @@ function AdminDashboardInner() {
         animation: adminPulse 2s ease-in-out infinite;
       }
     `}</style>
-    <div style={{ maxWidth: 1300, margin: '0 auto' }}>
+      <div style={{ maxWidth: 1300, margin: '0 auto' }}>
 
-      {/* Header */}
-      <div style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        marginBottom: 28, padding: '20px 24px', borderRadius: 20,
-        background: 'rgba(255,255,255,0.72)',
-        backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(234,88,12,0.1)',
-        boxShadow: '0 2px 16px rgba(234,88,12,0.06), 0 1px 3px rgba(0,0,0,0.04)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            width: 48, height: 48, borderRadius: 14,
-            background: `linear-gradient(135deg, ${ACCENT} 0%, ${ACCENT}99 100%)`,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: `0 6px 20px ${ACCENT}44`,
-          }}>
-            <Shield style={{ width: 22, height: 22, color: '#fff' }} />
+        {/* Header */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          marginBottom: 28, padding: '20px 24px', borderRadius: 20,
+          background: '#FFFFFF',
+          border: '1px solid #E2E8F0',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02)',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <div style={{
+              width: 48, height: 48, borderRadius: 14,
+              background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 6px 20px rgba(15,23,42,0.25)',
+            }}>
+              <Shield style={{ width: 22, height: 22, color: '#fff' }} />
+            </div>
+            <div>
+              <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>
+                Administration
+              </h1>
+              <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 500 }}>
+                Sankofa-Lab · CDC v1.1 · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: '#0F172A', letterSpacing: '-0.03em' }}>
-              Administration
-            </h1>
-            <p style={{ margin: 0, fontSize: 12, color: '#64748B', fontWeight: 500 }}>
-              Sankofa-Lab · CDC v1.1 · {new Date().toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })}
-            </p>
-          </div>
+
+          <RealtimeIndicator />
         </div>
 
-        <RealtimeIndicator />
+        {tab === 'overview' && <B2BPendingBanner />}
+        {tab === 'overview' && <ContestationsBanner />}
+
+        {/* Floating Tab bar */}
+        <div style={{
+          position: 'sticky', top: 12, zIndex: 100,
+          display: 'flex', gap: 6, marginBottom: 28,
+          background: 'rgba(255, 255, 255, 0.94)',
+          backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
+          borderRadius: 16, padding: '6px',
+          border: '1px solid #CBD5E1',
+          boxShadow: '0 10px 30px -4px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(0,0,0,0.04)',
+          overflowX: 'auto',
+        }}>
+          {TABS.map(t => {
+            const Icon = t.icon;
+            const active = tab === t.id;
+            return (
+              <button
+                key={t.id}
+                onClick={() => goTab(t.id)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '9px 16px', border: 'none', borderRadius: 12,
+                  cursor: 'pointer', fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap',
+                  background: active ? '#0F172A' : 'transparent',
+                  color: active ? '#FFFFFF' : '#475569',
+                  boxShadow: active ? '0 4px 14px rgba(15, 23, 42, 0.35)' : 'none',
+                  transition: 'all 0.18s ease',
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.background = '#F1F5F9'; e.currentTarget.style.color = '#0F172A'; } }}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#475569'; } }}
+              >
+                <Icon style={{ width: 15, height: 15, color: active ? '#38BDF8' : '#64748B' }} />
+                {t.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Zéro clignotement sans Framer Motion */}
+        <div className="fade-in" key={tab}>
+          {tab === 'overview' && <OverviewTab />}
+          {tab === 'alertes' && <AlertesTab />}
+          {tab === 'users' && <UsersTab />}
+          {tab === 'restaurants' && <RestaurantsTab />}
+          {tab === 'fournisseurs' && <FournisseursTab />}
+          {tab === 'livraisons' && <LivraisonsExtTab />}
+          {tab === 'metriques' && <MetriquesTab />}
+          {tab === 'audit' && <AuditTab />}
+          {tab === 'commissions' && <CommissionsTab />}
+          {tab === 'exports' && <ExportsTab />}
+          {tab === 'config' && <ConfigTab />}
+        </div>
+
+        <AdminOnboardingWizard />
+        <OnboardingWizard />
       </div>
-
-      {tab === 'overview' && <B2BPendingBanner />}
-      {tab === 'overview' && <ContestationsBanner />}
-
-      {/* Tab bar */}
-      <div style={{ display: 'flex', gap: 4, marginBottom: 24, background: 'rgba(234,88,12,0.06)', borderRadius: 12, padding: 4, border: '1px solid rgba(234,88,12,0.14)', overflowX: 'auto' }}>
-        {TABS.map(t => {
-          const Icon   = t.icon;
-          const active = tab === t.id;
-          return (
-            <button
-              key={t.id}
-              onClick={() => goTab(t.id)}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 7,
-                padding: '8px 14px', border: 'none', borderRadius: 9,
-                cursor: 'pointer', fontWeight: 600, fontSize: 13, whiteSpace: 'nowrap',
-                background: active ? ACCENT : 'transparent',
-                color: active ? '#fff' : '#64748B',
-                boxShadow: active ? `0 4px 12px ${ACCENT}40` : 'none',
-                transition: 'all 0.15s ease',
-              }}
-              onMouseEnter={e => { if (!active) { e.currentTarget.style.background = `${ACCENT}12`; e.currentTarget.style.color = ACCENT; } }}
-              onMouseLeave={e => { if (!active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#64748B'; } }}
-            >
-              <Icon style={{ width: 14, height: 14 }} />
-              {t.label}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* Pas d'exit animation → zéro clignotement */}
-      <motion.div
-        key={tab}
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
-      >
-        {tab === 'overview'       && <OverviewTab />}
-        {tab === 'alertes'  && <AlertesTab />}
-        {tab === 'users'          && <UsersTab />}
-        {tab === 'restaurants'    && <RestaurantsTab />}
-        {tab === 'fournisseurs'   && <FournisseursTab />}
-        {tab === 'livraisons'     && <LivraisonsExtTab />}
-        {tab === 'metriques'      && <MetriquesTab />}
-        {tab === 'audit'          && <AuditTab />}
-        {tab === 'commissions'    && <CommissionsTab />}
-        {tab === 'exports'        && <ExportsTab />}
-        {tab === 'config'         && <ConfigTab />}
-      </motion.div>
-
-      <OnboardingWizard />
-    </div>
     </div>
   );
 }

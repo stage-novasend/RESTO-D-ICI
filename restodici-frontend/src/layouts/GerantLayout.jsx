@@ -10,7 +10,7 @@ import LanguageSwitcher from '../components/shared/LanguageSwitcher';
 import { BrandMark } from '../components/shared/BrandLogo';
 import {
   LayoutDashboard, Package, ClipboardList, AlertTriangle,
-  TrendingUp, Settings, LogOut, ChevronRight, UtensilsCrossed, Activity, Menu, X, Tag,
+  TrendingUp, Settings, LogOut, ChevronRight, Activity, Menu, X, Tag,
 } from 'lucide-react';
 
 /* ── Éléments de la navigation sidebar ── */

@@ -255,6 +255,19 @@ button:disabled {
   to   { opacity: 1; transform: translateY(0); }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.fade-up {
+  animation: fadeUp 0.22s ease both;
+}
+
+.fade-in {
+  animation: fadeIn 0.2s ease both;
+}
+
 @keyframes kpiIn {
   from { opacity: 0; transform: translateY(12px) scale(0.97); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
@@ -493,3 +506,26 @@ select:focus {
     flex-wrap: wrap;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE UNIVERSEL — Support iOS Safe Area, Android & Desktop
+   ═══════════════════════════════════════════════════════════════ */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom, 16px);
+}
+.pt-safe {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* Scrolling fluide momentum sur iOS */
+.scroll-touch {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Zone tactile minimale (44px min) pour l'ergonomie sur smartphone */
+@media (max-width: 768px) {
+  button, select, input[type="button"], input[type="submit"] {
+    min-height: 44px;
+  }
+}
+

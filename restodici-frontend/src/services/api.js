@@ -331,11 +331,13 @@ export const adminAPI = {
   createUser:         (data)          => api.post("/admin/users", data),
   updateUser:         (id, data)      => api.patch(`/admin/users/${id}`, data),
   toggleUser:         (id)            => api.patch(`/admin/users/${id}/toggle`),
+  deleteUser:         (id)            => api.delete(`/admin/users/${id}`),
   activerTousUsers:   ()              => api.post("/admin/users/activer-tous"),
   getRestaurants:     ()              => api.get("/admin/restaurants"),
   createRestaurant:   (data)          => api.post("/admin/restaurants", data),
   updateRestaurant:   (id, data)      => api.patch(`/admin/restaurants/${id}`, data),
   toggleRestaurant:   (id)            => api.patch(`/admin/restaurants/${id}/toggle`),
+  deleteRestaurant:   (id)            => api.delete(`/admin/restaurants/${id}`),
   getAuditLogs:       (params)        => api.get("/admin/audit-logs", { params }),
   exportSyscohada:    (period)        => api.get("/admin/exports/syscohada", { params: { period }, responseType: "blob" }),
   exportAudit:        (params)        => api.get("/admin/exports/audit", { params, responseType: "blob" }),
@@ -354,11 +356,14 @@ export const adminAPI = {
   deleteIntegration:  (id)            => api.delete(`/admin/integrations/${id}`),
   testIntegration:    (id)            => api.post(`/admin/integrations/${id}/test`),
   getSystemMetrics:   ()              => api.get("/admin/system-metrics"),
+  getHealthChecks:    ()              => api.get("/admin/health-checks"),
   getCommissions:     ()              => api.get("/admin/commissions"),
   updateTauxCommission:(id, taux)     => api.patch(`/admin/restaurants/${id}/commission`, { taux }),
   getBackups:         ()              => api.get("/admin/backup/list"),
   runBackup:          ()              => api.post("/admin/backup/run"),
   purgeHistorique:    (target, before) => api.post("/admin/maintenance/purge", { target, before }),
+  getOnboardingStatus:()              => api.get("/admin/onboarding-status"),
+  completeOnboarding: (data)          => api.post("/admin/onboarding", data),
 };
 
 // paiements
@@ -377,12 +382,18 @@ export const paiementsAPI = {
 // uploads
 
 export const uploadsAPI = {
-  // Ne pas forcer Content-Type manuellement : le navigateur ajoute automatiquement
-  // le boundary correct pour multipart/form-data. Le forcer casse l'upload.
-  uploadImage: (file) => {
+  // Le Content-Type est mis à null pour ANNULER le "application/json" par défaut
+  // de l'instance axios : sinon axios sérialise le FormData en JSON et le backend
+  // ne reçoit aucun fichier. À null, le navigateur pose lui-même
+  // multipart/form-data avec le bon boundary.
+  uploadImage: (file, folder) => {
     const form = new FormData();
     form.append("file", file);
-    return api.post("/uploads/image", form);
+    return api.post("/uploads/image", form, {
+      headers: { "Content-Type": null },
+      params: folder ? { folder } : undefined,
+      timeout: 60000, // upload S3 : plus lent qu'un appel REST classique
+    });
   },
   getStatus: () => api.get("/uploads/status"),
 };

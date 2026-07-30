@@ -64,6 +64,19 @@ export class Restaurant {
   @Column({ type: 'decimal', precision: 5, scale: 2, default: 8 })
   tauxCommission!: number;
 
+  @Column({ default: 'NOVASEND' })
+  modeReceptionPaiement!: string; // 'NOVASEND' | 'MOBILE_MONEY' | 'BANCAIRE'
+
+  @Column({ type: 'simple-json', nullable: true })
+  modeReceptionDetails!: {
+    operator?: string;          // pour MOBILE_MONEY (WAVE, ORANGE, MTN, MOOV)
+    telephone?: string;         // pour MOBILE_MONEY
+    nomBanque?: string;         // pour BANCAIRE
+    titulaireCompte?: string;   // pour BANCAIRE
+    ibanRib?: string;           // pour BANCAIRE
+    novasendAccountId?: string; // pour NOVASEND
+  } | null;
+
   @Column({ type: 'decimal', precision: 3, scale: 2, default: 0 })
   noteMoyenne!: number;
 

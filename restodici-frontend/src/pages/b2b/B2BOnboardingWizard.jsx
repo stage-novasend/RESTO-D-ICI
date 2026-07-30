@@ -6,7 +6,8 @@ import {
   CheckCircle, ArrowRight, Loader2, Building2, MapPin, UserPlus,
 } from 'lucide-react';
 import { b2bAPI } from '../../services/api';
-import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG, isValidEmail, isValidCIPhone } from '../../utils/validators';
+import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG, isValidEmail, isValidCIPhone, extractErrorMessage } from '../../utils/validators';
+import { markOnboardingDone, markB2BOnboarded } from '../../utils/onboarding';
 
 import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
 
@@ -28,16 +29,19 @@ function StepDots({ current }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, hint, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#374151] mb-1.5">{label}</label>
+      <label className="block text-xs font-semibold text-[#374151] mb-1.5">
+        {label}
+        {hint && <span className="ml-1 font-normal text-[#9CA3AF]">({hint})</span>}
+      </label>
       {children}
     </div>
   );
 }
 
-function Input({ value, onChange, placeholder, type = 'text', pattern, title, inputMode, maxLength }) {
+function TextInput({ value, onChange, placeholder, type = 'text', pattern, title, inputMode, maxLength }) {
   return (
     <input
       type={type}
@@ -55,23 +59,38 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [err, setErr] = useState('');
-  const [compteId, setCompteId] = useState(null);
 
+  // Form step 1: Entreprise
   const [entreprise, setEntreprise] = useState({
-    raisonSociale: '',
-    numeroRCCM: '',
-    numeroContribuable: '',
-    emailProfessionnel: '',
-    telephoneProfessionnel: '',
+    raisonSociale:          user?.nomEntreprise || '',
+    numeroRCCM:             '',
+    numeroContribuable:     '',
+    emailProfessionnel:     user?.email || '',
+    telephoneProfessionnel: user?.telephone || '',
   });
 
-  const [adresse, setAdresse] = useState({ adresseSiege: '' });
+  // Form step 2: Adresse
+  const [adresse, setAdresse] = useState({
+    adresseSiege: '',
+  });
 
+  // Form step 3: Collaborateur optionnel
   const [collab, setCollab] = useState({ nom: '', email: '', budgetMensuel: '' });
   const [collabAdded, setCollabAdded] = useState(false);
 
   const setE = (k) => (e) => setEntreprise(p => ({ ...p, [k]: e.target.value }));
   const setC = (k) => (e) => setCollab(p => ({ ...p, [k]: e.target.value }));
+
+  // Toute sortie du wizard (terminée ou passée) doit poser les drapeaux, sinon
+  // B2BDashboard / BulkOrder le rouvrent immédiatement quand compte === null.
+  const finish = (action) => {
+    markOnboardingDone(user?.id);
+    markB2BOnboarded(user?.id);
+    onComplete?.(action);
+  };
+
+  // Le message d'erreur ne doit pas survivre au changement d'étape.
+  const goStep = (n) => { setErr(''); setStep(n); };
 
   const handleEntrepriseNext = () => {
     const required = ['raisonSociale', 'numeroRCCM', 'numeroContribuable', 'emailProfessionnel', 'telephoneProfessionnel'];
@@ -79,22 +98,27 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
     if (missing.length) { setErr('Tous les champs obligatoires sont requis'); return; }
     if (!isValidEmail(entreprise.emailProfessionnel))   { setErr(MSG.email); return; }
     if (!isValidCIPhone(entreprise.telephoneProfessionnel)) { setErr(MSG.phone); return; }
-    setErr('');
-    setStep(2);
+    goStep(2);
   };
 
-  const handleAdresseSubmit = async () => {
+  // skipAdresse : l'état React n'est pas encore à jour quand le bouton "Passer"
+  // vide l'adresse, il faut donc l'ignorer explicitement plutôt que relire adresse.
+  const handleAdresseSubmit = async (skipAdresse = false) => {
     setSaving(true);
     setErr('');
     try {
-      const payload = { ...entreprise, adresseSiege: adresse.adresseSiege };
-      const res = await b2bAPI.createCompte(payload);
-      setCompteId(res.data?.id);
+      const payload = {
+        ...entreprise,
+        adresseSiege: skipAdresse ? '' : adresse.adresseSiege.trim(),
+      };
+      await b2bAPI.createCompte(payload);
+      goStep(3);
     } catch (e) {
-      console.warn('Création compte B2B (fallback):', e);
+      // Un échec ici (RCCM invalide, compte déjà existant…) doit être visible :
+      // sinon l'utilisateur atteint l'écran final sans compte entreprise créé.
+      setErr(extractErrorMessage(e, "Impossible de créer le compte entreprise. Vérifiez vos informations."));
     } finally {
       setSaving(false);
-      setStep(3);
     }
   };
 
@@ -108,16 +132,16 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
     setErr('');
     try {
       await b2bAPI.createCollaborateur({
-        nom: collab.nom,
-        email: collab.email,
+        nom: collab.nom.trim(),
+        email: collab.email.trim(),
         budgetMensuel: collab.budgetMensuel ? Number(collab.budgetMensuel) : undefined,
       });
       setCollabAdded(true);
+      goStep(4);
     } catch (e) {
-      console.warn('Création collaborateur (fallback):', e);
+      setErr(extractErrorMessage(e, "Impossible d'inviter ce collaborateur."));
     } finally {
       setSaving(false);
-      setStep(4);
     }
   };
 
@@ -177,12 +201,12 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                   </div>
                 ))}
               </div>
-              <button onClick={() => setStep(1)}
+              <button onClick={() => goStep(1)}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: A }}>
                 Configurer mon compte entreprise <ArrowRight className="w-4 h-4" />
               </button>
-              <button onClick={onComplete} className="mt-3 w-full text-sm text-[#8B6E50] hover:text-[#8B6E50]">
+              <button onClick={() => finish()} className="mt-3 w-full text-sm text-[#8B6E50] hover:text-[#8B6E50]">
                 Passer pour l'instant
               </button>
             </div>
@@ -212,7 +236,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
               {err && <p className="mt-3 text-sm font-semibold text-red-500">{err}</p>}
 
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setStep(0)}
+                <button onClick={() => goStep(0)}
                   className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
@@ -258,7 +282,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
               {err && <p className="mt-3 text-sm font-semibold text-red-500">{err}</p>}
 
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setStep(1)}
+                <button onClick={() => goStep(1)}
                   className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
@@ -270,7 +294,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                   {saving ? 'Enregistrement…' : 'Continuer'}
                 </button>
               </div>
-              <button onClick={() => { setAdresse({ adresseSiege: '' }); handleAdresseSubmit(); }}
+              <button onClick={() => handleAdresseSubmit(true)}
                 className="mt-2 w-full text-xs text-[#8B6E50] hover:text-[#8B6E50]">
                 Passer cette étape
               </button>
@@ -306,7 +330,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
               {err && <p className="mt-3 text-sm font-semibold text-red-500">{err}</p>}
 
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setStep(2)}
+                <button onClick={() => goStep(2)}
                   className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
@@ -318,7 +342,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                   {saving ? 'Invitation…' : 'Inviter et continuer'}
                 </button>
               </div>
-              <button onClick={() => setStep(4)}
+              <button onClick={() => goStep(4)}
                 className="mt-2 w-full text-xs text-[#8B6E50] hover:text-[#8B6E50]">
                 Passer — inviter plus tard depuis le tableau de bord
               </button>
@@ -353,19 +377,19 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                 ))}
               </div>
 
-              <button onClick={() => { if (user?.id) { localStorage.setItem(`rdi_ob_${user.id}`, '1'); localStorage.setItem(`wizard_done_${user.id}`, '1'); } onComplete('order'); }}
+              <button onClick={() => finish('order')}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 mb-3"
                 style={{ background: A }}>
                 <ShoppingBag className="w-5 h-5" />
                 Passer ma première commande
               </button>
-              <button onClick={() => { if (user?.id) { localStorage.setItem(`rdi_ob_${user.id}`, '1'); localStorage.setItem(`wizard_done_${user.id}`, '1'); } onComplete('invite'); }}
+              <button onClick={() => finish('invite')}
                 className="w-full py-3 rounded-2xl font-bold border text-sm flex items-center justify-center gap-2"
                 style={{ borderColor: A, color: A }}>
                 <Users className="w-4 h-4" />
                 Gérer mon équipe
               </button>
-              <button onClick={() => { if (user?.id) { localStorage.setItem(`rdi_ob_${user.id}`, '1'); localStorage.setItem(`wizard_done_${user.id}`, '1'); } onComplete(); }} className="mt-3 w-full text-sm text-[#8B6E50] hover:text-[#8B6E50]">
+              <button onClick={() => finish()} className="mt-3 w-full text-sm text-[#8B6E50] hover:text-[#8B6E50]">
                 Explorer le tableau de bord
               </button>
             </div>

@@ -86,6 +86,8 @@ export class RestaurantsService {
       'closingTime',
       'latitude',
       'longitude',
+      'modeReceptionPaiement',
+      'modeReceptionDetails',
     ] as const;
 
     for (const field of allowedFields) {

@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  UtensilsCrossed, MapPin, Clock, BookOpen,
-  CheckCircle, ArrowRight, Loader2, ChefHat, Plus, X,
+  MapPin, Clock, BookOpen,
+  CheckCircle, ArrowRight, Loader2, ChefHat, Plus,
 } from 'lucide-react';
 import { restaurantAPI, menuAPI } from '../../services/api';
-import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG } from '../../utils/validators';
+import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG, isValidEmail, isValidCIPhone, extractErrorMessage } from '../../utils/validators';
+import { markOnboardingDone } from '../../utils/onboarding';
 
 import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
 import { BrandMark } from '../../components/shared/BrandLogo';
@@ -74,91 +75,111 @@ export default function GerantOnboardingWizard() {
     restaurantEmail: '',
   });
 
-  // Step 2: Horaires
-  const [horaires, setHoraires] = useState([
-    { jour: 'Lundi–Vendredi', ouverture: '08:00', fermeture: '22:00' },
-  ]);
+  // Step 2: Horaires — le restaurant expose une seule plage (openingTime / closingTime)
+  const [horaires, setHoraires] = useState({ ouverture: '08:00', fermeture: '22:00' });
 
   // Step 3: Article
   const [categorie, setCategorie] = useState('Plats du jour');
-  const [article, setArticle] = useState({ nom: '', description: '', prix: '' });
+  const [article, setArticle] = useState({ nom: '', description: '', prix: '', stock: '10' });
   const [articleCreated, setArticleCreated] = useState(false);
 
   const setA = (k) => (e) => setAdresse(p => ({ ...p, [k]: e.target.value }));
 
-  const horaireString = horaires
-    .map(h => `${h.jour} ${h.ouverture}–${h.fermeture}`)
-    .join(', ');
+  // Le message d'erreur ne doit pas survivre au changement d'étape.
+  const goStep = (n) => { setErr(''); setStep(n); };
 
   const handleAdresseSubmit = async () => {
-    if (!adresse.adresse.trim()) { setErr("L'adresse est requise"); return; }
-    if (!restaurantId) { setStep(2); return; }
+    if (!adresse.adresse.trim()) { setErr("L'adresse du restaurant est requise"); return; }
+    if (adresse.restaurantTelephone.trim() && !isValidCIPhone(adresse.restaurantTelephone)) {
+      setErr("Le numéro de téléphone du restaurant est invalide (+225 + 10 chiffres)");
+      return;
+    }
+    if (adresse.restaurantEmail.trim() && !isValidEmail(adresse.restaurantEmail)) {
+      setErr("L'adresse email du restaurant est invalide");
+      return;
+    }
+    if (!restaurantId) { setErr("Aucun restaurant associé à ce compte. Contactez le support."); return; }
     setSaving(true); setErr('');
     try {
+      // Noms de colonnes du restaurant : telephone / email (pas restaurantTelephone).
       await restaurantAPI.update(restaurantId, {
-        adresse: adresse.adresse,
-        description: adresse.description,
-        restaurantTelephone: adresse.restaurantTelephone,
-        restaurantEmail: adresse.restaurantEmail,
+        adresse: adresse.adresse.trim(),
+        description: adresse.description.trim(),
+        telephone: adresse.restaurantTelephone.trim(),
+        email: adresse.restaurantEmail.trim(),
       });
-      setStep(2);
+      goStep(2);
     } catch (e) {
-      setErr(e.response?.data?.message || "Erreur lors de la mise à jour");
-      setStep(2);
+      setErr(extractErrorMessage(e, "Erreur lors de la mise à jour des informations de l'adresse"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleHorairesSubmit = async () => {
-    if (!restaurantId) { setStep(3); return; }
+    if (!horaires.ouverture || !horaires.fermeture) {
+      setErr("Veuillez renseigner l'heure d'ouverture et de fermeture"); return;
+    }
+    if (horaires.ouverture >= horaires.fermeture) {
+      setErr("L'heure de fermeture doit être strictement après l'heure d'ouverture"); return;
+    }
+    if (!restaurantId) { setErr("Aucun restaurant associé à ce compte. Contactez le support."); return; }
     setSaving(true); setErr('');
     try {
-      await restaurantAPI.update(restaurantId, { horaires: horaireString });
-      setStep(3);
+      await restaurantAPI.update(restaurantId, {
+        openingTime: horaires.ouverture,
+        closingTime: horaires.fermeture,
+      });
+      goStep(3);
     } catch (e) {
-      setErr(e.response?.data?.message || "Erreur lors de la mise à jour");
-      setStep(3);
+      setErr(extractErrorMessage(e, "Erreur lors de la mise à jour des horaires"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleArticleSubmit = async () => {
-    if (!article.nom.trim() || !article.prix) { setErr("Nom et prix de l'article requis"); return; }
-    if (!restaurantId) { setStep(4); return; }
+    if (!categorie.trim()) { setErr("La catégorie est requise"); return; }
+    if (!article.nom.trim()) { setErr("Le nom de l'article est requis"); return; }
+    if (!article.prix || isNaN(Number(article.prix))) { setErr("Le prix de l'article est requis et doit être un nombre"); return; }
+    if (Number(article.prix) <= 0) { setErr("Le prix de l'article doit être supérieur à 0 FCFA"); return; }
+    if (article.stock === '' || isNaN(Number(article.stock)) || Number(article.stock) < 0) {
+      setErr("La quantité disponible doit être un nombre positif ou nul"); return;
+    }
+    if (!restaurantId) { setErr("Aucun restaurant associé à ce compte. Contactez le support."); return; }
     setSaving(true); setErr('');
     try {
       let catId;
       try {
-        const catRes = await menuAPI.createCategorie({ nom: categorie, restaurantId });
+        const catRes = await menuAPI.createCategorie({ nom: categorie.trim(), restaurantId });
         catId = catRes.data?.id;
       } catch {
         const cats = await menuAPI.getCategories({ restaurantId });
-        const existing = (cats.data || []).find(c => c.nom === categorie);
+        const existing = (cats.data || []).find(c => c.nom === categorie.trim());
         catId = existing?.id;
       }
+      if (!catId) throw new Error("Impossible de créer ou retrouver la catégorie");
+
+      // stock est requis pour que l'article soit publié : le backend calcule
+      // disponible = stock > 0, un stock à 0 le rendrait invisible au menu.
       await menuAPI.createArticle({
-        nom: article.nom,
-        description: article.description,
+        nom: article.nom.trim(),
+        description: article.description.trim(),
         prix: Number(article.prix),
+        stock: Number(article.stock) || 0,
         categorieId: catId,
         restaurantId,
-        disponible: true,
       });
       setArticleCreated(true);
-      setStep(4);
+      goStep(4);
     } catch (e) {
-      setErr(e.response?.data?.message || "Erreur lors de la création de l'article");
-      setStep(4);
+      setErr(extractErrorMessage(e, "Erreur lors de la création de l'article"));
     } finally {
       setSaving(false);
     }
   };
 
-  const addHoraire = () => setHoraires(h => [...h, { jour: '', ouverture: '08:00', fermeture: '22:00' }]);
-  const removeHoraire = (i) => setHoraires(h => h.filter((_, idx) => idx !== i));
-  const setHoraire = (i, k, v) => setHoraires(h => h.map((row, idx) => idx === i ? { ...row, [k]: v } : row));
+  const setHoraire = (k, v) => setHoraires(h => ({ ...h, [k]: v }));
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
@@ -214,16 +235,13 @@ export default function GerantOnboardingWizard() {
                   </div>
                 ))}
               </div>
-              <button onClick={() => setStep(1)}
+              <button onClick={() => goStep(1)}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: A }}>
                 Configurer mon restaurant <ArrowRight className="w-4 h-4" />
               </button>
               <button onClick={() => {
-                if (user?.id) {
-                  localStorage.setItem(`rdi_ob_${user.id}`, '1');
-                  localStorage.setItem(`wizard_done_${user.id}`, '1');
-                }
+                markOnboardingDone(user?.id);
                 navigate('/gerant');
               }} className="mt-3 w-full text-sm text-[#9CA3AF] hover:text-[#8B6E50]">
                 Passer — configurer plus tard
@@ -275,7 +293,7 @@ export default function GerantOnboardingWizard() {
               {err && <p className="mt-3 text-sm font-semibold text-red-500">{err}</p>}
 
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setStep(0)}
+                <button onClick={() => goStep(0)}
                   className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
@@ -287,7 +305,7 @@ export default function GerantOnboardingWizard() {
                   {saving ? 'Enregistrement…' : 'Continuer'}
                 </button>
               </div>
-              <button onClick={() => setStep(2)} className="mt-2 w-full text-xs text-[#9CA3AF] hover:text-[#8B6E50]">
+              <button onClick={() => goStep(2)} className="mt-2 w-full text-xs text-[#9CA3AF] hover:text-[#8B6E50]">
                 Passer cette étape
               </button>
             </div>
@@ -306,52 +324,32 @@ export default function GerantOnboardingWizard() {
                 </div>
               </div>
 
-              <div className="space-y-2 mb-3">
-                {horaires.map((h, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <input
-                      value={h.jour}
-                      onChange={e => setHoraire(i, 'jour', e.target.value)}
-                      placeholder="Ex: Lundi–Vendredi"
-                      className="flex-1 rounded-xl px-3 py-2 text-xs outline-none"
-                      style={{ background: SF, border: `1px solid ${BD}` }}
-                    />
-                    <input type="time" value={h.ouverture}
-                      onChange={e => setHoraire(i, 'ouverture', e.target.value)}
-                      className="rounded-xl px-2 py-2 text-xs outline-none"
-                      style={{ background: SF, border: `1px solid ${BD}`, width: 90 }}
-                    />
-                    <span className="text-xs text-[#9CA3AF]">–</span>
-                    <input type="time" value={h.fermeture}
-                      onChange={e => setHoraire(i, 'fermeture', e.target.value)}
-                      className="rounded-xl px-2 py-2 text-xs outline-none"
-                      style={{ background: SF, border: `1px solid ${BD}`, width: 90 }}
-                    />
-                    {horaires.length > 1 && (
-                      <button onClick={() => removeHoraire(i)}
-                        className="w-7 h-7 flex items-center justify-center rounded-lg"
-                        style={{ background: '#FEE2E2' }}>
-                        <X className="w-3.5 h-3.5 text-red-500" />
-                      </button>
-                    )}
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                <Field label="Ouverture">
+                  <input type="time" value={horaires.ouverture}
+                    onChange={e => setHoraire('ouverture', e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ background: SF, border: `1px solid ${BD}` }}
+                  />
+                </Field>
+                <Field label="Fermeture">
+                  <input type="time" value={horaires.fermeture}
+                    onChange={e => setHoraire('fermeture', e.target.value)}
+                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    style={{ background: SF, border: `1px solid ${BD}` }}
+                  />
+                </Field>
               </div>
 
-              <button onClick={addHoraire}
-                className="flex items-center gap-1.5 text-xs font-semibold rounded-xl px-3 py-2 mb-4"
-                style={{ background: AL, color: A }}>
-                <Plus className="w-3.5 h-3.5" /> Ajouter une plage horaire
-              </button>
-
               <div className="rounded-xl px-3 py-2 mb-4 text-xs" style={{ background: SF, color: '#8B6E50' }}>
-                Aperçu : <strong>{horaireString}</strong>
+                Ouvert de <strong>{horaires.ouverture}</strong> à <strong>{horaires.fermeture}</strong>
+                <span className="block mt-1 text-[11px]">Modifiable à tout moment depuis Paramètres → Horaires.</span>
               </div>
 
               {err && <p className="mt-3 text-sm font-semibold text-red-500">{err}</p>}
 
               <div className="flex gap-3 mt-2">
-                <button onClick={() => setStep(1)}
+                <button onClick={() => goStep(1)}
                   className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
@@ -363,7 +361,7 @@ export default function GerantOnboardingWizard() {
                   {saving ? 'Enregistrement…' : 'Continuer'}
                 </button>
               </div>
-              <button onClick={() => setStep(3)} className="mt-2 w-full text-xs text-[#9CA3AF] hover:text-[#8B6E50]">
+              <button onClick={() => goStep(3)} className="mt-2 w-full text-xs text-[#9CA3AF] hover:text-[#8B6E50]">
                 Passer cette étape
               </button>
             </div>
@@ -402,17 +400,27 @@ export default function GerantOnboardingWizard() {
                     style={{ background: SF, border: `1px solid ${BD}` }}
                   />
                 </Field>
-                <Field label="Prix (FCFA) *">
-                  <TextInput type="number" value={article.prix}
-                    onChange={e => setArticle(p => ({ ...p, prix: e.target.value }))}
-                    placeholder="Ex: 2500" />
-                </Field>
+                <div className="grid grid-cols-2 gap-3">
+                  <Field label="Prix (FCFA) *">
+                    <TextInput type="number" value={article.prix}
+                      onChange={e => setArticle(p => ({ ...p, prix: e.target.value }))}
+                      placeholder="Ex: 2500" />
+                  </Field>
+                  <Field label="Quantité *" hint="portions du jour">
+                    <TextInput type="number" value={article.stock}
+                      onChange={e => setArticle(p => ({ ...p, stock: e.target.value }))}
+                      placeholder="Ex: 10" />
+                  </Field>
+                </div>
+                <p className="text-[11px] text-[#9CA3AF]">
+                  Le plat n'apparaît au menu que si la quantité est supérieure à 0.
+                </p>
               </div>
 
               {err && <p className="mt-3 text-sm font-semibold text-red-500">{err}</p>}
 
               <div className="flex gap-3 mt-6">
-                <button onClick={() => setStep(2)}
+                <button onClick={() => goStep(2)}
                   className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
@@ -424,7 +432,7 @@ export default function GerantOnboardingWizard() {
                   {saving ? 'Création…' : 'Ajouter et terminer'}
                 </button>
               </div>
-              <button onClick={() => setStep(4)} className="mt-2 w-full text-xs text-[#9CA3AF] hover:text-[#8B6E50]">
+              <button onClick={() => goStep(4)} className="mt-2 w-full text-xs text-[#9CA3AF] hover:text-[#8B6E50]">
                 Passer — ajouter mes plats depuis le dashboard
               </button>
             </div>
@@ -455,10 +463,7 @@ export default function GerantOnboardingWizard() {
               </div>
 
               <button onClick={() => {
-                  if (user?.id) {
-                    localStorage.setItem(`rdi_ob_${user.id}`, '1');
-                    localStorage.setItem(`wizard_done_${user.id}`, '1');
-                  }
+                  markOnboardingDone(user?.id);
                   navigate('/gerant');
                 }}
                 className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"

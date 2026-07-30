@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UtensilsCrossed, Mail, MapPin, Building2, ArrowRight, Send, CheckCircle } from 'lucide-react';
+import { Mail, MapPin, Building2, ArrowRight, Send, CheckCircle } from 'lucide-react';
 import BrandLogo from '../components/shared/BrandLogo';
 import MiniFooter from '../components/shared/MiniFooter';
 

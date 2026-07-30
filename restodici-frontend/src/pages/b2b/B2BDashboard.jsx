@@ -1556,6 +1556,57 @@ export default function B2BDashboard() {
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-4 lg:p-6">
 
+          {/* ── BANNIÈRE EN ATTENTE DE VÉRIFICATION PAR L'ADMIN ── */}
+          {compte && (compte.statutValidation === 'EN_ATTENTE' || compte.actif === false) && (
+            <div className="mb-6 p-5 rounded-2xl border"
+              style={{ background: '#FFFBEB', borderColor: '#FDE68A', boxShadow: '0 4px 16px rgba(245,158,11,0.1)' }}>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FEF3C7' }}>
+                  <Clock className="w-5 h-5 text-[#D97706] animate-pulse" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm text-[#92400E]">Compte en cours de vérification par l'administration</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#FEF3C7] text-[#D97706]">
+                      Inactif temporairement
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#B45309] mt-1 leading-relaxed">
+                    Votre compte entreprise <strong>{compte.raisonSociale}</strong> est bien enregistré. L'équipe d'administration Resto d'ici vérifie actuellement vos informations légales (RCCM & NIF) pour valider et activer votre compte sous 24h.
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-[#92400E] font-semibold">
+                    <span>🏢 RCCM : {compte.numeroRCCM || 'En cours'}</span>
+                    <span>📑 NIF : {compte.numeroContribuable || 'En cours'}</span>
+                    <span className="text-[#D97706]">📞 Support : +225 07 00 00 00 00</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ── BANNIÈRE COMPTE REJETÉ ── */}
+          {compte && compte.statutValidation === 'REJETE' && (
+            <div className="mb-6 p-5 rounded-2xl border"
+              style={{ background: '#FEF2F2', borderColor: '#FCA5A5', boxShadow: '0 4px 16px rgba(239,68,68,0.1)' }}>
+              <div className="flex items-start gap-4">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FEE2E2' }}>
+                  <AlertCircle className="w-5 h-5 text-[#DC2626]" />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-sm text-[#991B1B]">Dossier Entreprise non validé</h3>
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-[#FEE2E2] text-[#DC2626]">
+                      Inactif
+                    </span>
+                  </div>
+                  <p className="text-xs text-[#991B1B] mt-1 leading-relaxed">
+                    Les informations légales fournies lors de l'inscription n'ont pas pu être validées par l'administration. Veuillez contacter notre service support pour corriger vos pièces justificatives.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {error && (
             <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border"
               style={{ background: RED_L, borderColor: '#FECACA' }}>

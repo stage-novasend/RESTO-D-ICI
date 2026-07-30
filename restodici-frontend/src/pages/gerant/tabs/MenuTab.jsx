@@ -114,9 +114,9 @@ export default function MenuTab({ restaurantId, token }) {
     } catch (err) {
       const msg = err?.response?.data?.message || "Erreur lors de l'upload. Vérifiez la configuration S3.";
       alert(msg);
-      // Fallback : prévisualisation locale sans persistance
-      const localUrl = URL.createObjectURL(file);
-      setNewArticle((prev) => ({ ...prev, photoUrl: localUrl }));
+      // Pas de fallback blob: — une URL locale ne survit pas au rechargement et
+      // serait enregistrée en base comme un lien mort pour tous les clients.
+      setNewArticle((prev) => ({ ...prev, photoUrl: "" }));
     } finally {
       setUploading(false);
     }
@@ -186,9 +186,10 @@ export default function MenuTab({ restaurantId, token }) {
     try {
       const res = await uploadsAPI.uploadImage(file);
       setEditArticle(p => ({ ...p, photoUrl: res.data.url }));
-    } catch {
-      const localUrl = URL.createObjectURL(file);
-      setEditArticle(p => ({ ...p, photoUrl: localUrl }));
+    } catch (err) {
+      // Photo précédente conservée : on n'écrase pas avec une URL blob: locale,
+      // qui serait un lien mort une fois enregistrée en base.
+      alert(err?.response?.data?.message || "Erreur lors de l'upload. Vérifiez la configuration S3.");
     } finally {
       setUploadingEdit(false);
     }

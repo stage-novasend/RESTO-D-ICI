@@ -9,6 +9,7 @@ import {
   normalizePhone,
   formatCIPhone,
   validateField,
+  extractErrorMessage,
   MSG,
 } from './validators.js';
 
@@ -74,3 +75,28 @@ test('validateField — format', () => {
   assert.equal(validateField('phone', '+225 07 12 34 56 78', { required: true }), '');
   assert.equal(validateField('password', 'short', { required: true }), MSG.password);
 });
+
+test('extractErrorMessage — extraits correctement les erreurs NestJS/Axios', () => {
+  assert.equal(extractErrorMessage('Erreur direct'), 'Erreur direct');
+  assert.equal(
+    extractErrorMessage({ response: { data: { message: ['email invalide', 'mot de passe court'] } } }),
+    'email invalide. mot de passe court'
+  );
+  assert.equal(
+    extractErrorMessage({ response: { data: { message: 'Compte bloqué' } } }),
+    'Compte bloqué'
+  );
+  assert.equal(
+    extractErrorMessage({ response: { data: { error: 'Accès interdit' } } }),
+    'Accès interdit'
+  );
+  assert.equal(
+    extractErrorMessage(new Error('Erreur réseau')),
+    'Erreur réseau'
+  );
+  assert.equal(
+    extractErrorMessage(null, 'Fallback par défaut'),
+    'Fallback par défaut'
+  );
+});
+

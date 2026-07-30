@@ -127,7 +127,13 @@ export class NovaSendGateway implements PaymentGateway {
   }
 
   private get appUrl(): string {
-    return (process.env.FRONTEND_URL || 'http://localhost:5173');
+    return (
+      process.env.PAYMENT_RETURN_URL ||
+      process.env.PUBLIC_FRONTEND_URL ||
+      process.env.FRONTEND_URL ||
+      process.env.APP_URL ||
+      'http://localhost:5173'
+    );
   }
 
   private async callApi(
@@ -141,37 +147,25 @@ export class NovaSendGateway implements PaymentGateway {
       successUrl: options.returnUrl || `${this.appUrl}/paiement/success`,
       failureUrl: `${this.appUrl}/paiement/failure`,
     };
-    const isWave = providerCode === 'WAVE';
 
-    const url = isWave
-      ? `${this.baseUrl}/payin/sessions`
-      : `${this.baseUrl}/direct/payin`;
+    // Tous les paiements (y compris Wave) utilisent POST /v1/direct/payin
+    const url = `${this.baseUrl}/direct/payin`;
 
-    const payload: Record<string, any> = isWave
-      ? {
-          reference,
-          amount: options.amount,
-          provider: 'WAVE',
-          country: 'CI',
-          customerName: options.metadata?.customerName || 'Client',
-          ...(msisdn ? { msisdn } : {}),
-          action,
-        }
-      : {
-          reference,
-          customerName: options.metadata?.customerName || 'Client',
-          payin: {
-            amount: options.amount,
-            provider: providerCode,
-            country: 'CI',
-            ...(msisdn ? { msisdn } : {}),
-            ...(options.metadata?.otp ? { otp: options.metadata.otp } : {}),
-          },
-          action,
-        };
+    const payload: Record<string, any> = {
+      reference,
+      customerName: options.metadata?.customerName || 'Client',
+      payin: {
+        amount: options.amount,
+        provider: providerCode,
+        country: 'CI',
+        ...(msisdn ? { msisdn } : {}),
+        ...(options.metadata?.otp ? { otp: options.metadata.otp } : {}),
+      },
+      action,
+    };
 
     try {
-      this.logger.log(`[NovaSend] Sending ${isWave ? 'Payin Session' : 'Direct Payin'} (${providerCode}) to ${url} for ${msisdn || 'non-specified phone'}`);
+      this.logger.log(`[NovaSend] Sending Direct Payin (${providerCode}) to ${url}. Payload: ${JSON.stringify(payload)}`);
       const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${this.credentials}`,
@@ -210,7 +204,7 @@ export class NovaSendGateway implements PaymentGateway {
         const altBase = url.includes('business-staging')
           ? 'https://business.novasend.app/v1'
           : 'https://business-staging.novasend.app/v1';
-        const altUrl = isWave ? `${altBase}/payin/sessions` : `${altBase}/direct/payin`;
+        const altUrl = `${altBase}/direct/payin`;
 
         try {
           this.logger.log(`[NovaSend] Tentative fallback sur ${altUrl}...`);
@@ -225,7 +219,12 @@ export class NovaSendGateway implements PaymentGateway {
           });
           const status = String(data?.status || '').toUpperCase();
           const isSuccess = status === 'SUCCESSFUL' || status === 'SUCCESS';
-          const paymentUrl = data?.paymentUrl || data?.url || data?.checkoutUrl || data?.action?.url;
+          const paymentUrl =
+            data?.paymentUrl ||
+            data?.url ||
+            data?.checkoutUrl ||
+            data?.waveLaunchUrl ||
+            data?.action?.url;
 
           return {
             transactionId: data?.id || data?.reference || reference,

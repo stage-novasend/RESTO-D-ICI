@@ -70,6 +70,13 @@ export class RegisterDto {
   @IsOptional()
   zonesLivraison?: string[];
 
+  @IsOptional()
+  @IsString()
+  modeReceptionPaiement?: string; // NOVASEND | MOBILE_MONEY | BANCAIRE
+
+  @IsOptional()
+  modeReceptionDetails?: any;
+
   // --- Champs pour BUSINESS_CLIENT ---
   @IsOptional()
   @IsString()

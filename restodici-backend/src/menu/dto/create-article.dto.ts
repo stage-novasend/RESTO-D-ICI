@@ -38,9 +38,10 @@ export class CreateArticleDto {
   @IsBoolean()
   disponible?: boolean;
 
+  @IsOptional()
   @IsNumber()
   @Min(0)
-  stock!: number;
+  stock?: number; // Optionnel : le service applique 0 par défaut
 
   @IsOptional()
   @IsNumber()

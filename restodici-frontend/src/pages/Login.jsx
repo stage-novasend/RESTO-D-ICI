@@ -5,17 +5,20 @@
    ═══════════════════════════════════════════════════════════════ */
 import { useState } from 'react';
 import { Link, useNavigate, useLocation, useSearchParams } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, CheckCircle, UtensilsCrossed, ArrowLeft } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, CheckCircle, ArrowLeft } from 'lucide-react';
 import { BrandMark } from '../components/shared/BrandLogo';
 import { useAuth } from '../hooks/useAuth';
+import { useLanguage } from '../hooks/useLanguage';
 import { setAccessToken } from '../services/token-store.js';
-import { isValidEmail, MSG } from '../utils/validators';
+import { isValidEmail, MSG, extractErrorMessage } from '../utils/validators';
+import { needsOnboarding, onboardingPath } from '../utils/onboarding';
 
 export default function Login() {
   const navigate       = useNavigate();
   const location       = useLocation();
   const [searchParams] = useSearchParams();
   const { login, syncUser } = useAuth();
+  const { t } = useLanguage();
 
   /* ── État du formulaire principal ── */
   const [formData,    setFormData]  = useState({ email: '', password: '' });
@@ -54,25 +57,15 @@ export default function Login() {
      Redirection après une connexion réussie
      Chaque rôle a son espace dédié
   ───────────────────────────────────────────────── */
-  const needsOnboarding = (user, role) => {
-    if (localStorage.getItem(`rdi_ob_${user.id}`)) return false;
-    if (role === 'ADMIN') return false;
-    if (role === 'GERANT') return !user.restaurant?.adresse;
-    return !user.telephone;
-  };
-
   const redirectAfterLogin = (user) => {
     const role = user.role?.toUpperCase();
 
     if (redirectParam === 'checkout') { navigate('/checkout'); return; }
 
-    if (needsOnboarding(user, role)) {
-      if (role === 'GERANT')      navigate('/onboarding/gerant');
-      else if (role === 'B2B')    navigate('/onboarding/b2b');
-      else if (role === 'STAFF')  navigate('/onboarding/staff');
-      else                        navigate('/onboarding/client');
-      return;
-    }
+    // needsOnboarding vit dans utils/onboarding.js : Register pose une adresse
+    // factice ("À compléter") et un téléphone est exigé à l'inscription, donc
+    // tester `!adresse` / `!telephone` ne détectait jamais un compte à configurer.
+    if (needsOnboarding(user)) { navigate(onboardingPath(role)); return; }
 
     if (role === 'ADMIN')        navigate('/admin');
     else if (role === 'GERANT')  navigate('/gerant');
@@ -109,8 +102,8 @@ export default function Login() {
       }
 
       redirectAfterLogin(result.user);
-    } catch {
-      setErrors({ submit: 'Impossible de joindre le serveur. Vérifiez votre connexion.' });
+    } catch (err) {
+      setErrors({ submit: extractErrorMessage(err, 'Impossible de joindre le serveur. Vérifiez votre connexion.') });
     } finally {
       setSubmit(false);
     }
@@ -137,8 +130,7 @@ export default function Login() {
       syncUser(user);
       redirectAfterLogin(user);
     } catch (err) {
-      const msg = err.response?.data?.message || 'Code 2FA invalide ou expiré';
-      setErrors({ submit: Array.isArray(msg) ? msg.join(', ') : msg });
+      setErrors({ submit: extractErrorMessage(err, 'Code 2FA invalide ou expiré') });
     } finally {
       setSubmit(false);
     }
@@ -162,9 +154,7 @@ export default function Login() {
             className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
             style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' }}
           >
-            <ArrowLeft className="w-4 h-4" />
-            Retour à l'accueil
-          </Link>
+            <ArrowLeft className="w-4 h-4" />{t('back_to_home')}</Link>
 
           {/* Logo Restodici */}
           <div className="flex items-center gap-2.5 mb-10">
@@ -177,12 +167,12 @@ export default function Login() {
           {/* Titre et sous-titre */}
           <div className="mb-8">
             <h1 className="text-2xl font-bold" style={{ color: '#1A0C00' }}>
-              {twoFactorStep ? 'Vérification' : 'Connexion'}
+              {twoFactorStep ? t('verification') : t('login_title')}
             </h1>
             <p className="mt-1 text-sm" style={{ color: '#8B6E50' }}>
               {twoFactorStep
-                ? "Entrez le code de votre application"
-                : 'Bon retour sur votre espace'}
+                ? t('enter_2fa_code')
+                : t('welcome_back')}
             </p>
           </div>
 
@@ -192,17 +182,13 @@ export default function Login() {
               className="mb-6 flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
               style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#15803D' }}
             >
-              <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />
-              Inscription réussie ! Connectez-vous maintenant.
-            </div>
+              <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />{t('register_success_login')}</div>
           )}
 
           {/* ── Formulaire 2FA ── */}
           {twoFactorStep ? (
             <form onSubmit={handle2FA} className="space-y-4">
-              <p className="text-sm" style={{ color: '#8B6E50' }}>
-                Entrez le code à 6 chiffres généré par votre application d'authentification.
-              </p>
+              <p className="text-sm" style={{ color: '#8B6E50' }}>{t('enter_6_digit_code')}</p>
 
               {/* Champ du code TOTP — grand et centré pour faciliter la saisie */}
               <input
@@ -234,7 +220,7 @@ export default function Login() {
                 className="w-full py-3 rounded-xl font-semibold text-white text-sm transition disabled:opacity-60"
                 style={{ background: '#EA580C' }}
               >
-                {isSubmitting ? 'Vérification…' : 'Valider'}
+                {isSubmitting ? t('verification') + '…' : t('validate')}
               </button>
 
               {/* Retour à l'étape de connexion principale */}
@@ -243,9 +229,7 @@ export default function Login() {
                 onClick={() => { set2FA(false); set2FACode(''); setErrors({}); }}
                 className="w-full py-2 text-sm"
                 style={{ color: '#A89070' }}
-              >
-                ← Retour
-              </button>
+              >{t('back')}</button>
             </form>
 
           ) : (
@@ -258,9 +242,7 @@ export default function Login() {
                   htmlFor="login-email"
                   className="block text-xs font-semibold mb-1.5"
                   style={{ color: '#475569' }}
-                >
-                  Email
-                </label>
+                >{t('email_label')}</label>
                 <div className="relative">
                   <Mail
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4"
@@ -274,7 +256,7 @@ export default function Login() {
                     aria-invalid={!!errors.email}
                     aria-describedby={errors.email ? 'email-error' : undefined}
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="vous@exemple.com"
+                    placeholder={t('email_placeholder')}
                     required title="Email invalide (ex. nom@domaine.com)"
                     className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition"
                     style={{
@@ -298,16 +280,12 @@ export default function Login() {
                     htmlFor="login-password"
                     className="text-xs font-semibold"
                     style={{ color: '#475569' }}
-                  >
-                    Mot de passe
-                  </label>
+                  >{t('password_label')}</label>
                   <Link
                     to="/forgot-password"
                     className="text-xs font-medium hover:underline"
                     style={{ color: '#EA580C' }}
-                  >
-                    Oublié ?
-                  </Link>
+                  >{t('forgot_password')}</Link>
                 </div>
                 <div className="relative">
                   <Lock
@@ -322,7 +300,7 @@ export default function Login() {
                     aria-invalid={!!errors.password}
                     aria-describedby={errors.password ? 'password-error' : undefined}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="••••••••"
+                    placeholder={t('password_placeholder')}
                     className="w-full pl-10 pr-10 py-3 rounded-xl text-sm outline-none transition"
                     style={{
                       background: '#F9F9FC',
@@ -364,9 +342,7 @@ export default function Login() {
                       to="/verify-email"
                       className="block mt-2 text-center py-1.5 px-4 rounded-lg font-semibold text-white text-xs"
                       style={{ background: '#EF4444' }}
-                    >
-                      Vérifier mon email
-                    </Link>
+                    >{t('verify_email_cta')}</Link>
                   )}
                 </div>
               )}
@@ -380,24 +356,20 @@ export default function Login() {
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">
-                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Connexion…
-                  </span>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('connecting')}</span>
                 ) : (
-                  'Se connecter'
+                  t('sign_in_button')
                 )}
               </button>
 
               {/* Lien vers l'inscription */}
               <p className="text-center text-sm pt-1" style={{ color: '#A89070' }}>
-                Pas encore de compte ?{' '}
+                {t('no_account')}{' '}
                 <Link
                   to="/register"
                   className="font-semibold hover:underline"
                   style={{ color: '#16A34A', fontWeight: 700 }}
-                >
-                  S'inscrire
-                </Link>
+                >{t('register')}</Link>
               </p>
             </form>
           )}
@@ -423,10 +395,8 @@ export default function Login() {
         />
         {/* Accroche en bas de l'image */}
         <div className="absolute bottom-10 left-8 right-8">
-          <p className="text-white font-bold text-xl">La table digitale</p>
-          <p className="text-white/70 text-sm mt-1">
-            Commandes, budgets et équipes en un seul endroit.
-          </p>
+          <p className="text-white font-bold text-xl">{t('auth_hero_title')}</p>
+          <p className="text-white/70 text-sm mt-1">{t('auth_hero_sub')}</p>
         </div>
       </div>
     </div>

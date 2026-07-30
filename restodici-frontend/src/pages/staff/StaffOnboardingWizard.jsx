@@ -3,21 +3,22 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  UtensilsCrossed, User, Phone, CheckCircle,
+  UtensilsCrossed, User, CheckCircle,
   ArrowRight, Loader2, ChefHat, Coffee, CreditCard,
 } from 'lucide-react';
 import { authAPI } from '../../services/api';
-import { CI_PHONE_PATTERN, MSG } from '../../utils/validators';
+import { CI_PHONE_PATTERN, MSG, isValidCIPhone, extractErrorMessage } from '../../utils/validators';
+import { markOnboardingDone } from '../../utils/onboarding';
 
 import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
 
 const POSTES = [
-  { key: 'SERVEUR',   label: 'Serveur / Salle',   icon: Coffee,     desc: 'Prise de commandes en salle' },
-  { key: 'CUISINIER', label: 'Cuisinier / Cuisine', icon: ChefHat,    desc: 'KDS cuisine, suivi des plats' },
-  { key: 'CAISSIER',  label: 'Caissier / Caisse',   icon: CreditCard, desc: 'Encaissements et paiements' },
+  { id: 'SERVEUR',  label: 'Serveur / Serveuse', icon: Coffee,     desc: 'Prise de commande sur table & encaissement' },
+  { id: 'CUISINE',  label: 'Cuisinier / Chef',   icon: ChefHat,    desc: 'Écran de cuisine (KDS) & préparation' },
+  { id: 'CAISSIER', label: 'Caissier / Caissière', icon: CreditCard, desc: 'Paiements & clôture de caisse' },
 ];
 
-const STEPS = ['Bienvenue', 'Ton profil', 'Ton poste', "C'est parti !"];
+const STEPS = ['Bienvenue', 'Mon profil', 'Mon rôle', "C'est parti !"];
 
 function StepDots({ current }) {
   return (
@@ -30,10 +31,13 @@ function StepDots({ current }) {
   );
 }
 
-function Field({ label, children }) {
+function Field({ label, hint, children }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#374151] mb-1.5">{label}</label>
+      <label className="block text-xs font-semibold text-[#374151] mb-1.5">
+        {label}
+        {hint && <span className="ml-1 font-normal text-[#9CA3AF]">({hint})</span>}
+      </label>
       {children}
     </div>
   );
@@ -69,29 +73,31 @@ export default function StaffOnboardingWizard() {
     if (!profil.nom.trim() || !profil.telephone.trim()) {
       setErr('Nom et téléphone sont requis'); return;
     }
+    if (!isValidCIPhone(profil.telephone)) {
+      setErr(MSG.phone); return;
+    }
     setErr('');
     setSaving(true);
     try {
-      await authAPI.updateProfile({
+      // Sans enregistrement serveur, le téléphone reste vide et le wizard se
+      // rouvrira à chaque connexion (needsOnboarding s'appuie dessus).
+      const res = await authAPI.updateProfile({
         nom:       profil.nom.trim(),
         prenom:    profil.prenom.trim() || profil.nom.trim(),
         telephone: profil.telephone.trim(),
       });
-    } catch (e) {
-      console.warn('Erreur mise à jour profil API (fallback local):', e);
-    } finally {
-      if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom });
-      setSaving(false);
+      if (syncUser) syncUser({ ...user, ...(res.data || {}), telephone: profil.telephone.trim(), nom: profil.nom.trim(), prenom: profil.prenom.trim() });
       setStep(2);
+    } catch (e) {
+      setErr(extractErrorMessage(e, "Impossible d'enregistrer votre profil. Réessayez."));
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleFinish = () => {
-    if (user?.id) {
-      localStorage.setItem(`rdi_ob_${user.id}`, '1');
-      localStorage.setItem(`wizard_done_${user.id}`, '1');
-      localStorage.setItem(`rdi_poste_${user.id}`, poste);
-    }
+    markOnboardingDone(user?.id);
+    if (user?.id) localStorage.setItem(`rdi_poste_${user.id}`, poste);
     if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom });
     navigate('/staff');
   };

@@ -76,6 +76,23 @@ export const MSG = {
   number:   'Doit être un nombre positif',
 };
 
+/* ── Extraction propre des messages d'erreur (Axios / NestJS / API) ── */
+export const extractErrorMessage = (err, fallback = 'Une erreur est survenue') => {
+  if (!err) return fallback;
+  if (typeof err === 'string') return err;
+  const msg = err.response?.data?.message ?? err.response?.data?.error ?? err.response?.data;
+  if (Array.isArray(msg)) {
+    return msg.join('. ');
+  }
+  if (typeof msg === 'string' && msg.trim()) {
+    return msg;
+  }
+  if (err.message && typeof err.message === 'string') {
+    return err.message;
+  }
+  return fallback;
+};
+
 /* ── Aide : renvoie le message d'erreur ou '' si valide ─────
    validateField('email', value, { required: true }) → '' | message   */
 export const validateField = (type, value, { required = false } = {}) => {
@@ -91,3 +108,4 @@ export const validateField = (type, value, { required = false } = {}) => {
     default:         return '';
   }
 };
+

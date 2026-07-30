@@ -15,6 +15,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { User, Role } from './entities/user.entity';
 import { PasswordReset } from './entities/password-reset.entity';
+import { AuditLog } from '../common/entities/audit-log.entity';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
@@ -40,6 +41,8 @@ export class AuthService {
     private restaurantRepository: Repository<Restaurant>,
     @InjectRepository(PasswordReset)
     private passwordResetRepository: Repository<PasswordReset>,
+    @InjectRepository(AuditLog)
+    private auditRepository: Repository<AuditLog>,
     private jwtService: JwtService,
     private emailService: EmailService,
     // ConfigService n'est pas essentiel pour la logique métier (liens/console logs)
@@ -167,6 +170,8 @@ export class AuthService {
               deliveryZones: user.restaurant.deliveryZones,
               latitude: user.restaurant.latitude,
               longitude: user.restaurant.longitude,
+              modeReceptionPaiement: user.restaurant.modeReceptionPaiement || 'NOVASEND',
+              modeReceptionDetails: user.restaurant.modeReceptionDetails || null,
             }
           : undefined,
       },
@@ -297,6 +302,8 @@ export class AuthService {
         openingTime,
         closingTime,
         deliveryZones: normalizeDeliveryZones(dto.zonesLivraison),
+        modeReceptionPaiement: dto.modeReceptionPaiement || 'NOVASEND',
+        modeReceptionDetails: dto.modeReceptionDetails || null,
       });
       const savedRestaurant =
         await this.restaurantRepository.save(newRestaurant);
@@ -344,6 +351,7 @@ export class AuthService {
       );
     }
 
+    this.auditRepository.save(this.auditRepository.create({ action: 'REGISTER_SUCCESS', userId: savedUser.id })).catch(() => {});
     // Retourner le token et les infos utilisateur pour la redirection
     return this.buildAuthResponse(
       savedUser,
@@ -359,6 +367,9 @@ export class AuthService {
     });
 
     if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+      if (user) {
+        this.auditRepository.save(this.auditRepository.create({ action: 'LOGIN_FAILED', userId: user.id })).catch(() => {});
+      }
       throw new UnauthorizedException('Identifiants incorrects');
     }
     if (!user.actif) throw new BadRequestException('Compte désactivé');
@@ -380,7 +391,7 @@ export class AuthService {
       await this.userRepository.save(user);
       return { requiresTwoFactor: true, tempToken };
     }
-
+    this.auditRepository.save(this.auditRepository.create({ action: 'LOGIN_SUCCESS', userId: user.id })).catch(() => {});
     return this.buildAuthResponse(user);
   }
 

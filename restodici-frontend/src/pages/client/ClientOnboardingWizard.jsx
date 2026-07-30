@@ -3,13 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import {
-  UtensilsCrossed, User, Phone, MapPin,
+  UtensilsCrossed, MapPin,
   CheckCircle, ArrowRight, Loader2, Star,
 } from 'lucide-react';
 import { authAPI } from '../../services/api';
-import { CI_PHONE_PATTERN, MSG } from '../../utils/validators';
+import { CI_PHONE_PATTERN, MSG, isValidCIPhone, extractErrorMessage } from '../../utils/validators';
+import { markOnboardingDone } from '../../utils/onboarding';
 
-import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
+import { ORANGE as A, SURFACE as SF, BORDER_BROWN as BD } from '../../theme/colors';
 
 const STEPS = ['Bienvenue', 'Ton profil', 'Adresse', "C'est parti !"];
 
@@ -17,19 +18,24 @@ function StepDots({ current }) {
   return (
     <div className="flex items-center justify-center gap-2 mb-6">
       {STEPS.map((_, i) => (
-        <div key={i} className="rounded-full transition-all duration-300"
-          style={{ width: i === current ? 24 : 8, height: 8, background: i <= current ? A : '#E5E7EB' }} />
+        <div key={i}
+          className="rounded-full transition-all duration-300"
+          style={{
+            width: i === current ? 24 : 8,
+            height: 8,
+            background: i <= current ? A : '#E5E7EB',
+          }} />
       ))}
     </div>
   );
 }
 
-function Field({ label, optional, children }) {
+function Field({ label, hint, children }) {
   return (
     <div>
       <label className="block text-xs font-semibold text-[#374151] mb-1.5">
         {label}
-        {optional && <span className="ml-1 font-normal text-[#9CA3AF]">(optionnel)</span>}
+        {hint && <span className="ml-1 font-normal text-[#9CA3AF]">({hint})</span>}
       </label>
       {children}
     </div>
@@ -66,35 +72,37 @@ export default function ClientOnboardingWizard() {
     if (!profil.nom.trim() || !profil.telephone.trim()) {
       setErr('Nom et téléphone sont requis'); return;
     }
+    if (!isValidCIPhone(profil.telephone)) {
+      setErr(MSG.phone); return;
+    }
     setErr('');
     setSaving(true);
     try {
-      await authAPI.updateProfile({
+      // Le profil doit vraiment être enregistré : sans téléphone, le wizard se
+      // rouvrira à la prochaine connexion et la commande ne pourra pas aboutir.
+      const res = await authAPI.updateProfile({
         nom:       profil.nom.trim(),
         prenom:    profil.prenom.trim() || profil.nom.trim(),
         telephone: profil.telephone.trim(),
       });
-    } catch (e) {
-      console.warn('Erreur mise à jour profil API (fallback local):', e);
-    } finally {
-      if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom, prenom: profil.prenom });
-      setSaving(false);
+      if (syncUser) syncUser({ ...user, ...(res.data || {}), telephone: profil.telephone.trim(), nom: profil.nom.trim(), prenom: profil.prenom.trim() });
       setStep(2);
+    } catch (e) {
+      setErr(extractErrorMessage(e, "Impossible d'enregistrer votre profil. Réessayez."));
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleAdresseNext = () => {
-    if (adresse.trim()) {
-      localStorage.setItem(`rdi_addr_${user?.id}`, adresse.trim());
+    if (adresse.trim() && user?.id) {
+      localStorage.setItem(`rdi_addr_${user.id}`, adresse.trim());
     }
     setStep(3);
   };
 
   const handleFinish = () => {
-    if (user?.id) {
-      localStorage.setItem(`rdi_ob_${user.id}`, '1');
-      localStorage.setItem(`wizard_done_${user.id}`, '1');
-    }
+    markOnboardingDone(user?.id);
     if (syncUser) syncUser({ ...user, telephone: profil.telephone, nom: profil.nom, prenom: profil.prenom });
     navigate('/menu');
   };

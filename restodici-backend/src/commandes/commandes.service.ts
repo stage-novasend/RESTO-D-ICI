@@ -135,7 +135,7 @@ export class CommandesService {
         where: { id: restaurantId },
         select: ['id', 'tauxCommission'],
       });
-      const tauxPct = Math.min(5, Math.max(1, Number(restaurant?.tauxCommission ?? 2)));
+      const tauxPct = Math.min(50, Math.max(0, Number(restaurant?.tauxCommission ?? 8)));
       const tauxFraction = tauxPct / 100;
 
       // [PERF] Chargement de tous les articles en une seule requête (audit §4.1)

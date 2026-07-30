@@ -5,10 +5,12 @@
    ═══════════════════════════════════════════════════════════════ */
 import { useState } from "react";
 import { Link, useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { Mail, Lock, User, Store, Phone, Building2, ChefHat, UtensilsCrossed } from "lucide-react";
+import { Mail, Lock, User, Store, Phone, Building2, ChefHat } from "lucide-react";
 import { BrandMark } from "../components/shared/BrandLogo";
 import { useAuth } from "../hooks/useAuth";
-import { validateField, MSG, EMAIL_PATTERN, CI_PHONE_PATTERN } from "../utils/validators";
+import { useLanguage } from "../hooks/useLanguage";
+import { validateField, MSG, EMAIL_PATTERN, CI_PHONE_PATTERN, extractErrorMessage } from "../utils/validators";
+import { ADRESSE_PLACEHOLDER } from "../utils/onboarding";
 
 function normalizeUserType(type) {
   const v = (type || "client").toLowerCase();
@@ -45,6 +47,7 @@ export default function Register() {
   const location       = useLocation();
   const navigate       = useNavigate();
   const { register: authRegister } = useAuth();
+  const { t } = useLanguage();
 
   const userType    = normalizeUserType(searchParams.get("type"));
   const isRestaurant = userType === "restaurant";
@@ -81,7 +84,9 @@ export default function Register() {
           type: "RESTAURANT",
           nom: form.nom, email: form.email, telephone: form.telephone, password: form.password,
           restaurantNom: form.restaurantNom,
-          description: "", adresse: "À compléter",
+          // Adresse réelle demandée au wizard d'onboarding gérant : ce placeholder
+          // est reconnu par needsOnboarding() comme "restaurant à configurer".
+          description: "", adresse: ADRESSE_PLACEHOLDER,
           restaurantTelephone: form.telephone, restaurantEmail: form.email,
           horaires: "Lun-Dim: 08:00-22:00", zonesLivraison: ["Abidjan"],
         };
@@ -103,21 +108,21 @@ export default function Register() {
         setApiError(res.error || "Erreur lors de l'inscription");
       }
     } catch (err) {
-      setApiError(err.message || "Erreur lors de l'inscription");
+      setApiError(extractErrorMessage(err, "Erreur lors de l'inscription"));
     } finally {
       setLoading(false);
     }
   };
 
   const TABS = [
-    { key: "client",     label: "Client",     icon: User      },
-    { key: "restaurant", label: "Restaurant", icon: ChefHat   },
-    { key: "business",   label: "Entreprise", icon: Building2 },
+    { key: "client",     label: t('client_tab'),     icon: User      },
+    { key: "restaurant", label: t('restaurant_tab'), icon: ChefHat   },
+    { key: "business",   label: t('enterprise_tab'), icon: Building2 },
   ];
 
-  const heading = isRestaurant ? "Créer mon restaurant"
-    : isBusiness ? "Compte entreprise"
-    : "Créer un compte";
+  const heading = isRestaurant ? t('create_restaurant')
+    : isBusiness ? t('create_b2b')
+    : t('create_account');
 
   return (
     <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF' }}>
@@ -136,9 +141,9 @@ export default function Register() {
           <div className="mb-6">
             <h1 className="text-2xl font-bold" style={{ color: '#1A0C00' }}>{heading}</h1>
             <p className="mt-1 text-sm" style={{ color: '#8B6E50' }}>
-              {isRestaurant ? "Gérez votre restaurant en temps réel"
-                : isBusiness ? "Repas d'équipe, budgets et facturation centralisés"
-                : "Rejoignez la table digitale"}
+              {isRestaurant ? t('manage_restaurant_rt')
+                : isBusiness ? t('team_meals_budget')
+                : t('join_digital_table')}
             </p>
           </div>
 
@@ -170,27 +175,27 @@ export default function Register() {
             {isRestaurant && (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Votre nom *" icon={User} error={errors.nom}>
+                  <Field label={t('your_name') + " *"} icon={User} error={errors.nom}>
                     <input value={form.nom} onChange={set("nom")} placeholder="Prénom Nom"
                       className={inputCls(true, errors.nom)} style={inputStyle(errors.nom)} />
                   </Field>
-                  <Field label="Téléphone *" icon={Phone} error={errors.telephone}>
+                  <Field label={t('phone_number') + " *"} icon={Phone} error={errors.telephone}>
                     <input value={form.telephone} onChange={set("telephone")} placeholder="+225 07 12 34 56 78" inputMode="tel"
                       type="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} required
                       className={inputCls(true, errors.telephone)} style={inputStyle(errors.telephone)} />
                   </Field>
                 </div>
-                <Field label="Email *" icon={Mail} error={errors.email}>
+                <Field label={t('email_label') + " *"} icon={Mail} error={errors.email}>
                   <input type="email" value={form.email} onChange={set("email")} placeholder="gerant@restaurant.com"
                     pattern={EMAIL_PATTERN} title={MSG.email} required
                     className={inputCls(true, errors.email)} style={inputStyle(errors.email)} />
                 </Field>
-                <Field label="Mot de passe *" icon={Lock} error={errors.password}>
+                <Field label={t('password_label') + " *"} icon={Lock} error={errors.password}>
                   <input type="password" value={form.password} onChange={set("password")} placeholder="••••••••"
                     minLength={8} title={MSG.password} required
                     className={inputCls(true, errors.password)} style={inputStyle(errors.password)} />
                 </Field>
-                <Field label="Nom du restaurant *" icon={Store} error={errors.restaurantNom}>
+                <Field label={t('restaurant_name') + " *"} icon={Store} error={errors.restaurantNom}>
                   <input value={form.restaurantNom} onChange={set("restaurantNom")} placeholder="Nom de votre établissement"
                     className={inputCls(true, errors.restaurantNom)} style={inputStyle(errors.restaurantNom)} />
                 </Field>
@@ -200,27 +205,27 @@ export default function Register() {
             {/* ── Champs spécifiques au compte entreprise ── */}
             {isBusiness && (
               <>
-                <Field label="Nom de l'entreprise *" icon={Building2} error={errors.nomEntreprise}>
+                <Field label={t('company_name') + " *"} icon={Building2} error={errors.nomEntreprise}>
                   <input value={form.nomEntreprise} onChange={set("nomEntreprise")} placeholder="Nom de votre société"
                     className={inputCls(true, errors.nomEntreprise)} style={inputStyle(errors.nomEntreprise)} />
                 </Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Responsable *" icon={User} error={errors.nom}>
+                  <Field label={t('manager_name') + " *"} icon={User} error={errors.nom}>
                     <input value={form.nom} onChange={set("nom")} placeholder="Votre nom"
                       className={inputCls(true, errors.nom)} style={inputStyle(errors.nom)} />
                   </Field>
-                  <Field label="Téléphone *" icon={Phone} error={errors.telephone}>
+                  <Field label={t('phone_number') + " *"} icon={Phone} error={errors.telephone}>
                     <input value={form.telephone} onChange={set("telephone")} placeholder="+225 07 12 34 56 78" inputMode="tel"
                       type="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} required
                       className={inputCls(true, errors.telephone)} style={inputStyle(errors.telephone)} />
                   </Field>
                 </div>
-                <Field label="Email professionnel *" icon={Mail} error={errors.email}>
+                <Field label={t('professional_email') + " *"} icon={Mail} error={errors.email}>
                   <input type="email" value={form.email} onChange={set("email")} placeholder="vous@entreprise.com"
                     pattern={EMAIL_PATTERN} title={MSG.email} required
                     className={inputCls(true, errors.email)} style={inputStyle(errors.email)} />
                 </Field>
-                <Field label="Mot de passe *" icon={Lock} error={errors.password}>
+                <Field label={t('password_label') + " *"} icon={Lock} error={errors.password}>
                   <input type="password" value={form.password} onChange={set("password")} placeholder="••••••••"
                     minLength={8} title={MSG.password} required
                     className={inputCls(true, errors.password)} style={inputStyle(errors.password)} />
@@ -232,22 +237,22 @@ export default function Register() {
             {!isRestaurant && !isBusiness && (
               <>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Nom complet *" icon={User} error={errors.nom}>
+                  <Field label={t('full_name') + " *"} icon={User} error={errors.nom}>
                     <input value={form.nom} onChange={set("nom")} placeholder="Votre nom"
                       className={inputCls(true, errors.nom)} style={inputStyle(errors.nom)} />
                   </Field>
-                  <Field label="Téléphone *" icon={Phone} error={errors.telephone}>
+                  <Field label={t('phone_number') + " *"} icon={Phone} error={errors.telephone}>
                     <input value={form.telephone} onChange={set("telephone")} placeholder="+225 07 12 34 56 78" inputMode="tel"
                       type="tel" pattern={CI_PHONE_PATTERN} maxLength={20} title={MSG.phone} required
                       className={inputCls(true, errors.telephone)} style={inputStyle(errors.telephone)} />
                   </Field>
                 </div>
-                <Field label="Email *" icon={Mail} error={errors.email}>
+                <Field label={t('email_label') + " *"} icon={Mail} error={errors.email}>
                   <input type="email" value={form.email} onChange={set("email")} placeholder="votre@email.com"
                     pattern={EMAIL_PATTERN} title={MSG.email} required
                     className={inputCls(true, errors.email)} style={inputStyle(errors.email)} />
                 </Field>
-                <Field label="Mot de passe *" icon={Lock} error={errors.password}>
+                <Field label={t('password_label') + " *"} icon={Lock} error={errors.password}>
                   <input type="password" value={form.password} onChange={set("password")} placeholder="••••••••"
                     minLength={8} title={MSG.password} required
                     className={inputCls(true, errors.password)} style={inputStyle(errors.password)} />
@@ -260,22 +265,18 @@ export default function Register() {
               style={{ background: '#EA580C' }}>
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
-                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                  Création en cours…
-                </span>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('creating')}</span>
               ) : (
-                isBusiness ? "Créer mon compte entreprise"
-                  : isRestaurant ? "Créer mon restaurant"
-                  : "Créer mon compte"
+                isBusiness ? t('create_business_account')
+                  : isRestaurant ? t('create_restaurant')
+                  : t('create_account')
               )}
             </button>
           </form>
 
           <p className="mt-5 text-center text-sm" style={{ color: '#A89070' }}>
-            Déjà un compte ?{' '}
-            <Link to={`/login${location.search}`} className="font-semibold hover:underline" style={{ color: '#EA580C' }}>
-              Se connecter
-            </Link>
+            {t('already_have_account')}{' '}
+            <Link to={`/login${location.search}`} className="font-semibold hover:underline" style={{ color: '#EA580C' }}>{t('login_title')}</Link>
           </p>
         </div>
       </div>
@@ -291,8 +292,8 @@ export default function Register() {
         <div className="absolute inset-0"
           style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.10) 50%, transparent 100%)' }} />
         <div className="absolute bottom-10 left-8 right-8">
-          <p className="text-white font-bold text-xl">Bienvenue sur Resto d'ici</p>
-          <p className="text-white/70 text-sm mt-1">Gérez vos repas, votre équipe et vos commandes en un seul endroit.</p>
+          <p className="text-white font-bold text-xl">{t('welcome_restodici')}</p>
+          <p className="text-white/70 text-sm mt-1">{t('manage_all_in_one')}</p>
         </div>
       </div>
     </div>

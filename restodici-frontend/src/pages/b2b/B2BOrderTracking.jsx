@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, CheckCircle, Clock, MapPin, Package,
-  Truck, UtensilsCrossed, XCircle, AlertTriangle,
+  Truck, XCircle, AlertTriangle,
   Star, ThumbsUp, ThumbsDown, Send, Users, Building2, Mail,
 } from 'lucide-react';
 import { b2bAPI } from '../../services/api';

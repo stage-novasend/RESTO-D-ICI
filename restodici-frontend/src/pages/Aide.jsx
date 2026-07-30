@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { UtensilsCrossed, ChevronDown, Search, ShoppingBag, CreditCard, Building2, Headphones, ArrowRight } from 'lucide-react';
+import { ChevronDown, Search, ShoppingBag, CreditCard, Building2, Headphones, ArrowRight } from 'lucide-react';
 import BrandLogo from '../components/shared/BrandLogo';
 import MiniFooter from '../components/shared/MiniFooter';
 

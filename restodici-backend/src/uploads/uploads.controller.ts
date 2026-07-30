@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Query,
   UploadedFile,
   UseGuards,
   UseInterceptors,
@@ -17,13 +18,17 @@ import type { Express } from 'express';
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 
+// Dossiers S3 autorisés — évite qu'un client écrive n'importe où dans le bucket.
+const ALLOWED_FOLDERS = ['articles', 'logos', 'restaurants'] as const;
+const DEFAULT_FOLDER = 'articles';
+
 @Controller('uploads')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
 @Roles('ADMIN', 'GERANT', 'STAFF')
 export class UploadsController {
   constructor(private readonly s3: S3Service) {}
 
-  /** POST /uploads/image — multipart/form-data, field: "file" */
+  /** POST /uploads/image?folder=logos — multipart/form-data, field: "file" */
   @Post('image')
   @UseInterceptors(
     FileInterceptor('file', {
@@ -41,9 +46,15 @@ export class UploadsController {
       },
     }),
   )
-  async uploadImage(@UploadedFile() file: Express.Multer.File) {
+  async uploadImage(
+    @UploadedFile() file: Express.Multer.File,
+    @Query('folder') folder?: string,
+  ) {
     if (!file) throw new BadRequestException('Aucun fichier reçu.');
-    return this.s3.uploadFile(file.buffer, file.mimetype, 'articles');
+    const target = ALLOWED_FOLDERS.includes(folder as never)
+      ? (folder as string)
+      : DEFAULT_FOLDER;
+    return this.s3.uploadFile(file.buffer, file.mimetype, target);
   }
 
   /** GET /uploads/status — indique si S3 est configuré */

@@ -8,7 +8,7 @@ import {
 import { useCart } from '../hooks/useCart';
 import { useAuth } from '../hooks/useAuth';
 import { formatFCFA } from '../utils/formatters';
-import { CI_PHONE_PATTERN, MSG, isValidCIPhone, phoneMatchesOperator, OPERATOR_LABEL } from '../utils/validators';
+import { CI_PHONE_PATTERN, MSG, isValidCIPhone, phoneMatchesOperator, OPERATOR_LABEL, extractErrorMessage } from '../utils/validators';
 import { commandesService, createCommandesSocket } from '../services/commandes.service';
 import { paiementsAPI, promosAPI } from '../services/api';
 import orangeMoneyLogo from '../assets/payments/orange-money.svg';
@@ -350,6 +350,12 @@ export default function CheckoutPage() {
   const [modalError, setModalError]     = useState('');
   const [createdOrder, setCreatedOrder] = useState(null);
   const [paymentUrl, setPaymentUrl]     = useState(null);
+
+  useEffect(() => {
+    if (paymentUrl) {
+      window.location.href = paymentUrl;
+    }
+  }, [paymentUrl]);
   const [countdown, setCountdown]       = useState(COUNTDOWN_SECS);
   const [canRetry, setCanRetry]         = useState(false);
 
@@ -414,7 +420,7 @@ export default function CheckoutPage() {
       const r = await promosAPI.validate(promoCode.trim(), pendingOrder.restaurantId, pendingOrder.total ?? 0);
       setPromoResult(r.data);
     } catch (e) {
-      setPromoError(e?.response?.data?.message || 'Code invalide');
+      setPromoError(extractErrorMessage(e, 'Code promo invalide'));
     } finally { setPromoLoading(false); }
   };
   const removePromo = () => { setPromoResult(null); setPromoCode(''); setPromoError(''); };
@@ -506,9 +512,7 @@ export default function CheckoutPage() {
       });
       if (paiRes.data?.paymentUrl) setPaymentUrl(paiRes.data.paymentUrl);
     } catch (err) {
-      const raw = err?.response?.data?.message || err?.response?.data;
-      const msg = Array.isArray(raw) ? raw.join(', ') : (typeof raw === 'string' ? raw : 'Erreur d\'initiation du paiement');
-      setModalError(msg);
+      setModalError(extractErrorMessage(err, "Erreur d'initiation du paiement"));
       setModalState('failed');
       setCanRetry(true);
     }
@@ -569,9 +573,7 @@ export default function CheckoutPage() {
 
     } catch (err) {
       cleanupAll();
-      const raw = err?.response?.data?.message || err?.response?.data;
-      const msg = Array.isArray(raw) ? raw.join(', ') : (typeof raw === 'string' ? raw : 'Une erreur est survenue');
-      setModalError(msg);
+      setModalError(extractErrorMessage(err, 'Erreur lors de la création de la commande'));
       setModalState('failed');
       setCanRetry(true);
     }
@@ -1313,9 +1315,11 @@ export default function CheckoutPage() {
           <div style={{
             width: '100%',
             maxWidth: 420,
+            maxHeight: 'calc(100dvh - 32px)',
+            overflowY: 'auto',
+            WebkitOverflowScrolling: 'touch',
             background: 'white',
             borderRadius: 24,
-            overflow: 'hidden',
             boxShadow: '0 32px 80px rgba(0,0,0,0.28), 0 0 0 1px rgba(255,255,255,0.05)',
           }}
             className="checkout-fadeup">
@@ -1456,31 +1460,10 @@ export default function CheckoutPage() {
                   )}
 
                   {paymentUrl && (
-                    <div style={{ width: '100%', marginBottom: 18 }}>
-                      <WaveQRCode url={paymentUrl} />
-                      <a
-                        href={paymentUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: 8,
-                          width: '100%',
-                          boxSizing: 'border-box',
-                          padding: '15px 22px',
-                          borderRadius: 14,
-                          background: `linear-gradient(135deg, ${ACCENT}, #C2410C)`,
-                          color: 'white',
-                          fontSize: 15,
-                          fontWeight: 800,
-                          textDecoration: 'none',
-                          boxShadow: `0 8px 24px ${ACCENT}55`,
-                        }}>
-                        <ExternalLink size={17} />
-                        Ouvrir {method?.shortName || 'la page'} pour payer
-                      </a>
+                    <div style={{ width: '100%', marginBottom: 18, textAlign: 'center', padding: '14px 16px', borderRadius: 14, background: '#FFF7ED', border: '1.5px solid #FFEDD5', boxSizing: 'border-box' }}>
+                      <p style={{ margin: 0, fontSize: 13, color: '#EA580C', fontWeight: 700 }}>
+                        ⏳ Redirection automatique vers la page de paiement...
+                      </p>
                     </div>
                   )}
 

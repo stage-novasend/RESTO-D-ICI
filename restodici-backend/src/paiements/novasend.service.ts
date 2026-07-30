@@ -74,7 +74,11 @@ export class NovaSendService {
     const apiSecret = this.config.get<string>('NOVASEND_API_SECRET')!;
     const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
     const appUrl =
-      this.config.get<string>('APP_URL') || 'http://localhost:5173';
+      this.config.get<string>('PAYMENT_RETURN_URL') ||
+      this.config.get<string>('PUBLIC_FRONTEND_URL') ||
+      this.config.get<string>('FRONTEND_URL') ||
+      this.config.get<string>('APP_URL') ||
+      'http://localhost:5173';
 
     const msisdn = toInternationalCiMsisdn(params.telephone);
     const providerCode = normalizeNovaSendProvider(params.provider);
@@ -85,37 +89,24 @@ export class NovaSendService {
     };
 
     // Règle d'acheminement des flux NovaSend :
-    //  - MTN / MOOV / ORANGE ➔ POST /v1/direct/payin (Push USSD)
-    //  - WAVE ➔ POST /v1/payin/sessions (Lien / QR Code)
-    const isWave = providerCode === 'WAVE';
-    const url = isWave
-      ? `${this.baseUrl}/payin/sessions`
-      : `${this.baseUrl}/direct/payin`;
+    // Tous les providers (WAVE, MTN, MOOV, ORANGE) passent par POST /v1/direct/payin
+    const url = `${this.baseUrl}/direct/payin`;
 
-    const payload: Record<string, any> = isWave
-      ? {
-          reference: params.reference,
-          amount: params.amount,
-          country: 'CI',
-          customerName: params.customerName || 'Client',
-          ...(msisdn ? { msisdn } : {}),
-          action,
-        }
-      : {
-          reference: params.reference,
-          customerName: params.customerName || 'Client',
-          payin: {
-            amount: params.amount,
-            provider: providerCode,
-            country: 'CI',
-            ...(msisdn ? { msisdn } : {}),
-            ...(params.otp ? { otp: params.otp } : {}),
-          },
-          action,
-        };
+    const payload: Record<string, any> = {
+      reference: params.reference,
+      customerName: params.customerName || 'Client',
+      payin: {
+        amount: params.amount,
+        provider: providerCode,
+        country: 'CI',
+        ...(msisdn ? { msisdn } : {}),
+        ...(params.otp ? { otp: params.otp } : {}),
+      },
+      action,
+    };
 
     try {
-      this.logger.log(`[NovaSendService] Calling ${url} (${providerCode}) for ${msisdn}`);
+      this.logger.log(`[NovaSendService] Calling ${url} (${providerCode}). Payload: ${JSON.stringify(payload)}`);
       const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${credentials}`,
@@ -126,7 +117,15 @@ export class NovaSendService {
       });
       return {
         sessionId: data?.id || data?.reference || params.reference,
-        paymentUrl: data?.paymentUrl || data?.checkoutUrl,
+        paymentUrl:
+          data?.paymentUrl ||
+          data?.checkoutUrl ||
+          data?.waveLaunchUrl ||
+          data?.url ||
+          data?.action?.url ||
+          data?.payin?.url ||
+          data?.data?.paymentUrl ||
+          data?.data?.waveLaunchUrl,
         simulated: false,
       };
     } catch (err: any) {

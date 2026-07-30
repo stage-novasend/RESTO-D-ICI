@@ -5,7 +5,7 @@
 import { useEffect, useState } from 'react';
 import {
   Search, Plus, Minus, Send, ChevronDown, Users,
-  UtensilsCrossed, Clock, CheckCircle, X,
+  Clock, CheckCircle, X,
   ChefHat, ShoppingCart, Receipt, Zap, RefreshCw,
   LayoutGrid, MapPin, Timer, Utensils,
 } from 'lucide-react';

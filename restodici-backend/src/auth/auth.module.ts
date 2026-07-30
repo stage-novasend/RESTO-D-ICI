@@ -12,11 +12,12 @@ import { RolesGuard } from './guards/roles.guard';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { CompteB2B } from '../b2b/entities/compte-b2b.entity';
 import { EmailModule } from '../email/email.module';
+import { AuditLog } from '../common/entities/audit-log.entity';
 
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Restaurant, CompteB2B, PasswordReset]),
+    TypeOrmModule.forFeature([User, Restaurant, CompteB2B, PasswordReset, AuditLog]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

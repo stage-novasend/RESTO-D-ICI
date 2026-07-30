@@ -33,6 +33,17 @@ export class AdminController {
     private readonly slaService: SlaService,
   ) {}
 
+  /* ── Onboarding Administrateur ── */
+  @Get('onboarding-status')
+  getOnboardingStatus(@Req() req: any) {
+    return this.adminService.getOnboardingStatus(req.user.userId);
+  }
+
+  @Post('onboarding')
+  completeOnboarding(@Req() req: any, @Body() body: any) {
+    return this.adminService.completeOnboarding(req.user.userId, body);
+  }
+
   /* ── Statistiques plateforme ── */
   @Get('stats')
   getStats() {
@@ -43,6 +54,12 @@ export class AdminController {
   @Get('stats/charts')
   getChartData() {
     return this.adminService.getChartData();
+  }
+
+  /* ── Santé système (dynamique) ── */
+  @Get('health-checks')
+  getHealthChecks() {
+    return this.adminService.getHealthChecks();
   }
 
   /* ── Gestion utilisateurs ── */
@@ -109,6 +126,11 @@ export class AdminController {
     return this.adminService.activerTousUtilisateurs();
   }
 
+  @Delete('users/:id')
+  deleteUser(@Param('id') id: string, @Req() req: any) {
+    return this.adminService.deleteUser(id, req.user?.id);
+  }
+
   /* ── Gestion restaurants ── */
   @Get('restaurants')
   getRestaurants() {
@@ -149,6 +171,11 @@ export class AdminController {
   @HttpCode(HttpStatus.OK)
   toggleRestaurant(@Param('id') id: string) {
     return this.adminService.toggleRestaurant(id);
+  }
+
+  @Delete('restaurants/:id')
+  deleteRestaurant(@Param('id') id: string, @Req() req: any) {
+    return this.adminService.deleteRestaurant(id, req.user?.id);
   }
 
   /* ── Logs d'audit ── */

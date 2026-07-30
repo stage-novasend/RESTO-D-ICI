@@ -162,7 +162,7 @@ export class MenuService {
     // Pour les clients : afficher le prix avec commission incluse
     if (cible === 'CLIENT') {
       articles.forEach((a: any) => {
-        const taux = Math.min(5, Math.max(1, Number(a.restaurant?.tauxCommission ?? 2))) / 100;
+        const taux = Math.min(50, Math.max(0, Number(a.restaurant?.tauxCommission ?? 8))) / 100;
         const prixHT = Number(a.promoActif && a.prixPromo ? a.prixPromo : a.prix);
         a.prixClient = Math.ceil(prixHT * (1 + taux));
       });

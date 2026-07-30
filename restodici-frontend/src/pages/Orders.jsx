@@ -1,7 +1,7 @@
 import React from 'react';
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
+import {
   Clock, CheckCircle, ChefHat, Package, Truck, MapPin,
   ArrowLeft, History, Store
 } from 'lucide-react';
@@ -34,7 +34,8 @@ export default function OrdersPage() {
         setLoading(false);
       }
     };
-    
+
+
     loadOrders();
   }, [user, navigate]);
 
@@ -66,7 +67,7 @@ export default function OrdersPage() {
     <div className="min-h-screen bg-white py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-4 mb-8">
-          <button 
+          <button
             onClick={() => navigate(-1)}
             className="p-2 hover:bg-white hover:rounded-xl transition"
           >
@@ -108,10 +109,9 @@ export default function OrdersPage() {
                   </p>
                 </div>
                 <div className="text-right">
-                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
-                    orderStatusConfig[order.status]?.color || 'text-gray-600'
-                  } bg-opacity-10`}>
-                    {orderStatusConfig[order.status]?.icon && 
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${orderStatusConfig[order.status]?.color || 'text-gray-600'
+                    } bg-opacity-10`}>
+                    {orderStatusConfig[order.status]?.icon &&
                       React.createElement(orderStatusConfig[order.status].icon, { className: "w-3 h-3" })
                     }
                     {orderStatusConfig[order.status]?.label || order.status}
