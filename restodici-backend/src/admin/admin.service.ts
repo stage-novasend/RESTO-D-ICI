@@ -274,12 +274,22 @@ export class AdminService {
     // 4. Cache en mémoire — NestJS CacheModule est toujours intégré
     checks.push({ label: 'Cache mémoire', ok: true });
 
-    // 5. Novasend (paiements) — vérifie la config
+    // 5. Novasend (paiements) — même source de vérité que NovaSendGateway.isConfigured :
+    // clé API sur l'intégration en base, ou variables d'env (jamais une clé
+    // "novasend_api_key" dans AdminConfig, qui n'a jamais été le vrai chemin
+    // de config et faisait toujours échouer ce check).
     try {
-      const novasendKey = await this.configRepo.findOne({
-        where: { key: 'novasend_api_key' },
+      const novasendIntegration = await this.integrationRepo.findOne({
+        where: { name: 'Novasend' },
       });
-      checks.push({ label: 'Novasend (paiements)', ok: !!novasendKey?.value });
+      const hasDbKey = !!novasendIntegration?.apiKey?.trim();
+      const hasEnvKey = !!(
+        process.env.NOVASEND_API_KEY && process.env.NOVASEND_API_SECRET
+      );
+      checks.push({
+        label: 'Novasend (paiements)',
+        ok: hasDbKey || hasEnvKey,
+      });
     } catch {
       checks.push({ label: 'Novasend (paiements)', ok: false });
     }

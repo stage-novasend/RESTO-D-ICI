@@ -1802,7 +1802,16 @@ function ConfigTab() {
     setSaving(s => ({ ...s, security: true }));
     try {
       await Promise.all(Object.entries(secEdits).map(([k, v]) => adminAPI.setConfig(k, v)));
-      await loadConfig();
+      // Mise à jour locale plutôt que loadConfig() : celui-ci repasse `loading`
+      // à true, ce qui remplace tout le panneau Réglages par un spinner
+      // (perçu comme un rechargement de page) pour un simple champ enregistré.
+      setConfigs(prev => {
+        const map = new Map(prev.map(c => [c.key, c]));
+        Object.entries(secEdits).forEach(([k, v]) => {
+          map.set(k, { ...(map.get(k) || { key: k }), value: v });
+        });
+        return Array.from(map.values());
+      });
     } catch { /* ignore */ }
     finally { setSaving(s => ({ ...s, security: false })); }
   };
