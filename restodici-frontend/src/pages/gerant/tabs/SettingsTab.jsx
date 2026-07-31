@@ -463,10 +463,11 @@ export default function SettingsTab({ restaurantId, user }) {
         </div>
       </div>
 
-      <div className="flex gap-6 items-start">
+      <div className="flex flex-col md:flex-row gap-6 items-start">
 
-        {/* ── Sidebar navigation minimale ── */}
-        <aside className="shrink-0" style={{ width: 172, position: 'sticky', top: 80, alignSelf: 'flex-start' }}>
+        {/* ── Sidebar navigation minimale — pleine largeur et non sticky sur mobile,
+               colonne fixe 172px sticky à partir de md ── */}
+        <aside className="shrink-0 w-full md:w-[172px] md:sticky" style={{ top: 80, alignSelf: 'flex-start' }}>
           <nav style={{ background: '#fff', border: '1px solid rgba(255,140,0,0.14)', borderRadius: 18, overflow: 'hidden', boxShadow: '0 2px 10px rgba(139,110,80,0.08)' }}>
             <div style={{ padding: '12px 14px 8px', borderBottom: '1px solid rgba(255,140,0,0.08)' }}>
               <p style={{ margin: 0, fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.14em', color: '#EA580C' }}>
