@@ -39,11 +39,22 @@ server {
     proxy_set_header X-Forwarded-Proto $scheme;
   }
 
+  # index.html ne doit JAMAIS être caché par le navigateur : c'est le seul
+  # fichier sans hash de contenu dans le nom, et il référence les assets
+  # hashés du build courant. Un dist/ est entièrement remplacé à chaque
+  # déploiement (pas de rétention des anciens fichiers hashés) — un
+  # index.html caché pointerait vers des .js/.css qui n'existent plus
+  # (404), ce qui casse silencieusement tout le style et le JS de la page.
+  location = /index.html {
+    add_header Cache-Control "no-cache, no-store, must-revalidate";
+  }
+
   location / {
     try_files $uri $uri/ /index.html;
   }
 
-  # Caching agressif pour les assets statiques
+  # Caching agressif pour les assets statiques (noms hashés par build → un
+  # nouveau build a de nouveaux noms, jamais de collision avec l'ancien cache)
   location ~* \.(?:css|js|woff2?|eot|ttf|otf|svg|png|jpg|jpeg|gif|ico|webp)$ {
     expires 1y;
     access_log off;
