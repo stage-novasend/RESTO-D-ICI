@@ -493,7 +493,7 @@ export default function CheckoutPage() {
           setModalState('failed');
           setCanRetry(true);
         }
-      } catch {}
+      } catch { /* vérification de statut non bloquante */ }
     }, 2000);
 
     return () => clearInterval(pollInterval);

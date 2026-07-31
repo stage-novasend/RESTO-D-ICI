@@ -37,6 +37,20 @@ export default defineConfig([
       'react/no-unescaped-entities': 'warn',
       'no-unused-vars': 'warn',
       'react-hooks/set-state-in-effect': 'off',
+      // Règles "React Compiler readiness" : signalent une vraie dette (God
+      // Components qui redéfinissent des sous-composants dans le render,
+      // Date.now()/refs lus pendant le rendu). Corriger correctement demande
+      // de découper AdminDashboard/StaffDashboard/etc. (cf. audit) — un
+      // chantier à part, pas quelque chose à faire taire silencieusement.
+      // En 'warn' pour rester visible en CI sans bloquer le pipeline.
+      'react-hooks/static-components': 'warn',
+      'react-hooks/purity': 'warn',
+      'react-hooks/refs': 'warn',
+      'react-hooks/preserve-manual-memoization': 'warn',
+      // Idem : fichiers hooks partagés (useAdminRealtime, useLanguage) qui
+      // exportent aussi des constantes — casse le Fast Refresh en dev
+      // uniquement, aucun impact runtime.
+      'react-refresh/only-export-components': 'warn',
     },
   },
 ])

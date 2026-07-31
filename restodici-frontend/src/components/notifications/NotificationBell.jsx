@@ -69,7 +69,7 @@ function mapServerNotif(n) {
 /* Notification native du navigateur. */
 function nativeNotify(n) {
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
-    try { new Notification(n.title, { body: n.body, icon: '/favicon.ico', tag: n.id }); } catch {}
+    try { new Notification(n.title, { body: n.body, icon: '/favicon.ico', tag: n.id }); } catch { /* notification native indisponible/refusée — pas bloquant */ }
   }
 }
 

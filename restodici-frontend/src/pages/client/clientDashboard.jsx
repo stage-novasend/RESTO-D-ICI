@@ -1163,13 +1163,13 @@ export default function ClientDashboard() {
     const next = [...savedAddresses, entry];
     setSavedAddresses(next);
     setAddrForm({ label: '', adresse: '' });
-    try { await authAPI.updateProfile({ adressesSauvegardees: next }); await refreshProfile(); } catch {}
+    try { await authAPI.updateProfile({ adressesSauvegardees: next }); await refreshProfile(); } catch { /* état local déjà à jour, resynchronisera au prochain refresh */ }
   };
 
   const removeAddress = async (id) => {
     const next = savedAddresses.filter(a => a.id !== id);
     setSavedAddresses(next);
-    try { await authAPI.updateProfile({ adressesSauvegardees: next }); await refreshProfile(); } catch {}
+    try { await authAPI.updateProfile({ adressesSauvegardees: next }); await refreshProfile(); } catch { /* état local déjà à jour, resynchronisera au prochain refresh */ }
   };
 
   const activeOrders  = orders.filter(o => !['LIVREE', 'ANNULEE'].includes(o.statut));

@@ -60,7 +60,7 @@ function savePayEntry(entry) {
     const pruned = all.filter(p => new Date(p.paidAt).getTime() > cutoff);
     pruned.push(entry);
     localStorage.setItem(PAY_HIST_KEY, JSON.stringify(pruned));
-  } catch {}
+  } catch { /* historique local best-effort — pas critique */ }
 }
 
 const PAY_MODE_LABEL = {

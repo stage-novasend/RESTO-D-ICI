@@ -182,7 +182,7 @@ export default function ServeurPage() {
   const updateTableCount = (n) => {
     const count = Math.max(1, n);
     setTableCount(count);
-    try { localStorage.setItem('resto_table_count', String(count)); } catch {}
+    try { localStorage.setItem('resto_table_count', String(count)); } catch { /* préférence locale best-effort */ }
   };
 
   const now = useClock();

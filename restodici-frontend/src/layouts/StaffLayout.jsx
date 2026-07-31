@@ -330,7 +330,7 @@ export default function StaffLayout() {
         g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
         o.connect(g); g.connect(ac.destination);
         o.start(); o.stop(ac.currentTime + 0.3);
-      } catch (_) {}
+      } catch { /* Web Audio indisponible (permissions/navigateur) — alerte silencieuse seulement */ }
     });
 
     s.on('commande.statut', p => {
@@ -350,7 +350,7 @@ export default function StaffLayout() {
         g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.4);
         o.connect(g); g.connect(ac.destination);
         o.start(); o.stop(ac.currentTime + 0.4);
-      } catch (_) {}
+      } catch { /* Web Audio indisponible (permissions/navigateur) — alerte silencieuse seulement */ }
     });
 
     return () => s.disconnect();

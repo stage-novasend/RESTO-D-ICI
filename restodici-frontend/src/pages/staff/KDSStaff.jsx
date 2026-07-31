@@ -81,7 +81,7 @@ function persistHistory(orders) {
   try {
     const done = orders.filter(o => ['LIVREE','ANNULEE'].includes(o.statut));
     if (done.length > 0) localStorage.setItem(HIST_KEY, JSON.stringify(done));
-  } catch {}
+  } catch { /* historique local best-effort — pas critique */ }
 }
 
 /* ── Tick global (pour les timers) ── */
@@ -129,7 +129,7 @@ function beep() {
     g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.3);
     o.connect(g); g.connect(ac.destination);
     o.start(); o.stop(ac.currentTime + 0.3);
-  } catch (_) {}
+  } catch { /* Web Audio indisponible (permissions/navigateur) — alerte silencieuse seulement */ }
 }
 
 function lieu(order) {

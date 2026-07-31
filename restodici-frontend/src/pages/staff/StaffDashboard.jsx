@@ -709,7 +709,7 @@ export default function StaffDashboard() {
     const entry = { id: `${Date.now()}-${Math.random().toString(16).slice(2)}`, type, title, desc, at: new Date().toISOString() };
     setActionHistory(cur => {
       const next = [entry, ...cur].slice(0, 10);
-      try { localStorage.setItem(historyKey, JSON.stringify(next)); } catch {}
+      try { localStorage.setItem(historyKey, JSON.stringify(next)); } catch { /* historique local best-effort — pas critique */ }
       return next;
     });
   }, [historyKey]);
@@ -718,7 +718,7 @@ export default function StaffDashboard() {
     try {
       const res = await commandesService.getRestaurantActivity(20);
       setServerActivity(Array.isArray(res.data) ? res.data : []);
-    } catch {}
+    } catch { /* activité non critique — reste vide en cas d'échec */ }
   }, []);
 
   const refresh = useCallback(async ({ silent = false } = {}) => {
@@ -732,7 +732,7 @@ export default function StaffDashboard() {
       setOrders(kdsRes.status === 'fulfilled' ? (kdsRes.value.data || []) : []);
       setB2bOrders(b2bRes.status === 'fulfilled' ? (b2bRes.value.data || []) : []);
       setStocks(stocksRes.status === 'fulfilled' ? (stocksRes.value.data || []) : []);
-    } catch {}
+    } catch { /* chaque source est déjà tolérée individuellement via allSettled */ }
     finally { if (!silent) setLoading(false); }
   }, []);
 
