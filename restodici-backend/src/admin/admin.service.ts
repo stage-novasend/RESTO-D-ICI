@@ -1102,6 +1102,11 @@ export class AdminService {
         totalCommandes: number;
         totalCommissions: number;
         tauxCommission: number;
+        detteEnCours: number;
+        detteEnRetard: number;
+        bloque: boolean;
+        aVerser: number;
+        verse: number;
       }
     >();
 
@@ -1114,6 +1119,11 @@ export class AdminService {
         totalCommandes: 0,
         totalCommissions: 0,
         tauxCommission: Number(r.tauxCommission),
+        detteEnCours: 0,
+        detteEnRetard: 0,
+        bloque: false,
+        aVerser: 0,
+        verse: 0,
       });
     }
 
@@ -1127,11 +1137,28 @@ export class AdminService {
           totalCommandes: 0,
           totalCommissions: 0,
           tauxCommission: Number(c.tauxCommission),
+          detteEnCours: 0,
+          detteEnRetard: 0,
+          bloque: false,
+          aVerser: 0,
+          verse: 0,
         });
       }
       const entry = parRestaurant.get(id)!;
       entry.totalCommandes += 1;
       entry.totalCommissions += Number(c.montantCommission);
+
+      if (c.statut === 'DU') {
+        entry.detteEnCours += Number(c.montantCommission);
+        if (c.dateEcheance && new Date(c.dateEcheance) < now) {
+          entry.detteEnRetard += Number(c.montantCommission);
+          entry.bloque = true;
+        }
+      } else if (c.statut === 'A_VERSER' || c.statut === 'EN_COURS') {
+        entry.aVerser += Number(c.montantNet ?? c.montantCommande - c.montantCommission);
+      } else if (c.statut === 'VERSE') {
+        entry.verse += Number(c.montantNet ?? c.montantCommande - c.montantCommission);
+      }
     }
 
     return {
@@ -1141,8 +1168,51 @@ export class AdminService {
       parRestaurant: [...parRestaurant.values()].map((r) => ({
         ...r,
         totalCommissions: Math.round(r.totalCommissions),
+        detteEnCours: Math.round(r.detteEnCours),
+        detteEnRetard: Math.round(r.detteEnRetard),
+        aVerser: Math.round(r.aVerser),
+        verse: Math.round(r.verse),
       })),
     };
+  }
+
+  /** Détail des lignes commission/dette/versement d'un restaurant (pour le drill-down admin). */
+  async getCommissionLignes(restaurantId: string) {
+    const lignes = await this.commissionRepo.find({
+      where: { restaurantId },
+      order: { createdAt: 'DESC' },
+      take: 200,
+    });
+    return lignes.map((l) => ({
+      id: l.id,
+      commandeId: l.commandeId,
+      montantCommande: Number(l.montantCommande),
+      tauxCommission: Number(l.tauxCommission),
+      montantCommission: Number(l.montantCommission),
+      montantNet: l.montantNet != null ? Number(l.montantNet) : null,
+      modePaiement: l.modePaiement,
+      statut: l.statut,
+      dateEcheance: l.dateEcheance,
+      dateReglement: l.dateReglement,
+      payoutReference: l.payoutReference,
+      payoutProvider: l.payoutProvider,
+      payoutErreur: l.payoutErreur,
+      createdAt: l.createdAt,
+    }));
+  }
+
+  /** Admin marque une dette espèces comme réglée (virement reçu manuellement). */
+  async regulariserDetteCommission(commissionId: string) {
+    const ligne = await this.commissionRepo.findOne({ where: { id: commissionId } });
+    if (!ligne) throw new NotFoundException('Ligne de commission introuvable');
+    if (ligne.statut !== 'DU') {
+      throw new BadRequestException('Cette ligne n\'est pas une dette en attente');
+    }
+    ligne.statut = 'PAYE';
+    ligne.dateReglement = new Date();
+    await this.commissionRepo.save(ligne);
+    this.notifyAdmins('commissions', { restaurantId: ligne.restaurantId, dettePayee: commissionId });
+    return { id: ligne.id, statut: ligne.statut };
   }
 
   async updateTauxCommission(restaurantId: string, taux: number) {

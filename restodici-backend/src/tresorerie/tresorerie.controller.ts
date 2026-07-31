@@ -33,6 +33,18 @@ export class TresorerieController {
     return this.tresorerieService.getRevenueStats(restaurantId, period);
   }
 
+  // GET /tresorerie/commissions — dette espèces / versements en ligne du restaurant
+  @Get('commissions')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  getCommissionsResume(@Req() req) {
+    const restaurantId = req.user?.restaurant?.id;
+    if (!restaurantId) {
+      throw new BadRequestException('Restaurant ID required');
+    }
+    return this.tresorerieService.getCommissionsResume(restaurantId);
+  }
+
   // GET /tresorerie/export/syscohada?period=monthly
   @Get('export/syscohada')
   @UseGuards(AuthGuard('jwt'), RolesGuard)

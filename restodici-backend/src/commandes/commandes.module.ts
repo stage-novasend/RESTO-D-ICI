@@ -18,6 +18,7 @@ import { User } from '../auth/entities/user.entity';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { HorairesGuard } from './guards/horaires.guard';
 import { StorageModule } from '../storage/storage.module';
+import { PaymentGatewaysModule } from '../paiements/gateways/payment-gateways.module';
 
 @Module({
   imports: [
@@ -37,6 +38,7 @@ import { StorageModule } from '../storage/storage.module';
     PromosModule,
     NotificationsModule,
     StorageModule,
+    PaymentGatewaysModule,
   ],
   controllers: [CommandesController],
   providers: [CommandesService, CommandesGateway, HorairesGuard],

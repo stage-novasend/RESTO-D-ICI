@@ -14,6 +14,20 @@ export interface PaymentGatewayResult {
   status: 'PENDING' | 'SUCCESS' | 'FAILED';
 }
 
+export interface PayoutOptions {
+  amount: number;
+  provider: string; // 'WAVE' | 'ORANGE' | 'MOMO' | 'MOOV'
+  phone: string;
+  reference: string;
+  recipientName?: string;
+}
+
+export interface PayoutResult {
+  payoutId: string;
+  status: 'PROCESSING' | 'PROCESSED' | 'FAILED' | 'EXPIRED';
+  raw?: any;
+}
+
 export interface PaymentGateway {
   readonly name: string;
   initiate(options: InitiatePaymentOptions): Promise<PaymentGatewayResult>;
@@ -23,6 +37,14 @@ export interface PaymentGateway {
    */
   verifyWebhook(payload: any, signature?: string, rawBody?: string): boolean;
   handleWebhook(payload: any): Promise<PaymentWebhookResult>;
+  /**
+   * Verse de l'argent vers un tiers (ex: reversement au restaurant après
+   * commission). Optionnel — tous les gateways ne le supportent pas
+   * (ex: pas de payout API pour un virement bancaire classique).
+   */
+  payout?(options: PayoutOptions): Promise<PayoutResult>;
+  /** Interroge le statut d'un payout précédemment initié (si asynchrone). */
+  getPayoutStatus?(reference: string): Promise<PayoutResult>;
 }
 
 export interface PaymentWebhookResult {

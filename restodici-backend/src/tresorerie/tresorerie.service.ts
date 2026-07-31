@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { Commande, StatutCommande } from '../commandes/entities/commande.entity';
+import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
 import axios from 'axios';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const PDFDocument = require('pdfkit');
@@ -29,7 +30,60 @@ export class TresorerieService {
   constructor(
     @InjectRepository(Commande)
     private commandeRepository: Repository<Commande>,
+    @InjectRepository(CommissionPlateforme)
+    private commissionRepository: Repository<CommissionPlateforme>,
   ) {}
+
+  /** Vue côté restaurant : dette commission espèces due, statut bloqué,
+   * versements en ligne à venir/reçus. */
+  async getCommissionsResume(restaurantId: string) {
+    const lignes = await this.commissionRepository.find({
+      where: { restaurantId },
+      order: { createdAt: 'DESC' },
+      take: 200,
+    });
+
+    const now = new Date();
+    let detteEnCours = 0;
+    let detteEnRetard = 0;
+    let bloque = false;
+    let aVerser = 0;
+    let verse = 0;
+
+    for (const l of lignes) {
+      if (l.statut === 'DU') {
+        detteEnCours += Number(l.montantCommission);
+        if (l.dateEcheance && new Date(l.dateEcheance) < now) {
+          detteEnRetard += Number(l.montantCommission);
+          bloque = true;
+        }
+      } else if (l.statut === 'A_VERSER' || l.statut === 'EN_COURS') {
+        aVerser += Number(l.montantNet ?? l.montantCommande - l.montantCommission);
+      } else if (l.statut === 'VERSE') {
+        verse += Number(l.montantNet ?? l.montantCommande - l.montantCommission);
+      }
+    }
+
+    return {
+      bloque,
+      detteEnCours: Math.round(detteEnCours),
+      detteEnRetard: Math.round(detteEnRetard),
+      aVerser: Math.round(aVerser),
+      verse: Math.round(verse),
+      lignes: lignes.map((l) => ({
+        id: l.id,
+        commandeId: l.commandeId,
+        montantCommande: Number(l.montantCommande),
+        montantCommission: Number(l.montantCommission),
+        montantNet: l.montantNet != null ? Number(l.montantNet) : null,
+        modePaiement: l.modePaiement,
+        statut: l.statut,
+        dateEcheance: l.dateEcheance,
+        dateReglement: l.dateReglement,
+        createdAt: l.createdAt,
+      })),
+    };
+  }
 
   async generateReceiptPdf(data: {
     commandeId: string;

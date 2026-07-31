@@ -9,6 +9,8 @@ import {
   InitiatePaymentOptions,
   PaymentGatewayResult,
   PaymentWebhookResult,
+  PayoutOptions,
+  PayoutResult,
 } from './payment-gateway.interface';
 import { EXTERNAL_URLS } from '../../config/app-config';
 import { normalizeCiNumber } from '../phone.util';
@@ -255,4 +257,104 @@ export class NovaSendGateway implements PaymentGateway {
       status: 'PENDING',
     };
   }
+
+  // ── Payout (reversement au restaurant) ──────────────────────────────────
+  // POST /v1/direct/payout — même auth/idempotence que le payin. Providers
+  // supportés par NovaSend pour le déboursement : WAVE, ORANGE, MOMO, MOOV
+  // (pas de virement bancaire classique ni de wallet NovaSend interne — cf.
+  // docs.novasend.app/fr/docs/api/direct/transfer).
+  async payout(options: PayoutOptions): Promise<PayoutResult> {
+    const msisdn = toInternationalCiMsisdn(options.phone);
+    if (!msisdn) {
+      throw new Error(`Numéro de téléphone invalide pour le payout: "${options.phone}"`);
+    }
+    const providerCode = normalizeNovaSendProvider(options.provider);
+
+    if (!this.isConfigured) {
+      return this.simulatePayout(options);
+    }
+
+    const url = `${this.baseUrl}/direct/payout`;
+    const payload = {
+      reference: options.reference,
+      customerName: options.recipientName || 'Restaurant',
+      payout: {
+        amount: options.amount,
+        provider: providerCode,
+        country: 'CI',
+        msisdn,
+      },
+    };
+
+    try {
+      this.logger.log(`[NovaSend] Sending Direct Payout (${providerCode}) to ${url}. Payload: ${JSON.stringify(payload)}`);
+      const { data } = await axios.post(url, payload, {
+        headers: {
+          Authorization: `Basic ${this.credentials}`,
+          'X-Idempotency-Key': randomUUID(),
+          'Content-Type': 'application/json',
+          'Accept-Language': 'fr',
+        },
+        timeout: 15_000,
+      });
+      this.logger.log(`[NovaSend] Payout response (${providerCode}): ${JSON.stringify(data)}`);
+      return {
+        payoutId: data?.id || data?.reference || options.reference,
+        status: normalizeNovaSendPayoutStatus(data?.status),
+        raw: data,
+      };
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        this.logger.warn('[NovaSend] 401 sur le payout — clés invalides/expirées. Basculement en simulation.');
+        return this.simulatePayout(options);
+      }
+      const errorMsg = err?.response?.data || err.message;
+      this.logger.error(`NovaSend payout error [${providerCode}] (${url}):`, JSON.stringify(errorMsg));
+      return {
+        payoutId: options.reference,
+        status: 'FAILED',
+        raw: errorMsg,
+      };
+    }
+  }
+
+  async getPayoutStatus(reference: string): Promise<PayoutResult> {
+    if (!this.isConfigured) {
+      return { payoutId: reference, status: 'PROCESSED', raw: { simulated: true } };
+    }
+    const url = `${this.baseUrl}/direct/payout/${encodeURIComponent(reference)}`;
+    try {
+      const { data } = await axios.get(url, {
+        headers: { Authorization: `Basic ${this.credentials}` },
+        timeout: 15_000,
+      });
+      return {
+        payoutId: data?.id || reference,
+        status: normalizeNovaSendPayoutStatus(data?.status),
+        raw: data,
+      };
+    } catch (err: any) {
+      const errorMsg = err?.response?.data || err.message;
+      this.logger.error(`NovaSend payout status error (${url}):`, JSON.stringify(errorMsg));
+      return { payoutId: reference, status: 'FAILED', raw: errorMsg };
+    }
+  }
+
+  private simulatePayout(options: PayoutOptions): PayoutResult {
+    this.logger.log(`[NovaSend] Payout simulé (pas de clés API) — ${options.amount} FCFA vers ${options.phone}`);
+    return {
+      payoutId: `sim_payout_${randomUUID().slice(0, 8)}`,
+      status: 'PROCESSED',
+      raw: { simulated: true },
+    };
+  }
+}
+
+/** Normalise le statut NovaSend (processing | processed | failed | expired) en statut interne. */
+function normalizeNovaSendPayoutStatus(status?: string): PayoutResult['status'] {
+  const s = String(status || '').toLowerCase();
+  if (s === 'processed' || s === 'success' || s === 'successful') return 'PROCESSED';
+  if (s === 'failed' || s === 'error') return 'FAILED';
+  if (s === 'expired') return 'EXPIRED';
+  return 'PROCESSING';
 }

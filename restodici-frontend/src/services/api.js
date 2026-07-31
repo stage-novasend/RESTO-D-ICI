@@ -313,6 +313,8 @@ export const tresorerieAPI = {
 
   configureBudgetAlerts: (config) =>
     api.post("/tresorerie/budget-alerts", config),
+
+  getCommissionsResume: () => api.get("/tresorerie/commissions"),
 };
 
 // restaurant
@@ -359,6 +361,8 @@ export const adminAPI = {
   getHealthChecks:    ()              => api.get("/admin/health-checks"),
   getCommissions:     ()              => api.get("/admin/commissions"),
   updateTauxCommission:(id, taux)     => api.patch(`/admin/restaurants/${id}/commission`, { taux }),
+  getCommissionLignes: (restaurantId) => api.get(`/admin/commissions/${restaurantId}/lignes`),
+  regulariserDette:    (commissionId) => api.patch(`/admin/commissions/${commissionId}/regulariser`),
   getBackups:         ()              => api.get("/admin/backup/list"),
   runBackup:          ()              => api.post("/admin/backup/run"),
   purgeHistorique:    (target, before) => api.post("/admin/maintenance/purge", { target, before }),

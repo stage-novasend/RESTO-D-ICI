@@ -1,7 +1,7 @@
 /* FinanceTab — extrait de GerantDashboard */
 import { useCallback, useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
-import { AlertTriangle, CreditCard, DollarSign, Download, FileText, PieChart, Plus, ShoppingBag, Wallet } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CreditCard, DollarSign, Download, FileText, PieChart, Plus, ShoppingBag, Wallet } from "lucide-react";
 import { tresorerieAPI } from "../../../services/api";
 import { formatFCFA } from "../../../utils/formatters";
 import { buildFinanceReportBlob } from "../../../utils/syscohada-pdf";
@@ -9,6 +9,7 @@ import { EXPENSE_CATS, downloadAndOpenBlob } from "../_helpers";
 
 export default function FinanceTab({ restaurantId }) {
   const [kpiData, setKpiData]   = useState(null);
+  const [commissions, setCommissions] = useState(null);
   const [loading, setLoading]   = useState(true);
   const [period, setPeriod]     = useState('day');
   const [saving, setSaving]     = useState(false);
@@ -26,8 +27,12 @@ export default function FinanceTab({ restaurantId }) {
     if (!restaurantId) return;
     setLoading(true);
     try {
-      const r = await tresorerieAPI.getStats(period);
-      setKpiData(r.data);
+      const [statsRes, commRes] = await Promise.allSettled([
+        tresorerieAPI.getStats(period),
+        tresorerieAPI.getCommissionsResume(),
+      ]);
+      setKpiData(statsRes.status === 'fulfilled' ? statsRes.value.data : { caJour: 0, caSemaine: 0, caMois: 0, nbCommandes: 0, ticketMoyen: 0, margesBrutes: 0 });
+      setCommissions(commRes.status === 'fulfilled' ? commRes.value.data : null);
     } catch {
       setKpiData({ caJour: 0, caSemaine: 0, caMois: 0, nbCommandes: 0, ticketMoyen: 0, margesBrutes: 0 });
     } finally { setLoading(false); }
@@ -167,6 +172,75 @@ export default function FinanceTab({ restaurantId }) {
           </div>
         ))}
       </div>
+
+      {/* ── Commission plateforme : dette espèces + versements en ligne ── */}
+      {commissions && (
+        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
+              <Wallet className="w-3.5 h-3.5 text-[#EA580C]" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-[#1A0C00]">Commission plateforme</h4>
+              <p className="text-[10px] text-[#8B6E50]">Dette espèces à régler · versements en ligne reçus de SANKOFA-LAB</p>
+            </div>
+          </div>
+
+          {commissions.bloque && (
+            <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-4 text-sm font-semibold" style={{ background: '#FEF2F2', color: '#DC2626' }}>
+              <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+              Commission espèces impayée depuis plus de 7 jours — les nouvelles commandes sont bloquées jusqu'à régularisation par l'administration.
+            </div>
+          )}
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <div className="rounded-xl p-4" style={{ background: commissions.detteEnRetard > 0 ? '#FEF2F2' : '#F8FAFC' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: commissions.detteEnRetard > 0 ? '#DC2626' : '#8B6E50' }}>Dette espèces due</p>
+              <p className="text-xl font-extrabold mt-1" style={{ color: commissions.detteEnRetard > 0 ? '#DC2626' : '#1A0C00' }}>{formatFCFA(commissions.detteEnCours)}</p>
+              {commissions.detteEnRetard > 0 && <p className="text-[10px] text-[#DC2626] mt-1">dont {formatFCFA(commissions.detteEnRetard)} en retard</p>}
+            </div>
+            <div className="rounded-xl p-4" style={{ background: '#EFF6FF' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#2563EB]">À recevoir (en ligne)</p>
+              <p className="text-xl font-extrabold text-[#2563EB] mt-1">{formatFCFA(commissions.aVerser)}</p>
+              <p className="text-[10px] text-[#2563EB]/70 mt-1">Versement automatique en cours de traitement</p>
+            </div>
+            <div className="rounded-xl p-4" style={{ background: '#ECFDF5' }}>
+              <p className="text-[10px] font-semibold uppercase tracking-wide text-[#059669] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Déjà reçu</p>
+              <p className="text-xl font-extrabold text-[#059669] mt-1">{formatFCFA(commissions.verse)}</p>
+            </div>
+          </div>
+
+          {commissions.lignes?.length > 0 && (
+            <div className="mt-4 overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="border-b border-[#E2E8F0]">
+                    {['Date', 'Mode', 'Commission', 'Statut', 'Échéance'].map(h => (
+                      <th key={h} className="text-left py-2 px-2 font-semibold text-[#8B6E50] uppercase tracking-wide text-[10px]">{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {commissions.lignes.slice(0, 8).map(l => (
+                    <tr key={l.id} className="border-b border-[#F1F5F9]">
+                      <td className="py-2 px-2 text-[#334155]">{new Date(l.createdAt).toLocaleDateString('fr-FR')}</td>
+                      <td className="py-2 px-2 text-[#334155]">{l.modePaiement || '—'}</td>
+                      <td className="py-2 px-2 font-semibold text-[#1A0C00]">{formatFCFA(l.montantCommission)}</td>
+                      <td className="py-2 px-2">
+                        <span className="rounded-full px-2 py-0.5 font-semibold" style={{
+                          background: l.statut === 'DU' ? '#FEF3C7' : l.statut === 'VERSE' || l.statut === 'PAYE' ? '#ECFDF5' : l.statut === 'ECHEC' ? '#FEF2F2' : '#EFF6FF',
+                          color: l.statut === 'DU' ? '#92400E' : l.statut === 'VERSE' || l.statut === 'PAYE' ? '#059669' : l.statut === 'ECHEC' ? '#DC2626' : '#2563EB',
+                        }}>{l.statut}</span>
+                      </td>
+                      <td className="py-2 px-2 text-[#8B6E50]">{l.dateEcheance ? new Date(l.dateEcheance).toLocaleDateString('fr-FR') : '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* ── Row 2 : Paiements + Budget ── */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">

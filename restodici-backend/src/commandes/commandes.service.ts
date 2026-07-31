@@ -6,7 +6,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DataSource, In } from 'typeorm';
+import { Repository, DataSource, In, LessThan } from 'typeorm';
 import {
   Commande,
   StatutCommande,
@@ -26,6 +26,13 @@ import { PromosService } from '../promos/promos.service';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PaymentGatewayRegistry } from '../paiements/gateways/payment-gateway.registry';
+
+// Modes de paiement dont le versement au restaurant peut être automatisé via
+// l'API payout NovaSend (mobile money uniquement — pas de virement bancaire
+// classique ni de wallet NovaSend interne côté API).
+const AUTO_PAYOUT_OPERATORS = new Set(['WAVE', 'ORANGE', 'MTN', 'MOOV']);
+const COMMISSION_DEBT_DEADLINE_DAYS = 7;
 
 const DIGITAL_MODES = [
   ModePaiementCommande.ORANGE_MONEY,
@@ -67,6 +74,7 @@ export class CommandesService {
     private smsService: SmsService,
     private fcmService: FcmService,
     private notificationsService: NotificationsService,
+    private paymentGatewayRegistry: PaymentGatewayRegistry,
   ) {}
 
   /**
@@ -97,6 +105,117 @@ export class CommandesService {
     }
   }
 
+  /**
+   * Calcule et enregistre le cycle commission/versement d'une commande livrée :
+   * - paiement encaissé en ligne par la plateforme → la plateforme doit verser
+   *   le net au restaurant (payout NovaSend automatique si possible) ;
+   * - paiement encaissé en espèces par le restaurant → le restaurant doit sa
+   *   commission à la plateforme (dette, échéance 7 jours).
+   * Utilise montantNetRestaurant/montantCommissionPlateforme déjà calculés à
+   * la création de la commande (taux figé au moment de l'achat), plutôt que
+   * de recalculer depuis montantTotal qui inclut les frais de livraison.
+   */
+  private async processDeliveryCommission(commande: Commande): Promise<void> {
+    const taux = Number(commande.tauxCommission ?? commande.restaurant.tauxCommission ?? 8);
+    const montantCommande = Number(commande.montantTotal);
+    const montantCommission = Number(
+      commande.montantCommissionPlateforme ??
+        parseFloat(((montantCommande * taux) / 100).toFixed(2)),
+    );
+    const montantNet = Number(
+      commande.montantNetRestaurant ?? montantCommande - montantCommission,
+    );
+    const isOnline = commande.paiementCollectePlateforme === true;
+
+    const row = this.commissionRepo.create({
+      commandeId: commande.id,
+      restaurantId: commande.restaurant.id,
+      montantCommande,
+      tauxCommission: taux,
+      montantCommission,
+      montantNet,
+      modePaiement: commande.modePaiement ?? null,
+      statut: isOnline ? 'A_VERSER' : 'DU',
+      dateEcheance: isOnline
+        ? null
+        : new Date(Date.now() + COMMISSION_DEBT_DEADLINE_DAYS * 24 * 60 * 60 * 1000),
+    });
+    const saved = await this.commissionRepo.save(row);
+
+    if (isOnline) {
+      await this.attemptRestaurantPayout(saved, commande.restaurant);
+    }
+  }
+
+  /** Tente un payout NovaSend automatique vers le restaurant ; laisse la ligne
+   * en A_VERSER (versement manuel par l'admin) si le mode de réception n'est
+   * pas automatisable (NovaSend interne / bancaire) ou si l'appel échoue. */
+  private async attemptRestaurantPayout(
+    commission: CommissionPlateforme,
+    restaurant: Restaurant,
+  ): Promise<void> {
+    const details = restaurant.modeReceptionDetails;
+    const operator = (details?.operator || '').toUpperCase();
+    const phone = details?.telephone;
+
+    if (
+      restaurant.modeReceptionPaiement !== 'MOBILE_MONEY' ||
+      !AUTO_PAYOUT_OPERATORS.has(operator) ||
+      !phone
+    ) {
+      // Pas automatisable via l'API NovaSend (NOVASEND interne, BANCAIRE, ou
+      // config incomplète) — reste "A_VERSER" pour versement manuel par l'admin.
+      return;
+    }
+
+    try {
+      const gateway = await this.paymentGatewayRegistry.getGateway('novasend');
+      if (!gateway.payout) return;
+
+      await this.commissionRepo.update(commission.id, {
+        statut: 'EN_COURS',
+        payoutProvider: operator,
+        payoutMsisdn: phone,
+      });
+
+      const result = await gateway.payout({
+        amount: Number(commission.montantNet),
+        provider: operator,
+        phone,
+        reference: `payout-commission-${commission.id}`,
+        recipientName: restaurant.nom,
+      });
+
+      await this.commissionRepo.update(commission.id, {
+        statut: result.status === 'PROCESSED' ? 'VERSE' : result.status === 'FAILED' || result.status === 'EXPIRED' ? 'ECHEC' : 'EN_COURS',
+        payoutReference: result.payoutId,
+        dateReglement: result.status === 'PROCESSED' ? new Date() : null,
+        payoutErreur: result.status === 'FAILED' ? JSON.stringify(result.raw).slice(0, 2000) : null,
+      });
+    } catch (err) {
+      this.logger.error(
+        `Payout NovaSend échoué pour commission ${commission.id}: ${(err as Error)?.message || err}`,
+      );
+      await this.commissionRepo.update(commission.id, {
+        statut: 'ECHEC',
+        payoutErreur: String((err as Error)?.message || err).slice(0, 2000),
+      });
+    }
+  }
+
+  /** Un restaurant est bloqué pour de nouvelles commandes s'il a au moins une
+   * dette de commission espèces (statut DU) dont l'échéance est dépassée. */
+  async hasOverdueCommissionDebt(restaurantId: string): Promise<boolean> {
+    const count = await this.commissionRepo.count({
+      where: {
+        restaurantId,
+        statut: 'DU',
+        dateEcheance: LessThan(new Date()),
+      },
+    });
+    return count > 0;
+  }
+
   private generateOrderNumber(): string {
     const year = new Date().getFullYear();
     const ts = Date.now().toString(36).toUpperCase().slice(-5);
@@ -122,6 +241,12 @@ export class CommandesService {
       !dto.adresseLivraison
     ) {
       throw new BadRequestException('Adresse obligatoire en mode livraison');
+    }
+
+    if (await this.hasOverdueCommissionDebt(restaurantId)) {
+      throw new BadRequestException(
+        'Ce restaurant a une commission impayée depuis plus de 7 jours — nouvelles commandes temporairement indisponibles.',
+      );
     }
 
     const numero = this.generateOrderNumber();
@@ -595,17 +720,7 @@ export class CommandesService {
           'LIVREE',
         );
       }
-      const taux = Number(commande.restaurant.tauxCommission ?? 8);
-      const montant = Number(commande.montantTotal);
-      await this.commissionRepo.save(
-        this.commissionRepo.create({
-          commandeId: saved.id,
-          restaurantId: commande.restaurant.id,
-          montantCommande: montant,
-          tauxCommission: taux,
-          montantCommission: parseFloat(((montant * taux) / 100).toFixed(2)),
-        }),
-      );
+      await this.processDeliveryCommission(saved);
     }
 
     return saved;

@@ -103,6 +103,16 @@ export class Commande {
   @Column({ type: 'enum', enum: ModePaiementCommande, nullable: true })
   modePaiement?: ModePaiementCommande;
 
+  /**
+   * true si la plateforme a elle-même encaissé le paiement (webhook NovaSend
+   * en ligne) ; false si le restaurant a encaissé directement (espèces,
+   * terminal carte propre via registerPayment). Détermine si la commission
+   * doit être versée au restaurant (plateforme a encaissé) ou si le
+   * restaurant doit sa commission à la plateforme (dette).
+   */
+  @Column({ default: false })
+  paiementCollectePlateforme!: boolean;
+
   @Column('decimal', { precision: 10, scale: 2, nullable: true })
   montantRemise?: number;
 

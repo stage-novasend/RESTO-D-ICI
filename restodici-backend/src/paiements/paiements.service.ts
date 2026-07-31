@@ -375,6 +375,7 @@ export class PaiementsService implements OnModuleInit {
       estPaye: true,
       payeAt,
       modePaiement,
+      paiementCollectePlateforme: true,
     });
     await this.updatePaymentStatus(reference, PaymentStatus.SUCCESS);
     await this.paymentLock.cacheStatus(reference, PaymentStatus.SUCCESS);

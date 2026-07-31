@@ -402,6 +402,16 @@ export class AdminController {
     return this.adminService.updateTauxCommission(id, Number(taux));
   }
 
+  @Get('commissions/:restaurantId/lignes')
+  getCommissionLignes(@Param('restaurantId') restaurantId: string) {
+    return this.adminService.getCommissionLignes(restaurantId);
+  }
+
+  @Patch('commissions/:id/regulariser')
+  regulariserDetteCommission(@Param('id') id: string) {
+    return this.adminService.regulariserDetteCommission(id);
+  }
+
   @Post('maintenance/purge')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
