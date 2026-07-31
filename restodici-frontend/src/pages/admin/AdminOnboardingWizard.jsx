@@ -86,8 +86,8 @@ export default function AdminOnboardingWizard() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6"
-        style={{ background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)' }}
+        className="fixed inset-0 flex items-center justify-center p-4 sm:p-6"
+        style={{ zIndex: 2000, background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)' }}
       >
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 20 }}

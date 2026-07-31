@@ -206,7 +206,7 @@ export default function OnboardingWizard() {
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
-        style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(17,16,13,0.60)', backdropFilter: 'blur(4px)' }}
+        style={{ position: 'fixed', inset: 0, zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(17,16,13,0.60)', backdropFilter: 'blur(4px)' }}
       >
       <div style={{ position: 'relative', width: '100%', maxWidth: 420, borderRadius: 24, background: '#fff', boxShadow: '0 24px 80px rgba(0,0,0,0.20)', overflow: 'hidden' }}>
 
