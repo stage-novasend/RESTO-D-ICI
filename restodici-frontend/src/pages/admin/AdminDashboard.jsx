@@ -1798,16 +1798,22 @@ function ConfigTab() {
     finally { setSaving(s => ({ ...s, [key]: false })); }
   };
 
-  const saveSecurityFields = async () => {
+  // `keys` limite la sauvegarde aux champs du panneau réellement affiché.
+  // Sans ça, secEdits (peuplé avec TOUTES les clés de config au premier
+  // chargement) faisait ressauvegarder chaque clé de la plateforme entière
+  // (twilio_*, sla_*, rate_limit_*…) au moindre clic sur un seul champ —
+  // une rafale de 20+ PATCH simultanés qui déclenchait le rate limit (429).
+  const saveSecurityFields = async (keys) => {
     setSaving(s => ({ ...s, security: true }));
     try {
-      await Promise.all(Object.entries(secEdits).map(([k, v]) => adminAPI.setConfig(k, v)));
+      const entries = (keys ?? Object.keys(secEdits)).map(k => [k, secEdits[k] ?? '']);
+      await Promise.all(entries.map(([k, v]) => adminAPI.setConfig(k, v)));
       // Mise à jour locale plutôt que loadConfig() : celui-ci repasse `loading`
       // à true, ce qui remplace tout le panneau Réglages par un spinner
       // (perçu comme un rechargement de page) pour un simple champ enregistré.
       setConfigs(prev => {
         const map = new Map(prev.map(c => [c.key, c]));
-        Object.entries(secEdits).forEach(([k, v]) => {
+        entries.forEach(([k, v]) => {
           map.set(k, { ...(map.get(k) || { key: k }), value: v });
         });
         return Array.from(map.values());
@@ -1968,7 +1974,7 @@ function ConfigTab() {
               <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Fuseau horaire</label>{Inp('timezone', 'text', 'Africa/Abidjan')}</div>
               <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Devise</label>{Inp('currency', 'text', 'FCFA')}</div>
             </div>
-            <button onClick={saveSecurityFields} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
+            <button onClick={() => saveSecurityFields(['platform_nom', 'platform_adresse', 'platform_nif', 'platform_rccm', 'timezone', 'currency'])} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
               <Save style={{ width: 13, height: 13 }} /> {saving.security ? 'Enregistrement…' : 'Enregistrer'}
             </button>
           </div>
@@ -1985,7 +1991,7 @@ function ConfigTab() {
               <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Rate limit global</label>{Inp('rate_limit_global', 'number', '100', 'req/min')}</div>
               <div style={{ marginBottom: 14 }}><label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#0F172A', marginBottom: 6 }}>Rétention backups</label>{Inp('backup_retention_days', 'number', '90', 'jours')}</div>
             </div>
-            <button onClick={saveSecurityFields} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
+            <button onClick={() => saveSecurityFields(['jwt_ttl_hours', 'bcrypt_cost', 'rate_limit_auth', 'rate_limit_global', 'backup_retention_days'])} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
               <Save style={{ width: 13, height: 13 }} /> {saving.security ? 'Enregistrement…' : 'Enregistrer'}
             </button>
           </div>
@@ -2092,7 +2098,7 @@ function ConfigTab() {
                 </div>
                 <p style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>Numéro utilisé pour recevoir les commissions de la plateforme.</p>
               </div>
-              <button onClick={saveSecurityFields} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
+              <button onClick={() => saveSecurityFields(['ADMIN_NOVASEND_NUMBER'])} disabled={saving.security} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: ACCENT, color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: saving.security ? 'not-allowed' : 'pointer', opacity: saving.security ? 0.65 : 1, marginTop: 4 }}>
                 <Save style={{ width: 13, height: 13 }} /> {saving.security ? 'Enregistrement…' : 'Enregistrer le numéro'}
               </button>
             </div>
