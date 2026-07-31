@@ -298,7 +298,7 @@ function InviteModal({ onClose, onSave }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="rounded-2xl w-full max-w-sm overflow-hidden" style={{ background: CARD, boxShadow: SH3 }}>
+      <div className="rounded-lg w-full max-w-sm overflow-hidden" style={{ background: CARD, boxShadow: SH3 }}>
 
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
           <div className="flex items-center gap-2.5">
@@ -322,7 +322,7 @@ function InviteModal({ onClose, onSave }) {
             <p className="text-xs" style={{ color: MUTED }}>
               Un email a été envoyé à <strong style={{ color: TEXT }}>{form.email}</strong>
             </p>
-            <button onClick={onClose} className="mt-2 px-6 py-2.5 rounded-xl text-sm font-semibold text-white"
+            <button onClick={onClose} className="mt-2 px-6 py-2.5 rounded-lg text-sm font-semibold text-white"
               style={{ background: ORANGE }}>Fermer</button>
           </div>
         ) : (
@@ -356,7 +356,7 @@ function InviteModal({ onClose, onSave }) {
                 finally { setSaving(false); }
               }}
               disabled={saving}
-              className="w-full py-2.5 rounded-xl text-sm font-semibold text-white flex items-center justify-center gap-2 transition"
+              className="w-full py-2.5 rounded-lg text-sm font-semibold text-white flex items-center justify-center gap-2 transition"
               style={{ background: saving ? MUTED : ORANGE, cursor: saving ? 'wait' : 'pointer' }}>
               {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               {saving ? 'Envoi en cours…' : 'Envoyer l\'invitation'}
@@ -380,7 +380,7 @@ function ViewFactureModal({ facture, onClose, onDownload }) {
       onClick={e => e.target === e.currentTarget && onClose()}
       onContextMenu={e => e.preventDefault()}
       style={{ userSelect: 'none', WebkitUserSelect: 'none', MozUserSelect: 'none' }}>
-      <div className="rounded-3xl w-full max-w-lg overflow-hidden"
+      <div className="rounded-lg w-full max-w-lg overflow-hidden"
         style={{ background: '#FFFFFF', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
         onContextMenu={e => e.preventDefault()}>
 
@@ -424,7 +424,7 @@ function ViewFactureModal({ facture, onClose, onDownload }) {
               }}>
               {isPaid ? 'PAYÉE' : 'NON PAYÉE'}
             </div>
-            <div className="relative space-y-0 z-10 rounded-2xl overflow-hidden border"
+            <div className="relative space-y-0 z-10 rounded-lg overflow-hidden border"
               style={{ borderColor: BORDER }}>
               {[
                 { label: 'Référence',   value: facture.numeroFacture || `Facture ${facture.periode || ''}` },
@@ -462,7 +462,7 @@ function ViewFactureModal({ facture, onClose, onDownload }) {
                 </p>
                 <button
                   onClick={onDownload}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
                   style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, boxShadow: `0 2px 8px ${GREEN}40` }}>
                   <Download className="w-3.5 h-3.5" /> Télécharger PDF
                 </button>
@@ -508,7 +508,7 @@ function PayModal({ facture, onClose, onPaid }) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
       onClick={e => e.target === e.currentTarget && step !== 'paying' && onClose()}>
-      <div className="rounded-3xl w-full max-w-md overflow-hidden" style={{ background: CARD, boxShadow: SH3 }}>
+      <div className="rounded-lg w-full max-w-md overflow-hidden" style={{ background: CARD, boxShadow: SH3 }}>
 
         {/* Header */}
         <div className="relative overflow-hidden px-6 py-8"
@@ -541,7 +541,7 @@ function PayModal({ facture, onClose, onPaid }) {
                 La facture a été réglée avec succès.
               </p>
               <button onClick={() => { onPaid(); onClose(); }}
-                className="w-full py-3 rounded-xl text-sm font-bold text-white"
+                className="w-full py-3 rounded-lg text-sm font-bold text-white"
                 style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})` }}>
                 Fermer
               </button>
@@ -556,12 +556,12 @@ function PayModal({ facture, onClose, onPaid }) {
               <p className="text-sm mb-6" style={{ color: MUTED }}>{errMsg}</p>
               <div className="flex gap-3">
                 <button onClick={onClose}
-                  className="flex-1 py-3 rounded-xl text-sm font-semibold border"
+                  className="flex-1 py-3 rounded-lg text-sm font-semibold border"
                   style={{ borderColor: BORDER, color: MUTED }}>
                   Annuler
                 </button>
                 <button onClick={doPay}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white"
+                  className="flex-1 py-3 rounded-lg text-sm font-bold text-white"
                   style={{ background: ORANGE }}>
                   Réessayer
                 </button>
@@ -570,7 +570,7 @@ function PayModal({ facture, onClose, onPaid }) {
           ) : (
             <>
               {/* Détail facture */}
-              <div className="rounded-2xl p-4 mb-5 space-y-3" style={{ background: BG }}>
+              <div className="rounded-lg p-4 mb-5 space-y-3" style={{ background: BG }}>
                 {[
                   { label: 'Référence', value: facture.numeroFacture || `Facture ${facture.periode || ''}` },
                   { label: 'Période', value: facture.periode || '—' },
@@ -592,12 +592,12 @@ function PayModal({ facture, onClose, onPaid }) {
 
               <div className="flex gap-3">
                 <button onClick={onClose}
-                  className="flex-1 py-3 rounded-xl text-sm font-semibold border transition hover:opacity-80"
+                  className="flex-1 py-3 rounded-lg text-sm font-semibold border transition hover:opacity-80"
                   style={{ borderColor: BORDER, color: MUTED, background: BG }}>
                   Annuler
                 </button>
                 <button onClick={doPay} disabled={step === 'paying'}
-                  className="flex-1 py-3 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
+                  className="flex-1 py-3 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
                   style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, boxShadow: `0 3px 12px ${ORANGE}50` }}>
                   {step === 'paying'
                     ? <><RefreshCw className="w-4 h-4 animate-spin" /> Traitement…</>
@@ -729,7 +729,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
          onClick={e => e.target === e.currentTarget && onClose()}>
       <style>{`@media print { .syscohada-viewer-modal { display: none !important; } }`}</style>
-      <div className="syscohada-viewer-modal rounded-2xl overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col relative"
+      <div className="syscohada-viewer-modal rounded-lg overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col relative"
            style={{ background: '#fff', boxShadow: '0 24px 64px rgba(0,0,0,0.45)' }}
            onContextMenu={e => e.preventDefault()}>
 
@@ -737,7 +737,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
         <div className="flex items-center justify-between px-6 py-4 shrink-0"
              style={{ background: '#1A0C00', borderBottom: '2.5px solid #EA580C' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(234,88,12,0.20)' }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(234,88,12,0.20)' }}>
               <FileText className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -750,18 +750,18 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
           <div className="flex items-center gap-2">
             {isLastDayOfMonth ? (
               <button onClick={onDownload} disabled={downloading}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition hover:opacity-90"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#EA580C,#C2410C)', opacity: downloading ? 0.7 : 1 }}>
                 {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 {downloading ? 'Génération…' : 'Télécharger PDF'}
               </button>
             ) : (
-              <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold"
+              <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold"
                     style={{ background: '#FFFBEB', color: '#D97706' }}>
                 <Clock className="w-3.5 h-3.5" /> Dispo le {lastDayDisplay}
               </span>
             )}
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
+            <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: 'rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
               <X className="w-4 h-4" />
             </button>
@@ -770,7 +770,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
 
         {/* Blur guard */}
         {captureGuard && (
-          <div className="absolute inset-0 z-[300] flex flex-col items-center justify-center rounded-2xl"
+          <div className="absolute inset-0 z-[300] flex flex-col items-center justify-center rounded-lg"
                style={{ background: 'rgba(15,23,42,0.96)' }}>
             <Shield className="w-12 h-12 mb-3" style={{ color: '#EA580C' }} />
             <p className="text-white font-bold text-base">Contenu masqué</p>
@@ -795,7 +795,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
           <div className="p-6 space-y-5" style={{ position: 'relative', zIndex: 1 }}>
 
             {/* Report header */}
-            <div className="rounded-2xl p-5" style={{ background: '#1A0C00' }}>
+            <div className="rounded-lg p-5" style={{ background: '#1A0C00' }}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#EA580C' }}>Rapport Mensuel SYSCOHADA</p>
@@ -803,7 +803,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                   <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>contact@restodici.ci · Abidjan, Côte d'Ivoire</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: '#EA580C' }}>SYSCOHADA</span>
+                  <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: '#EA580C' }}>SYSCOHADA</span>
                   <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Période : {mois}</p>
                 </div>
               </div>
@@ -812,7 +812,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                   { title: 'PRESTATAIRE', lines: ["Resto d'ici", 'NIF : CI-ABJ-2024-001', 'RCCM : CI-ABJ-2024-B-001', "Abidjan, Côte d'Ivoire"] },
                   { title: 'CLIENT', lines: [compte?.raisonSociale || 'Entreprise', `NIF : ${compte?.numeroContribuable || '—'}`, `RCCM : ${compte?.numeroRCCM || '—'}`, compte?.secteurActivite ? `Secteur : ${compte.secteurActivite}` : ''] },
                 ].map(({ title, lines }) => (
-                  <div key={title} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <div key={title} className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
                     <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#EA580C' }}>{title}</p>
                     {lines.filter(Boolean).map((l, i) => (
                       <p key={i} className="text-[12px]" style={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)', fontWeight: i === 0 ? 600 : 400 }}>{l}</p>
@@ -960,7 +960,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
             </div>
 
             {/* Mentions légales */}
-            <div className="rounded-xl p-4" style={{ background: '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
+            <div className="rounded-lg p-4" style={{ background: '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
               <p className="text-[11px] italic" style={{ color: '#8B6E50' }}>
                 Conformément au Système Comptable OHADA (SYSCOHADA Révisé) · TVA collectée au taux de 18%
                 conformément au Code Général des Impôts de la Côte d'Ivoire — Article 339 CGI-CI.
@@ -1483,7 +1483,7 @@ export default function B2BDashboard() {
           <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${ORANGE} 0%, #FFB800 50%, ${ORANGE} 100%)`, pointerEvents: 'none' }} />
           <div className="h-16 px-4 lg:px-6 flex items-center gap-4">
             {/* Hamburger mobile */}
-            <button className="lg:hidden p-2 rounded-xl" onClick={() => setSideOpen(true)}
+            <button className="lg:hidden p-2 rounded-lg" onClick={() => setSideOpen(true)}
               style={{ background: `${ORANGE}12`, border: `1px solid ${ORANGE}22`, color: ORANGE, cursor: 'pointer' }}>
               <Menu className="w-5 h-5" />
             </button>
@@ -1504,7 +1504,7 @@ export default function B2BDashboard() {
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
                 placeholder="Rechercher commande, centre de coûts…"
-                className="w-full rounded-xl border pl-9 pr-8 py-2 text-sm outline-none transition"
+                className="w-full rounded-lg border pl-9 pr-8 py-2 text-sm outline-none transition"
                 style={{ borderColor: searchQuery ? ORANGE : '#E5E7EB', background: searchQuery ? `${ORANGE}08` : '#F9FAFB', color: TEXT, boxShadow: searchQuery ? `0 0 0 3px ${ORANGE}25` : 'none' }}
               />
               {searchQuery && (
@@ -1558,10 +1558,10 @@ export default function B2BDashboard() {
 
           {/* ── BANNIÈRE EN ATTENTE DE VÉRIFICATION PAR L'ADMIN ── */}
           {compte && (compte.statutValidation === 'EN_ATTENTE' || compte.actif === false) && (
-            <div className="mb-6 p-5 rounded-2xl border"
+            <div className="mb-6 p-5 rounded-lg border"
               style={{ background: '#FFFBEB', borderColor: '#FDE68A', boxShadow: '0 4px 16px rgba(245,158,11,0.1)' }}>
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FEF3C7' }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FEF3C7' }}>
                   <Clock className="w-5 h-5 text-[#D97706] animate-pulse" />
                 </div>
                 <div className="flex-1">
@@ -1586,10 +1586,10 @@ export default function B2BDashboard() {
 
           {/* ── BANNIÈRE COMPTE REJETÉ ── */}
           {compte && compte.statutValidation === 'REJETE' && (
-            <div className="mb-6 p-5 rounded-2xl border"
+            <div className="mb-6 p-5 rounded-lg border"
               style={{ background: '#FEF2F2', borderColor: '#FCA5A5', boxShadow: '0 4px 16px rgba(239,68,68,0.1)' }}>
               <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FEE2E2' }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FEE2E2' }}>
                   <AlertCircle className="w-5 h-5 text-[#DC2626]" />
                 </div>
                 <div className="flex-1">
@@ -1608,7 +1608,7 @@ export default function B2BDashboard() {
           )}
 
           {error && (
-            <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-xl border"
+            <div className="mb-4 flex items-center gap-3 px-4 py-3 rounded-lg border"
               style={{ background: RED_L, borderColor: '#FECACA' }}>
               <AlertCircle className="w-4 h-4 shrink-0" style={{ color: RED }} />
               <p className="flex-1 text-sm" style={{ color: '#B91C1C' }}>{error}</p>
@@ -1620,12 +1620,12 @@ export default function B2BDashboard() {
 
           {/* Bannière retour Novasend */}
           {paymentBanner && (
-            <div className="mb-4 flex items-center gap-3 px-5 py-4 rounded-2xl border"
+            <div className="mb-4 flex items-center gap-3 px-5 py-4 rounded-lg border"
               style={{
                 background: paymentBanner.type === 'success' ? GREEN_L : AMBER_L,
                 borderColor: paymentBanner.type === 'success' ? '#FFE4CC' : '#FDE68A',
               }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: paymentBanner.type === 'success' ? GREEN : AMBER }}>
                 {paymentBanner.type === 'success'
                   ? <CheckCircle className="w-5 h-5 text-white" />
@@ -1675,9 +1675,9 @@ export default function B2BDashboard() {
                   { label: 'Factures impayées',  value: loading ? '—' : String(unpaidInvoices),       sub: unpaidInvoices > 0 ? 'À régler rapidement' : 'Tout est à jour', color: unpaidInvoices > 0 ? RED : MUTED, bg: unpaidInvoices > 0 ? RED_L : BG, Icon: FileText },
                 ].map(({ label, value, sub, color, bg, Icon }) => (
                   <div key={label}
-                    className="rounded-2xl px-5 py-4 flex items-center gap-4 transition-transform hover:-translate-y-0.5"
+                    className="rounded-lg px-5 py-4 flex items-center gap-4 transition-transform hover:-translate-y-0.5"
                     style={{ background: CARD, border: `1px solid ${BORDER}`, boxShadow: SH, cursor: 'default' }}>
-                    <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ background: bg }}>
+                    <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0" style={{ background: bg }}>
                       <Icon className="w-5 h-5" style={{ color }} />
                     </div>
                     <div className="min-w-0">
@@ -1691,9 +1691,9 @@ export default function B2BDashboard() {
 
               {/* Blocked banner */}
               {isBlocked && (
-                <div className="rounded-2xl border px-5 py-4 flex items-start gap-4"
+                <div className="rounded-lg border px-5 py-4 flex items-start gap-4"
                   style={{ background: RED_L, borderColor: '#FECACA' }}>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#FEE2E2' }}>
+                  <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FEE2E2' }}>
                     <Shield className="w-5 h-5" style={{ color: RED }} />
                   </div>
                   <div className="flex-1">
@@ -1703,7 +1703,7 @@ export default function B2BDashboard() {
                     </p>
                   </div>
                   <button onClick={() => goTo('factures')}
-                    className="shrink-0 px-4 py-2 rounded-xl text-xs font-bold text-white" style={{ background: RED }}>
+                    className="shrink-0 px-4 py-2 rounded-lg text-xs font-bold text-white" style={{ background: RED }}>
                     Voir les factures
                   </button>
                 </div>
@@ -1723,7 +1723,7 @@ export default function B2BDashboard() {
                   {/* Left */}
                   <div className="flex-1 space-y-5">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: ORANGE_L }}>
                         <Download className="w-6 h-6" style={{ color: ORANGE }} />
                       </div>
@@ -1776,7 +1776,7 @@ export default function B2BDashboard() {
                     )}
                   </div>
                   {/* Right panel */}
-                  <div className="rounded-2xl p-6 flex flex-col justify-between min-w-[200px]"
+                  <div className="rounded-lg p-6 flex flex-col justify-between min-w-[200px]"
                     style={{
                       background: isBlocked ? RED_L : BG,
                       border: `1px solid ${isBlocked ? '#FECACA' : BORDER}`,
@@ -1795,7 +1795,7 @@ export default function B2BDashboard() {
                     </div>
                     <button
                       onClick={() => isBlocked ? goTo('factures') : goTo('factures')}
-                      className="mt-5 w-full py-3 rounded-xl font-bold text-sm transition hover:opacity-90"
+                      className="mt-5 w-full py-3 rounded-lg font-bold text-sm transition hover:opacity-90"
                       style={{
                         background: isBlocked ? RED : NAVY,
                         color: '#fff',
@@ -1813,7 +1813,7 @@ export default function B2BDashboard() {
                     animation: 'kpiIn 0.45s 0.1s cubic-bezier(0.22,1,0.36,1) both',
                   }}>
                   <div className="space-y-3">
-                    <div className="w-12 h-12 rounded-2xl flex items-center justify-center"
+                    <div className="w-12 h-12 rounded-lg flex items-center justify-center"
                       style={{ background: 'rgba(255,255,255,0.20)' }}>
                       <Users className="w-6 h-6 text-white" />
                     </div>
@@ -1824,19 +1824,19 @@ export default function B2BDashboard() {
                   </div>
                   {isBlocked ? (
                     <button disabled
-                      className="relative mt-8 w-full py-3.5 rounded-xl font-bold text-sm"
+                      className="relative mt-8 w-full py-3.5 rounded-lg font-bold text-sm"
                       style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.5)', cursor: 'not-allowed' }}>
                       Commandes désactivées
                     </button>
                   ) : (
                     <div className="mt-8 flex flex-col gap-2">
                       <button onClick={() => navigate('/b2b/order?mode=instant')}
-                        className="w-full py-3 rounded-xl font-bold text-sm transition hover:opacity-90"
+                        className="w-full py-3 rounded-lg font-bold text-sm transition hover:opacity-90"
                         style={{ background: 'rgba(255,255,255,0.22)', color: '#fff', border: '1px solid rgba(255,255,255,0.30)' }}>
                         ⚡ Commander maintenant
                       </button>
                       <button onClick={() => navigate('/b2b/order?mode=schedule')}
-                        className="w-full py-2.5 rounded-xl font-semibold text-sm transition hover:opacity-80"
+                        className="w-full py-2.5 rounded-lg font-semibold text-sm transition hover:opacity-80"
                         style={{ background: 'rgba(255,255,255,0.10)', color: 'rgba(255,255,255,0.85)', border: '1px solid rgba(255,255,255,0.20)' }}>
                         <span className="flex items-center justify-center gap-1.5">
                           <CalendarDays className="w-4 h-4" /> Planifier pour plus tard
@@ -1859,7 +1859,7 @@ export default function B2BDashboard() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                       {/* Cost center tabs */}
-                      <div className="flex items-center gap-1 p-1 rounded-xl" style={{ background: BG }}>
+                      <div className="flex items-center gap-1 p-1 rounded-lg" style={{ background: BG }}>
                         {[
                           { k: 'all',    label: 'Tous' },
                           { k: 'active', label: `En cours (${activeOrders.length})` },
@@ -1877,7 +1877,7 @@ export default function B2BDashboard() {
                         ))}
                       </div>
                       <button onClick={() => goTo('orders')}
-                        className="px-4 py-2 rounded-xl text-[12px] font-semibold transition hover:opacity-80"
+                        className="px-4 py-2 rounded-lg text-[12px] font-semibold transition hover:opacity-80"
                         style={{ background: ORANGE_L, color: ORANGE }}>
                         Voir tout →
                       </button>
@@ -1956,7 +1956,7 @@ export default function B2BDashboard() {
                   style={{ background: BG, border: `1px solid ${BORDER}`, boxShadow: '0 2px 12px rgba(0,0,0,0.06)' }}>
                   <div>
                     <div className="flex items-center gap-3 mb-5">
-                      <div className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0"
+                      <div className="w-12 h-12 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: GREEN_L }}>
                         <Download className="w-6 h-6" style={{ color: GREEN }} />
                       </div>
@@ -1967,7 +1967,7 @@ export default function B2BDashboard() {
                     </p>
                     {/* Latest facture preview */}
                     {factures.length > 0 && (
-                      <div className="rounded-xl border p-4 flex items-center justify-between"
+                      <div className="rounded-lg border p-4 flex items-center justify-between"
                         style={{ background: CARD, borderColor: BORDER }}>
                         <div className="flex items-center gap-3">
                           <FileText className="w-5 h-5 shrink-0" style={{ color: GREEN }} />
@@ -1983,19 +1983,19 @@ export default function B2BDashboard() {
                   </div>
                   <div className="mt-8 space-y-2.5">
                     <button onClick={() => setViewingSyscohada(true)}
-                      className="w-full py-3.5 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition hover:opacity-80"
+                      className="w-full py-3.5 rounded-lg font-bold text-sm flex items-center justify-center gap-2 transition hover:opacity-80"
                       style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }}>
                       <Eye className="w-4 h-4" /> Voir le rapport
                     </button>
                     {isLastDayOfMonth ? (
                       <button onClick={downloadSyscohadaReport} disabled={downloading}
-                        className="w-full py-3.5 rounded-2xl font-bold text-sm text-white flex items-center justify-center gap-2 transition hover:opacity-90"
+                        className="w-full py-3.5 rounded-lg font-bold text-sm text-white flex items-center justify-center gap-2 transition hover:opacity-90"
                         style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, boxShadow: `0 4px 16px ${GREEN}40`, opacity: downloading ? 0.7 : 1 }}>
                         {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                         {downloading ? 'Génération…' : 'Télécharger Rapport Mensuel'}
                       </button>
                     ) : (
-                      <div className="rounded-2xl p-3.5 flex items-center gap-3"
+                      <div className="rounded-lg p-3.5 flex items-center gap-3"
                         style={{ background: AMBER_L, border: `1px solid #FDE68A` }}>
                         <Clock className="w-4 h-4 shrink-0" style={{ color: AMBER }} />
                         <div>
@@ -2010,7 +2010,7 @@ export default function B2BDashboard() {
                 </div>
 
                 {/* ── Centres de coûts — Doughnut Chart — col 7 ─────────────────── */}
-                <div className="col-span-12 lg:col-span-7 rounded-2xl p-7 relative overflow-hidden transition-all duration-200"
+                <div className="col-span-12 lg:col-span-7 rounded-lg p-7 relative overflow-hidden transition-all duration-200"
                   style={{ background: '#FFFFFF', border: `1px solid #E2E8F0`, boxShadow: '0 4px 20px rgba(15, 23, 42, 0.05)' }}>
                   <div className="flex items-center justify-between mb-2">
                     <div>
@@ -2045,12 +2045,12 @@ export default function B2BDashboard() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Link to="/b2b/order?mode=schedule"
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-semibold transition hover:opacity-80"
+                    className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-semibold transition hover:opacity-80"
                     style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
                     <CalendarDays className="w-4 h-4" /> Planifier
                   </Link>
                   <Link to="/b2b/order?mode=instant"
-                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                     style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, boxShadow: `0 2px 8px ${ORANGE}40` }}>
                     <Plus className="w-4 h-4" /> Nouvelle commande
                   </Link>
@@ -2064,7 +2064,7 @@ export default function B2BDashboard() {
                   { k: 'done',   label: `Terminées (${doneOrders.length})` },
                 ].map(f => (
                   <button key={f.k} onClick={() => setOrderFilter(f.k)}
-                    className="px-3 py-1.5 rounded-xl text-[12px] font-semibold transition"
+                    className="px-3 py-1.5 rounded-lg text-[12px] font-semibold transition"
                     style={{
                       background: orderFilter === f.k ? ORANGE : CARD,
                       color: orderFilter === f.k ? '#fff' : MUTED,
@@ -2076,21 +2076,21 @@ export default function B2BDashboard() {
                 ))}
               </div>
 
-              <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+              <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                 {loading ? (
                   <div className="p-4 space-y-2">
-                    {[1,2,3,4].map(i => <div key={i} className="h-14 rounded-xl animate-pulse" style={{ background: BG }} />)}
+                    {[1,2,3,4].map(i => <div key={i} className="h-14 rounded-lg animate-pulse" style={{ background: BG }} />)}
                   </div>
                 ) : displayed.length === 0 ? (
                   <div className="py-20 text-center">
-                    <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                    <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center"
                       style={{ background: ORANGE_L }}>
                       <ShoppingBag className="w-7 h-7" style={{ color: ORANGE }} />
                     </div>
                     <p className="text-sm font-bold mb-1" style={{ color: TEXT }}>Aucune commande</p>
                     <p className="text-xs mb-5" style={{ color: FAINT }}>Passez votre première commande d'équipe</p>
                     <Link to="/b2b/order?mode=instant"
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white"
                       style={{ background: ORANGE }}>
                       <Plus className="w-4 h-4" /> Commander maintenant
                     </Link>
@@ -2114,7 +2114,7 @@ export default function B2BDashboard() {
                         if (isGroupee) navigate(`/b2b/suivi/${o.id}`);
                         else navigate(`/suivi/${o.id}`);
                       }}>
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: isGroupee ? '#F5F5F4' : ORANGE_L }}>
                         <ShoppingBag className="w-4.5 h-4.5" style={{ color: isGroupee ? '#78716C' : ORANGE }} />
                       </div>
@@ -2153,27 +2153,27 @@ export default function B2BDashboard() {
                 {/* Inviter — orange */}
                 <button onClick={() => setShowInvite(true)}
                   data-tour="b2b-invite-btn"
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                   style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, boxShadow: `0 2px 8px ${ORANGE}40` }}>
                   <Plus className="w-4 h-4" /> Inviter un collaborateur
                 </button>
               </div>
 
-              <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+              <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                 {loading ? (
                   <div className="p-4 space-y-2">
-                    {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: BG }} />)}
+                    {[1,2,3].map(i => <div key={i} className="h-16 rounded-lg animate-pulse" style={{ background: BG }} />)}
                   </div>
                 ) : collabs.length === 0 ? (
                   <div className="py-20 text-center">
-                    <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                    <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center"
                       style={{ background: ORANGE_L }}>
                       <Users className="w-7 h-7" style={{ color: ORANGE }} />
                     </div>
                     <p className="text-sm font-bold mb-1" style={{ color: TEXT }}>Aucun collaborateur</p>
                     <p className="text-xs mb-5" style={{ color: FAINT }}>Invitez votre équipe pour gérer les déjeuners ensemble</p>
                     <button onClick={() => setShowInvite(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white"
                       style={{ background: ORANGE }}>
                       <Plus className="w-4 h-4" /> Inviter
                     </button>
@@ -2205,7 +2205,7 @@ export default function B2BDashboard() {
                             setEditBudgetError('');
                             setConfirmDeleteId(null);
                           }}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center border transition hover:opacity-90"
+                          className="w-9 h-9 rounded-lg flex items-center justify-center border transition hover:opacity-90"
                           style={{ borderColor: BORDER, background: isEditing ? ORANGE_L : BG, color: isEditing ? ORANGE : MUTED }}
                           title="Modifier le budget">
                           <Pencil className="w-3.5 h-3.5" />
@@ -2213,7 +2213,7 @@ export default function B2BDashboard() {
                         <button
                           onClick={() => { setConfirmDeleteId(isConfirming ? null : c.id); setDeleteError(''); setEditBudgetId(null); }}
                           disabled={deletingId === c.id}
-                          className="w-9 h-9 rounded-xl flex items-center justify-center border transition hover:opacity-90"
+                          className="w-9 h-9 rounded-lg flex items-center justify-center border transition hover:opacity-90"
                           style={{ borderColor: '#FECACA', background: isConfirming ? RED : RED_L, color: isConfirming ? '#fff' : RED }}
                           title="Supprimer ce collaborateur">
                           {deletingId === c.id
@@ -2223,7 +2223,7 @@ export default function B2BDashboard() {
                       </div>
                       {/* Inline edit budget */}
                       {isEditing && (
-                        <div className="mx-5 mb-3 px-4 py-3 rounded-xl" style={{ background: ORANGE_L, border: `1px solid ${ORANGE}30` }}>
+                        <div className="mx-5 mb-3 px-4 py-3 rounded-lg" style={{ background: ORANGE_L, border: `1px solid ${ORANGE}30` }}>
                           <p className="text-[11px] font-semibold mb-2" style={{ color: ORANGE_D }}>Modifier le budget mensuel de {c.nom}</p>
                           <div className="flex items-center gap-2">
                             <input
@@ -2238,12 +2238,12 @@ export default function B2BDashboard() {
                             />
                             <span className="text-xs font-semibold shrink-0" style={{ color: MUTED }}>FCFA</span>
                             <button onClick={() => handleEditBudget(c.id)} disabled={editBudgetSaving}
-                              className="w-9 h-9 rounded-xl flex items-center justify-center text-white transition"
+                              className="w-9 h-9 rounded-lg flex items-center justify-center text-white transition"
                               style={{ background: editBudgetSaving ? MUTED : ORANGE }}>
                               {editBudgetSaving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                             </button>
                             <button onClick={() => { setEditBudgetId(null); setEditBudgetError(''); }}
-                              className="w-9 h-9 rounded-xl flex items-center justify-center border text-sm"
+                              className="w-9 h-9 rounded-lg flex items-center justify-center border text-sm"
                               style={{ borderColor: BORDER, color: MUTED, background: CARD }}>
                               <X className="w-3.5 h-3.5" />
                             </button>
@@ -2253,7 +2253,7 @@ export default function B2BDashboard() {
                       )}
                       {/* Bandeau de confirmation inline */}
                       {isConfirming && (
-                        <div className="mx-5 mb-3 px-4 py-3 rounded-xl flex items-center gap-3"
+                        <div className="mx-5 mb-3 px-4 py-3 rounded-lg flex items-center gap-3"
                           style={{ background: RED_L, border: `1px solid #FECACA` }}>
                           <AlertCircle className="w-4 h-4 shrink-0" style={{ color: RED }} />
                           <p className="flex-1 text-xs font-semibold" style={{ color: '#991B1B' }}>
@@ -2295,7 +2295,7 @@ export default function B2BDashboard() {
                   </p>
                 </div>
                 <button onClick={() => { setShowSubForm(true); setSubFormErr(''); }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                   style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, boxShadow: `0 2px 8px ${ORANGE}40` }}>
                   <Plus className="w-4 h-4" /> Nouveau plan
                 </button>
@@ -2303,7 +2303,7 @@ export default function B2BDashboard() {
 
               {/* Add form */}
               {showSubForm && (
-                <div className="rounded-2xl p-5 space-y-3" style={{ background: CARD, boxShadow: SH2 }}>
+                <div className="rounded-lg p-5 space-y-3" style={{ background: CARD, boxShadow: SH2 }}>
                   <div className="flex items-center justify-between mb-1">
                     <p className="font-semibold text-sm" style={{ color: TEXT }}>Nouveau plan repas</p>
                     <button onClick={() => { setShowSubForm(false); setSubFormErr(''); }}
@@ -2362,7 +2362,7 @@ export default function B2BDashboard() {
                     </div>
                   )}
                   <button onClick={handleAddSub} disabled={subSaving}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
+                    className="w-full py-2.5 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
                     style={{ background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`, opacity: subSaving ? 0.7 : 1 }}>
                     {subSaving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                     {subSaving ? 'Enregistrement…' : 'Créer le plan'}
@@ -2371,10 +2371,10 @@ export default function B2BDashboard() {
               )}
 
               {/* Subscription list */}
-              <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+              <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                 {subs.length === 0 ? (
                   <div className="py-20 text-center">
-                    <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                    <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center"
                       style={{ background: ORANGE_L }}>
                       <CalendarDays className="w-7 h-7" style={{ color: ORANGE }} />
                     </div>
@@ -2383,7 +2383,7 @@ export default function B2BDashboard() {
                       Planifiez des commandes récurrentes pour votre équipe
                     </p>
                     <button onClick={() => setShowSubForm(true)}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white"
                       style={{ background: ORANGE }}>
                       <Plus className="w-4 h-4" /> Créer un plan
                     </button>
@@ -2392,7 +2392,7 @@ export default function B2BDashboard() {
                   <div key={s.id} className="transition"
                     style={{ borderBottom: idx < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
                     <div className="flex items-start gap-4 px-5 py-4">
-                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                      <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: s.actif ? ORANGE_L : BG }}>
                         <CalendarDays className="w-5 h-5" style={{ color: s.actif ? ORANGE : FAINT }} />
                       </div>
@@ -2427,7 +2427,7 @@ export default function B2BDashboard() {
                           {s.actif ? 'Pause' : 'Activer'}
                         </button>
                         <button onClick={() => handleDeleteSub(s.id)}
-                          className="w-8 h-8 rounded-xl flex items-center justify-center border transition"
+                          className="w-8 h-8 rounded-lg flex items-center justify-center border transition"
                           style={{ borderColor: '#FECACA', background: RED_L, color: RED }}>
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -2438,7 +2438,7 @@ export default function B2BDashboard() {
               </div>
 
               {subs.length > 0 && (
-                <div className="rounded-xl px-4 py-3 flex items-start gap-3"
+                <div className="rounded-lg px-4 py-3 flex items-start gap-3"
                   style={{ background: AMBER_L, border: `1px solid ${AMBER}30` }}>
                   <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" style={{ color: AMBER }} />
                   <p className="text-[11px]" style={{ color: AMBER }}>
@@ -2462,19 +2462,19 @@ export default function B2BDashboard() {
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <button onClick={() => setViewingSyscohada(true)}
-                    className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition hover:opacity-80"
+                    className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold transition hover:opacity-80"
                     style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }}>
                     <Eye className="w-4 h-4" /> Voir SYSCOHADA
                   </button>
                   {isLastDayOfMonth ? (
                     <button onClick={downloadSyscohadaReport} disabled={downloading}
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                       style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, boxShadow: `0 2px 8px ${GREEN}40`, opacity: downloading ? 0.7 : 1 }}>
                       {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                       {downloading ? 'Génération…' : 'Télécharger PDF'}
                     </button>
                   ) : (
-                    <span className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold"
+                    <span className="flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-semibold"
                       style={{ background: AMBER_L, color: AMBER }}>
                       <Clock className="w-4 h-4" /> Export le {lastDayDisplay}
                     </span>
@@ -2502,7 +2502,7 @@ export default function B2BDashboard() {
                       color: GREEN, bg: GREEN_L,
                     },
                   ].map(s => (
-                    <div key={s.label} className="rounded-2xl px-5 py-4" style={{ background: s.bg, boxShadow: SH }}>
+                    <div key={s.label} className="rounded-lg px-5 py-4" style={{ background: s.bg, boxShadow: SH }}>
                       <p className="text-xl font-bold" style={{ color: s.color }}>{s.value}</p>
                       <p className="text-[11px] mt-1" style={{ color: MUTED }}>{s.label}</p>
                     </div>
@@ -2510,14 +2510,14 @@ export default function B2BDashboard() {
                 </div>
               )}
 
-              <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+              <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                 {loading ? (
                   <div className="p-4 space-y-2">
-                    {[1,2,3].map(i => <div key={i} className="h-20 rounded-xl animate-pulse" style={{ background: BG }} />)}
+                    {[1,2,3].map(i => <div key={i} className="h-20 rounded-lg animate-pulse" style={{ background: BG }} />)}
                   </div>
                 ) : factures.length === 0 ? (
                   <div className="py-24 text-center px-6">
-                    <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                    <div className="w-16 h-16 rounded-lg mx-auto mb-4 flex items-center justify-center"
                       style={{ background: '#F5F3FF' }}>
                       <FileText className="w-8 h-8" style={{ color: '#7C3AED' }} />
                     </div>
@@ -2532,7 +2532,7 @@ export default function B2BDashboard() {
                           alert(e.response?.data?.message || 'Erreur lors de la création');
                         }
                       }}
-                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                       style={{ background: `linear-gradient(135deg, #7C3AED, #6D28D9)`, boxShadow: '0 3px 12px rgba(124,58,237,0.35)' }}>
                       <Plus className="w-4 h-4" /> Créer une facture de test
                     </button>
@@ -2552,7 +2552,7 @@ export default function B2BDashboard() {
                       onMouseEnter={e => e.currentTarget.style.background = BG}
                       onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                       <div className="flex items-center gap-4 px-6 py-5">
-                        <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                        <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0"
                           style={{ background: isPaid ? GREEN_L : isLate ? RED_L : AMBER_L }}>
                           <FileText className="w-5 h-5"
                             style={{ color: isPaid ? GREEN : isLate ? RED : AMBER }} />
@@ -2588,7 +2588,7 @@ export default function B2BDashboard() {
                           {/* Voir le reçu — icône œil ; modal gère download si payée */}
                           <button
                             onClick={() => setViewingFacture(f)}
-                            className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-[12px] font-semibold transition hover:opacity-80"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-[12px] font-semibold transition hover:opacity-80"
                             style={{
                               borderColor: isPaid ? '#FFE4CC' : BORDER,
                               background: isPaid ? GREEN_L : BG,
@@ -2602,7 +2602,7 @@ export default function B2BDashboard() {
                           {!isPaid && (
                             <button
                               onClick={() => setPayingFacture(f)}
-                              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+                              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
                               style={{
                                 background: isLate
                                   ? `linear-gradient(135deg, ${RED}, #B91C1C)`
@@ -2639,7 +2639,7 @@ export default function B2BDashboard() {
                       .finally(() => setAuditLoading(false));
                   }}
                   disabled={auditLoading}
-                  className="flex items-center gap-2 px-3 py-2 rounded-xl text-[12px] font-semibold border transition hover:opacity-80 disabled:opacity-50"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg text-[12px] font-semibold border transition hover:opacity-80 disabled:opacity-50"
                   style={{ borderColor: BORDER, color: MUTED, background: CARD }}>
                   <RefreshCw className={`w-3.5 h-3.5 ${auditLoading ? 'animate-spin' : ''}`} />
                   Actualiser
@@ -2652,15 +2652,15 @@ export default function B2BDashboard() {
                     style={{ borderColor: ORANGE, borderTopColor: 'transparent' }} />
                 </div>
               ) : auditLogs.length === 0 ? (
-                <div className="py-20 text-center rounded-2xl" style={{ background: CARD, boxShadow: SH }}>
-                  <div className="w-12 h-12 rounded-2xl mx-auto mb-3 flex items-center justify-center" style={{ background: BG }}>
+                <div className="py-20 text-center rounded-lg" style={{ background: CARD, boxShadow: SH }}>
+                  <div className="w-12 h-12 rounded-lg mx-auto mb-3 flex items-center justify-center" style={{ background: BG }}>
                     <Activity className="w-6 h-6" style={{ color: FAINT }} />
                   </div>
                   <p className="text-sm font-medium" style={{ color: MUTED }}>Aucun événement enregistré</p>
                   <p className="text-xs mt-1" style={{ color: FAINT }}>Les connexions, commandes et actions apparaissent ici</p>
                 </div>
               ) : (
-                <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+                <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                   {auditLogs.map((entry, idx, arr) => {
                     const LABELS = {
                       CONNEXION: 'Connexion', CREATION_COLLABORATEUR: 'Ajout collaborateur',
@@ -2680,7 +2680,7 @@ export default function B2BDashboard() {
                     return (
                       <div key={entry.id || idx} className="flex items-center gap-4 px-5 py-3.5"
                         style={{ borderBottom: idx < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
-                        <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                        <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                           style={{ background: s.bg }}>
                           <Activity className="w-3.5 h-3.5" style={{ color: s.color }} />
                         </div>
@@ -2723,12 +2723,12 @@ export default function B2BDashboard() {
                 {notifications.length > 0 && (
                   <div className="flex items-center gap-3">
                     <button onClick={markAllRead}
-                      className="px-4 py-2 rounded-xl text-[12px] font-semibold border transition hover:opacity-80"
+                      className="px-4 py-2 rounded-lg text-[12px] font-semibold border transition hover:opacity-80"
                       style={{ borderColor: BORDER, color: MUTED, background: CARD }}>
                       Tout marquer lu
                     </button>
                     <button onClick={() => setNotifications([])}
-                      className="px-4 py-2 rounded-xl text-[12px] font-semibold border transition hover:opacity-80"
+                      className="px-4 py-2 rounded-lg text-[12px] font-semibold border transition hover:opacity-80"
                       style={{ borderColor: '#FECACA', color: RED, background: RED_L }}>
                       Effacer tout
                     </button>
@@ -2738,9 +2738,9 @@ export default function B2BDashboard() {
 
               {/* Unread banner */}
               {unreadCount > 0 && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl"
+                <div className="flex items-center gap-3 px-4 py-3 rounded-lg"
                   style={{ background: ORANGE_L, border: `1px solid ${ORANGE}33` }}>
-                  <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0"
+                  <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
                     style={{ background: ORANGE }}>
                     <Bell className="w-4.5 h-4.5 text-white" />
                   </div>
@@ -2755,10 +2755,10 @@ export default function B2BDashboard() {
                 </div>
               )}
 
-              <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+              <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                 {notifications.length === 0 ? (
                   <div className="py-28 text-center">
-                    <div className="w-16 h-16 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                    <div className="w-16 h-16 rounded-lg mx-auto mb-4 flex items-center justify-center"
                       style={{ background: BG }}>
                       <Bell className="w-8 h-8" style={{ color: FAINT }} />
                     </div>
@@ -2790,7 +2790,7 @@ export default function B2BDashboard() {
                       onMouseEnter={e => { if (hasTarget) e.currentTarget.style.background = n.read ? BG : `${color}12`; }}
                       onMouseLeave={e => { e.currentTarget.style.background = n.read ? 'transparent' : `${color}08`; }}
                       onClick={() => handleNotifClick(n)}>
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                      <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0"
                         style={{ background: n.read ? BG : iconBg }}>
                         <NotifIcon className="w-5 h-5" style={{ color: n.read ? FAINT : color }} />
                       </div>
@@ -2831,7 +2831,7 @@ export default function B2BDashboard() {
                   <p className="text-[12px] mt-0.5" style={{ color: FAINT }}>Gérez votre profil, votre entreprise et vos accès</p>
                 </div>
                 <button onClick={() => setShowLogoutModal(true)}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-[12px] font-semibold border transition hover:opacity-80"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-lg text-[12px] font-semibold border transition hover:opacity-80"
                   style={{ borderColor: BORDER, color: MUTED, background: CARD }}>
                   <LogOut className="w-3.5 h-3.5" /> Déconnexion
                 </button>
@@ -2841,7 +2841,7 @@ export default function B2BDashboard() {
               <div className="flex gap-5 items-start">
 
                 {/* Sidebar 160px */}
-                <div className="shrink-0 rounded-2xl overflow-hidden" style={{ width: 160, background: ORANGE_L, border: `1px solid ${BORDER}` }}>
+                <div className="shrink-0 rounded-lg overflow-hidden" style={{ width: 160, background: ORANGE_L, border: `1px solid ${BORDER}` }}>
                   {[
                     { id: 'profil',     label: 'Profil',      icon: '👤' },
                     { id: 'entreprise', label: 'Entreprise',  icon: '🏢' },
@@ -2868,7 +2868,7 @@ export default function B2BDashboard() {
 
                   {/* Onglet Profil */}
                   {settingsTab === 'profil' && (
-                    <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+                    <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                       <div className="flex items-center gap-4 px-6 py-5" style={{ borderBottom: `1px solid ${BORDER}` }}>
                         <Avatar name={user?.nom || 'B2B'} size={52} />
                         <div>
@@ -2893,13 +2893,13 @@ export default function B2BDashboard() {
                               <label className="block text-[11px] font-bold mb-1.5" style={{ color: MUTED }}>{f.label}</label>
                               <input value={profileForm[f.k] || ''} type={f.type}
                                 onChange={e => setProfileForm(p => ({ ...p, [f.k]: e.target.value }))}
-                                className="w-full rounded-xl px-3.5 py-3 text-sm outline-none transition"
+                                className="w-full rounded-lg px-3.5 py-3 text-sm outline-none transition"
                                 style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }} />
                             </div>
                           ))}
                         </div>
                         {profileMsg && (
-                          <div className="flex items-center gap-2 px-4 py-3 rounded-xl"
+                          <div className="flex items-center gap-2 px-4 py-3 rounded-lg"
                             style={{ background: profileMsg.includes('Erreur') ? RED_L : GREEN_L, border: `1px solid ${profileMsg.includes('Erreur') ? '#FECACA' : '#FFE4CC'}` }}>
                             {profileMsg.includes('Erreur')
                               ? <AlertCircle className="w-3.5 h-3.5 shrink-0" style={{ color: RED }} />
@@ -2908,7 +2908,7 @@ export default function B2BDashboard() {
                           </div>
                         )}
                         <button type="submit"
-                          className="w-full py-3.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                          className="w-full py-3.5 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                           style={{ background: `linear-gradient(135deg, ${NAVY}, ${NAVY2})`, boxShadow: `0 2px 8px ${NAVY}40` }}>
                           Enregistrer les modifications
                         </button>
@@ -2918,7 +2918,7 @@ export default function B2BDashboard() {
 
                   {/* Onglet Entreprise */}
                   {settingsTab === 'entreprise' && compte && (
-                    <div className="rounded-2xl p-6" style={{ background: CARD, boxShadow: SH2 }}>
+                    <div className="rounded-lg p-6" style={{ background: CARD, boxShadow: SH2 }}>
                       <p className="text-[11px] font-bold uppercase tracking-widest mb-4" style={{ color: FAINT }}>Informations entreprise</p>
                       {[
                         { label: 'Raison sociale', value: compte.raisonSociale },
@@ -2937,7 +2937,7 @@ export default function B2BDashboard() {
                     </div>
                   )}
                   {settingsTab === 'entreprise' && !compte && (
-                    <div className="rounded-2xl p-6 text-center" style={{ background: CARD, boxShadow: SH2 }}>
+                    <div className="rounded-lg p-6 text-center" style={{ background: CARD, boxShadow: SH2 }}>
                       <p className="text-sm" style={{ color: FAINT }}>Aucune information entreprise disponible.</p>
                     </div>
                   )}
@@ -2949,9 +2949,9 @@ export default function B2BDashboard() {
 
                   {/* Onglet Rapports */}
                   {settingsTab === 'rapports' && (
-                    <div className="rounded-2xl p-6" style={{ background: CARD, boxShadow: SH2 }}>
+                    <div className="rounded-lg p-6" style={{ background: CARD, boxShadow: SH2 }}>
                       <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: GREEN_L }}>
+                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: GREEN_L }}>
                           <FileText className="w-5 h-5" style={{ color: GREEN }} />
                         </div>
                         <div>
@@ -2960,19 +2960,19 @@ export default function B2BDashboard() {
                         </div>
                       </div>
                       <button onClick={() => setViewingSyscohada(true)}
-                        className="w-full rounded-xl py-3 text-sm font-bold flex items-center justify-center gap-2 transition hover:opacity-80 mb-3"
+                        className="w-full rounded-lg py-3 text-sm font-bold flex items-center justify-center gap-2 transition hover:opacity-80 mb-3"
                         style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }}>
                         <Eye className="w-4 h-4" /> Consulter le rapport
                       </button>
                       {isLastDayOfMonth ? (
                         <button onClick={downloadSyscohadaReport} disabled={downloading}
-                          className="w-full rounded-xl py-3 text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
+                          className="w-full rounded-lg py-3 text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
                           style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, opacity: downloading ? 0.7 : 1 }}>
                           {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
                           {downloading ? 'Génération…' : 'Télécharger (PDF)'}
                         </button>
                       ) : (
-                        <div className="rounded-xl p-3.5 flex items-center gap-3"
+                        <div className="rounded-lg p-3.5 flex items-center gap-3"
                           style={{ background: AMBER_L, border: `1px solid #FDE68A` }}>
                           <Clock className="w-4 h-4 shrink-0" style={{ color: AMBER }} />
                           <div>
@@ -3053,9 +3053,9 @@ export default function B2BDashboard() {
       {showLogoutModal && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           onClick={e => e.target === e.currentTarget && setShowLogoutModal(false)}>
-          <div className="rounded-2xl p-6 w-full max-w-sm" style={{ background: CARD, boxShadow: SH3 }}>
+          <div className="rounded-lg p-6 w-full max-w-sm" style={{ background: CARD, boxShadow: SH3 }}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-2xl flex items-center justify-center" style={{ background: RED_L }}>
+              <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ background: RED_L }}>
                 <LogOut className="w-6 h-6" style={{ color: RED }} />
               </div>
               <div>
@@ -3065,12 +3065,12 @@ export default function B2BDashboard() {
             </div>
             <div className="flex gap-3">
               <button onClick={() => setShowLogoutModal(false)}
-                className="flex-1 px-4 py-2.5 rounded-xl border text-sm font-semibold transition hover:opacity-80"
+                className="flex-1 px-4 py-2.5 rounded-lg border text-sm font-semibold transition hover:opacity-80"
                 style={{ borderColor: BORDER, color: TEXT, background: BG }}>
                 Annuler
               </button>
               <button onClick={() => { logout?.(); navigate('/login'); setShowLogoutModal(false); }}
-                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                className="flex-1 px-4 py-2.5 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                 style={{ background: RED }}>
                 Déconnecter
               </button>
@@ -3083,7 +3083,7 @@ export default function B2BDashboard() {
       {selectedOrder && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
           onClick={e => e.target === e.currentTarget && setSelectedOrder(null)}>
-          <div className="rounded-2xl w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto"
+          <div className="rounded-lg w-full max-w-lg overflow-hidden max-h-[90vh] overflow-y-auto"
             style={{ background: CARD, boxShadow: SH3 }}>
             <div className="flex items-center justify-between px-5 py-4 sticky top-0 z-10"
               style={{ background: CARD, borderBottom: `1px solid ${BORDER}` }}>
@@ -3092,14 +3092,14 @@ export default function B2BDashboard() {
                 <StatusPill statut={selectedOrder.statut} />
               </div>
               <button onClick={() => setSelectedOrder(null)}
-                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                className="w-8 h-8 rounded-lg flex items-center justify-center"
                 style={{ background: BG, color: MUTED }}>
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <div className="p-5 space-y-5">
-              <div className="rounded-xl p-4 space-y-2" style={{ background: BG }}>
+              <div className="rounded-lg p-4 space-y-2" style={{ background: BG }}>
                 <div className="flex items-center gap-2 text-[13px]" style={{ color: TEXT }}>
                   <CalendarDays className="w-4 h-4 shrink-0" style={{ color: ORANGE }} />
                   <span>
@@ -3149,7 +3149,7 @@ export default function B2BDashboard() {
               {selectedOrder.lignes?.length > 0 && (
                 <div>
                   <p className="text-[11px] font-bold uppercase tracking-wider mb-2" style={{ color: FAINT }}>Détail</p>
-                  <div className="rounded-xl overflow-hidden border" style={{ borderColor: BORDER }}>
+                  <div className="rounded-lg overflow-hidden border" style={{ borderColor: BORDER }}>
                     {selectedOrder.lignes.map((l, i) => (
                       <div key={l.id || i} className="flex items-center justify-between px-4 py-3"
                         style={{ borderBottom: i < selectedOrder.lignes.length - 1 ? `1px solid ${BORDER}` : 'none' }}>
@@ -3169,7 +3169,7 @@ export default function B2BDashboard() {
               )}
 
               {selectedOrder.statut === 'LIVREE' && !selectedOrder.avisNote && (
-                <div className="rounded-xl border p-4" style={{ borderColor: BORDER }}>
+                <div className="rounded-lg border p-4" style={{ borderColor: BORDER }}>
                   <p className="text-[13px] font-bold mb-3" style={{ color: TEXT }}>Laisser un avis</p>
                   <div className="flex gap-2 mb-3">
                     {[1,2,3,4,5].map(n => (
@@ -3183,7 +3183,7 @@ export default function B2BDashboard() {
                   <textarea value={avisForm.commentaire}
                     onChange={e => setAvisForm(p => ({ ...p, commentaire: e.target.value }))}
                     placeholder="Commentaire (optionnel)" rows={2}
-                    className="w-full rounded-xl px-3 py-2 text-sm outline-none resize-none mb-3"
+                    className="w-full rounded-lg px-3 py-2 text-sm outline-none resize-none mb-3"
                     style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }} />
                   {avisMsg && (
                     <p className="text-xs font-medium mb-2"
@@ -3203,7 +3203,7 @@ export default function B2BDashboard() {
                       } catch (e) { setAvisMsg(e.response?.data?.message || 'Erreur'); }
                       finally { setAvisSubmitting(false); }
                     }}
-                    className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
+                    className="w-full py-2.5 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition"
                     style={{ background: ORANGE, opacity: avisForm.note === 0 || avisSubmitting ? 0.5 : 1 }}>
                     {avisSubmitting ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Star className="w-4 h-4" fill="white" />}
                     Envoyer l'avis
@@ -3211,7 +3211,7 @@ export default function B2BDashboard() {
                 </div>
               )}
               {selectedOrder.avisNote && (
-                <div className="flex items-center gap-2 px-4 py-3 rounded-xl" style={{ background: GREEN_L }}>
+                <div className="flex items-center gap-2 px-4 py-3 rounded-lg" style={{ background: GREEN_L }}>
                   <CheckCircle className="w-4 h-4 shrink-0" style={{ color: GREEN }} />
                   <p className="text-sm font-semibold" style={{ color: GREEN_D }}>
                     Avis soumis — {selectedOrder.avisNote}/5 étoiles

@@ -4,7 +4,7 @@
    + Sidebar dynamique Yango Deli + Grille des restaurants + Footer.
    ═══════════════════════════════════════════════════════════════ */
 import { useState, useEffect, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UtensilsCrossed, ArrowRight, Check, Star, Search, Truck, Clock,
@@ -17,6 +17,7 @@ import { BrandMark } from "../components/shared/BrandLogo";
 import LanguageSwitcher from "../components/shared/LanguageSwitcher";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../hooks/useLanguage";
+import { RADIUS } from "../theme/colors";
 
 import orangeMoneyLogo from "../assets/payments/orange-money.svg";
 import mtnMomoLogo from "../assets/payments/mtn-momo.svg";
@@ -24,31 +25,34 @@ import moovMoneyLogo from "../assets/payments/moov-money.svg";
 import waveLogo from "../assets/payments/wave.svg";
 import carteBancaireLogo from "../assets/payments/carte-bancaire.svg";
 
-/* ─── Palette de couleurs Ultra-Premium ─── */
+/* ─── Palette "flat enterprise" — couleurs pro, neutres élégants,
+   ombres naturelles restreintes (pas de glow coloré ni glassmorphism). ─── */
 const T = {
-  bg: "#FAF6F0",
-  bgAlt: "#F5EFE6",
-  surface: "#FFFDF9",
-  dark: "#160E08",
-  text: "#2C1D11",
-  muted: "#756252",
-  mutedL: "#A89685",
+  bg: "#F8FAFC", // slate-50
+  bgAlt: "#F1F5F9", // slate-100
+  surface: "#FFFFFF",
+  dark: "#0F172A", // slate-900
+  text: "#334155", // slate-700
+  muted: "#64748B", // slate-500
+  mutedL: "#94A3B8", // slate-400
   card: "#FFFFFF",
-  accent: "#EA580C",
-  accentD: "#C2410C",
-  accentL: "#F97316",
-  yellow: "#F59E0B",
-  yellowL: "#FBBF24",
+  accent: "#EA580C", // orange-600
+  accentD: "#C2410C", // orange-700
+  accentL: "#F97316", // orange-500
+  yellow: "#F59E0B", // amber-500
+  yellowL: "#FCD34D", // amber-300
   red: "#EF4444",
   green: "#10B981",
-  line: "rgba(234, 88, 12, 0.12)",
-  shadow: "0 12px 36px rgba(234, 88, 12, 0.12)",
-  shadowS: "0 4px 20px rgba(0,0,0,0.06)",
+  line: "#E2E8F0", // slate-200
+  shadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+  shadowS: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)",
+  shadowM: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
 };
 
-const KENTE = ["#EA580C", "#F59E0B", "#160E08", "#C2410C"];
-const serif = "'Playfair Display', Georgia, serif";
-const sans = "'Manrope', system-ui, sans-serif";
+const KENTE = ["#EA580C", "#F97316", "#C2410C", "#9A3412"];
+/* Une seule famille moderne sans-serif pour un look SaaS pur */
+const serif = "'Inter', system-ui, sans-serif";
+const sans = "'Inter', system-ui, sans-serif";
 
 /* Nombre de restaurants mis en avant sur l'accueil (2 rangées de 3 en desktop). */
 const HOME_TOP_COUNT = 6;
@@ -56,11 +60,9 @@ const HOME_TOP_COUNT = 6;
 const CSS = `
 @keyframes kfpulse    { 0%,100%{opacity:1} 50%{opacity:0.55} }
 @keyframes kfskeleton { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-@keyframes rd-orbit   { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-@keyframes rd-orbit-rev { 0% { transform: rotate(360deg); } 100% { transform: rotate(0deg); } }
 .rd-nav-link:hover  { color:${T.accent} !important; }
-.rd-btn-cta:hover   { transform:translateY(-2px) !important; box-shadow:0 12px 32px rgba(234,88,12,0.4) !important; }
-.rd-card:hover      { transform:translateY(-6px) !important; box-shadow:0 20px 48px rgba(234,88,12,0.18) !important; }
+.rd-btn-cta:hover   { filter:brightness(0.94); }
+.rd-card:hover      { transform:translateY(-2px) !important; box-shadow:${T.shadowM} !important; border-color:${T.mutedL} !important; }
 .rd-foot-link:hover { color:${T.accent} !important; }
 @media (max-width: 900px) {
   .rd-desktop-sidebar { display: none !important; }
@@ -80,20 +82,13 @@ const CSS = `
 `;
 
 const FOOD_IMGS = [
-  "photo-1665332195309-9d75071138f0",
-  "photo-1665400808116-f0e6339b7e9a",
-  "photo-1664993101841-036f189719b6",
-  "photo-1664992960082-0ea299a9c53e",
-  "photo-1665333048952-a3ee97714c6b",
-  "photo-1665332305771-e49a5dd5ba80",
-  "photo-1665334217407-6688e6941a47",
-  "photo-1665332561290-cc6757172890",
-  "photo-1665401015549-712c0dc5ef85",
-  "photo-1603496987674-79600a000f55",
+  "/images/food/poulet_braise.png",
+  "/images/food/jollof_rice.png",
+  "/images/food/poisson_braise.png",
+  "/images/food/suya_brochettes.png",
 ];
 
-const fallbackImg = (idx, w = 600) =>
-  `https://images.unsplash.com/${FOOD_IMGS[idx % FOOD_IMGS.length]}?q=80&w=${w}&auto=format&fit=crop`;
+const fallbackImg = (idx, w = 600) => FOOD_IMGS[idx % FOOD_IMGS.length];
 
 function restoImg(r, idx) {
   return r?.logo || r?.coverImage || r?.photoUrl || fallbackImg(idx);
@@ -108,7 +103,7 @@ function FontLoader() {
   useEffect(() => {
     if (!document.getElementById("rd-fonts")) {
       const l = document.createElement("link"); l.id = "rd-fonts"; l.rel = "stylesheet";
-      l.href = "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap";
+      l.href = "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap";
       document.head.appendChild(l);
     }
     if (!document.getElementById("rd-css")) {
@@ -163,34 +158,29 @@ function Nav() {
     <>
     <nav style={{
       position: "fixed", top: 0, left: 0, right: 0, zIndex: 1000,
-      background: scrolled ? "rgba(255, 255, 255, 0.94)" : "rgba(22, 14, 8, 0.45)",
-      backdropFilter: "blur(20px)",
-      boxShadow: scrolled ? "0 4px 30px rgba(234, 88, 12, 0.08)" : "none",
-      transition: "all 0.35s ease",
-      borderBottom: scrolled ? "1px solid rgba(234,88,12,0.12)" : "1px solid rgba(255,255,255,0.1)",
+      background: scrolled ? "#FFFFFF" : T.dark,
+      boxShadow: scrolled ? T.shadowS : "none",
+      transition: "background 0.2s ease, box-shadow 0.2s ease",
+      borderBottom: scrolled ? `1px solid ${T.line}` : "1px solid transparent",
     }}>
-      <KS h={3} />
-      <div className="rd-nav-inner" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: 72, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
+      <div className="rd-nav-inner" style={{ maxWidth: 1280, margin: "0 auto", padding: "0 32px", height: 64, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
 
         {/* Brand */}
-        <a href="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", minWidth: 0 }}>
-          <BrandMark size={42} shadow />
+        <Link to="/" style={{ display: "flex", alignItems: "center", gap: 12, textDecoration: "none", minWidth: 0 }}>
+          <BrandMark size={32} />
           <div style={{ minWidth: 0 }}>
-            <span style={{ fontFamily: serif, fontWeight: 900, color: scrolled ? T.dark : "#fff", fontSize: 23, letterSpacing: "-0.02em", display: "block", whiteSpace: "nowrap" }}>
+            <span style={{ fontFamily: sans, fontWeight: 700, color: scrolled ? T.dark : "#fff", fontSize: 20, letterSpacing: "-0.02em", display: "block", whiteSpace: "nowrap" }}>
               Resto d'ici
             </span>
-            <span className="rd-nav-brand-sub" style={{ fontFamily: sans, fontSize: 9, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.18em", color: scrolled ? T.accent : T.yellowL, whiteSpace: "nowrap" }}>
-              {t('abidjan_gastro')}
-            </span>
           </div>
-        </a>
+        </Link>
 
         {/* Links (desktop) */}
         <div className="rd-nav-links-desktop" style={{ display: "flex", gap: 32, alignItems: "center" }}>
-          <a href="#catalogue" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700 }}>{t('restaurants')}</a>
-          <a href="/register?type=b2b" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>
-            <Building2 size={15} color={scrolled ? T.accent : T.yellowL} />{t('b2b_space')}</a>
-          <a href="/aide" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#fff", textDecoration: "none", fontWeight: 700 }}>{t('help')}</a>
+          <a href="#catalogue" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#cbd5e1", textDecoration: "none", fontWeight: 500 }}>{t('restaurants')}</a>
+          <Link to="/register?type=b2b" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#cbd5e1", textDecoration: "none", fontWeight: 500, display: "flex", alignItems: "center", gap: 6 }}>
+            <Building2 size={15} color={scrolled ? T.accent : T.yellowL} />{t('b2b_space')}</Link>
+          <Link to="/aide" className="rd-nav-link" style={{ fontFamily: sans, fontSize: 14, color: scrolled ? T.text : "#cbd5e1", textDecoration: "none", fontWeight: 500 }}>{t('help')}</Link>
         </div>
 
         {/* Actions (desktop) */}
@@ -202,11 +192,11 @@ function Nav() {
               onClick={() => navigate(getDashboardPath())}
               className="rd-btn-cta"
               style={{
-                fontFamily: sans, fontSize: 13, fontWeight: 800,
-                padding: "10px 22px", borderRadius: 50, cursor: "pointer",
-                color: "#fff", background: "linear-gradient(135deg, #EA580C, #C2410C)",
+                fontFamily: sans, fontSize: 13, fontWeight: 600,
+                padding: "8px 16px", borderRadius: 6, cursor: "pointer",
+                color: "#fff", background: T.accent,
                 border: "none", display: "inline-flex", alignItems: "center", gap: 8,
-                boxShadow: "0 6px 20px rgba(234,88,12,0.35)"
+                boxShadow: T.shadowS
               }}
             >
               <User size={15} /> {t('my_space')} ({role})
@@ -217,22 +207,22 @@ function Nav() {
                 href="/login"
                 className="rd-btn-cta"
                 style={{
-                  fontFamily: sans, fontSize: 13, fontWeight: 700, textDecoration: "none",
-                  padding: "10px 22px", borderRadius: 50, transition: "all .22s",
+                  fontFamily: sans, fontSize: 13, fontWeight: 500, textDecoration: "none",
+                  padding: "8px 16px", borderRadius: 6, transition: "all .22s",
                   display: "inline-flex", alignItems: "center", gap: 6,
                   color: scrolled ? T.dark : "#fff", background: "transparent",
-                  border: `1.5px solid ${scrolled ? "rgba(26,12,0,0.2)" : "rgba(255,255,255,0.4)"}`
+                  border: `1px solid ${scrolled ? T.line : "rgba(255,255,255,0.2)"}`
                 }}
               >{t('login')}</a>
               <a
                 href="/register"
                 className="rd-btn-cta"
                 style={{
-                  fontFamily: sans, fontSize: 13, fontWeight: 800, textDecoration: "none",
-                  padding: "10px 22px", borderRadius: 50, transition: "all .22s",
+                  fontFamily: sans, fontSize: 13, fontWeight: 600, textDecoration: "none",
+                  padding: "8px 16px", borderRadius: 6, transition: "filter .15s",
                   display: "inline-flex", alignItems: "center", gap: 6,
-                  color: "#fff", background: "linear-gradient(135deg, #10B981, #059669)",
-                  border: "none", boxShadow: "0 6px 20px rgba(16,185,129,0.35)"
+                  color: "#fff", background: T.accent,
+                  border: "none", boxShadow: T.shadowS
                 }}
               >{t('register')}</a>
             </>
@@ -246,9 +236,9 @@ function Nav() {
           aria-label={t('menu_button')}
           style={{
             alignItems: "center", justifyContent: "center",
-            width: 42, height: 42, borderRadius: 12, flexShrink: 0,
-            border: `1.5px solid ${scrolled ? "rgba(26,12,0,0.15)" : "rgba(255,255,255,0.35)"}`,
-            background: scrolled ? "rgba(0,0,0,0.03)" : "rgba(255,255,255,0.1)",
+            width: 40, height: 40, borderRadius: 8, flexShrink: 0,
+            border: `1px solid ${scrolled ? T.line : "rgba(255,255,255,0.2)"}`,
+            background: "transparent",
             color: scrolled ? T.dark : "#fff", cursor: "pointer",
           }}
         >
@@ -264,7 +254,7 @@ function Nav() {
         {mobileOpen && (
           <motion.div
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)" }}
+            style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(15,17,20,0.6)" }}
             onClick={(e) => e.target === e.currentTarget && setMobileOpen(false)}
           >
             <motion.div
@@ -315,7 +305,7 @@ function Nav() {
                     onClick={() => { setMobileOpen(false); navigate(getDashboardPath()); }}
                     style={{
                       fontFamily: sans, fontSize: 14, fontWeight: 800, padding: "14px 22px", borderRadius: 50,
-                      cursor: "pointer", color: "#fff", background: "linear-gradient(135deg, #EA580C, #C2410C)",
+                      cursor: "pointer", color: "#fff", background: T.accent,
                       border: "none", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
                     }}
                   ><User size={16} /> {t('my_space')} ({role})</button>
@@ -336,7 +326,7 @@ function Nav() {
                       style={{
                         fontFamily: sans, fontSize: 14, fontWeight: 800, textDecoration: "none", textAlign: "center",
                         padding: "13px 22px", borderRadius: 50, color: "#fff",
-                        background: "linear-gradient(135deg, #10B981, #059669)", border: "none",
+                        background: T.green, border: "none",
                       }}
                     >{t('register')}</a>
                   </>
@@ -395,15 +385,15 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
               filter: "contrast(1.06) brightness(1.08) saturate(1.1)",
             }}
             onError={e => {
-              e.target.src = "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=100&w=2400&auto=format&fit=crop";
+              e.target.src = "/images/food/jollof_rice.png";
             }}
           />
         </AnimatePresence>
 
-        {/* Ambient Dark Overlay */}
+        {/* Ambient Overlay */}
         <div style={{
           position: "absolute", inset: 0, zIndex: 1,
-          background: "linear-gradient(180deg, rgba(22,14,8,0.18) 0%, rgba(22,14,8,0.40) 50%, rgba(22,14,8,0.78) 100%)"
+          background: "linear-gradient(180deg, rgba(15,23,42,0.4) 0%, rgba(15,23,42,0.7) 100%)"
         }} />
 
         {/* Carousel Indicators */}
@@ -413,29 +403,28 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
               key={idx}
               onClick={() => setCurrentImgIndex(idx)}
               style={{
-                width: idx === currentImgIndex ? 28 : 10,
-                height: 10,
-                borderRadius: 99,
+                width: idx === currentImgIndex ? 24 : 8,
+                height: 8,
+                borderRadius: 4,
                 border: "none",
-                background: idx === currentImgIndex ? T.yellow : "rgba(255,255,255,0.45)",
+                background: idx === currentImgIndex ? "#fff" : "rgba(255,255,255,0.4)",
                 cursor: "pointer",
                 transition: "all 0.3s ease",
-                boxShadow: "0 2px 6px rgba(0,0,0,0.3)"
               }}
             />
           ))}
         </div>
 
         {/* Hero Content */}
-        <div style={{ position: "relative", zIndex: 2, maxWidth: 900, margin: "0 auto", padding: "100px 24px 70px", width: "100%", textAlign: "center" }}>
+        <div style={{ position: "relative", zIndex: 2, maxWidth: 900, margin: "0 auto", padding: "120px 24px 80px", width: "100%", textAlign: "center" }}>
 
           <motion.div
             initial={{ opacity: 0, y: -15 }}
             animate={{ opacity: 1, y: 0 }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.14)", backdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 100, padding: "8px 22px", marginBottom: 24 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 16px", marginBottom: 24 }}
           >
-            <span style={{ width: 9, height: 9, borderRadius: "50%", background: T.yellow, boxShadow: `0 0 12px ${T.yellow}` }} />
-            <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, letterSpacing: "0.2em", textTransform: "uppercase", color: "#fff" }}>
+            <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.green }} />
+            <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#fff" }}>
               {t('abidjan_ci')}
             </span>
           </motion.div>
@@ -444,14 +433,14 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            style={{ fontFamily: serif, fontWeight: 900, fontSize: "clamp(38px, 6.5vw, 76px)", color: "#fff", lineHeight: 1.02, letterSpacing: "-0.03em", margin: "0 0 22px", textShadow: "0 6px 30px rgba(0,0,0,0.6)" }}
+            style={{ fontFamily: sans, fontWeight: 700, fontSize: "clamp(32px, 5vw, 56px)", color: "#fff", lineHeight: 1.1, margin: "0 0 24px" }}
             dangerouslySetInnerHTML={{ __html: t('hero_title') }}></motion.h1>
 
           <motion.p
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            style={{ fontFamily: sans, fontSize: "clamp(15px, 2vw, 19px)", color: "rgba(255,255,255,0.9)", lineHeight: 1.65, maxWidth: 620, margin: "0 auto 36px", fontWeight: 400 }}
+            style={{ fontFamily: sans, fontSize: "clamp(15px, 2vw, 18px)", color: "rgba(255,255,255,0.8)", lineHeight: 1.6, maxWidth: 620, margin: "0 auto 40px", fontWeight: 400 }}
           >{t('hero_sub')}</motion.p>
 
           {/* Floating Search Bar */}
@@ -461,31 +450,31 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
             transition={{ delay: 0.3 }}
             style={{ maxWidth: 660, margin: "0 auto 24px" }}
           >
-            <div style={{ display: "flex", alignItems: "center", background: "rgba(255,255,255,0.96)", backdropFilter: "blur(20px)", borderRadius: 50, padding: "6px 8px 6px 24px", boxShadow: "0 20px 60px rgba(0,0,0,0.45)", border: "1.5px solid rgba(255,255,255,0.8)" }}>
-              <Search size={22} color={T.accent} style={{ flexShrink: 0 }} />
+            <div style={{ display: "flex", alignItems: "center", background: "#FFFFFF", borderRadius: 8, padding: "8px 8px 8px 24px", boxShadow: T.shadowM, border: `1px solid ${T.line}` }}>
+              <Search size={20} color={T.muted} style={{ flexShrink: 0 }} />
               <input
                 value={search}
                 onChange={e => onSearch(e.target.value)}
                 placeholder={t('search_placeholder')}
-                style={{ border: "none", outline: "none", fontFamily: sans, fontSize: 15, color: T.text, background: "transparent", width: "100%", padding: "16px 14px", fontWeight: 600 }}
+                style={{ border: "none", outline: "none", fontFamily: sans, fontSize: 14, color: T.text, background: "transparent", width: "100%", padding: "12px 16px", fontWeight: 500 }}
               />
               {search && (
                 <button onClick={() => onSearch("")} style={{ background: "none", border: "none", cursor: "pointer", color: T.mutedL, padding: 8 }}>
-                  <X size={18} />
+                  <X size={16} />
                 </button>
               )}
               <a
                 href="#catalogue"
                 style={{
                   display: "inline-flex", alignItems: "center", gap: 8,
-                  background: "linear-gradient(135deg, #EA580C, #C2410C)",
-                  color: "#fff", fontFamily: sans, fontSize: 14, fontWeight: 800,
-                  padding: "16px 28px", borderRadius: 50, textDecoration: "none",
-                  whiteSpace: "nowrap", boxShadow: "0 6px 20px rgba(234,88,12,0.4)",
-                  transition: "transform 0.2s"
+                  background: T.accent,
+                  color: "#fff", fontFamily: sans, fontSize: 14, fontWeight: 600,
+                  padding: "12px 24px", borderRadius: 6, textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  transition: "background 0.2s"
                 }}
               >
-                {hasQuery ? `${resultCount} ${t('results')}` : t('find')} <ArrowRight size={16} />
+                {hasQuery ? `${resultCount} ${t('results')}` : t('find')}
               </a>
             </div>
           </motion.div>
@@ -509,10 +498,10 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
                   }
                   style={{
                     fontFamily: sans, fontSize: 12, fontWeight: 700, color: "#fff",
-                    background: search === plat.nom ? T.accent : "rgba(255,255,255,0.16)",
-                    border: "1px solid rgba(255,255,255,0.25)", borderRadius: 100,
-                    padding: "6px 14px", cursor: "pointer", backdropFilter: "blur(10px)",
-                    transition: "all 0.2s"
+                    background: search === plat.nom ? T.accent : "rgba(20,22,26,0.45)",
+                    border: "1px solid rgba(255,255,255,0.22)", borderRadius: RADIUS.pill,
+                    padding: "6px 14px", cursor: "pointer",
+                    transition: "background 0.15s"
                   }}
                 >
                   {plat.nom}
@@ -523,7 +512,7 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
         </div>
 
         {/* Live Trust Bar Badges at Bottom of Hero */}
-        <div style={{ position: "relative", zIndex: 2, background: "rgba(22,14,8,0.75)", backdropFilter: "blur(20px)", borderTop: "1px solid rgba(255,255,255,0.1)", padding: "18px 32px" }}>
+        <div style={{ position: "relative", zIndex: 2, background: "rgba(20,22,26,0.82)", borderTop: "1px solid rgba(255,255,255,0.1)", padding: "18px 32px" }}>
           <div style={{ maxWidth: 1100, margin: "0 auto", display: "flex", alignItems: "center", justifyContent: "space-around", flexWrap: "wrap", gap: 20 }}>
             {[
               { icon: Truck, text: t('delivery_express'), sub: t('everywhere_abidjan') },
@@ -556,24 +545,24 @@ function Pillars() {
     { Icon: Smartphone, title: t('pillar_3_title'), text: t('pillar_3_desc') },
   ];
   return (
-    <section style={{ background: "#fff", padding: "64px 0", borderBottom: `1px solid ${T.line}` }}>
+    <section style={{ background: "#fff", padding: "80px 0", borderBottom: `1px solid ${T.line}` }}>
       <div style={{ maxWidth: 1180, margin: "0 auto", padding: "0 24px" }}>
-        <div style={{ textAlign: "center", marginBottom: 40 }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${T.accent}12`, border: `1px solid ${T.accent}28`, borderRadius: 100, padding: "7px 20px", marginBottom: 14 }}>
+        <div style={{ textAlign: "center", marginBottom: 48 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: T.bgAlt, borderRadius: 6, padding: "4px 12px", marginBottom: 16 }}>
             <ShieldCheck size={14} color={T.accent} />
-            <span style={{ fontFamily: sans, fontSize: 11, color: T.accent, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 800 }}>{t('commitments')}</span>
+            <span style={{ fontFamily: sans, fontSize: 12, color: T.accent, fontWeight: 600 }}>{t('commitments')}</span>
           </div>
-          <h2 style={{ fontFamily: serif, fontSize: "clamp(26px, 3.5vw, 40px)", color: T.dark, fontWeight: 900, margin: 0, letterSpacing: "-0.025em" }} dangerouslySetInnerHTML={{ __html: t('excellence_simplified') }} ></h2>
+          <h2 style={{ fontFamily: sans, fontSize: "clamp(24px, 3vw, 32px)", color: T.dark, fontWeight: 700, margin: 0 }} dangerouslySetInnerHTML={{ __html: t('excellence_simplified') }} ></h2>
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 28 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 24 }}>
           {items.map(({ Icon, title, text }) => (
-            <div key={title} style={{ textAlign: "center", padding: "32px 24px", borderRadius: 24, background: T.bg, border: `1px solid ${T.line}`, transition: "transform 0.3s" }}>
-              <div style={{ width: 64, height: 64, borderRadius: 20, margin: "0 auto 20px", background: `linear-gradient(135deg, ${T.accent}18, ${T.yellow}28)`, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
-                <Icon size={28} color={T.accent} strokeWidth={2} />
+            <div key={title} style={{ padding: "32px 24px", borderRadius: 12, background: T.bg, border: `1px solid ${T.line}` }}>
+              <div style={{ width: 48, height: 48, borderRadius: 8, margin: "0 0 20px", background: T.surface, border: `1px solid ${T.line}`, display: "flex", alignItems: "center", justifyContent: "center", boxShadow: T.shadow }}>
+                <Icon size={24} color={T.accent} strokeWidth={2} />
               </div>
-              <h3 style={{ fontFamily: serif, fontSize: 20, color: T.dark, fontWeight: 800, margin: "0 0 10px" }}>{title}</h3>
-              <p style={{ fontFamily: sans, fontSize: 14, color: T.muted, lineHeight: 1.65, margin: 0 }}>{text}</p>
+              <h3 style={{ fontFamily: sans, fontSize: 18, color: T.dark, fontWeight: 600, margin: "0 0 8px" }}>{title}</h3>
+              <p style={{ fontFamily: sans, fontSize: 14, color: T.muted, lineHeight: 1.6, margin: 0 }}>{text}</p>
             </div>
           ))}
         </div>
@@ -594,52 +583,51 @@ function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDi
 
   return (
     <motion.div
-      whileHover={{ y: -6 }}
+      whileHover={{ y: -2 }}
       transition={{ duration: 0.2 }}
       onMouseEnter={() => setHov(true)}
       onMouseLeave={() => setHov(false)}
       style={{
-        background: T.card, borderRadius: 24, overflow: "hidden",
-        boxShadow: hov ? "0 20px 48px rgba(234, 88, 12, 0.18)" : T.shadowS,
-        border: `1px solid ${hov ? T.accent : T.line}`,
-        transition: "all .3s ease", display: "flex", flexDirection: "column"
+        background: T.card, borderRadius: 12, overflow: "hidden",
+        boxShadow: T.shadow, border: `1px solid ${hov ? T.accentL : T.line}`,
+        transition: "all .2s ease", display: "flex", flexDirection: "column"
       }}
     >
       {/* Cover Image */}
-      <div onClick={() => onOpenResto(restaurant)} style={{ position: "relative", height: 200, overflow: "hidden", cursor: "pointer" }}>
+      <div onClick={() => onOpenResto(restaurant)} style={{ position: "relative", height: 180, overflow: "hidden", cursor: "pointer", background: T.bgAlt }}>
         <img
           src={restoImg(restaurant, idx)}
           alt={restaurant.nom}
           onError={e => { e.target.src = fallbackImg(idx); }}
-          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.5s ease", transform: hov ? "scale(1.06)" : "scale(1)" }}
+          style={{ width: "100%", height: "100%", objectFit: "cover", display: "block", transition: "transform 0.4s ease", transform: hov ? "scale(1.02)" : "scale(1)" }}
         />
 
         {/* Rating Badge */}
-        <div style={{ position: "absolute", top: 14, left: 14, background: "rgba(255,255,255,0.96)", backdropFilter: "blur(8px)", borderRadius: 12, padding: "5px 12px", display: "flex", alignItems: "center", gap: 6, boxShadow: "0 4px 14px rgba(0,0,0,0.15)" }}>
+        <div style={{ position: "absolute", top: 12, left: 12, background: "#FFFFFF", borderRadius: 6, padding: "4px 8px", display: "flex", alignItems: "center", gap: 4, boxShadow: T.shadow, border: `1px solid ${T.line}` }}>
           {rating ? (
             <>
-              <Star size={14} fill={T.yellow} color={T.yellow} />
-              <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: T.dark }}>{rating}</span>
-              <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 600, color: T.muted }}>
+              <Star size={12} fill={T.yellow} color={T.yellow} />
+              <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, color: T.dark }}>{rating}</span>
+              <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 500, color: T.muted }}>
                 ({nbAvis})
               </span>
             </>
           ) : (
-            <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, color: T.accent }}>{t('new')}</span>
+            <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 600, color: T.accent }}>{t('new')}</span>
           )}
         </div>
 
         {/* Status Badge */}
-        <div style={{ position: "absolute", top: 14, right: 14, background: "rgba(16, 185, 129, 0.95)", borderRadius: 10, padding: "4px 10px", color: "#fff", fontFamily: sans, fontSize: 11, fontWeight: 800, letterSpacing: "0.05em", uppercase: true }}>{t('open_now')}</div>
+        <div style={{ position: "absolute", top: 12, right: 12, background: T.green, borderRadius: 6, padding: "4px 8px", color: "#fff", fontFamily: sans, fontSize: 10, fontWeight: 600, textTransform: "uppercase" }}>{t('open_now')}</div>
       </div>
 
       {/* Info Body */}
-      <div style={{ padding: "20px 22px", display: "flex", flexDirection: "column", flex: 1 }}>
-        <h3 onClick={() => onOpenResto(restaurant)} style={{ fontFamily: serif, fontSize: 21, color: T.dark, fontWeight: 800, margin: "0 0 6px", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+      <div style={{ padding: "16px", display: "flex", flexDirection: "column", flex: 1 }}>
+        <h3 onClick={() => onOpenResto(restaurant)} style={{ fontFamily: sans, fontSize: 16, color: T.dark, fontWeight: 600, margin: "0 0 4px", cursor: "pointer", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
           {restaurant.nom}
         </h3>
         <p style={{ fontFamily: sans, fontSize: 13, color: T.muted, margin: "0 0 16px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-          📍 {restaurant.adresse || restaurant.ville || "Plateau, Abidjan"}
+          {restaurant.adresse || restaurant.ville || "Plateau, Abidjan"}
         </p>
 
         {/* Matched Dishes in Search */}
@@ -664,20 +652,20 @@ function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDi
         )}
 
         {/* Footer info & Action button */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${T.line}`, paddingTop: 14, marginTop: "auto" }}>
-          <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, color: T.muted }}>
-              <Clock size={13} /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 700 }}>{time}</span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${T.line}`, paddingTop: 12, marginTop: "auto" }}>
+          <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 4, color: T.muted }}>
+              <Clock size={12} /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 500 }}>{time}</span>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <Truck size={13} color="#10B981" /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 800, color: T.green }}>{t('delivery')}</span>
+              <Truck size={12} color={T.green} /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 500, color: T.green }}>{t('delivery')}</span>
             </div>
           </div>
           <button
             onClick={() => onOpenResto(restaurant)}
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontFamily: sans, fontSize: 13, fontWeight: 800, color: T.accent, background: "none", border: "none", cursor: "pointer", padding: 0 }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 4, fontFamily: sans, fontSize: 13, fontWeight: 600, color: T.accent, background: "none", border: "none", cursor: "pointer", padding: 0 }}
           >
-            {t('view_menu')} <ArrowRight size={15} />
+            {t('view_menu')} <ArrowRight size={14} />
           </button>
         </div>
       </div>
@@ -735,11 +723,11 @@ function Catalog({
           <button
             onClick={() => setMobileFilterOpen(true)}
             style={{
-              width: "100%", padding: "14px 20px", borderRadius: 16,
-              background: `linear-gradient(135deg, ${T.accent}, ${T.accentD})`,
+              width: "100%", padding: "14px 20px", borderRadius: RADIUS.lg,
+              background: T.accent,
               color: "#fff", border: "none", fontFamily: sans, fontSize: 15, fontWeight: 800,
               display: "flex", alignItems: "center", justifyContent: "space-between",
-              boxShadow: "0 8px 24px rgba(234,88,12,0.3)"
+              boxShadow: T.shadowS
             }}
           >
             <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -783,7 +771,7 @@ function Catalog({
             {/* Header Result Counter */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 24, flexWrap: "wrap", gap: 12 }}>
               <div>
-                <h2 style={{ fontFamily: serif, fontSize: 26, color: T.dark, fontWeight: 900, margin: 0 }}>
+                <h2 style={{ fontFamily: sans, fontSize: 24, color: T.dark, fontWeight: 700, margin: 0 }}>
                   {query ? `${t('results_for')} « ${query} »` : t('top_rated')}
                 </h2>
                 <p style={{ fontFamily: sans, fontSize: 13, color: T.muted, margin: "4px 0 0" }}>
@@ -867,7 +855,7 @@ function Catalog({
           {mobileFilterOpen && (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(4px)", display: "flex", justifyContent: "flex-end" }}
+              style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(15,17,20,0.6)", display: "flex", justifyContent: "flex-end" }}
             >
               <motion.div
                 initial={{ x: "100%" }} animate={{ x: 0 }} exit={{ x: "100%" }} transition={{ type: "spring", damping: 25 }}
@@ -911,45 +899,43 @@ function B2BBanner() {
   const { t } = useLanguage();
   const navigate = useNavigate();
   return (
-    <section style={{ background: T.bg, padding: "72px 24px", borderBottom: `1px solid ${T.line}` }}>
+    <section style={{ background: T.bg, padding: "80px 24px", borderBottom: `1px solid ${T.line}` }}>
       <div style={{
         maxWidth: 1200,
         margin: "0 auto",
-        background: "linear-gradient(135deg, #1A110A 0%, #2D190B 100%)",
-        borderRadius: 36,
-        padding: "56px 48px",
+        background: T.dark,
+        borderRadius: 16,
+        padding: "48px",
         color: "#FFFFFF",
-        boxShadow: "0 24px 64px rgba(26, 17, 10, 0.25)",
-        border: "1px solid rgba(255,255,255,0.12)",
+        boxShadow: T.shadowM,
+        border: `1px solid ${T.dark}`,
         position: "relative",
         overflow: "hidden"
       }}>
-        <div style={{ position: "absolute", top: -60, right: -60, width: 280, height: 280, background: "radial-gradient(circle, rgba(234,88,12,0.18) 0%, transparent 70%)", pointerEvents: "none" }} />
-
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 40, position: "relative", zIndex: 2 }}>
           <div style={{ maxWidth: 580 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 100, padding: "6px 18px", marginBottom: 16 }}>
-              <Building2 size={15} color={T.yellow} />
-              <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: "0.14em", color: T.yellow }}>{t('b2b_enterprise')}</span>
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(255,255,255,0.1)", borderRadius: 6, padding: "4px 12px", marginBottom: 16 }}>
+              <Building2 size={14} color="#fff" />
+              <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, color: "#fff" }}>{t('b2b_enterprise')}</span>
             </div>
-            <h2 style={{ fontFamily: serif, fontSize: "clamp(26px, 3.5vw, 40px)", fontWeight: 900, lineHeight: 1.15, margin: "0 0 14px" }} dangerouslySetInnerHTML={{ __html: t('b2b_title') }} ></h2>
-            <p style={{ fontFamily: sans, fontSize: 15, color: "rgba(255,255,255,0.8)", lineHeight: 1.65, margin: "0 0 26px" }}>{t('b2b_desc')}</p>
-            <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+            <h2 style={{ fontFamily: sans, fontSize: "clamp(24px, 3vw, 32px)", fontWeight: 700, lineHeight: 1.2, margin: "0 0 16px" }} dangerouslySetInnerHTML={{ __html: t('b2b_title') }} ></h2>
+            <p style={{ fontFamily: sans, fontSize: 15, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, margin: "0 0 32px" }}>{t('b2b_desc')}</p>
+            <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
               <button
                 onClick={() => navigate('/register?type=b2b')}
-                style={{ fontFamily: sans, fontSize: 14, fontWeight: 800, color: "#fff", background: "linear-gradient(135deg, #EA580C, #C2410C)", border: "none", borderRadius: 50, padding: "14px 30px", cursor: "pointer", boxShadow: "0 8px 24px rgba(234,88,12,0.4)" }}
+                style={{ fontFamily: sans, fontSize: 14, fontWeight: 600, color: "#fff", background: T.accent, border: "none", borderRadius: 6, padding: "12px 24px", cursor: "pointer", transition: "background 0.2s" }}
               >{t('create_b2b_account')}</button>
               <button
                 onClick={() => navigate('/aide')}
-                style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: "#fff", background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 50, padding: "14px 26px", cursor: "pointer", backdropFilter: "blur(10px)" }}
+                style={{ fontFamily: sans, fontSize: 14, fontWeight: 500, color: "#fff", background: "transparent", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 6, padding: "12px 24px", cursor: "pointer", transition: "background 0.2s" }}
               >{t('learn_more')}</button>
             </div>
           </div>
 
           {/* Feature Check Grid */}
-          <div style={{ background: "rgba(255,255,255,0.06)", backdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 28, padding: "28px 32px", maxWidth: 400, width: "100%" }}>
-            <h3 style={{ fontFamily: serif, fontSize: 20, fontWeight: 800, margin: "0 0 16px" }}>{t('why_b2b')}</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <div style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 12, padding: "32px", maxWidth: 400, width: "100%" }}>
+            <h3 style={{ fontFamily: sans, fontSize: 18, fontWeight: 600, margin: "0 0 20px" }}>{t('why_b2b')}</h3>
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               {[
                 t('b2b_feat_1'),
                 t('b2b_feat_2'),
@@ -957,10 +943,10 @@ function B2BBanner() {
                 t('b2b_feat_4'),
               ].map(txt => (
                 <div key={txt} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                  <div style={{ width: 24, height: 24, borderRadius: "50%", background: T.yellow, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-                    <Check size={13} color="#160E08" strokeWidth={3} />
+                  <div style={{ width: 20, height: 20, borderRadius: 4, background: T.accent, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Check size={12} color="#fff" strokeWidth={3} />
                   </div>
-                  <span style={{ fontFamily: sans, fontSize: 13.5, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{txt}</span>
+                  <span style={{ fontFamily: sans, fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.9)" }}>{txt}</span>
                 </div>
               ))}
             </div>
@@ -983,145 +969,44 @@ function PaymentLogosBar() {
     { name: "Carte", logo: carteBancaireLogo },
   ];
 
-  const total = logos.length;
-  // Dimensions agrandies du grand cercle central et rayon d'orbite
-  const centerSize = 500;
-  const ringRadius = 320;
-  const orbitSize = ringRadius * 2;
-
   return (
-    <section style={{ background: "linear-gradient(180deg, #FAFAFA 0%, #F1F5F9 100%)", padding: "72px 24px 0", display: "flex", flexDirection: "column", alignItems: "center", borderBottom: `1px solid ${T.line}`, overflow: "hidden", position: "relative" }}>
-      
+    <section style={{ background: T.bg, padding: "72px 24px", borderBottom: `1px solid ${T.line}` }}>
+
       {/* En-tête de section */}
-      <div style={{ textAlign: "center", marginBottom: 32, zIndex: 10 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(16, 185, 129, 0.12)", border: "1px solid rgba(16, 185, 129, 0.3)", borderRadius: 100, padding: "6px 20px", marginBottom: 14 }}>
-          <ShieldCheck size={15} color="#10B981" />
-          <span style={{ fontFamily: sans, fontSize: 11, color: "#065F46", letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 800 }}>
-            Intégration Directe NovaSend
+      <div style={{ textAlign: "center", marginBottom: 44, maxWidth: 640, marginLeft: "auto", marginRight: "auto" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 8, background: `${T.green}12`, border: `1px solid ${T.green}30`, borderRadius: RADIUS.pill, padding: "6px 20px", marginBottom: 14 }}>
+          <ShieldCheck size={15} color={T.green} />
+          <span style={{ fontFamily: sans, fontSize: 11, color: T.green, letterSpacing: "0.16em", textTransform: "uppercase", fontWeight: 800 }}>
+            Intégration directe NovaSend
           </span>
         </div>
-        <h2 style={{ fontFamily: serif, fontSize: "clamp(28px, 4vw, 42px)", color: T.dark, fontWeight: 900, margin: "0 0 12px", letterSpacing: "-0.02em" }} dangerouslySetInnerHTML={{ __html: t('payments_secure') }} ></h2>
-        <p style={{ fontFamily: sans, fontSize: 16, color: T.muted, maxWidth: 560, margin: "0 auto", lineHeight: 1.6 }}>{t('payments_desc')}</p>
+        <h2 style={{ fontFamily: serif, fontSize: "clamp(26px, 3.5vw, 38px)", color: T.dark, fontWeight: 800, margin: "0 0 12px", letterSpacing: "-0.02em" }} dangerouslySetInnerHTML={{ __html: t('payments_secure') }} ></h2>
+        <p style={{ fontFamily: sans, fontSize: 15, color: T.muted, lineHeight: 1.6, margin: 0 }}>{t('payments_desc')}</p>
       </div>
 
-      {/* Assemblage du Grand Cercle Agrandis Style NovaSend Documentation */}
-      <div style={{
-        position: "relative",
-        width: "100%",
-        maxWidth: 800,
-        height: 380,
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "flex-start",
-        overflow: "hidden"
-      }}>
-
-        {/* Ligne d'arc extérieure verte fluide */}
-        <div style={{
-          position: "absolute",
-          top: 20,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: ringRadius * 2,
-          height: ringRadius * 2,
-          borderRadius: "50%",
-          border: "2px solid #10B981",
-          pointerEvents: "none",
-          zIndex: 1
-        }} />
-
-        {/* Anneau blanc de halo translucide */}
-        <div style={{
-          position: "absolute",
-          top: 50,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: centerSize + 60,
-          height: centerSize + 60,
-          borderRadius: "50%",
-          background: "rgba(255, 255, 255, 0.75)",
-          boxShadow: "0 20px 54px rgba(0,0,0,0.06), inset 0 2px 6px rgba(255,255,255,0.8)",
-          border: "1px solid rgba(255,255,255,0.9)",
-          pointerEvents: "none",
-          zIndex: 2
-        }} />
-
-        {/* Grand Disque Central Bleu Canard / Dark Teal NovaSend */}
-        <div style={{
-          position: "absolute",
-          top: 80,
-          left: "50%",
-          transform: "translateX(-50%)",
-          width: centerSize,
-          height: centerSize,
-          borderRadius: "50%",
-          background: "linear-gradient(145deg, #01373A 0%, #075E66 100%)",
-          boxShadow: "0 28px 70px rgba(1, 55, 58, 0.35), inset 0 4px 14px rgba(255,255,255,0.15)",
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "flex-start",
-          paddingTop: 60,
-          zIndex: 3,
-          color: "#FFFFFF"
-        }}>
-          <div style={{ padding: 14, background: "rgba(255,255,255,0.12)", borderRadius: 24, marginBottom: 16, border: "1px solid rgba(255,255,255,0.2)" }}>
-            <BrandMark size={54} shadow />
+      {/* Rangée de moyens de paiement — tuiles plates, pas de disque 3D */}
+      <div style={{ maxWidth: 900, margin: "0 auto", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 16 }}>
+        {logos.map((item) => (
+          <div
+            key={item.name}
+            style={{
+              background: T.card,
+              border: `1px solid ${T.line}`,
+              borderRadius: RADIUS.lg,
+              boxShadow: T.shadowS,
+              padding: "22px 16px",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              gap: 12,
+            }}
+          >
+            <div style={{ width: 44, height: 44, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={item.logo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            </div>
+            <span style={{ fontFamily: sans, fontSize: 12.5, fontWeight: 700, color: T.text }}>{item.name}</span>
           </div>
-          <h3 style={{ fontFamily: serif, fontSize: 26, fontWeight: 900, color: "#FFFFFF", letterSpacing: "-0.01em", margin: "0 0 6px", textTransform: "uppercase" }}>
-            Paiements Directs
-          </h3>
-          <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: "#10B981", letterSpacing: "0.14em", textTransform: "uppercase" }}>
-            Wave · Mobile Money · Carte
-          </span>
-        </div>
-
-        {/* Conteneur d'Orbite Tournante Continue */}
-        <div style={{
-          position: "absolute",
-          top: 20,
-          left: "50%",
-          width: orbitSize,
-          height: orbitSize,
-          marginTop: 0,
-          marginLeft: -(orbitSize / 2),
-          zIndex: 10,
-          animation: "rd-orbit 32s linear infinite"
-        }}>
-          {logos.map((item, i) => {
-            const angle = (360 / total) * i;
-            return (
-              <div
-                key={item.name}
-                style={{
-                  position: "absolute",
-                  top: "50%", left: "50%",
-                  width: 78, height: 78,
-                  marginTop: -39, marginLeft: -39,
-                  transform: `rotate(${angle}deg) translateX(${ringRadius}px)`
-                }}
-              >
-                <div style={{ width: "100%", height: "100%", transform: `rotate(-${angle}deg)` }}>
-                  <div style={{
-                    width: "100%", height: "100%",
-                    background: "#FFFFFF",
-                    borderRadius: 24,
-                    boxShadow: "0 14px 36px rgba(0,0,0,0.12), inset 0 2px 4px rgba(255,255,255,0.9)",
-                    border: "1px solid rgba(0,0,0,0.06)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: 12,
-                    animation: "rd-orbit-rev 32s linear infinite"
-                  }}>
-                    <img src={item.logo} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
+        ))}
       </div>
     </section>
   );
@@ -1147,8 +1032,8 @@ function Footer() {
 
   return (
     <footer style={{ background: "#0B0805", color: "#FFFFFF", position: "relative", overflow: "hidden" }}>
-      {/* Top Gradient Accent Line */}
-      <div style={{ height: 4, background: `linear-gradient(90deg, ${T.accent} 0%, ${T.yellow} 50%, ${T.accent} 100%)` }} />
+      {/* Top Accent Line */}
+      <div style={{ height: 3, background: T.accent }} />
 
       <div style={{ maxWidth: 1240, margin: "0 auto", padding: "80px 32px 40px" }}>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 48, marginBottom: 64 }}>
@@ -1192,24 +1077,24 @@ function Footer() {
                 </a>
               </li>
               <li>
-                <a href="/menu" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
+                <Link to="/menu" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
                   {t('dishes_menus')}
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/register?type=b2b" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
+                <Link to="/register?type=b2b" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
                   Espace Entreprise B2B
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/register?type=gerant" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
+                <Link to="/register?type=gerant" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
                   Devenir Restaurateur Partenaire
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/aide" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
+                <Link to="/aide" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
                   {t('help_center')}
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -1221,19 +1106,19 @@ function Footer() {
             </h4>
             <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 12, fontFamily: sans, fontSize: 14 }}>
               <li>
-                <a href="/legal" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
+                <Link to="/legal" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
                   Mentions Légales & Conditions
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/privacy" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
+                <Link to="/privacy" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
                   Politique de Confidentialité
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/contact" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
+                <Link to="/contact" style={{ color: "rgba(255,255,255,0.75)", textDecoration: "none", transition: "color 0.2s" }} onMouseEnter={e => e.target.style.color = T.accent} onMouseLeave={e => e.target.style.color = "rgba(255,255,255,0.75)"}>
                   Service Client & Partenariats
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -1248,7 +1133,7 @@ function Footer() {
             </p>
 
             {sent ? (
-              <div style={{ background: "rgba(16,185,129,0.15)", border: "1px solid rgba(16,185,129,0.3)", borderRadius: 16, padding: "14px 18px", color: "#34D399", fontFamily: sans, fontSize: 13, fontWeight: 700 }}>
+              <div style={{ background: "rgba(21,128,61,0.18)", border: "1px solid rgba(21,128,61,0.35)", borderRadius: RADIUS.md, padding: "14px 18px", color: "#4ADE80", fontFamily: sans, fontSize: 13, fontWeight: 700 }}>
                 ✓ {t('newsletter_success')}
               </div>
             ) : (
@@ -1268,9 +1153,9 @@ function Footer() {
                 <button
                   type="submit"
                   style={{
-                    padding: "12px 22px", borderRadius: 100, background: "linear-gradient(135deg, #EA580C, #C2410C)",
+                    padding: "12px 22px", borderRadius: 100, background: T.accent,
                     border: "none", color: "#FFFFFF", cursor: "pointer", fontFamily: sans, fontSize: 13, fontWeight: 800,
-                    boxShadow: "0 6px 20px rgba(234,88,12,0.4)", transition: "all 0.2s"
+                    boxShadow: T.shadowS, transition: "all 0.2s"
                   }}
                 >
                   OK

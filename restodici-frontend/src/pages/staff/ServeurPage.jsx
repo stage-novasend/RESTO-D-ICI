@@ -217,7 +217,12 @@ export default function ServeurPage() {
   const allCats = ['Tous', ...categories.map(c => c.nom)];
 
   const shown = articles.filter(a => {
-    const matchSearch = !search || a.nom.toLowerCase().includes(search.toLowerCase());
+    const q = search.trim().toLowerCase();
+    const matchSearch = !q
+      || a.nom?.toLowerCase().includes(q)
+      || a.description?.toLowerCase().includes(q)
+      || a.categorie?.nom?.toLowerCase().includes(q)
+      || a.categorieNom?.toLowerCase().includes(q);
     const matchCat    = catFilter === 'Tous' || a.categorie?.nom === catFilter || a.categorieNom === catFilter;
     return matchSearch && matchCat;
   });

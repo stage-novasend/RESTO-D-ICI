@@ -75,7 +75,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
          onClick={e => e.target === e.currentTarget && onClose()}>
       <style>{`@media print { .syscohada-viewer-reports { display: none !important; } }`}</style>
-      <div className="syscohada-viewer-reports rounded-2xl overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col relative"
+      <div className="syscohada-viewer-reports rounded-lg overflow-hidden w-full max-w-4xl max-h-[90vh] flex flex-col relative"
            style={{ background: '#fff', boxShadow: '0 24px 64px rgba(0,0,0,0.45)' }}
            onContextMenu={e => e.preventDefault()}>
 
@@ -83,7 +83,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
         <div className="flex items-center justify-between px-6 py-4 shrink-0"
              style={{ background: '#1A0C00', borderBottom: '2.5px solid #EA580C' }}>
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,140,0,0.20)' }}>
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center" style={{ background: 'rgba(255,140,0,0.20)' }}>
               <FileText className="w-4 h-4 text-white" />
             </div>
             <div>
@@ -96,18 +96,18 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
           <div className="flex items-center gap-2">
             {isLastDayOfMonth ? (
               <button onClick={onDownload} disabled={downloading}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-white transition hover:opacity-90"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-xs font-bold text-white transition hover:opacity-90"
                 style={{ background: 'linear-gradient(135deg,#16A34A,#15803D)', opacity: downloading ? 0.7 : 1 }}>
                 {downloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
                 {downloading ? 'Génération…' : 'Télécharger PDF'}
               </button>
             ) : (
-              <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold"
+              <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold"
                     style={{ background: '#FFFBEB', color: '#D97706' }}>
                 <Clock className="w-3.5 h-3.5" /> Dispo le {lastDayDisplay}
               </span>
             )}
-            <button onClick={onClose} className="w-8 h-8 rounded-xl flex items-center justify-center"
+            <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center"
               style={{ background: 'rgba(255,255,255,0.08)', color: '#9CA3AF' }}>
               <X className="w-4 h-4" />
             </button>
@@ -116,7 +116,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
 
         {/* Blur guard */}
         {captureGuard && (
-          <div className="absolute inset-0 z-[300] flex flex-col items-center justify-center rounded-2xl"
+          <div className="absolute inset-0 z-[300] flex flex-col items-center justify-center rounded-lg"
                style={{ background: 'rgba(139,110,80,0.96)' }}>
             <Shield className="w-12 h-12 mb-3" style={{ color: '#EA580C' }} />
             <p className="text-white font-bold text-base">Contenu masqué</p>
@@ -141,7 +141,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
           <div className="p-6 space-y-5" style={{ position: 'relative', zIndex: 1 }}>
 
             {/* Report header */}
-            <div className="rounded-2xl p-5" style={{ background: '#1A0C00' }}>
+            <div className="rounded-lg p-5" style={{ background: '#1A0C00' }}>
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#EA580C' }}>Rapport Mensuel SYSCOHADA</p>
@@ -149,7 +149,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                   <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>{reports?.plateforme?.adresse || '—'}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <span className="px-3 py-1.5 rounded-xl text-xs font-bold text-white" style={{ background: '#EA580C' }}>SYSCOHADA</span>
+                  <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: '#EA580C' }}>SYSCOHADA</span>
                   <p className="text-[11px] mt-1.5" style={{ color: 'rgba(255,255,255,0.45)' }}>Période : {mois}</p>
                 </div>
               </div>
@@ -158,7 +158,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
                   { title: 'PRESTATAIRE', lines: [reports?.plateforme?.nom || '—', reports?.plateforme?.nif ? `NIF : ${reports.plateforme.nif}` : '—', reports?.plateforme?.rccm ? `RCCM : ${reports.plateforme.rccm}` : '—', reports?.plateforme?.adresse || '—'] },
                   { title: 'CLIENT', lines: [compte?.raisonSociale || 'Entreprise', `NIF : ${compte?.numeroContribuable || '—'}`, `RCCM : ${compte?.numeroRCCM || '—'}`, compte?.secteurActivite ? `Secteur : ${compte.secteurActivite}` : ''] },
                 ].map(({ title, lines }) => (
-                  <div key={title} className="rounded-xl p-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
+                  <div key={title} className="rounded-lg p-3" style={{ background: 'rgba(255,255,255,0.07)' }}>
                     <p className="text-[10px] font-bold uppercase tracking-wider mb-1.5" style={{ color: '#EA580C' }}>{title}</p>
                     {lines.filter(Boolean).map((l, i) => (
                       <p key={i} className="text-[12px]" style={{ color: i === 0 ? '#fff' : 'rgba(255,255,255,0.5)', fontWeight: i === 0 ? 600 : 400 }}>{l}</p>
@@ -281,7 +281,7 @@ function SyscohadaViewerModal({ reports, compte, monthlyExp, isLastDayOfMonth, l
             </div>
 
             {/* Mentions légales */}
-            <div className="rounded-xl p-4" style={{ background: '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
+            <div className="rounded-lg p-4" style={{ background: '#F8FAFC', border: '1px solid rgba(0,0,0,0.06)' }}>
               <p className="text-[11px] italic" style={{ color: '#8B6E50' }}>
                 Conformément au Système Comptable OHADA (SYSCOHADA Révisé) · TVA collectée au taux de 18%
                 conformément au Code Général des Impôts de la Côte d'Ivoire — Article 339 CGI-CI.
@@ -399,7 +399,7 @@ export default function B2BReports() {
           <div className="flex items-center gap-2">
             {/* Voir — toujours disponible */}
             <button onClick={() => setViewerOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-semibold border transition hover:opacity-80"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-semibold border transition hover:opacity-80"
               style={{ borderColor: BORDER, color: TEXT, background: BG }}>
               <Eye className="w-3.5 h-3.5" /> Voir rapport
             </button>
@@ -407,14 +407,14 @@ export default function B2BReports() {
             {/* Télécharger — fin de mois uniquement */}
             {isLastDayOfMonth ? (
               <button onClick={handleExport}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+                className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
                 style={{ background: exported ? `linear-gradient(135deg,${GREEN_D},${GREEN})` : `linear-gradient(135deg,${GREEN},${GREEN_D})`, boxShadow: `0 2px 10px ${GREEN}50` }}>
                 {exported
                   ? <><CheckCircle className="w-3.5 h-3.5" /> Exporté !</>
                   : <><Download className="w-3.5 h-3.5" /> Télécharger CSV SYSCOHADA</>}
               </button>
             ) : (
-              <span className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[11px] font-semibold"
+              <span className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold"
                 style={{ background: AMBER_L, color: AMBER }}>
                 <Clock className="w-3.5 h-3.5" /> Disponible le {lastDayDisplay}
               </span>
@@ -439,10 +439,10 @@ export default function B2BReports() {
               { label: 'Commandes mois',  value: reports?.totalCommandesMois ?? 0, bg: GREEN,     icon: BarChart2 },
               { label: 'Factures',        value: factures.length,                  bg: '#7C3AED', icon: FileText },
             ].map(({ label, value, bg, icon: Icon }) => (
-              <div key={label} className="rounded-2xl p-4 text-white"
+              <div key={label} className="rounded-lg p-4 text-white"
                 style={{ background: bg, boxShadow: `0 4px 16px ${bg}40` }}>
                 <div className="flex items-center justify-between mb-2">
-                  <div className="w-8 h-8 rounded-xl flex items-center justify-center"
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center"
                     style={{ background: 'rgba(255,255,255,0.2)' }}>
                     <Icon className="w-4 h-4 text-white" />
                   </div>
@@ -455,8 +455,8 @@ export default function B2BReports() {
 
           {/* Export info banner */}
           {isLastDayOfMonth ? (
-            <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: GREEN_L, border: '1.5px solid #BBF7D0' }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#fff' }}>
+            <div className="rounded-lg p-4 flex items-center gap-4" style={{ background: GREEN_L, border: '1.5px solid #BBF7D0' }}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#fff' }}>
                 <Download className="w-5 h-5" style={{ color: GREEN }} />
               </div>
               <div className="flex-1">
@@ -467,14 +467,14 @@ export default function B2BReports() {
                 </p>
               </div>
               <button onClick={handleExport}
-                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
                 style={{ background: GREEN, boxShadow: `0 2px 8px ${GREEN}40` }}>
                 <Download className="w-3.5 h-3.5" /> Télécharger
               </button>
             </div>
           ) : (
-            <div className="rounded-2xl p-4 flex items-center gap-4" style={{ background: AMBER_L, border: '1.5px solid #FDE68A' }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: '#fff' }}>
+            <div className="rounded-lg p-4 flex items-center gap-4" style={{ background: AMBER_L, border: '1.5px solid #FDE68A' }}>
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#fff' }}>
                 <Clock className="w-5 h-5" style={{ color: AMBER }} />
               </div>
               <div className="flex-1">
@@ -485,7 +485,7 @@ export default function B2BReports() {
                 </p>
               </div>
               <button onClick={() => setViewerOpen(true)}
-                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-bold border transition hover:opacity-80"
+                className="shrink-0 flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-bold border transition hover:opacity-80"
                 style={{ borderColor: AMBER, color: AMBER, background: '#fff' }}>
                 <Eye className="w-3.5 h-3.5" /> Consulter
               </button>
@@ -519,7 +519,7 @@ export default function B2BReports() {
           {tab === 'collaborateurs' && (
             <div className="space-y-3">
               {collaborateurs.length === 0 ? (
-                <div className="rounded-2xl py-16 text-center" style={{ background: CARD, boxShadow: SH }}>
+                <div className="rounded-lg py-16 text-center" style={{ background: CARD, boxShadow: SH }}>
                   <Users className="w-10 h-10 mx-auto mb-3" style={{ color: FAINT }} />
                   <p className="text-sm font-medium" style={{ color: MUTED }}>Aucune donnée de consommation ce mois</p>
                 </div>
@@ -527,7 +527,7 @@ export default function B2BReports() {
                 const pct = c.limite > 0 ? Math.min(100, (c.totalDepense / c.limite) * 100) : 0;
                 const barColor = pct >= 100 ? RED : pct >= 80 ? ORANGE : GREEN;
                 return (
-                  <div key={i} className="rounded-2xl p-5" style={{ background: CARD, boxShadow: SH2 }}>
+                  <div key={i} className="rounded-lg p-5" style={{ background: CARD, boxShadow: SH2 }}>
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex items-start gap-3 flex-1 min-w-0">
                         <Avatar name={c.collaborateur || ''} size={40} />
@@ -564,13 +564,13 @@ export default function B2BReports() {
           {tab === 'audit' && (
             <div className="space-y-1.5">
               {auditLogs.length === 0 ? (
-                <div className="flex flex-col items-center justify-center rounded-2xl py-16 text-center" style={{ background: '#FFF7ED', boxShadow: SH }}>
+                <div className="flex flex-col items-center justify-center rounded-lg py-16 text-center" style={{ background: '#FFF7ED', boxShadow: SH }}>
                   <Activity className="w-12 h-12 mb-3" style={{ color: '#EA580C', opacity: 0.4 }} />
                   <p className="text-sm font-medium" style={{ color: '#1A0C00' }}>Aucun log d'audit</p>
                   <p className="text-xs mt-1" style={{ color: '#A89070' }}>Les actions de votre compte seront enregistrées ici.</p>
                 </div>
               ) : (
-                <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+                <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
                   {auditLogs.map((log, i, arr) => {
                     const TYPE_COLORS = {
                       CONNEXION: { bg: '#F5F5F4', color: '#57534E' },
@@ -586,7 +586,7 @@ export default function B2BReports() {
                         style={{ borderBottom: i < arr.length - 1 ? `1px solid ${BORDER}` : 'none' }}
                         onMouseEnter={e => e.currentTarget.style.background = BG}
                         onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                        <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[11px] font-bold shrink-0"
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0"
                           style={{ background: s.bg, color: s.color }}>
                           {(log.actorEmail ?? log.user ?? '?')[0]?.toUpperCase()}
                         </div>
@@ -612,7 +612,7 @@ export default function B2BReports() {
 
           {/* ── Factures ── */}
           {tab === 'factures' && (
-            <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+            <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
               {factures.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-16 text-center" style={{ background: '#FFF7ED' }}>
                   <FileText className="w-12 h-12 mb-3" style={{ color: '#EA580C', opacity: 0.4 }} />
@@ -630,7 +630,7 @@ export default function B2BReports() {
                     onMouseEnter={e => e.currentTarget.style.background = BG}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
                     <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                      <div className="w-9 h-9 rounded-lg flex items-center justify-center"
                         style={{ background: isPaid ? GREEN_L : isLate ? RED_L : isContested ? '#EEF2FF' : AMBER_L }}>
                         <FileText className="w-4 h-4" style={{ color: isPaid ? GREEN : isLate ? RED : isContested ? '#6366F1' : AMBER }} />
                       </div>
@@ -690,18 +690,18 @@ export default function B2BReports() {
               onChange={e => setMotif(e.target.value)}
               placeholder="Ex : montant incorrect, commandes manquantes..."
               rows={4}
-              className="w-full rounded-xl border px-4 py-3 text-[13px] resize-none"
+              className="w-full rounded-lg border px-4 py-3 text-[13px] resize-none"
               style={{ borderColor: contesterErr ? RED : BORDER, outline: 'none', color: TEXT }}
             />
             {contesterErr && <p className="text-[12px] mt-1" style={{ color: RED }}>{contesterErr}</p>}
             <div className="flex gap-3 mt-4">
               <button onClick={() => setContesterModal(null)}
-                className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold border"
+                className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold border"
                 style={{ borderColor: BORDER, color: MUTED, background: '#fff' }}>
                 Annuler
               </button>
               <button onClick={handleContester} disabled={contesterLoading}
-                className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-white"
+                className="flex-1 py-2.5 rounded-lg text-[13px] font-semibold text-white"
                 style={{ background: contesterLoading ? '#FCA5A5' : RED }}>
                 {contesterLoading ? 'Envoi...' : 'Envoyer la contestation'}
               </button>

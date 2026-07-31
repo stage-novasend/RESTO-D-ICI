@@ -11,22 +11,28 @@ import {
 } from 'lucide-react';
 
 const C = {
-  accent:  '#EA580C',
+  bg: '#F8FAFC',
+  bgAlt: '#F1F5F9',
+  surface: '#FFFFFF',
+  dark: '#0F172A',
+  text: '#334155',
+  muted: '#64748B',
+  mutedL: '#94A3B8',
+  card: '#FFFFFF',
+  accent: '#EA580C',
   accentD: '#C2410C',
-  accentL: '#FFF5E8',
-  yellow:  '#FFB800',
-  green:   '#22C55E',
-  dark:    '#1A0C00',
-  text:    '#3B2409',
-  muted:   '#7A5E3A',
-  mutedL:  '#B09070',
-  card:    '#FFFFFF',
-  bg:      '#F1F5F9', // remplissage discret (neutre, visible sur page blanche)
-  line:    '#E2E8F0',
-  shadow:  '0 1px 3px rgba(15,23,42,0.06), 0 8px 24px rgba(15,23,42,0.06)',
+  accentL: '#FFF7ED',
+  yellow: '#F59E0B',
+  yellowL: '#FCD34D',
+  red: '#EF4444',
+  green: '#10B981',
+  line: '#E2E8F0',
+  shadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  shadowS: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+  shadowM: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
 };
 
-const sans = "'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif";
+const sans = "'Inter', system-ui, sans-serif";
 
 const CAT_EMOJIS = {
   pizza: '🍕', burger: '🍔', sushi: '🍣', tacos: '🌮', poulet: '🍗',
@@ -87,17 +93,17 @@ export default function FilterSidebar({
   ];
 
   const sidebarContent = (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 20, padding: 20, fontFamily: sans }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 24, padding: 24, fontFamily: sans }}>
       {/* En-tête filtres & reset */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 14, borderBottom: `1px solid ${C.line}` }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 16, borderBottom: `1px solid ${C.line}` }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <div style={{ width: 34, height: 34, borderRadius: 10, background: C.accentL, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <SlidersHorizontal size={17} color={C.accent} />
+          <div style={{ width: 32, height: 32, borderRadius: 6, background: C.bgAlt, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <SlidersHorizontal size={16} color={C.text} />
           </div>
           <div>
-            <h3 style={{ margin: 0, fontSize: 16, fontWeight: 800, color: C.dark }}>Filtres</h3>
+            <h3 style={{ margin: 0, fontSize: 15, fontWeight: 600, color: C.dark }}>Filtres</h3>
             {activeCount > 0 && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: C.accent }}>
+              <span style={{ fontSize: 12, fontWeight: 500, color: C.accent }}>
                 {activeCount} filtre{activeCount > 1 ? 's' : ''} actif{activeCount > 1 ? 's' : ''}
               </span>
             )}
@@ -108,33 +114,33 @@ export default function FilterSidebar({
           <button
             onClick={onReset}
             style={{
-              display: 'inline-flex', alignItems: 'center', gap: 5,
-              background: 'transparent', border: 'none', color: C.accent,
-              fontSize: 12, fontWeight: 700, cursor: 'pointer', padding: '4px 8px',
-              borderRadius: 8, transition: 'background 0.15s'
+              display: 'inline-flex', alignItems: 'center', gap: 4,
+              background: 'transparent', border: 'none', color: C.muted,
+              fontSize: 12, fontWeight: 500, cursor: 'pointer', padding: '6px 8px',
+              borderRadius: 6, transition: 'background 0.2s, color 0.2s'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = C.accentL}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            onMouseEnter={e => { e.currentTarget.style.background = C.bgAlt; e.currentTarget.style.color = C.text; }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = C.muted; }}
           >
-            <RotateCcw size={13} /> Reset
+            <RotateCcw size={14} /> Reset
           </button>
         )}
       </div>
 
       {/* 1. Tri & Classement */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div
           onClick={() => toggleSection('sort')}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
         >
-          <span style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted }}>
+          <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.muted }}>
             Classer par
           </span>
           <ChevronDown size={14} color={C.mutedL} style={{ transform: collapsedSections['sort'] ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }} />
         </div>
 
         {!collapsedSections['sort'] && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {SORT_OPTIONS.map(opt => {
               const isActive = sortBy === opt.id;
               return (
@@ -142,13 +148,14 @@ export default function FilterSidebar({
                   key={opt.id}
                   onClick={() => onSortByChange(opt.id)}
                   style={{
-                    padding: '7px 12px', borderRadius: 10,
-                    border: `1.5px solid ${isActive ? C.accent : 'rgba(234,88,12,0.12)'}`,
-                    background: isActive ? C.accent : C.card,
-                    color: isActive ? '#fff' : C.text,
-                    fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                    transition: 'all 0.15s', boxShadow: isActive ? `0 4px 12px ${C.accent}33` : 'none',
-                    display: 'flex', alignItems: 'center', gap: 5
+                    padding: '6px 12px', borderRadius: 6,
+                    border: `1px solid ${isActive ? C.accent : C.line}`,
+                    background: isActive ? C.accentL : C.card,
+                    color: isActive ? C.accentD : C.text,
+                    fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                    transition: 'all 0.15s',
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    boxShadow: isActive ? C.shadow : 'none'
                   }}
                 >
                   {opt.label}
@@ -163,12 +170,12 @@ export default function FilterSidebar({
 
       {/* 2. Catégories de Plats */}
       {categories.length > 0 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div
             onClick={() => toggleSection('cats')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
           >
-            <span style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted }}>
+            <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.muted }}>
               Catégories de plats
             </span>
             <ChevronDown size={14} color={C.mutedL} style={{ transform: collapsedSections['cats'] ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -188,23 +195,23 @@ export default function FilterSidebar({
                     onClick={() => onCatChange(catId)}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                      padding: '8px 12px', borderRadius: 10, border: 'none',
+                      padding: '8px 12px', borderRadius: 6, border: 'none',
                       background: isActive ? C.accentL : 'transparent',
                       color: isActive ? C.accentD : C.text,
-                      fontSize: 13, fontWeight: isActive ? 800 : 600,
+                      fontSize: 13, fontWeight: 500,
                       cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s'
                     }}
-                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(234,88,12,0.05)'; }}
+                    onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = C.bgAlt; }}
                     onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent'; }}
                   >
                     <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span style={{ fontSize: 15 }}>
+                      <span style={{ fontSize: 14 }}>
                         {catId === '__all__' ? '🍽️' : getCatEmoji(catNom)}
                       </span>
                       {catNom}
                     </span>
                     {count !== undefined && (
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '2px 7px', borderRadius: 99, background: isActive ? C.accent : 'rgba(0,0,0,0.05)', color: isActive ? '#fff' : C.muted }}>
+                      <span style={{ fontSize: 11, fontWeight: 500, padding: '2px 6px', borderRadius: 4, background: isActive ? C.accent : C.bgAlt, color: isActive ? '#fff' : C.muted }}>
                         {count}
                       </span>
                     )}
@@ -220,12 +227,12 @@ export default function FilterSidebar({
 
       {/* 3. Filtre par Restaurant */}
       {restaurants.length > 1 && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div
             onClick={() => toggleSection('resto')}
             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
           >
-            <span style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted }}>
+            <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.muted }}>
               Restaurant
             </span>
             <ChevronDown size={14} color={C.mutedL} style={{ transform: collapsedSections['resto'] ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }} />
@@ -236,10 +243,10 @@ export default function FilterSidebar({
               value={selectedRestoId}
               onChange={e => onRestoChange(e.target.value)}
               style={{
-                width: '100%', padding: '10px 12px', borderRadius: 10,
-                border: `1.5px solid ${selectedRestoId !== '__all__' ? C.accent : C.line}`,
+                width: '100%', padding: '8px 12px', borderRadius: 6,
+                border: `1px solid ${selectedRestoId !== '__all__' ? C.accent : C.line}`,
                 background: C.card, color: C.text, fontFamily: sans, fontSize: 13,
-                fontWeight: 600, outline: 'none', cursor: 'pointer'
+                fontWeight: 500, outline: 'none', cursor: 'pointer', boxShadow: C.shadow
               }}
             >
               <option value="__all__">Tous les restaurants ({restaurants.length})</option>
@@ -254,19 +261,19 @@ export default function FilterSidebar({
       {restaurants.length > 1 && <div style={{ height: 1, background: C.line }} />}
 
       {/* 4. Fourchette de prix */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
         <div
           onClick={() => toggleSection('price')}
           style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', cursor: 'pointer', userSelect: 'none' }}
         >
-          <span style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted }}>
+          <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.muted }}>
             Fourchette de prix
           </span>
           <ChevronDown size={14} color={C.mutedL} style={{ transform: collapsedSections['price'] ? 'rotate(-90deg)' : 'none', transition: 'transform 0.2s' }} />
         </div>
 
         {!collapsedSections['price'] && (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {PRICE_OPTIONS.map(opt => {
               const isActive = priceRange === opt.id;
               return (
@@ -274,12 +281,13 @@ export default function FilterSidebar({
                   key={opt.id}
                   onClick={() => onPriceRangeChange(opt.id)}
                   style={{
-                    padding: '8px 10px', borderRadius: 10,
-                    border: `1.5px solid ${isActive ? C.accent : 'rgba(234,88,12,0.12)'}`,
+                    padding: '8px 12px', borderRadius: 6,
+                    border: `1px solid ${isActive ? C.accent : C.line}`,
                     background: isActive ? C.accentL : C.card,
                     color: isActive ? C.accentD : C.text,
-                    fontSize: 12, fontWeight: isActive ? 800 : 600, cursor: 'pointer',
-                    transition: 'all 0.15s', textAlign: 'center'
+                    fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                    transition: 'all 0.15s', textAlign: 'center',
+                    boxShadow: isActive ? C.shadow : 'none'
                   }}
                 >
                   {opt.label}
@@ -293,13 +301,13 @@ export default function FilterSidebar({
       <div style={{ height: 1, background: C.line }} />
 
       {/* 5. Services & Filtres rapides (Notes, Livraison) */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: C.muted }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <span style={{ fontSize: 12, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em', color: C.muted }}>
           Services & Qualité
         </span>
 
         {/* Note 4.0+ / 4.5+ */}
-        <div style={{ display: 'flex', gap: 6 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
           {[0, 4.0, 4.5].map(rating => {
             const isActive = minRating === rating;
             return (
@@ -307,13 +315,14 @@ export default function FilterSidebar({
                 key={rating}
                 onClick={() => onMinRatingChange(rating)}
                 style={{
-                  flex: 1, padding: '7px 8px', borderRadius: 9,
-                  border: `1.5px solid ${isActive ? C.yellow : C.line}`,
-                  background: isActive ? '#FFFBEB' : C.card,
-                  color: isActive ? '#B45309' : C.text,
-                  fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                  transition: 'all 0.15s'
+                  flex: 1, padding: '8px 12px', borderRadius: 6,
+                  border: `1px solid ${isActive ? C.yellow : C.line}`,
+                  background: isActive ? '#FEF3C7' : C.card,
+                  color: isActive ? '#92400E' : C.text,
+                  fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                  transition: 'all 0.15s',
+                  boxShadow: isActive ? C.shadow : 'none'
                 }}
               >
                 <Star size={12} fill={rating > 0 ? C.yellow : 'none'} color={C.yellow} />
@@ -327,12 +336,13 @@ export default function FilterSidebar({
         <label
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '9px 12px', borderRadius: 10, background: freeDeliveryOnly ? '#F0FDF4' : C.card,
-            border: `1.5px solid ${freeDeliveryOnly ? C.green : C.line}`, cursor: 'pointer', transition: 'all 0.15s'
+            padding: '10px 12px', borderRadius: 6, background: freeDeliveryOnly ? '#F0FDF4' : C.card,
+            border: `1px solid ${freeDeliveryOnly ? C.green : C.line}`, cursor: 'pointer', transition: 'all 0.15s',
+            boxShadow: freeDeliveryOnly ? C.shadow : 'none'
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 700, color: freeDeliveryOnly ? '#15803D' : C.text }}>
-            <Truck size={14} color={C.green} /> Livraison offerte
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: freeDeliveryOnly ? '#15803D' : C.text }}>
+            <Truck size={14} color={freeDeliveryOnly ? '#15803D' : C.muted} /> Livraison offerte
           </span>
           <input
             type="checkbox"
@@ -346,12 +356,13 @@ export default function FilterSidebar({
         <label
           style={{
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '9px 12px', borderRadius: 10, background: fastDeliveryOnly ? C.accentL : C.card,
-            border: `1.5px solid ${fastDeliveryOnly ? C.accent : C.line}`, cursor: 'pointer', transition: 'all 0.15s'
+            padding: '10px 12px', borderRadius: 6, background: fastDeliveryOnly ? C.accentL : C.card,
+            border: `1px solid ${fastDeliveryOnly ? C.accent : C.line}`, cursor: 'pointer', transition: 'all 0.15s',
+            boxShadow: fastDeliveryOnly ? C.shadow : 'none'
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12.5, fontWeight: 700, color: fastDeliveryOnly ? C.accentD : C.text }}>
-            <Clock size={14} color={C.accent} /> Moins de 30 min
+          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: fastDeliveryOnly ? C.accentD : C.text }}>
+            <Clock size={14} color={fastDeliveryOnly ? C.accentD : C.muted} /> Moins de 30 min
           </span>
           <input
             type="checkbox"
@@ -371,19 +382,19 @@ export default function FilterSidebar({
         style={{
           width: '100%',
           background: C.card,
-          borderRadius: 20,
+          borderRadius: 12,
           border: `1px solid ${C.line}`,
-          boxShadow: C.shadow,
-          marginBottom: 20,
-          animation: 'slideInLeft 0.25s ease-out',
+          boxShadow: C.shadowM,
+          marginBottom: 24,
+          animation: 'slideInLeft 0.2s ease-out',
           overflow: 'hidden'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 20px', borderBottom: `1px solid ${C.line}` }}>
-          <span style={{ fontWeight: 900, fontSize: 18, color: C.dark }}>Filtres de recherche</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px 24px', borderBottom: `1px solid ${C.line}` }}>
+          <span style={{ fontWeight: 600, fontSize: 16, color: C.dark }}>Filtres de recherche</span>
           <button
             onClick={onCloseMobile}
-            style={{ width: 34, height: 34, borderRadius: '50%', border: 'none', background: C.bg, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+            style={{ width: 32, height: 32, borderRadius: 6, border: 'none', background: C.bgAlt, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           >
             <X size={16} color={C.text} />
           </button>
@@ -398,9 +409,9 @@ export default function FilterSidebar({
     <aside
       style={{
         width: 280, flexShrink: 0, background: C.card,
-        borderRadius: 24, border: `1px solid ${C.line}`,
+        borderRadius: 12, border: `1px solid ${C.line}`,
         boxShadow: C.shadow, height: 'fit-content',
-        position: 'sticky', top: 90, zIndex: 20
+        position: 'sticky', top: 96, zIndex: 20
       }}
     >
       {sidebarContent}

@@ -1,6 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { StocksService } from './stocks.service';
 import { Article, CibleEnum } from '../menu/entities/article.entity';
 import { FournisseursService } from '../fournisseurs/fournisseurs.service';
@@ -60,7 +64,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as Article;
+  };
 }
 
 // ─── Builder ──────────────────────────────────────────────────────────────────
@@ -110,7 +114,10 @@ describe('StocksService getAll()', () => {
   });
 
   it('returns all stocks when no restaurantId is provided', async () => {
-    const articles = [makeArticle(), makeArticle({ id: 'article-uuid-2', nom: 'Riz Sauce' })];
+    const articles = [
+      makeArticle(),
+      makeArticle({ id: 'article-uuid-2', nom: 'Riz Sauce' }),
+    ];
     const qb = makeQueryBuilder(articles);
     mockArticleRepo.createQueryBuilder.mockReturnValue(qb);
 
@@ -130,7 +137,7 @@ describe('StocksService getAll()', () => {
   });
 
   it('defaults stock to 0 when article.stock is null', async () => {
-    const article = makeArticle({ stock: undefined as any });
+    const article = makeArticle({ stock: undefined });
     const qb = makeQueryBuilder([article]);
     mockArticleRepo.createQueryBuilder.mockReturnValue(qb);
 
@@ -140,7 +147,7 @@ describe('StocksService getAll()', () => {
   });
 
   it('defaults seuil to 5 when article.seuilMin is null', async () => {
-    const article = makeArticle({ seuilMin: undefined as any });
+    const article = makeArticle({ seuilMin: undefined });
     const qb = makeQueryBuilder([article]);
     mockArticleRepo.createQueryBuilder.mockReturnValue(qb);
 
@@ -166,7 +173,12 @@ describe('StocksService adjustStock()', () => {
     mockArticleRepo.findOne.mockResolvedValue(article);
     mockArticleRepo.update.mockResolvedValue(undefined);
 
-    const result = await service.adjustStock('article-uuid-1', 5, 'resto-uuid-1', 'Réception');
+    const result = await service.adjustStock(
+      'article-uuid-1',
+      5,
+      'resto-uuid-1',
+      'Réception',
+    );
 
     expect(mockArticleRepo.update).toHaveBeenCalledWith('article-uuid-1', {
       stock: 15,
@@ -182,7 +194,11 @@ describe('StocksService adjustStock()', () => {
     mockArticleRepo.findOne.mockResolvedValue(article);
     mockArticleRepo.update.mockResolvedValue(undefined);
 
-    const result = await service.adjustStock('article-uuid-1', -10, 'resto-uuid-1');
+    const result = await service.adjustStock(
+      'article-uuid-1',
+      -10,
+      'resto-uuid-1',
+    );
 
     expect(result.stock).toBe(0);
     expect(result.disponible).toBe(false);
@@ -203,7 +219,9 @@ describe('StocksService adjustStock()', () => {
   });
 
   it('throws ForbiddenException when restaurantId does not match article restaurant', async () => {
-    const article = makeArticle({ restaurant: { id: 'autre-resto' } as Restaurant });
+    const article = makeArticle({
+      restaurant: { id: 'autre-resto' } as Restaurant,
+    });
     mockArticleRepo.findOne.mockResolvedValue(article);
 
     await expect(
@@ -294,7 +312,7 @@ describe('StocksService getRapportEcarts()', () => {
   });
 
   it('returns stockTheorique=0 when article.stock is null', async () => {
-    const article = makeArticle({ stock: undefined as any });
+    const article = makeArticle({ stock: undefined });
     const qb = makeQueryBuilder([article]);
     mockArticleRepo.createQueryBuilder.mockReturnValue(qb);
 

@@ -68,7 +68,7 @@ export default function LanguageSwitcher({ style = {}, className = '', variant }
           color: isFr ? '#FFFFFF' : 'rgba(255, 255, 255, 0.9)',
           fontWeight: 800,
           fontSize: '12px',
-          fontFamily: 'Manrope, sans-serif',
+          fontFamily: "'Inter', sans-serif",
           letterSpacing: '0.04em',
           cursor: 'pointer',
           transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -77,7 +77,7 @@ export default function LanguageSwitcher({ style = {}, className = '', variant }
         }}
       >
         <FrenchFlag />
-        <span className="rd-lang-label">FRANCAIS</span>
+        <span className="rd-lang-label">FR</span>
       </button>
 
       {/* ENGLISH button */}
@@ -96,7 +96,7 @@ export default function LanguageSwitcher({ style = {}, className = '', variant }
           color: isEn ? '#FFFFFF' : 'rgba(255, 255, 255, 0.9)',
           fontWeight: 800,
           fontSize: '12px',
-          fontFamily: 'Manrope, sans-serif',
+          fontFamily: "'Inter', sans-serif",
           letterSpacing: '0.04em',
           cursor: 'pointer',
           transition: 'all 0.22s cubic-bezier(0.4, 0, 0.2, 1)',
@@ -105,7 +105,7 @@ export default function LanguageSwitcher({ style = {}, className = '', variant }
         }}
       >
         <UKFlag />
-        <span className="rd-lang-label">ENGLISH</span>
+        <span className="rd-lang-label">EN</span>
       </button>
     </div>
   );

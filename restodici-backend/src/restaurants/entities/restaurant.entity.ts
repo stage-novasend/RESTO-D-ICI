@@ -69,11 +69,11 @@ export class Restaurant {
 
   @Column({ type: 'simple-json', nullable: true })
   modeReceptionDetails!: {
-    operator?: string;          // pour MOBILE_MONEY (WAVE, ORANGE, MTN, MOOV)
-    telephone?: string;         // pour MOBILE_MONEY
-    nomBanque?: string;         // pour BANCAIRE
-    titulaireCompte?: string;   // pour BANCAIRE
-    ibanRib?: string;           // pour BANCAIRE
+    operator?: string; // pour MOBILE_MONEY (WAVE, ORANGE, MTN, MOOV)
+    telephone?: string; // pour MOBILE_MONEY
+    nomBanque?: string; // pour BANCAIRE
+    titulaireCompte?: string; // pour BANCAIRE
+    ibanRib?: string; // pour BANCAIRE
     novasendAccountId?: string; // pour NOVASEND
   } | null;
 
@@ -82,6 +82,16 @@ export class Restaurant {
 
   @Column({ default: 0 })
   nbAvis!: number;
+
+  /** Plafond budgétaire mensuel de dépenses opérationnelles (trésorerie), null = non configuré. */
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
+  budgetPlafondMensuel!: number | null;
+
+  @Column({ default: true })
+  budgetAlerte80!: boolean;
+
+  @Column({ default: true })
+  budgetAlerte100!: boolean;
 
   @OneToMany(() => User, (user) => user.restaurant)
   users!: User[];

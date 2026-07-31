@@ -27,11 +27,7 @@ import { ReceiptQueueModule } from '../receipt-queue/receipt-queue.module';
     PaymentGatewaysModule,
   ],
   controllers: [PaiementsController],
-  providers: [
-    PaiementsService,
-    NovaSendService,
-    PaymentLockService,
-  ],
+  providers: [PaiementsService, NovaSendService, PaymentLockService],
   exports: [PaiementsService, NovaSendService, PaymentGatewaysModule],
 })
 export class PaiementsModule {}

@@ -17,10 +17,16 @@ export class NewsletterService {
     }
     const exists = await this.repo.findOne({ where: { email: normalized } });
     if (exists) {
-      return { success: true, message: 'Vous êtes déjà inscrit à la newsletter.' };
+      return {
+        success: true,
+        message: 'Vous êtes déjà inscrit à la newsletter.',
+      };
     }
     await this.repo.save(this.repo.create({ email: normalized }));
-    return { success: true, message: 'Inscription confirmée ! Merci de nous rejoindre.' };
+    return {
+      success: true,
+      message: 'Inscription confirmée ! Merci de nous rejoindre.',
+    };
   }
 
   findAll(): Promise<NewsletterSubscriber[]> {

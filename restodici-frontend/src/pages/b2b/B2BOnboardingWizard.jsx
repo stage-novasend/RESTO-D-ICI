@@ -49,7 +49,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', pattern, title
       onChange={onChange}
       placeholder={placeholder}
       pattern={pattern} title={title} inputMode={inputMode} maxLength={maxLength}
-      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+      className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
       style={{ background: SF, border: `1px solid ${BD}` }}
     />
   );
@@ -147,12 +147,12 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
+      <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
 
         {/* Header gradient */}
         <div className="px-8 pt-8 pb-6" style={{ background: 'linear-gradient(135deg, #181A20 0%, #2B1500 100%)' }}>
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: A }}>
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: A }}>
               <UtensilsCrossed className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -177,7 +177,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
           {/* ── STEP 0: Bienvenue ── */}
           {step === 0 && (
             <div className="text-center">
-              <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: AL }}>
+              <div className="w-20 h-20 rounded-lg flex items-center justify-center mx-auto mb-5" style={{ background: AL }}>
                 <Building2 className="w-10 h-10" style={{ color: A }} />
               </div>
               <h2 className="text-2xl font-extrabold text-[#1A0C00] mb-3">
@@ -192,8 +192,8 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                   { icon: Users,        label: 'Budgets équipe',      desc: 'Par collaborateur' },
                   { icon: FileText,     label: 'Facture SYSCOHADA',   desc: 'En fin de mois' },
                 ].map(({ icon: Icon, label, desc }) => (
-                  <div key={label} className="rounded-2xl p-3 text-center" style={{ background: SF }}>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: AL }}>
+                  <div key={label} className="rounded-lg p-3 text-center" style={{ background: SF }}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2" style={{ background: AL }}>
                       <Icon className="w-4 h-4" style={{ color: A }} />
                     </div>
                     <p className="text-[11px] font-bold text-[#1A0C00]">{label}</p>
@@ -202,7 +202,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                 ))}
               </div>
               <button onClick={() => goStep(1)}
-                className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: A }}>
                 Configurer mon compte entreprise <ArrowRight className="w-4 h-4" />
               </button>
@@ -227,7 +227,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                   { k: 'telephoneProfessionnel', label: 'Téléphone professionnel *',     ph: '+225 07 12 34 56 78', type: 'tel', inputMode: 'tel', pattern: CI_PHONE_PATTERN, maxLength: 20, title: MSG.phone },
                 ].map(f => (
                   <Field key={f.k} label={f.label}>
-                    <Input value={entreprise[f.k]} onChange={setE(f.k)} placeholder={f.ph}
+                    <TextInput value={entreprise[f.k]} onChange={setE(f.k)} placeholder={f.ph}
                       type={f.type || 'text'} pattern={f.pattern} title={f.title} inputMode={f.inputMode} maxLength={f.maxLength} />
                   </Field>
                 ))}
@@ -237,12 +237,12 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
 
               <div className="flex gap-3 mt-6">
                 <button onClick={() => goStep(0)}
-                  className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
+                  className="px-4 py-3 rounded-lg border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
                 </button>
                 <button onClick={handleEntrepriseNext}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-lg font-bold text-sm text-white flex items-center justify-center gap-2"
                   style={{ background: A }}>
                   <ArrowRight className="w-4 h-4" /> Continuer
                 </button>
@@ -257,7 +257,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
           {step === 2 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: AL }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: AL }}>
                   <MapPin className="w-5 h-5" style={{ color: A }} />
                 </div>
                 <div>
@@ -273,7 +273,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                     onChange={e => setAdresse({ adresseSiege: e.target.value })}
                     placeholder="Ex : Plateau, Avenue Houphouët-Boigny, Immeuble Alpha 2000, 3ème étage, Abidjan"
                     rows={3}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
+                    className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none"
                     style={{ background: SF, border: `1px solid ${BD}` }}
                   />
                 </Field>
@@ -283,12 +283,12 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
 
               <div className="flex gap-3 mt-6">
                 <button onClick={() => goStep(1)}
-                  className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
+                  className="px-4 py-3 rounded-lg border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
                 </button>
                 <button onClick={handleAdresseSubmit} disabled={saving}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-lg font-bold text-sm text-white flex items-center justify-center gap-2"
                   style={{ background: A, opacity: saving ? 0.7 : 1 }}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                   {saving ? 'Enregistrement…' : 'Continuer'}
@@ -305,7 +305,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
           {step === 3 && (
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl shrink-0" style={{ background: AL }}>
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg shrink-0" style={{ background: AL }}>
                   <UserPlus className="w-5 h-5" style={{ color: A }} />
                 </div>
                 <div>
@@ -321,7 +321,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
                   { k: 'budgetMensuel', label: 'Budget mensuel (FCFA)',  ph: '50000', type: 'number', inputMode: 'numeric' },
                 ].map(f => (
                   <Field key={f.k} label={f.label}>
-                    <Input value={collab[f.k]} onChange={setC(f.k)} placeholder={f.ph}
+                    <TextInput value={collab[f.k]} onChange={setC(f.k)} placeholder={f.ph}
                       type={f.type || 'text'} pattern={f.pattern} title={f.title} inputMode={f.inputMode} maxLength={f.maxLength} />
                   </Field>
                 ))}
@@ -331,12 +331,12 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
 
               <div className="flex gap-3 mt-6">
                 <button onClick={() => goStep(2)}
-                  className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
+                  className="px-4 py-3 rounded-lg border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
                 </button>
                 <button onClick={handleCollabAdd} disabled={saving}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-lg font-bold text-sm text-white flex items-center justify-center gap-2"
                   style={{ background: A, opacity: saving ? 0.7 : 1 }}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
                   {saving ? 'Invitation…' : 'Inviter et continuer'}
@@ -364,7 +364,7 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
               )}
               {!collabAdded && <div className="mb-6" />}
 
-              <div className="rounded-2xl p-4 mb-6 text-left" style={{ background: SF }}>
+              <div className="rounded-lg p-4 mb-6 text-left" style={{ background: SF }}>
                 <p className="text-xs font-bold text-[#374151] mb-3">Votre compte est en attente de validation (24–48h)</p>
                 {[
                   'Passez votre première commande groupée',
@@ -378,13 +378,13 @@ export default function B2BOnboardingWizard({ user, onComplete }) {
               </div>
 
               <button onClick={() => finish('order')}
-                className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2 mb-3"
+                className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2 mb-3"
                 style={{ background: A }}>
                 <ShoppingBag className="w-5 h-5" />
                 Passer ma première commande
               </button>
               <button onClick={() => finish('invite')}
-                className="w-full py-3 rounded-2xl font-bold border text-sm flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-lg font-bold border text-sm flex items-center justify-center gap-2"
                 style={{ borderColor: A, color: A }}>
                 <Users className="w-4 h-4" />
                 Gérer mon équipe

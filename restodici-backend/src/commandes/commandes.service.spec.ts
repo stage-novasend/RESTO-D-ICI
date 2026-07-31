@@ -15,6 +15,7 @@ import { PromosService } from '../promos/promos.service';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PaymentGatewayRegistry } from '../paiements/gateways/payment-gateway.registry';
 
 // ─── Shared mock objects ──────────────────────────────────────────────────────
 
@@ -42,7 +43,13 @@ const mockTresorerieService = {};
 const mockPromosService = {};
 const mockSmsService = {};
 const mockFcmService = {};
-const mockNotificationsService = { create: jest.fn().mockResolvedValue({ id: 'notif-1' }) };
+const mockNotificationsService = {
+  create: jest.fn().mockResolvedValue({ id: 'notif-1' }),
+};
+const mockPaymentGatewayRegistry = {
+  getGateway: jest.fn(),
+  refundPayment: jest.fn(),
+};
 
 function buildModule() {
   return Test.createTestingModule({
@@ -70,6 +77,7 @@ function buildModule() {
       { provide: SmsService, useValue: mockSmsService },
       { provide: FcmService, useValue: mockFcmService },
       { provide: NotificationsService, useValue: mockNotificationsService },
+      { provide: PaymentGatewayRegistry, useValue: mockPaymentGatewayRegistry },
     ],
   }).compile();
 }

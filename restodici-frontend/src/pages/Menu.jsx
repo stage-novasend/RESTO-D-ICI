@@ -21,30 +21,27 @@ import { formatFCFA } from '../utils/formatters';
 import { getArticleImage } from '../utils/articleImage';
 import { BrandMark } from '../components/shared/BrandLogo';
 
-/* ── Design tokens ── */
 const C = {
-  page:   '#FFFFFF', // fond de page (blanc pur)
-  bg:     '#F1F5F9', // remplissage discret : inputs, survols, vignettes vides
+  page:   '#FFFFFF',
+  bg:     '#F1F5F9',
   card:   '#FFFFFF',
   accent: '#EA580C',
   aD:     '#C2410C',
-  aL:     '#FFF5E8',
-  yellow: '#FFB800',
-  red:    '#FF3B30',
-  green:  '#22C55E',
-  dark:   '#1A0C00',
-  text:   '#3B2409',
-  muted:  '#7A5E3A',
-  faint:  '#D1D1D6',
+  aL:     '#FFF7ED', // orange-50
+  yellow: '#F59E0B',
+  red:    '#EF4444',
+  green:  '#10B981',
+  dark:   '#0F172A',
+  text:   '#334155',
+  muted:  '#64748B',
+  faint:  '#94A3B8',
   line:   '#E2E8F0',
   nav:    '#FFFFFF',
-  // Ombres neutres : sur fond blanc, une carte blanche ne tient plus que
-  // par son ombre et sa bordure — l'ombre orangée d'avant ne suffisait pas.
-  sh:     '0 1px 2px rgba(15,23,42,0.06), 0 2px 10px rgba(15,23,42,0.05)',
-  shM:    '0 2px 6px rgba(15,23,42,0.07), 0 8px 24px rgba(15,23,42,0.08)',
-  shL:    '0 4px 12px rgba(15,23,42,0.08), 0 16px 44px rgba(15,23,42,0.12)',
+  sh:     '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+  shM:    '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1)',
+  shL:    '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)',
 };
-const sans = "'Manrope', 'Plus Jakarta Sans', system-ui, sans-serif";
+const sans = "'Inter', system-ui, sans-serif";
 
 const DELIVERY_MODES = [
   { key: 'SUR_PLACE', label: 'Sur place',  Icon: UtensilsCrossed },
@@ -53,16 +50,12 @@ const DELIVERY_MODES = [
 ];
 
 const FOOD_IMGS = [
-  'photo-1665332195309-9d75071138f0','photo-1665400808116-f0e6339b7e9a',
-  'photo-1664993101841-036f189719b6','photo-1664992960082-0ea299a9c53e',
-  'photo-1665333048952-a3ee97714c6b','photo-1665332305771-e49a5dd5ba80',
-  'photo-1665334217407-6688e6941a47','photo-1665332561290-cc6757172890',
-  'photo-1665401015549-712c0dc5ef85','photo-1603496987674-79600a000f55',
-  'photo-1773620494293-e9e075dd48fd','photo-1634324092526-91f5e878b72f',
-  'photo-1569058242252-623df46b5025','photo-1665833613236-7c1d087463b1',
+  '/images/food/poulet_braise.png',
+  '/images/food/jollof_rice.png',
+  '/images/food/poisson_braise.png',
+  '/images/food/suya_brochettes.png',
 ];
-const fallback = (i, w = 600) =>
-  `https://images.unsplash.com/${FOOD_IMGS[i % FOOD_IMGS.length]}?q=80&w=${w}&auto=format&fit=crop`;
+const fallback = (i, w = 600) => FOOD_IMGS[i % FOOD_IMGS.length];
 
 const CSS = `
 @keyframes sk      { 0%{background-position:200% 0}100%{background-position:-200% 0} }
@@ -111,18 +104,7 @@ function SK({ w = '100%', h = 16, r = 8 }) {
   );
 }
 
-const CAT_EMOJI = {
-  pizza: '🍕', burger: '🍔', sushi: '🍣', tacos: '🌮', poulet: '🍗',
-  poisson: '🐟', riz: '🍚', salade: '🥗', dessert: '🍰', boisson: '🥤',
-  brochette: '🥩', foutou: '🫙', soupe: '🍲',
-  grillades: '🔥', sandwich: '🥪', plat: '🍽️',
-  donut: '🍩', icecream: '🍦', café: '☕', viande: '🥩',
-};
-function catEmoji(name = '') {
-  const k = name.toLowerCase();
-  for (const [w, e] of Object.entries(CAT_EMOJI)) if (k.includes(w)) return e;
-  return '🍽️';
-}
+
 
 function buildDynCats(articles, catList) {
   const map = new Map();
@@ -137,13 +119,13 @@ function buildDynCats(articles, catList) {
 /* ── Logo ── */
 function Logo() {
   return (
-    <a href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+    <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
       <BrandMark size={36} shadow />
       <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, letterSpacing: '-0.04em' }}>
         <span style={{ color: '#EA580C' }}>Resto</span>
         <span style={{ color: '#1C1C1E' }}>&nbsp;d'ici</span>
       </span>
-    </a>
+    </Link>
   );
 }
 
@@ -447,7 +429,8 @@ function ProductCard({ product, qty, onAdd, onRemove, onCustomize, idx, isFav, o
   );
 }
 
-/* ── Catégories circulaires ── */
+/* ── Catégories en onglets plats (SaaS Style) ── */
+// eslint-disable-next-line react/prop-types
 function CategoryTabs({ cats, active, onChange }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -457,15 +440,35 @@ function CategoryTabs({ cats, active, onChange }) {
   }, [active]);
 
   return (
-    <div ref={ref} className="cat-scroll" style={{ display: 'flex', gap: 16, overflowX: 'auto', padding: '10px 20px 14px', scrollbarWidth: 'none' }}>
+    <div ref={ref} className="cat-scroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '12px 20px 16px', scrollbarWidth: 'none' }}>
+      {/* eslint-disable-next-line react/prop-types */}
       {cats.map(cat => {
         const isActive = cat.id === active;
         return (
-          <button key={cat.id} data-cat={cat.id} onClick={() => onChange(cat.id)} style={{ flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>
-            <div style={{ width: 60, height: 60, borderRadius: '50%', background: isActive ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.card, border: isActive ? 'none' : '2px solid ' + C.line, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: isActive ? '0 6px 18px #EA580C44' : C.sh, transition: 'all 0.2s cubic-bezier(.4,0,.2,1)', fontSize: 24 }}>
-              {catEmoji(cat.nom)}
-            </div>
-            <span style={{ fontFamily: sans, fontSize: 11, fontWeight: 700, color: isActive ? C.accent : C.muted, whiteSpace: 'nowrap', transition: 'color 0.15s' }}>{cat.nom}</span>
+          <button 
+            key={cat.id} 
+            data-cat={cat.id} 
+            onClick={() => onChange(cat.id)} 
+            style={{ 
+              flexShrink: 0, 
+              display: 'inline-flex', 
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '8px 16px',
+              borderRadius: '8px',
+              background: isActive ? '#0F172A' : '#FFFFFF',
+              border: '1px solid',
+              borderColor: isActive ? '#0F172A' : '#E2E8F0',
+              color: isActive ? '#FFFFFF' : '#334155',
+              fontFamily: sans,
+              fontSize: '13px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s ease',
+              boxShadow: 'none'
+            }}
+          >
+            {cat.nom}
           </button>
         );
       })}
@@ -1025,7 +1028,6 @@ export default function MenuPage() {
         {grouped.grouped.map((grp, gi) => (
           <div key={gi}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-              <span style={{ fontSize: 20 }}>{catEmoji(grp.cat?.nom)}</span>
               <h3 style={{ margin: 0, fontFamily: sans, fontSize: 15, fontWeight: 900, color: C.dark }}>{grp.cat?.nom || 'Autres'}</h3>
               <span style={{ fontFamily: sans, fontSize: 12, color: C.muted }}>({grp.items.length})</span>
               <div style={{ flex: 1, height: 1, background: C.line }} />
@@ -1050,7 +1052,9 @@ export default function MenuPage() {
         <>
           <div style={{ position: 'sticky', top: 0, zIndex: 100, background: C.nav, borderBottom: '1px solid ' + C.line, boxShadow: C.sh }}>
             <div style={{ padding: '0 clamp(12px,4vw,28px)', height: 64, display: 'flex', alignItems: 'center', gap: 16 }}>
-              <Logo />
+              <Link to="/">
+                <Logo />
+              </Link>
               <div style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, background: C.bg, border: '1.5px solid ' + C.line, borderRadius: 50, padding: '0 16px', height: 42, maxWidth: 540, position: 'relative' }}>
                 <Search size={16} color={C.accent} />
                 <input 

@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
-import { Commande, StatutCommande } from '../commandes/entities/commande.entity';
+import {
+  Commande,
+  StatutCommande,
+} from '../commandes/entities/commande.entity';
 import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
+import { DepenseOperationnelle } from './entities/depense-operationnelle.entity';
+import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import axios from 'axios';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const PDFDocument = require('pdfkit');
@@ -32,6 +37,10 @@ export class TresorerieService {
     private commandeRepository: Repository<Commande>,
     @InjectRepository(CommissionPlateforme)
     private commissionRepository: Repository<CommissionPlateforme>,
+    @InjectRepository(DepenseOperationnelle)
+    private depenseRepository: Repository<DepenseOperationnelle>,
+    @InjectRepository(Restaurant)
+    private restaurantRepository: Repository<Restaurant>,
   ) {}
 
   /** Vue côté restaurant : dette commission espèces due, statut bloqué,
@@ -58,9 +67,13 @@ export class TresorerieService {
           bloque = true;
         }
       } else if (l.statut === 'A_VERSER' || l.statut === 'EN_COURS') {
-        aVerser += Number(l.montantNet ?? l.montantCommande - l.montantCommission);
+        aVerser += Number(
+          l.montantNet ?? l.montantCommande - l.montantCommission,
+        );
       } else if (l.statut === 'VERSE') {
-        verse += Number(l.montantNet ?? l.montantCommande - l.montantCommission);
+        verse += Number(
+          l.montantNet ?? l.montantCommande - l.montantCommission,
+        );
       }
     }
 
@@ -613,7 +626,14 @@ export class TresorerieService {
     let dateFrom: Date;
 
     if (period === 'day') {
-      dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      dateFrom = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        now.getDate(),
+        0,
+        0,
+        0,
+      );
     } else if (period === 'week') {
       const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
       dateFrom = new Date(now);
@@ -635,8 +655,30 @@ export class TresorerieService {
     const caTotal = commandes.reduce((s, c) => s + Number(c.montantTotal), 0);
     const nbCommandes = commandes.length;
     const ticketMoyen = nbCommandes > 0 ? Math.round(caTotal / nbCommandes) : 0;
-    const chiffreAffairesHT = Math.round(caTotal * 0.82);
-    const margesBrutes = caTotal > 0 ? Math.round((chiffreAffairesHT / caTotal) * 100) : 0;
+
+    // Part réellement conservée par le restaurant après commission plateforme
+    // (calculée depuis montantNetRestaurant, figé par commande à l'achat) —
+    // remplace l'ancienne estimation fixe à 82% qui ne reflétait aucune donnée réelle.
+    const netRestaurantTotal = commandes.reduce(
+      (s, c) => s + Number(c.montantNetRestaurant ?? c.montantTotal),
+      0,
+    );
+    const margesBrutes =
+      caTotal > 0 ? Math.round((netRestaurantTotal / caTotal) * 100) : 0;
+
+    // Répartition réelle par mode de paiement (remplace l'ancien split fixe
+    // 55/25/20 affiché côté frontend sans lien avec les commandes réelles).
+    const repartitionPaiements: Record<string, number> = {};
+    for (const c of commandes) {
+      const mode = c.modePaiement || 'AUTRE';
+      repartitionPaiements[mode] =
+        (repartitionPaiements[mode] || 0) + Number(c.montantTotal);
+    }
+
+    const depenses = await this.depenseRepository.find({
+      where: { restaurantId, date: Between(dateFrom, now) },
+    });
+    const depensesTotal = depenses.reduce((s, d) => s + Number(d.montant), 0);
 
     const caJour = period === 'day' ? caTotal : 0;
     const caSemaine = period === 'week' ? caTotal : 0;
@@ -648,21 +690,60 @@ export class TresorerieService {
       caMois,
       nbCommandes,
       ticketMoyen,
-      margesBrutes: Math.min(90, Math.max(60, margesBrutes)),
+      margesBrutes,
+      repartitionPaiements,
+      depensesTotal: Math.round(depensesTotal),
     };
   }
 
-  async recordExpense(data: any, restaurantId: string) {
-    return {
-      id: 'expense_' + Date.now(),
-      ...data,
+  async recordExpense(
+    data: {
+      categorie: string;
+      montant: number;
+      description?: string;
+      date?: string;
+    },
+    restaurantId: string,
+  ) {
+    const depense = this.depenseRepository.create({
       restaurantId,
-      createdAt: new Date(),
-      status: 'recorded',
-    };
+      categorie: data.categorie,
+      montant: data.montant,
+      description: data.description ?? null,
+      date: data.date ? new Date(data.date) : new Date(),
+    });
+    return this.depenseRepository.save(depense);
   }
 
-  private getPeriodRange(period: 'monthly' | 'quarterly' | 'yearly'): { from: Date; to: Date } {
+  /** Dépenses opérationnelles persistées pour la période (jour/semaine/mois en cours). */
+  async listExpenses(
+    restaurantId: string,
+    period: 'day' | 'week' | 'month' = 'month',
+  ) {
+    const now = new Date();
+    let dateFrom: Date;
+    if (period === 'day') {
+      dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    } else if (period === 'week') {
+      const dayOfWeek = now.getDay() === 0 ? 6 : now.getDay() - 1;
+      dateFrom = new Date(now);
+      dateFrom.setDate(now.getDate() - dayOfWeek);
+      dateFrom.setHours(0, 0, 0, 0);
+    } else {
+      dateFrom = new Date(now.getFullYear(), now.getMonth(), 1);
+    }
+
+    return this.depenseRepository.find({
+      where: { restaurantId, date: Between(dateFrom, now) },
+      order: { date: 'DESC' },
+      take: 100,
+    });
+  }
+
+  private getPeriodRange(period: 'monthly' | 'quarterly' | 'yearly'): {
+    from: Date;
+    to: Date;
+  } {
     const now = new Date();
     let from: Date;
     if (period === 'monthly') {
@@ -691,8 +772,14 @@ export class TresorerieService {
       },
     });
 
-    const totalRevenue = commandes.reduce((s, c) => s + Number(c.montantTotal), 0);
-    const totalRemises = commandes.reduce((s, c) => s + Number(c.montantRemise ?? 0), 0);
+    const totalRevenue = commandes.reduce(
+      (s, c) => s + Number(c.montantTotal),
+      0,
+    );
+    const totalRemises = commandes.reduce(
+      (s, c) => s + Number(c.montantRemise ?? 0),
+      0,
+    );
     const tva = Math.round(totalRevenue * 0.18);
     const revenueHT = totalRevenue - tva;
 
@@ -707,7 +794,10 @@ export class TresorerieService {
         revenueHT: Math.round(revenueHT),
         tva,
         netProfit: Math.round(revenueHT * 0.7),
-        profitMargin: totalRevenue > 0 ? Math.round((revenueHT * 0.7 / totalRevenue) * 100) : 0,
+        profitMargin:
+          totalRevenue > 0
+            ? Math.round(((revenueHT * 0.7) / totalRevenue) * 100)
+            : 0,
       },
     };
   }
@@ -734,11 +824,22 @@ export class TresorerieService {
     const today = new Date().toISOString().slice(0, 10);
 
     const rows = [
-      ['SYSCOHADA Export', restaurantId, period.toUpperCase(), `Generé le ${today}`],
+      [
+        'SYSCOHADA Export',
+        restaurantId,
+        period.toUpperCase(),
+        `Generé le ${today}`,
+      ],
       ['Date', 'Compte', 'Libelle', 'Debit', 'Credit'],
       [today, '701100', 'Ventes repas — période', '0', String(totalHT)],
       [today, '4457000', 'TVA collectée 18%', '0', String(tva)],
-      [today, '607100', 'Achats et charges — période', '0', String(Math.max(1, Math.round(totalHT * 0.35)))],
+      [
+        today,
+        '607100',
+        'Achats et charges — période',
+        '0',
+        String(Math.max(1, Math.round(totalHT * 0.35))),
+      ],
       [today, '4110000', 'Clients — règlements', String(totalTTC), '0'],
       ...commandes.map((c) => [
         new Date(c.createdAt).toISOString().slice(0, 10),
@@ -750,7 +851,9 @@ export class TresorerieService {
     ];
 
     const csvContent = rows
-      .map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','))
+      .map((row) =>
+        row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(','),
+      )
       .join('\r\n');
 
     return Buffer.from('﻿' + csvContent, 'utf8');
@@ -774,12 +877,39 @@ export class TresorerieService {
     };
   }
 
-  async configureBudgetAlerts(restaurantId: string, config: any) {
+  async configureBudgetAlerts(
+    restaurantId: string,
+    config: {
+      plafondMensuel?: number;
+      alerte80?: boolean;
+      alerte100?: boolean;
+    },
+  ) {
+    await this.restaurantRepository.update(
+      { id: restaurantId },
+      {
+        budgetPlafondMensuel: config.plafondMensuel ?? null,
+        budgetAlerte80: config.alerte80 ?? true,
+        budgetAlerte100: config.alerte100 ?? true,
+      },
+    );
+    return this.getBudgetAlerts(restaurantId);
+  }
+
+  async getBudgetAlerts(restaurantId: string) {
+    const restaurant = await this.restaurantRepository.findOne({
+      where: { id: restaurantId },
+      select: [
+        'id',
+        'budgetPlafondMensuel',
+        'budgetAlerte80',
+        'budgetAlerte100',
+      ],
+    });
     return {
-      restaurantId,
-      ...config,
-      updatedAt: new Date(),
-      status: 'configured',
+      plafondMensuel: restaurant?.budgetPlafondMensuel ?? null,
+      alerte80: restaurant?.budgetAlerte80 ?? true,
+      alerte100: restaurant?.budgetAlerte100 ?? true,
     };
   }
 }

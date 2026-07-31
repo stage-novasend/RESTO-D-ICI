@@ -51,7 +51,7 @@ export default function AcceptInvitation() {
 
         {/* Logo */}
         <div className="flex items-center justify-center gap-3 mb-8">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: A }}>
+          <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: A }}>
             <UtensilsCrossed className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -60,7 +60,7 @@ export default function AcceptInvitation() {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-lg border border-[#E2E8F0] overflow-hidden">
+        <div className="bg-white rounded-lg shadow-lg border border-[#E2E8F0] overflow-hidden">
 
           {/* Header card */}
           <div className="px-8 py-6 border-b border-[#F3F4F6]" style={{ background: 'linear-gradient(135deg, #181A20, #2B1500)' }}>
@@ -101,7 +101,7 @@ export default function AcceptInvitation() {
             {/* Form */}
             {!loadingInvit && invitation && !success && (
               <>
-                <div className="mb-6 p-4 rounded-2xl" style={{ background: '#FFF0DF' }}>
+                <div className="mb-6 p-4 rounded-lg" style={{ background: '#FFF0DF' }}>
                   <p className="text-sm font-bold" style={{ color: A }}>
                     {invitation.entreprise}
                   </p>
@@ -123,7 +123,7 @@ export default function AcceptInvitation() {
                       type="text"
                       value={invitation.nom}
                       readOnly
-                      className="w-full rounded-xl px-4 py-3 text-sm bg-[#F3F4F6] text-[#8B6E50] cursor-not-allowed"
+                      className="w-full rounded-lg px-4 py-3 text-sm bg-[#F3F4F6] text-[#8B6E50] cursor-not-allowed"
                       style={{ border: '1px solid rgba(89,67,42,0.10)' }}
                     />
                   </div>
@@ -135,7 +135,7 @@ export default function AcceptInvitation() {
                       type="email"
                       value={invitation.email}
                       readOnly
-                      className="w-full rounded-xl px-4 py-3 text-sm bg-[#F3F4F6] text-[#8B6E50] cursor-not-allowed"
+                      className="w-full rounded-lg px-4 py-3 text-sm bg-[#F3F4F6] text-[#8B6E50] cursor-not-allowed"
                       style={{ border: '1px solid rgba(89,67,42,0.10)' }}
                     />
                   </div>
@@ -148,7 +148,7 @@ export default function AcceptInvitation() {
                       value={form.prenom}
                       onChange={e => setForm(p => ({ ...p, prenom: e.target.value }))}
                       placeholder="Votre prénom"
-                      className="w-full rounded-xl px-4 py-3 text-sm outline-none focus:ring-2"
+                      className="w-full rounded-lg px-4 py-3 text-sm outline-none focus:ring-2"
                       style={{ background: '#FFFFFF', border: '1px solid rgba(89,67,42,0.10)', focusRingColor: A }}
                     />
                   </div>
@@ -163,7 +163,7 @@ export default function AcceptInvitation() {
                         onChange={e => setForm(p => ({ ...p, password: e.target.value }))}
                         placeholder="8 caractères minimum"
                         required
-                        className="w-full rounded-xl px-4 py-3 pr-11 text-sm outline-none"
+                        className="w-full rounded-lg px-4 py-3 pr-11 text-sm outline-none"
                         style={{ background: '#FFFFFF', border: '1px solid rgba(89,67,42,0.10)' }}
                       />
                       <button type="button" onClick={() => setShowPwd(v => !v)}
@@ -182,7 +182,7 @@ export default function AcceptInvitation() {
                       onChange={e => setForm(p => ({ ...p, confirm: e.target.value }))}
                       placeholder="Retapez votre mot de passe"
                       required
-                      className="w-full rounded-xl px-4 py-3 text-sm outline-none"
+                      className="w-full rounded-lg px-4 py-3 text-sm outline-none"
                       style={{ background: '#FFFFFF', border: '1px solid rgba(89,67,42,0.10)' }}
                     />
                   </div>
@@ -194,7 +194,7 @@ export default function AcceptInvitation() {
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full py-3.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
+                    className="w-full py-3.5 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition"
                     style={{ background: A, opacity: submitting ? 0.7 : 1 }}
                   >
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}

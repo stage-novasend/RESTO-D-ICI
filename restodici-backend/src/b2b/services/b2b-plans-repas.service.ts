@@ -6,10 +6,7 @@ import {
 import { InjectRepository } from '@nestjs/typeorm';
 import { Cron } from '@nestjs/schedule';
 import { Repository } from 'typeorm';
-import {
-  PlanRepasB2B,
-  FrequencePlan,
-} from '../entities/plan-repas-b2b.entity';
+import { PlanRepasB2B, FrequencePlan } from '../entities/plan-repas-b2b.entity';
 import { CompteB2B } from '../entities/compte-b2b.entity';
 import { B2bNotifyService } from './b2b-notify.service';
 

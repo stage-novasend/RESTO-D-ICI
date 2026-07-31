@@ -105,7 +105,7 @@ export default function B2BOrders() {
 
         {/* Blocked account banner */}
         {isBlocked && (
-          <div className="rounded-xl border border-red-200 bg-red-50 px-5 py-4 flex items-start gap-3">
+          <div className="rounded-lg border border-red-200 bg-red-50 px-5 py-4 flex items-start gap-3">
             <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
             <div className="flex-1">
               <p className="text-sm font-semibold text-red-800">Compte bloqué — commandes désactivées</p>
@@ -128,7 +128,7 @@ export default function B2BOrders() {
             { label: 'En cours',  value: active.length, bg: '#EA580C' },
             { label: 'Terminées', value: done.length,   bg: '#10B981' },
           ].map(s => (
-            <div key={s.label} className="rounded-xl p-4 text-center" style={{ background: s.bg }}>
+            <div key={s.label} className="rounded-lg p-4 text-center" style={{ background: s.bg }}>
               <p className="text-xl font-bold text-white">{s.value}</p>
               <p className="text-[11px] mt-0.5" style={{ color: 'rgba(255,255,255,0.7)' }}>{s.label}</p>
             </div>
@@ -155,7 +155,7 @@ export default function B2BOrders() {
         </div>
 
         {/* List */}
-        <div className="rounded-xl overflow-hidden" style={{ background: CARD, boxShadow: SH }}>
+        <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH }}>
           {loading ? (
             <div className="p-4 space-y-2">
               {[1,2,3,4,5].map(i => (

@@ -6,8 +6,16 @@ import { SlaIncident } from './entities/sla-incident.entity';
 
 describe('SlaService', () => {
   let service: SlaService;
-  const configRepo = { findOne: jest.fn(), save: jest.fn(), create: jest.fn((x) => x) };
-  const incidentRepo = { find: jest.fn(), save: jest.fn(), create: jest.fn((x) => x) };
+  const configRepo = {
+    findOne: jest.fn(),
+    save: jest.fn(),
+    create: jest.fn((x) => x),
+  };
+  const incidentRepo = {
+    find: jest.fn(),
+    save: jest.fn(),
+    create: jest.fn((x) => x),
+  };
 
   beforeEach(async () => {
     jest.clearAllMocks();
@@ -24,7 +32,10 @@ describe('SlaService', () => {
   it('renvoie 100% quand aucun incident', async () => {
     // service démarré il y a 10 jours, aucun incident
     const start = new Date(Date.now() - 10 * 86400 * 1000).toISOString();
-    configRepo.findOne.mockResolvedValue({ key: 'sla_service_started_at', value: start });
+    configRepo.findOne.mockResolvedValue({
+      key: 'sla_service_started_at',
+      value: start,
+    });
     incidentRepo.find.mockResolvedValue([]);
 
     const sla = await service.getSla(30);
@@ -36,7 +47,10 @@ describe('SlaService', () => {
     // fenêtre ≈ 10 jours ; un incident de 1h → dispo ≈ 99.58%
     const now = Date.now();
     const start = new Date(now - 10 * 86400 * 1000).toISOString();
-    configRepo.findOne.mockResolvedValue({ key: 'sla_service_started_at', value: start });
+    configRepo.findOne.mockResolvedValue({
+      key: 'sla_service_started_at',
+      value: start,
+    });
     incidentRepo.find.mockResolvedValue([
       {
         startedAt: new Date(now - 2 * 86400 * 1000),

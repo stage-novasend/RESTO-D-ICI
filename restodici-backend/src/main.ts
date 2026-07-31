@@ -1,8 +1,12 @@
 // src/main.ts
 import 'dotenv/config'; // ← charge .env avant tout le reste
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
-import { Logger, ValidationPipe } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  Logger,
+  ValidationPipe,
+} from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
@@ -36,6 +40,11 @@ async function bootstrap() {
       transform: true,
     }),
   );
+
+  // [SÉCURITÉ] Applique les @Exclude() des entités (password, refreshToken,
+  // secrets 2FA…) à TOUTE réponse JSON — y compris les relations imbriquées
+  // (ex: commande.client) qui échappaient jusqu'ici à tout filtrage manuel.
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
   // CORS — origines centralisées (config/app-config.ts, pilotées par l'env).
   app.enableCors({

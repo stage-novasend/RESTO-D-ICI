@@ -4,7 +4,7 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Google Fonts — doit précéder @tailwind ── */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Manrope:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Inter:wght@300;400;500;600;700;800&display=swap');
 
 /* ── Ordre recommandé par Tailwind (base → components → utilities) ── */
 @tailwind base;
@@ -139,7 +139,7 @@ html {
 body {
   background-color: #FFFFFF;
   color: var(--color-text);
-  font-family: 'Manrope', 'Inter', system-ui, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   font-weight: 600;
   -webkit-font-smoothing: antialiased;   /* rendu de police lissé sur Mac/iOS */
   -moz-osx-font-smoothing: grayscale;

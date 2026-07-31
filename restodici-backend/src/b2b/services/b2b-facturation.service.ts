@@ -108,7 +108,9 @@ export class B2bFacturationService {
         ? Math.min(Math.max(pagination.limit, 1), 200)
         : undefined;
     const skip =
-      take != null ? (Math.max(pagination?.page ?? 1, 1) - 1) * take : undefined;
+      take != null
+        ? (Math.max(pagination?.page ?? 1, 1) - 1) * take
+        : undefined;
 
     const factures = await this.factureRepository.find({
       where: { compteB2B: { id: compte.id } },
@@ -333,12 +335,17 @@ export class B2bFacturationService {
     });
 
     const saved = await this.factureRepository.save(facture);
-    await this.auditService.logAudit('GENERATION_FACTURE', compte.id, 'SYSTEM', {
-      numeroFacture,
-      montantTTC,
-      mois,
-      annee,
-    });
+    await this.auditService.logAudit(
+      'GENERATION_FACTURE',
+      compte.id,
+      'SYSTEM',
+      {
+        numeroFacture,
+        montantTTC,
+        mois,
+        annee,
+      },
+    );
 
     // Notifie le responsable B2B par email (RG-20)
     const emailDest = compte.emailProfessionnel;

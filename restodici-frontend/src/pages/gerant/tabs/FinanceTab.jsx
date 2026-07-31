@@ -3,9 +3,21 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import Chart from "chart.js/auto";
 import { AlertTriangle, CheckCircle2, CreditCard, DollarSign, Download, FileText, PieChart, Plus, ShoppingBag, Wallet } from "lucide-react";
 import { tresorerieAPI } from "../../../services/api";
+import { createCommandesSocket } from "../../../services/commandes.service";
 import { formatFCFA } from "../../../utils/formatters";
 import { buildFinanceReportBlob } from "../../../utils/syscohada-pdf";
 import { EXPENSE_CATS, downloadAndOpenBlob } from "../_helpers";
+
+const MODE_PAIEMENT_LABEL = {
+  ESPECES: 'Espèces', CARTE_BANCAIRE: 'Carte bancaire', WAVE: 'Wave',
+  ORANGE_MONEY: 'Orange Money', MTN_MONEY: 'MTN MoMo', MOOV_MONEY: 'Moov Money',
+  NOVASEND: 'NovaSend', LIVRAISON: 'Paiement à la livraison', AUTRE: 'Autre',
+};
+const MODE_PAIEMENT_COLOR = {
+  ESPECES: '#9CA3AF', CARTE_BANCAIRE: '#1A0C00', WAVE: '#2563EB',
+  ORANGE_MONEY: '#EA580C', MTN_MONEY: '#EAB308', MOOV_MONEY: '#059669',
+  NOVASEND: '#7C3AED', LIVRAISON: '#0891B2', AUTRE: '#94A3B8',
+};
 
 export default function FinanceTab({ restaurantId }) {
   const [kpiData, setKpiData]   = useState(null);
@@ -20,36 +32,70 @@ export default function FinanceTab({ restaurantId }) {
   const [dlState, setDlState]   = useState({});
   const donutRef = useRef(null);
   const donutChart = useRef(null);
+  const budgetLoadedRef = useRef(false);
 
   const showToast = (msg, ok = true) => { setToast({ msg, ok }); setTimeout(() => setToast({ msg: '', ok: true }), 3000); };
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async ({ silent = false } = {}) => {
     if (!restaurantId) return;
-    setLoading(true);
+    if (!silent) setLoading(true);
     try {
-      const [statsRes, commRes] = await Promise.allSettled([
+      const [statsRes, commRes, expRes, budgetRes] = await Promise.allSettled([
         tresorerieAPI.getStats(period),
         tresorerieAPI.getCommissionsResume(),
+        tresorerieAPI.getExpenses('month'), // le plafond budgétaire est mensuel, indépendant du sélecteur de période CA
+        tresorerieAPI.getBudgetAlerts(),
       ]);
-      setKpiData(statsRes.status === 'fulfilled' ? statsRes.value.data : { caJour: 0, caSemaine: 0, caMois: 0, nbCommandes: 0, ticketMoyen: 0, margesBrutes: 0 });
+      setKpiData(statsRes.status === 'fulfilled' ? statsRes.value.data : { caJour: 0, caSemaine: 0, caMois: 0, nbCommandes: 0, ticketMoyen: 0, margesBrutes: 0, repartitionPaiements: {}, depensesTotal: 0 });
       setCommissions(commRes.status === 'fulfilled' ? commRes.value.data : null);
+      if (expRes.status === 'fulfilled') {
+        setExpenses((expRes.value.data || []).map(e => ({
+          id: e.id, categorie: e.categorie,
+          label: EXPENSE_CATS.find(c => c.value === e.categorie)?.label || e.categorie,
+          montant: Number(e.montant), description: e.description, date: e.date,
+        })));
+      }
+      // Ne réinitialise le formulaire budget qu'au premier chargement, pas à
+      // chaque rafraîchissement silencieux (sinon on écrase la saisie en cours).
+      if (budgetRes.status === 'fulfilled' && !budgetLoadedRef.current) {
+        const b = budgetRes.value.data || {};
+        setBudget(prev => ({ ...prev, plafond: b.plafondMensuel != null ? String(b.plafondMensuel) : '', alerte80: b.alerte80 ?? true, alerte100: b.alerte100 ?? true }));
+        budgetLoadedRef.current = true;
+      }
     } catch {
-      setKpiData({ caJour: 0, caSemaine: 0, caMois: 0, nbCommandes: 0, ticketMoyen: 0, margesBrutes: 0 });
+      setKpiData({ caJour: 0, caSemaine: 0, caMois: 0, nbCommandes: 0, ticketMoyen: 0, margesBrutes: 0, repartitionPaiements: {}, depensesTotal: 0 });
     } finally { setLoading(false); }
   }, [restaurantId, period]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => {
+    void loadData();
+    const interval = setInterval(() => void loadData({ silent: true }), 30000);
 
-  /* Donut paiements */
+    const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
+    const currentUser = cachedUser?.user || cachedUser;
+    const socket = createCommandesSocket(currentUser);
+    const refresh = () => void loadData({ silent: true });
+    socket.on('commande.statut', refresh);
+    socket.on('commande.paiement', refresh);
+    socket.on('commande.nouvelle', refresh);
+
+    return () => { clearInterval(interval); socket.disconnect(); };
+  }, [loadData]);
+
+  /* Donut paiements — répartition réelle par mode (depuis les commandes payées de la période) */
   useEffect(() => {
     if (!donutRef.current || !kpiData) return;
     donutChart.current?.destroy();
-    const ca = kpiData.caJour || kpiData.caMois || 100000;
+    const repartition = kpiData.repartitionPaiements || {};
+    const modes = Object.keys(repartition);
+    const labels = modes.length ? modes.map(m => MODE_PAIEMENT_LABEL[m] || m) : ['Aucune donnée'];
+    const data = modes.length ? modes.map(m => repartition[m]) : [1];
+    const colors = modes.length ? modes.map(m => MODE_PAIEMENT_COLOR[m] || '#CBD5E1') : ['#E2E8F0'];
     donutChart.current = new Chart(donutRef.current, {
       type: 'doughnut',
       data: {
-        labels: ['Mobile Money', 'Carte bancaire', 'Espèces'],
-        datasets: [{ data: [Math.round(ca * 0.55), Math.round(ca * 0.25), Math.round(ca * 0.20)], backgroundColor: ['#EA580C', '#C2410C', '#9CA3AF'], borderWidth: 0, hoverOffset: 4 }],
+        labels,
+        datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }],
       },
       options: {
         cutout: '72%', responsive: true, maintainAspectRatio: false,
@@ -69,10 +115,9 @@ export default function FinanceTab({ restaurantId }) {
     setSaving(true);
     try {
       await tresorerieAPI.recordExpense({ categorie: expenseForm.categorie, montant: m, description: expenseForm.description, date: new Date().toISOString() });
-      const cat = EXPENSE_CATS.find(c => c.value === expenseForm.categorie);
-      setExpenses(prev => [{ id: Date.now(), categorie: expenseForm.categorie, label: cat?.label || expenseForm.categorie, montant: m, description: expenseForm.description, date: new Date() }, ...prev].slice(0, 20));
       setExpenseForm({ categorie: '', montant: '', description: '' });
       showToast('Dépense enregistrée');
+      await loadData({ silent: true }); // recharge la liste persistée + les totaux (dette budget, KPI)
     } catch { showToast("Erreur lors de l'enregistrement", false); }
     finally { setSaving(false); }
   };
@@ -126,10 +171,22 @@ export default function FinanceTab({ restaurantId }) {
   const budgetPct  = plafond > 0 ? Math.min(Math.round((depTotal / plafond) * 100), 100) : 0;
   const budgetAlert = budgetPct >= 100 ? 'rouge' : budgetPct >= 80 ? 'orange' : 'vert';
 
+  // Répartition réelle des paiements de la période (remplace l'ancien split fixe 55/25/20)
+  const repartition = kpiData.repartitionPaiements || {};
+  const repartitionTotal = Object.values(repartition).reduce((s, v) => s + v, 0);
+  const paiementBreakdown = Object.entries(repartition)
+    .sort((a, b) => b[1] - a[1])
+    .map(([mode, montant]) => ({
+      label: MODE_PAIEMENT_LABEL[mode] || mode,
+      pct: repartitionTotal > 0 ? Math.round((montant / repartitionTotal) * 100) : 0,
+      color: MODE_PAIEMENT_COLOR[mode] || '#94A3B8',
+      montant,
+    }));
+
   return (
     <div className="space-y-5">
       {toast.msg && (
-        <div className={`fixed bottom-4 right-4 z-50 rounded-2xl px-4 py-3 text-sm font-semibold text-white shadow-xl ${toast.ok ? 'bg-[#059669]' : 'bg-red-600'}`}>{toast.msg}</div>
+        <div className={`fixed bottom-4 right-4 z-50 rounded-lg px-4 py-3 text-sm font-semibold text-white shadow-xl ${toast.ok ? 'bg-[#059669]' : 'bg-red-600'}`}>{toast.msg}</div>
       )}
 
       {/* ── Header + period ── */}
@@ -138,10 +195,10 @@ export default function FinanceTab({ restaurantId }) {
           <h3 className="text-lg font-extrabold text-[#1A0C00]">Trésorerie & Finances</h3>
           <p className="text-xs text-[#8B6E50] mt-0.5">CA, dépenses, budget, exports SYSCOHADA — , </p>
         </div>
-        <div className="flex p-1 bg-[#F4F6F8] rounded-2xl gap-1">
+        <div className="flex p-1 bg-[#F4F6F8] rounded-lg gap-1">
           {[{ v: 'day', l: "Aujourd'hui" }, { v: 'week', l: 'Semaine' }, { v: 'month', l: 'Mois' }].map(p => (
             <button key={p.v} onClick={() => setPeriod(p.v)}
-              className={`rounded-xl px-4 py-2 text-xs font-semibold transition ${period === p.v ? 'bg-white text-[#EA580C] shadow-sm' : 'text-[#8B6E50] hover:text-[#EA580C]'}`}>
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${period === p.v ? 'bg-white text-[#EA580C] shadow-card' : 'text-[#8B6E50] hover:text-[#EA580C]'}`}>
               {p.l}
             </button>
           ))}
@@ -150,7 +207,7 @@ export default function FinanceTab({ restaurantId }) {
 
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <div className="rounded-2xl p-5 shadow-sm col-span-2 xl:col-span-1" style={{ background: '#EA580C' }}>
+        <div className="rounded-lg p-5 shadow-sm col-span-2 xl:col-span-1" style={{ background: '#EA580C' }}>
           <p className="text-xs font-semibold uppercase tracking-wide text-white/50 mb-1">{caLabel}</p>
           <p className="text-2xl font-extrabold text-white leading-none">{formatFCFA(caValue)}</p>
           <p className="text-xs text-white/30 mt-2">Chiffre d'affaires</p>
@@ -160,10 +217,10 @@ export default function FinanceTab({ restaurantId }) {
           { label: 'Ticket moyen', value: formatFCFA(kpiData.ticketMoyen), sub: 'par commande', icon: CreditCard, bg: '#F0FDF4', color: '#16A34A' },
           { label: 'Marge brute', value: (kpiData.margesBrutes || 0) + '%', sub: '(PV−Coût)/PV ', icon: PieChart, bg: '#EFF6FF', color: '#2563EB' },
         ].map(({ label, value, sub, icon: Icon, bg, color }) => (
-          <div key={label} className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+          <div key={label} className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
             <div className="flex items-center justify-between mb-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-[#8B6E50]">{label}</p>
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: bg }}>
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: bg }}>
                 <Icon className="w-3.5 h-3.5" style={{ color }} />
               </div>
             </div>
@@ -175,7 +232,7 @@ export default function FinanceTab({ restaurantId }) {
 
       {/* ── Commission plateforme : dette espèces + versements en ligne ── */}
       {commissions && (
-        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+        <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
               <Wallet className="w-3.5 h-3.5 text-[#EA580C]" />
@@ -187,24 +244,24 @@ export default function FinanceTab({ restaurantId }) {
           </div>
 
           {commissions.bloque && (
-            <div className="flex items-center gap-2 rounded-xl px-4 py-3 mb-4 text-sm font-semibold" style={{ background: '#FEF2F2', color: '#DC2626' }}>
+            <div className="flex items-center gap-2 rounded-lg px-4 py-3 mb-4 text-sm font-semibold" style={{ background: '#FEF2F2', color: '#DC2626' }}>
               <AlertTriangle className="w-4 h-4 flex-shrink-0" />
               Commission espèces impayée depuis plus de 7 jours — les nouvelles commandes sont bloquées jusqu'à régularisation par l'administration.
             </div>
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <div className="rounded-xl p-4" style={{ background: commissions.detteEnRetard > 0 ? '#FEF2F2' : '#F8FAFC' }}>
+            <div className="rounded-lg p-4" style={{ background: commissions.detteEnRetard > 0 ? '#FEF2F2' : '#F8FAFC' }}>
               <p className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: commissions.detteEnRetard > 0 ? '#DC2626' : '#8B6E50' }}>Dette espèces due</p>
               <p className="text-xl font-extrabold mt-1" style={{ color: commissions.detteEnRetard > 0 ? '#DC2626' : '#1A0C00' }}>{formatFCFA(commissions.detteEnCours)}</p>
               {commissions.detteEnRetard > 0 && <p className="text-[10px] text-[#DC2626] mt-1">dont {formatFCFA(commissions.detteEnRetard)} en retard</p>}
             </div>
-            <div className="rounded-xl p-4" style={{ background: '#EFF6FF' }}>
+            <div className="rounded-lg p-4" style={{ background: '#EFF6FF' }}>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#2563EB]">À recevoir (en ligne)</p>
               <p className="text-xl font-extrabold text-[#2563EB] mt-1">{formatFCFA(commissions.aVerser)}</p>
               <p className="text-[10px] text-[#2563EB]/70 mt-1">Versement automatique en cours de traitement</p>
             </div>
-            <div className="rounded-xl p-4" style={{ background: '#ECFDF5' }}>
+            <div className="rounded-lg p-4" style={{ background: '#ECFDF5' }}>
               <p className="text-[10px] font-semibold uppercase tracking-wide text-[#059669] flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Déjà reçu</p>
               <p className="text-xl font-extrabold text-[#059669] mt-1">{formatFCFA(commissions.verse)}</p>
             </div>
@@ -246,7 +303,7 @@ export default function FinanceTab({ restaurantId }) {
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
 
         {/* Répartition paiements */}
-        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+        <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-3">
             <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
               <CreditCard className="w-3.5 h-3.5 text-[#EA580C]" />
@@ -261,11 +318,7 @@ export default function FinanceTab({ restaurantId }) {
               <canvas ref={donutRef} />
             </div>
             <div className="flex flex-col gap-2 flex-1">
-              {[
-                { label: 'Mobile Money', pct: 55, color: '#EA580C', note: 'Orange · MTN · Wave' },
-                { label: 'Carte bancaire', pct: 25, color: '#1A0C00', note: 'Visa · Mastercard' },
-                { label: 'Espèces', pct: 20, color: '#9CA3AF', note: 'Caisse physique' },
-              ].map(({ label, pct, color, note }) => (
+              {paiementBreakdown.length > 0 ? paiementBreakdown.map(({ label, pct, color, montant }) => (
                 <div key={label}>
                   <div className="flex justify-between mb-0.5">
                     <span className="text-xs font-semibold text-[#1A0C00]">{label}</span>
@@ -274,15 +327,17 @@ export default function FinanceTab({ restaurantId }) {
                   <div className="h-1.5 w-full rounded-full bg-[#FFF5E6] overflow-hidden">
                     <div className="h-full rounded-full" style={{ width: pct + '%', background: color }} />
                   </div>
-                  <p className="text-[10px] text-[#8B6E50] mt-0.5">{note}</p>
+                  <p className="text-[10px] text-[#8B6E50] mt-0.5">{formatFCFA(montant)}</p>
                 </div>
-              ))}
+              )) : (
+                <p className="text-xs text-[#8B6E50]">Aucun paiement encaissé sur cette période.</p>
+              )}
             </div>
           </div>
         </div>
 
         {/* Budget & Alertes  */}
-        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+        <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
               <Wallet className="w-3.5 h-3.5 text-[#EA580C]" />
@@ -296,10 +351,10 @@ export default function FinanceTab({ restaurantId }) {
           {/* Config plafond */}
           <div className="flex gap-2 mb-4">
             <input type="number" min="0" value={budget.plafond} onChange={e => setBudget(b => ({ ...b, plafond: e.target.value }))}
-              className="flex-1 rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+              className="flex-1 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
               placeholder="Plafond mensuel (FCFA)" />
             <button onClick={handleSaveBudget} disabled={budget.saving}
-              className="rounded-xl bg-[#EA580C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#C2410C] disabled:opacity-60">
+              className="rounded-lg bg-[#EA580C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#C2410C] disabled:opacity-60">
               {budget.saving ? '…' : 'Définir'}
             </button>
           </div>
@@ -348,7 +403,7 @@ export default function FinanceTab({ restaurantId }) {
       <div className="grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
 
         {/* Saisie dépenses + liste */}
-        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+        <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
               <DollarSign className="w-3.5 h-3.5 text-[#EA580C]" />
@@ -362,7 +417,7 @@ export default function FinanceTab({ restaurantId }) {
             <div>
               <label className="mb-1 block text-sm font-semibold text-[#475569]">Catégorie *</label>
               <select value={expenseForm.categorie} onChange={e => setExpenseForm(f => ({ ...f, categorie: e.target.value }))}
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
                 <option value="">Catégorie…</option>
                 {EXPENSE_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
@@ -370,18 +425,18 @@ export default function FinanceTab({ restaurantId }) {
             <div>
               <label className="mb-1 block text-sm font-semibold text-[#475569]">Montant (FCFA) *</label>
               <input type="number" min="1" value={expenseForm.montant} onChange={e => setExpenseForm(f => ({ ...f, montant: e.target.value }))}
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
                 placeholder="Ex: 50 000" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-semibold text-[#475569]">Description</label>
               <input type="text" value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
                 placeholder="Optionnel" />
             </div>
           </div>
           <button onClick={handleRecordExpense} disabled={saving}
-            className="flex items-center gap-2 rounded-xl bg-[#EA580C] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#C2410C] disabled:opacity-60 mb-5">
+            className="flex items-center gap-2 rounded-lg bg-[#EA580C] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#C2410C] disabled:opacity-60 mb-5">
             {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
@@ -394,7 +449,7 @@ export default function FinanceTab({ restaurantId }) {
                 {expenses.map(exp => {
                   const cat = EXPENSE_CATS.find(c => c.value === exp.categorie);
                   return (
-                    <div key={exp.id} className="flex items-center justify-between rounded-xl bg-[#F9F9FC] px-3 py-2 border border-[#FFF5E6]">
+                    <div key={exp.id} className="flex items-center justify-between rounded-lg bg-[#F9F9FC] px-3 py-2 border border-[#FFF5E6]">
                       <div className="flex items-center gap-2">
                         <div className="w-2.5 h-2.5 rounded-full flex-shrink-0" style={{ background: cat?.color || '#8B6E50' }} />
                         <span className="text-xs font-semibold text-[#334155]">{cat?.label || exp.categorie}</span>
@@ -414,7 +469,7 @@ export default function FinanceTab({ restaurantId }) {
         </div>
 
         {/* Exports financiers */}
-        <div className="rounded-2xl bg-white border border-[#E2E8F0] p-5 shadow-sm">
+        <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-4">
             <div className="w-7 h-7 rounded-lg bg-[#EEF2FF] flex items-center justify-center">
               <Download className="w-3.5 h-3.5 text-[#4F46E5]" />
@@ -434,7 +489,7 @@ export default function FinanceTab({ restaurantId }) {
               { period: 'yearly',    label: 'Annuel',       color: '#059669' },
             ].map(({ period: p, label, color }) => (
               <button key={p} onClick={() => downloadSyscohada(p)} disabled={dlState[p]}
-                className="w-full flex items-center gap-2 rounded-xl px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
+                className="w-full flex items-center gap-2 rounded-lg px-4 py-2.5 text-xs font-bold text-white shadow-sm transition hover:opacity-90 disabled:opacity-60"
                 style={{ background: color }}>
                 <Download className="w-3.5 h-3.5 flex-shrink-0" />
                 {dlState[p] ? 'Génération…' : `CSV SYSCOHADA — ${label}`}
@@ -451,14 +506,14 @@ export default function FinanceTab({ restaurantId }) {
               { rp: 'yearly',    label: 'Rapport annuel' },
             ].map(({ rp, label }) => (
               <button key={rp} onClick={() => downloadReport(rp)} disabled={dlState[`rp_${rp}`]}
-                className="w-full flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-2.5 text-xs font-semibold text-[#334155] transition hover:border-[#EA580C] hover:text-[#EA580C] disabled:opacity-60">
+                className="w-full flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-2.5 text-xs font-semibold text-[#334155] transition hover:border-[#EA580C] hover:text-[#EA580C] disabled:opacity-60">
                 <FileText className="w-3.5 h-3.5 flex-shrink-0" />
                 {dlState[`rp_${rp}`] ? 'Génération…' : label}
               </button>
             ))}
           </div>
 
-          <div className="mt-4 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2.5">
+          <div className="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5">
             <p className="text-[10px] text-amber-800 font-semibold leading-relaxed">
               Les exports SYSCOHADA sont au format CSV UTF-8 (BOM) compatibles avec Sage, Ciel et les logiciels comptables ivoiriens. Rétention légale : 10 ans (OHADA).
             </p>

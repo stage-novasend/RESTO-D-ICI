@@ -34,7 +34,11 @@ describe('NotificationsService', () => {
       data: { commandeId: 'c1' },
     });
     expect(repo.create).toHaveBeenCalledWith(
-      expect.objectContaining({ userId: 'u1', read: false, type: 'commande.statut' }),
+      expect.objectContaining({
+        userId: 'u1',
+        read: false,
+        type: 'commande.statut',
+      }),
     );
     expect(notif.id).toBe('n1');
   });
@@ -52,12 +56,18 @@ describe('NotificationsService', () => {
 
   it('markRead ne cible que la notif du user', async () => {
     await service.markRead('n1', 'u1');
-    expect(repo.update).toHaveBeenCalledWith({ id: 'n1', userId: 'u1' }, { read: true });
+    expect(repo.update).toHaveBeenCalledWith(
+      { id: 'n1', userId: 'u1' },
+      { read: true },
+    );
   });
 
   it('markAllRead ne cible que les non-lues du user', async () => {
     await service.markAllRead('u1');
-    expect(repo.update).toHaveBeenCalledWith({ userId: 'u1', read: false }, { read: true });
+    expect(repo.update).toHaveBeenCalledWith(
+      { userId: 'u1', read: false },
+      { read: true },
+    );
   });
 
   it('borne la pagination (limit max 100)', async () => {

@@ -25,7 +25,7 @@ function Field({ label, icon: Icon, error, children }) {
       <label className="block text-xs font-semibold" style={{ color: '#475569' }}>{label}</label>
       <div className="relative">
         {Icon && (
-          <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#A89070' }} />
+          <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: '#94A3B8' }} />
         )}
         {children}
       </div>
@@ -35,11 +35,11 @@ function Field({ label, icon: Icon, error, children }) {
 }
 
 const inputCls = (hasIcon, hasError) =>
-  `w-full ${hasIcon ? 'pl-10' : 'px-4'} pr-4 py-3 rounded-xl text-sm outline-none transition`;
+  `w-full ${hasIcon ? 'pl-10' : 'px-4'} pr-4 py-3 rounded-lg text-sm outline-none transition`;
 const inputStyle = (hasError) => ({
   background: '#F8FAFC',
   border: `1.5px solid ${hasError ? '#FCA5A5' : '#E2E8F0'}`,
-  color: '#1A0C00',
+  color: '#0F172A',
 });
 
 export default function Register() {
@@ -125,7 +125,7 @@ export default function Register() {
     : t('create_account');
 
   return (
-    <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF' }}>
+    <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF', fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ── Formulaire d'inscription — côté droit (visuellement) ── */}
       <div className="flex-1 flex flex-col justify-center px-8 py-10 sm:px-12 lg:px-16 xl:px-24 overflow-y-auto">
@@ -134,13 +134,13 @@ export default function Register() {
           {/* ── Logo ── */}
           <div className="flex items-center gap-2.5 mb-8">
             <BrandMark size={36} />
-            <span className="font-bold text-lg" style={{ color: '#1A0C00' }}>Resto d'ici</span>
+            <span className="font-bold text-lg" style={{ color: '#0F172A' }}>Resto d'ici</span>
           </div>
 
           {/* ── Titre selon le type d'inscription ── */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold" style={{ color: '#1A0C00' }}>{heading}</h1>
-            <p className="mt-1 text-sm" style={{ color: '#8B6E50' }}>
+            <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>{heading}</h1>
+            <p className="mt-1 text-sm" style={{ color: '#64748B' }}>
               {isRestaurant ? t('manage_restaurant_rt')
                 : isBusiness ? t('team_meals_budget')
                 : t('join_digital_table')}
@@ -148,14 +148,14 @@ export default function Register() {
           </div>
 
           {/* ── Onglets de sélection du type de compte ── */}
-          <div className="flex gap-1 mb-6 p-1 rounded-xl" style={{ background: '#F1F5F9' }}>
+          <div className="flex gap-1 mb-6 p-1 rounded-lg" style={{ background: '#F1F5F9' }}>
             {TABS.map(({ key, label, icon: Icon }) => (
               <button key={key} type="button"
                 onClick={() => navigate(`/register?type=${key}`)}
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-semibold transition-all"
                 style={{
                   background: userType === key ? '#FFFFFF' : 'transparent',
-                  color: userType === key ? '#EA580C' : '#A89070',
+                  color: userType === key ? '#EA580C' : '#94A3B8',
                   boxShadow: userType === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 }}>
                 <Icon className="w-3.5 h-3.5" />
@@ -167,7 +167,7 @@ export default function Register() {
           {/* ── Formulaire ── */}
           <form onSubmit={onSubmit} className="space-y-4">
             {apiError && (
-              <div className="rounded-xl px-4 py-3 text-sm text-red-700"
+              <div className="rounded-lg px-4 py-3 text-sm text-red-700"
                 style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}>{apiError}</div>
             )}
 
@@ -261,7 +261,7 @@ export default function Register() {
             )}
 
             <button type="submit" disabled={loading}
-              className="w-full py-3 rounded-xl font-semibold text-white text-sm transition disabled:opacity-60 active:scale-[0.99]"
+              className="w-full py-3 rounded-lg font-semibold text-white text-sm transition disabled:opacity-60 active:scale-[0.99]"
               style={{ background: '#EA580C' }}>
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -274,7 +274,7 @@ export default function Register() {
             </button>
           </form>
 
-          <p className="mt-5 text-center text-sm" style={{ color: '#A89070' }}>
+          <p className="mt-5 text-center text-sm" style={{ color: '#94A3B8' }}>
             {t('already_have_account')}{' '}
             <Link to={`/login${location.search}`} className="font-semibold hover:underline" style={{ color: '#EA580C' }}>{t('login_title')}</Link>
           </p>

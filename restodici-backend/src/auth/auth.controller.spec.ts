@@ -64,13 +64,16 @@ describe('AuthController login()', () => {
     controller = module.get<AuthController>(AuthController);
   });
 
-  it('retourne les tokens et l\'utilisateur quand les credentials sont valides', async () => {
+  it("retourne les tokens et l'utilisateur quand les credentials sont valides", async () => {
     mockAuthService.login.mockResolvedValue(tokenResponse);
 
-    const result = await controller.login({
-      email: 'client@example.com',
-      password: 'CorrectPass1!',
-    }, mockRes());
+    const result = await controller.login(
+      {
+        email: 'client@example.com',
+        password: 'CorrectPass1!',
+      },
+      mockRes(),
+    );
 
     expect(mockAuthService.login).toHaveBeenCalledWith({
       email: 'client@example.com',
@@ -97,10 +100,10 @@ describe('AuthController login()', () => {
       tempToken: 'temp-jwt-token',
     });
 
-    const result = await controller.login({
+    const result = (await controller.login({
       email: 'admin@example.com',
       password: 'SecurePass1!',
-    }) as any;
+    })) as any;
 
     expect(result.requiresTwoFactor).toBe(true);
     expect(result.tempToken).toBeDefined();
@@ -121,7 +124,8 @@ describe('AuthController register()', () => {
   it('crée un utilisateur CLIENT et retourne les tokens', async () => {
     const registerResponse = {
       ...tokenResponse,
-      message: 'Compte créé avec succès. Vérifiez votre email pour activer votre compte.',
+      message:
+        'Compte créé avec succès. Vérifiez votre email pour activer votre compte.',
     };
     mockAuthService.register.mockResolvedValue(registerResponse);
 
@@ -131,7 +135,7 @@ describe('AuthController register()', () => {
       nom: 'Koné',
       prenom: 'Aminata',
       telephone: '0707070707',
-    } as any);
+    });
 
     expect(mockAuthService.register).toHaveBeenCalledWith(
       expect.objectContaining({ email: 'client@example.com' }),
@@ -160,11 +164,12 @@ describe('AuthController register()', () => {
           adresse: 'Plateau, Abidjan',
         },
       },
-      message: 'Compte créé avec succès. Vérifiez votre email pour activer votre compte.',
+      message:
+        'Compte créé avec succès. Vérifiez votre email pour activer votre compte.',
     };
     mockAuthService.register.mockResolvedValue(gerantResponse);
 
-    const result = await controller.register({
+    const result = (await controller.register({
       email: 'gerant@restaurant.ci',
       password: 'GerantPass1!',
       nom: 'Touré',
@@ -172,10 +177,13 @@ describe('AuthController register()', () => {
       type: 'RESTAURANT',
       restaurantNom: 'Le Bon Coin',
       adresse: 'Plateau, Abidjan',
-    } as any) as any;
+    })) as any;
 
     expect(mockAuthService.register).toHaveBeenCalledWith(
-      expect.objectContaining({ type: 'RESTAURANT', restaurantNom: 'Le Bon Coin' }),
+      expect.objectContaining({
+        type: 'RESTAURANT',
+        restaurantNom: 'Le Bon Coin',
+      }),
     );
     expect(result.user.role).toBe(Role.GERANT);
     expect(result.user.restaurant).toMatchObject({ nom: 'Le Bon Coin' });
@@ -193,11 +201,11 @@ describe('AuthController me()', () => {
     controller = module.get<AuthController>(AuthController);
   });
 
-  it('retourne le profil de l\'utilisateur connecté', async () => {
+  it("retourne le profil de l'utilisateur connecté", async () => {
     const profile = { ...tokenResponse.user };
     mockAuthService.getProfile.mockResolvedValue(profile);
 
-    const result = await controller.me({ user: { id: 'user-uuid-1' } } as any);
+    const result = await controller.me({ user: { id: 'user-uuid-1' } });
 
     expect(mockAuthService.getProfile).toHaveBeenCalledWith('user-uuid-1');
     expect(result).toMatchObject({
@@ -207,7 +215,7 @@ describe('AuthController me()', () => {
     });
   });
 
-  it('propage NotFoundException si l\'utilisateur n\'existe plus', async () => {
+  it("propage NotFoundException si l'utilisateur n'existe plus", async () => {
     mockAuthService.getProfile.mockRejectedValue(
       new NotFoundException('Utilisateur introuvable'),
     );

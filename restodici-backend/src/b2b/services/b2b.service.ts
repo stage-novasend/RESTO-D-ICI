@@ -244,10 +244,15 @@ export class B2BService {
 
     const saved = await this.collaborateurRepository.save(collaborateur);
 
-    await this.auditService.logAudit('CREATION_COLLABORATEUR', compte.id, userId, {
-      collaborateurEmail: email,
-      limiteBudget,
-    });
+    await this.auditService.logAudit(
+      'CREATION_COLLABORATEUR',
+      compte.id,
+      userId,
+      {
+        collaborateurEmail: email,
+        limiteBudget,
+      },
+    );
 
     await this.sendInvitationEmail(saved, compte, userId);
 
@@ -643,7 +648,8 @@ export class B2BService {
       (await this.facturationService.getPendingInvoiceEcheance(compte.id)) ||
       compte.datePrelevement ||
       undefined;
-    const blocked = (await this.facturationService.getOverdueInvoiceCount(compte.id)) > 0;
+    const blocked =
+      (await this.facturationService.getOverdueInvoiceCount(compte.id)) > 0;
 
     // Last day of current month — date at which next invoice will be generated
     const now = new Date();
@@ -799,12 +805,17 @@ export class B2BService {
       }
     }
 
-    await this.auditService.logAudit('CREATION_COMMANDE_GROUPEE', compte.id, userId, {
-      numero,
-      totalEstime,
-      nbLignes: lignes.length,
-      couverts: totalCouverts,
-    });
+    await this.auditService.logAudit(
+      'CREATION_COMMANDE_GROUPEE',
+      compte.id,
+      userId,
+      {
+        numero,
+        totalEstime,
+        nbLignes: lignes.length,
+        couverts: totalCouverts,
+      },
+    );
 
     const notifPayload = {
       id: savedCommande.id,
@@ -1011,7 +1022,10 @@ export class B2BService {
           }
           if (cmd.restaurantId) {
             const gerant = await this.userRepository.findOne({
-              where: { restaurant: { id: cmd.restaurantId }, role: Role.GERANT },
+              where: {
+                restaurant: { id: cmd.restaurantId },
+                role: Role.GERANT,
+              },
             });
             if (gerant) {
               await this.notifyService.notifyUser(
@@ -1092,7 +1106,9 @@ export class B2BService {
         ? Math.min(Math.max(pagination.limit, 1), 200)
         : undefined;
     const skip =
-      take != null ? (Math.max(pagination?.page ?? 1, 1) - 1) * take : undefined;
+      take != null
+        ? (Math.max(pagination?.page ?? 1, 1) - 1) * take
+        : undefined;
 
     const commandes = await this.commandeGroupeeRepository.find({
       where: { compteB2B: { id: compte.id } },
@@ -1138,7 +1154,9 @@ export class B2BService {
     const currentMois = MOIS_FR[now.getMonth()];
     const currentAnnee = now.getFullYear();
 
-    const factures = compte ? await this.facturationService.getFacturesMensuelles(userId) : [];
+    const factures = compte
+      ? await this.facturationService.getFacturesMensuelles(userId)
+      : [];
 
     // Aggregate spending by collaborator
     const expenses = collaborateurs.map((c) => ({
@@ -1172,7 +1190,9 @@ export class B2BService {
         { key: 'platform_adresse' },
       ],
     });
-    const cfg = Object.fromEntries(platformConfigs.map((c) => [c.key, c.value]));
+    const cfg = Object.fromEntries(
+      platformConfigs.map((c) => [c.key, c.value]),
+    );
 
     return {
       compte: compte
@@ -1385,7 +1405,8 @@ export class B2BService {
 
   async getInvoicesByUser(userId: string): Promise<Record<string, any>[]> {
     // Prefer FactureMensuelleB2B, fall back to legacy Invoice
-    const facturesMensuelles = await this.facturationService.getFacturesMensuelles(userId);
+    const facturesMensuelles =
+      await this.facturationService.getFacturesMensuelles(userId);
     if (facturesMensuelles.length > 0) return facturesMensuelles;
 
     const invoices = await this.invoiceRepository.find({
@@ -1432,7 +1453,9 @@ export class B2BService {
         }),
         compte ? this.getCommandesGroupees(userId) : Promise.resolve([]),
         compte ? this.getCollaborateursB2B(userId) : Promise.resolve([]),
-        compte ? this.facturationService.getFacturesMensuelles(userId) : Promise.resolve([]),
+        compte
+          ? this.facturationService.getFacturesMensuelles(userId)
+          : Promise.resolve([]),
       ]);
 
     const totalBulk = bulkOrders.reduce((s, o) => s + Number(o.total), 0);
@@ -1637,7 +1660,6 @@ export class B2BService {
     };
     return statusMap[status] ?? status;
   }
-
 
   // ============================================================
   // === PLANS REPAS RÉCURRENTS =================================

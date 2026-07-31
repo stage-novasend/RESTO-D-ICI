@@ -83,7 +83,9 @@ export class PaymentGatewayRegistry {
         name: 'novasend',
         type: IntegrationType.PAYMENT,
         enabled: true,
-        baseUrl: process.env.NOVASEND_BASE_URL || 'https://business-staging.novasend.app/v1',
+        baseUrl:
+          process.env.NOVASEND_BASE_URL ||
+          'https://business-staging.novasend.app/v1',
         apiKey: apiKey && apiSecret ? `${apiKey}:${apiSecret}` : null,
         webhookSecret: process.env.NOVASEND_WEBHOOK_SECRET ?? null,
       } as Integration;

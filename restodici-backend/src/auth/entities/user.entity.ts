@@ -9,6 +9,7 @@ import {
   JoinTable,
   Index,
 } from 'typeorm';
+import { Exclude } from 'class-transformer';
 import { Restaurant } from '../../restaurants/entities/restaurant.entity';
 
 //  Exporter l'enum pour qu'il soit utilisable ailleurs
@@ -34,6 +35,10 @@ export class User {
   @Column({ unique: true })
   email!: string;
 
+  // [SÉCURITÉ] Jamais renvoyé au client — voir ClassSerializerInterceptor
+  // global (main.ts). Sans ça, tout endpoint chargeant une relation User
+  // (ex: commande.client) renvoyait le hash en clair dans le JSON.
+  @Exclude()
   @Column()
   password!: string;
 
@@ -51,6 +56,7 @@ export class User {
   @Column({ default: false })
   emailVerified!: boolean;
 
+  @Exclude()
   @Column({ nullable: true })
   emailVerificationToken?: string;
 
@@ -61,12 +67,15 @@ export class User {
   @Column({ default: false })
   twoFactorEnabled!: boolean;
 
+  @Exclude()
   @Column({ nullable: true })
   twoFactorSecret?: string;
 
+  @Exclude()
   @Column({ nullable: true, type: 'json' })
   twoFactorBackupCodes?: string[];
 
+  @Exclude()
   @Column({ nullable: true })
   twoFactorTempToken?: string;
 
@@ -98,10 +107,12 @@ export class User {
     isDefault: boolean;
   }>;
 
+  @Exclude()
   @Column({ nullable: true })
   refreshToken?: string;
 
   // [PERF/SÉCURITÉ] Identifiant de session non haché, indexé → lookup direct O(1) (audit §3.4)
+  @Exclude()
   @Column({ nullable: true, unique: true })
   @Index()
   refreshTokenId?: string;

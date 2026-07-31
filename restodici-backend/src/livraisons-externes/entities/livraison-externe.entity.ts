@@ -1,16 +1,21 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
-  ManyToOne, JoinColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
 } from 'typeorm';
 import { FournisseurLivraison } from './fournisseur-livraison.entity';
 
 export enum StatutLivraisonExterne {
-  EN_ATTENTE  = 'EN_ATTENTE',
-  AFFECTEE    = 'AFFECTEE',
-  EN_COURS    = 'EN_COURS',
-  LIVREE      = 'LIVREE',
-  ECHEC       = 'ECHEC',
-  ANNULEE     = 'ANNULEE',
+  EN_ATTENTE = 'EN_ATTENTE',
+  AFFECTEE = 'AFFECTEE',
+  EN_COURS = 'EN_COURS',
+  LIVREE = 'LIVREE',
+  ECHEC = 'ECHEC',
+  ANNULEE = 'ANNULEE',
 }
 
 @Entity('livraisons_externes')
@@ -32,7 +37,11 @@ export class LivraisonExterne {
   @Column({ nullable: true })
   referenceExterne?: string;
 
-  @Column({ type: 'enum', enum: StatutLivraisonExterne, default: StatutLivraisonExterne.EN_ATTENTE })
+  @Column({
+    type: 'enum',
+    enum: StatutLivraisonExterne,
+    default: StatutLivraisonExterne.EN_ATTENTE,
+  })
   statut!: StatutLivraisonExterne;
 
   @Column({ nullable: true, type: 'text' })

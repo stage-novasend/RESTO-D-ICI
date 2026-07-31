@@ -14,6 +14,7 @@ import { User, Role } from './entities/user.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { EmailService } from '../email/email.service';
+import { AuditLog } from '../common/entities/audit-log.entity';
 
 // Couvre les méthodes non testées par auth.service.spec.ts (login déjà couvert).
 describe('AuthService — méthodes complémentaires', () => {
@@ -55,10 +56,23 @@ describe('AuthService — méthodes complémentaires', () => {
       providers: [
         AuthService,
         { provide: getRepositoryToken(User), useValue: userRepo },
-        { provide: getRepositoryToken(Restaurant), useValue: { save: jest.fn(), create: jest.fn() } },
+        {
+          provide: getRepositoryToken(Restaurant),
+          useValue: { save: jest.fn(), create: jest.fn() },
+        },
         { provide: getRepositoryToken(PasswordReset), useValue: resetRepo },
+        {
+          provide: getRepositoryToken(AuditLog),
+          useValue: {
+            create: jest.fn(),
+            save: jest.fn().mockResolvedValue(undefined),
+          },
+        },
         { provide: JwtService, useValue: jwt },
-        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('http://localhost:5173') } },
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('http://localhost:5173') },
+        },
         { provide: EmailService, useValue: email },
       ],
     }).compile();
@@ -66,22 +80,37 @@ describe('AuthService — méthodes complémentaires', () => {
   });
 
   const user = (o: Partial<User> = {}): any => ({
-    id: 'u1', email: 'a@b.com', password: 'hash', nom: 'D', prenom: 'J',
-    role: Role.CLIENT, actif: true, emailVerified: true, twoFactorEnabled: false,
-    createdAt: new Date(), updatedAt: new Date(), ...o,
+    id: 'u1',
+    email: 'a@b.com',
+    password: 'hash',
+    nom: 'D',
+    prenom: 'J',
+    role: Role.CLIENT,
+    actif: true,
+    emailVerified: true,
+    twoFactorEnabled: false,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...o,
   });
 
   // ── refreshAccessToken ──
   describe('refreshAccessToken', () => {
     it('rejette un token manquant', async () => {
-      await expect(service.refreshAccessToken('')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshAccessToken('')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
     it('rejette un format invalide (sans point)', async () => {
-      await expect(service.refreshAccessToken('abc')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshAccessToken('abc')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
     it('rejette si la session est introuvable', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.refreshAccessToken('sid.secret')).rejects.toThrow(UnauthorizedException);
+      await expect(service.refreshAccessToken('sid.secret')).rejects.toThrow(
+        UnauthorizedException,
+      );
     });
   });
 
@@ -117,17 +146,24 @@ describe('AuthService — méthodes complémentaires', () => {
   describe('updateProfile', () => {
     it('404 si introuvable', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateProfile('x', { nom: 'X' })).rejects.toThrow(NotFoundException);
+      await expect(service.updateProfile('x', { nom: 'X' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('conflit si email déjà pris par un autre', async () => {
       userRepo.findOne
         .mockResolvedValueOnce(user())
         .mockResolvedValueOnce(user({ id: 'other', email: 'new@b.com' }));
-      await expect(service.updateProfile('u1', { email: 'new@b.com' })).rejects.toThrow(ConflictException);
+      await expect(
+        service.updateProfile('u1', { email: 'new@b.com' }),
+      ).rejects.toThrow(ConflictException);
     });
     it('met à jour les champs', async () => {
       userRepo.findOne.mockResolvedValue(user());
-      const r = await service.updateProfile('u1', { nom: 'Nouveau', telephone: '07' });
+      const r = await service.updateProfile('u1', {
+        nom: 'Nouveau',
+        telephone: '07',
+      });
       expect(r.nom).toBe('Nouveau');
     });
   });
@@ -136,13 +172,23 @@ describe('AuthService — méthodes complémentaires', () => {
   describe('register', () => {
     it('conflit si email déjà utilisé', async () => {
       userRepo.findOne.mockResolvedValue(user());
-      await expect(service.register({ email: 'a@b.com', password: 'ValidPass1', nom: 'D' } as any))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        service.register({
+          email: 'a@b.com',
+          password: 'ValidPass1',
+          nom: 'D',
+        } as any),
+      ).rejects.toThrow(ConflictException);
     });
     it('rejette un mot de passe trop court', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.register({ email: 'x@b.com', password: '123', nom: 'D' } as any))
-        .rejects.toThrow(BadRequestException);
+      await expect(
+        service.register({
+          email: 'x@b.com',
+          password: '123',
+          nom: 'D',
+        } as any),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -154,7 +200,7 @@ describe('AuthService — méthodes complémentaires', () => {
       expect(r.message).toMatch(/Si l'email existe/);
       expect(resetRepo.save).not.toHaveBeenCalled();
     });
-    it('crée un token et envoie l\'email si l\'utilisateur existe', async () => {
+    it("crée un token et envoie l'email si l'utilisateur existe", async () => {
       userRepo.findOne.mockResolvedValue(user());
       await service.requestPasswordReset('a@b.com');
       expect(resetRepo.save).toHaveBeenCalled();
@@ -165,15 +211,22 @@ describe('AuthService — méthodes complémentaires', () => {
   // ── resetPassword ──
   describe('resetPassword', () => {
     it('rejette un mot de passe trop court', async () => {
-      await expect(service.resetPassword('tok', '123')).rejects.toThrow(BadRequestException);
+      await expect(service.resetPassword('tok', '123')).rejects.toThrow(
+        BadRequestException,
+      );
     });
     it('rejette un token invalide/expiré', async () => {
       resetRepo.findOne.mockResolvedValue(null);
-      await expect(service.resetPassword('tok', 'ValidPass1')).rejects.toThrow(BadRequestException);
+      await expect(service.resetPassword('tok', 'ValidPass1')).rejects.toThrow(
+        BadRequestException,
+      );
     });
     it('réinitialise avec un token valide', async () => {
       resetRepo.findOne.mockResolvedValue({
-        token: 'tok', used: false, expiresAt: new Date(Date.now() + 3600000), user: user(),
+        token: 'tok',
+        used: false,
+        expiresAt: new Date(Date.now() + 3600000),
+        user: user(),
       });
       const r = await service.resetPassword('tok', 'ValidPass1');
       expect(r.message).toMatch(/réinitialisé/);
@@ -184,13 +237,17 @@ describe('AuthService — méthodes complémentaires', () => {
   describe('verifyEmail', () => {
     it('rejette un lien invalide/expiré', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.verifyEmail('tok')).rejects.toThrow(BadRequestException);
+      await expect(service.verifyEmail('tok')).rejects.toThrow(
+        BadRequestException,
+      );
     });
     it('vérifie avec un token valide', async () => {
-      userRepo.findOne.mockResolvedValue(user({
-        emailVerified: false,
-        emailVerificationExpires: new Date(Date.now() + 3600000),
-      }));
+      userRepo.findOne.mockResolvedValue(
+        user({
+          emailVerified: false,
+          emailVerificationExpires: new Date(Date.now() + 3600000),
+        }),
+      );
       const r = await service.verifyEmail('tok');
       expect(r.emailVerified).toBe(true);
     });
@@ -203,7 +260,7 @@ describe('AuthService — méthodes complémentaires', () => {
       const r = await service.resendVerificationEmail('x@b.com');
       expect(r.message).toMatch(/Email de vérification/);
     });
-    it('renvoie l\'email si compte non vérifié', async () => {
+    it("renvoie l'email si compte non vérifié", async () => {
       userRepo.findOne.mockResolvedValue(user({ emailVerified: false }));
       await service.resendVerificationEmail('a@b.com');
       expect(email.sendEmailVerification).toHaveBeenCalled();
@@ -214,17 +271,23 @@ describe('AuthService — méthodes complémentaires', () => {
   describe('changePassword', () => {
     it('404 si introuvable', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.changePassword('x', 'old', 'NewPass12')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.changePassword('x', 'old', 'NewPass12'),
+      ).rejects.toThrow(NotFoundException);
     });
     it('rejette si mot de passe actuel incorrect', async () => {
       const hash = await bcrypt.hash('realpass', 8);
       userRepo.findOne.mockResolvedValue(user({ password: hash }));
-      await expect(service.changePassword('u1', 'wrong', 'NewPass12')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.changePassword('u1', 'wrong', 'NewPass12'),
+      ).rejects.toThrow(BadRequestException);
     });
     it('rejette un nouveau mot de passe trop court', async () => {
       const hash = await bcrypt.hash('realpass', 8);
       userRepo.findOne.mockResolvedValue(user({ password: hash }));
-      await expect(service.changePassword('u1', 'realpass', '123')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.changePassword('u1', 'realpass', '123'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
@@ -238,7 +301,9 @@ describe('AuthService — méthodes complémentaires', () => {
     });
     it('enable2FA rejette si non configurée', async () => {
       userRepo.findOne.mockResolvedValue(user({ twoFactorSecret: undefined }));
-      await expect(service.enable2FA('u1', '000000')).rejects.toThrow(BadRequestException);
+      await expect(service.enable2FA('u1', '000000')).rejects.toThrow(
+        BadRequestException,
+      );
     });
     it('disable2FA désactive', async () => {
       userRepo.findOne.mockResolvedValue(user({ twoFactorEnabled: true }));
@@ -246,12 +311,18 @@ describe('AuthService — méthodes complémentaires', () => {
       expect(r.twoFactorEnabled).toBe(false);
     });
     it('verifyTwoFactorLogin rejette un token expiré', async () => {
-      jwt.verify.mockImplementation(() => { throw new Error('expired'); });
-      await expect(service.verifyTwoFactorLogin('bad', '123456')).rejects.toThrow(UnauthorizedException);
+      jwt.verify.mockImplementation(() => {
+        throw new Error('expired');
+      });
+      await expect(
+        service.verifyTwoFactorLogin('bad', '123456'),
+      ).rejects.toThrow(UnauthorizedException);
     });
     it('verifyTwoFactorLogin rejette un mauvais type de token', async () => {
       jwt.verify.mockReturnValue({ type: 'autre', sub: 'u1' });
-      await expect(service.verifyTwoFactorLogin('tok', '123456')).rejects.toThrow(UnauthorizedException);
+      await expect(
+        service.verifyTwoFactorLogin('tok', '123456'),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

@@ -95,10 +95,7 @@ export class AuthController {
   @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const token = req.cookies?.[REFRESH_COOKIE];
     await this.authService.logout(token);
     res.clearCookie(REFRESH_COOKIE, { path: refreshCookieOptions().path });
@@ -114,7 +111,7 @@ export class AuthController {
   ) {
     // Refresh token lu depuis le cookie HttpOnly (fallback body pour compat).
     const token: string =
-      req.cookies?.[REFRESH_COOKIE] || (req.body as any)?.refreshToken;
+      req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
     if (!token) {
       throw new UnauthorizedException('Aucune session active');
     }

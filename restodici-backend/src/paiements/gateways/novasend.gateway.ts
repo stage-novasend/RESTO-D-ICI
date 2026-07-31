@@ -27,7 +27,8 @@ export function normalizeNovaSendProvider(provider?: string): string {
   if (!provider) return 'ORANGE';
   const p = provider.toUpperCase().trim();
   if (p === 'ORANGE_MONEY' || p === 'ORANGE' || p === 'OM') return 'ORANGE';
-  if (p === 'MTN_MONEY' || p === 'MTN_MOMO' || p === 'MTN' || p === 'MOMO') return 'MOMO';
+  if (p === 'MTN_MONEY' || p === 'MTN_MOMO' || p === 'MTN' || p === 'MOMO')
+    return 'MOMO';
   if (p === 'MOOV_MONEY' || p === 'MOOV' || p === 'FLOOZ') return 'MOOV';
   if (p === 'WAVE') return 'WAVE';
   return p;
@@ -44,7 +45,10 @@ export class NovaSendGateway implements PaymentGateway {
 
   private get baseUrl(): string {
     if (process.env.NOVASEND_BASE_URL) return process.env.NOVASEND_BASE_URL;
-    if (this.integration.baseUrl && this.integration.baseUrl.includes('novasend')) {
+    if (
+      this.integration.baseUrl &&
+      this.integration.baseUrl.includes('novasend')
+    ) {
       return this.integration.baseUrl;
     }
     return EXTERNAL_URLS.novasend || 'https://business.novasend.app/v1';
@@ -55,7 +59,9 @@ export class NovaSendGateway implements PaymentGateway {
 
   constructor(private readonly integration: Integration) {}
 
-  async initiate(options: InitiatePaymentOptions): Promise<PaymentGatewayResult> {
+  async initiate(
+    options: InitiatePaymentOptions,
+  ): Promise<PaymentGatewayResult> {
     const reference = options.metadata?.reference ?? randomUUID();
     if (options.provider) {
       this.pendingMap.set(reference, options.provider);
@@ -167,7 +173,9 @@ export class NovaSendGateway implements PaymentGateway {
     };
 
     try {
-      this.logger.log(`[NovaSend] Sending Direct Payin (${providerCode}) to ${url}. Payload: ${JSON.stringify(payload)}`);
+      this.logger.log(
+        `[NovaSend] Sending Direct Payin (${providerCode}) to ${url}. Payload: ${JSON.stringify(payload)}`,
+      );
       const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${this.credentials}`,
@@ -177,7 +185,9 @@ export class NovaSendGateway implements PaymentGateway {
         },
         timeout: 15_000,
       });
-      this.logger.log(`[NovaSend] Payin response (${providerCode}): ${JSON.stringify(data)}`);
+      this.logger.log(
+        `[NovaSend] Payin response (${providerCode}): ${JSON.stringify(data)}`,
+      );
 
       const status = String(data?.status || '').toUpperCase();
       const isSuccess = status === 'SUCCESSFUL' || status === 'SUCCESS';
@@ -234,13 +244,18 @@ export class NovaSendGateway implements PaymentGateway {
             status: isSuccess ? 'SUCCESS' : 'PENDING',
           };
         } catch (altErr: any) {
-          this.logger.warn(`[NovaSend] 401 sur API réelles (prod & staging) — Clés invalides ou expirées. Basculement en simulation.`);
+          this.logger.warn(
+            `[NovaSend] 401 sur API réelles (prod & staging) — Clés invalides ou expirées. Basculement en simulation.`,
+          );
           return this.simulateInitiation(reference, options);
         }
       }
 
       const errorMsg = err?.response?.data || err.message;
-      this.logger.error(`NovaSend API error [${providerCode}] (${url}):`, JSON.stringify(errorMsg));
+      this.logger.error(
+        `NovaSend API error [${providerCode}] (${url}):`,
+        JSON.stringify(errorMsg),
+      );
       throw new Error(JSON.stringify(errorMsg));
     }
   }
@@ -266,7 +281,9 @@ export class NovaSendGateway implements PaymentGateway {
   async payout(options: PayoutOptions): Promise<PayoutResult> {
     const msisdn = toInternationalCiMsisdn(options.phone);
     if (!msisdn) {
-      throw new Error(`Numéro de téléphone invalide pour le payout: "${options.phone}"`);
+      throw new Error(
+        `Numéro de téléphone invalide pour le payout: "${options.phone}"`,
+      );
     }
     const providerCode = normalizeNovaSendProvider(options.provider);
 
@@ -287,7 +304,9 @@ export class NovaSendGateway implements PaymentGateway {
     };
 
     try {
-      this.logger.log(`[NovaSend] Sending Direct Payout (${providerCode}) to ${url}. Payload: ${JSON.stringify(payload)}`);
+      this.logger.log(
+        `[NovaSend] Sending Direct Payout (${providerCode}) to ${url}. Payload: ${JSON.stringify(payload)}`,
+      );
       const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${this.credentials}`,
@@ -297,7 +316,9 @@ export class NovaSendGateway implements PaymentGateway {
         },
         timeout: 15_000,
       });
-      this.logger.log(`[NovaSend] Payout response (${providerCode}): ${JSON.stringify(data)}`);
+      this.logger.log(
+        `[NovaSend] Payout response (${providerCode}): ${JSON.stringify(data)}`,
+      );
       return {
         payoutId: data?.id || data?.reference || options.reference,
         status: normalizeNovaSendPayoutStatus(data?.status),
@@ -305,11 +326,16 @@ export class NovaSendGateway implements PaymentGateway {
       };
     } catch (err: any) {
       if (err?.response?.status === 401) {
-        this.logger.warn('[NovaSend] 401 sur le payout — clés invalides/expirées. Basculement en simulation.');
+        this.logger.warn(
+          '[NovaSend] 401 sur le payout — clés invalides/expirées. Basculement en simulation.',
+        );
         return this.simulatePayout(options);
       }
       const errorMsg = err?.response?.data || err.message;
-      this.logger.error(`NovaSend payout error [${providerCode}] (${url}):`, JSON.stringify(errorMsg));
+      this.logger.error(
+        `NovaSend payout error [${providerCode}] (${url}):`,
+        JSON.stringify(errorMsg),
+      );
       return {
         payoutId: options.reference,
         status: 'FAILED',
@@ -320,7 +346,11 @@ export class NovaSendGateway implements PaymentGateway {
 
   async getPayoutStatus(reference: string): Promise<PayoutResult> {
     if (!this.isConfigured) {
-      return { payoutId: reference, status: 'PROCESSED', raw: { simulated: true } };
+      return {
+        payoutId: reference,
+        status: 'PROCESSED',
+        raw: { simulated: true },
+      };
     }
     const url = `${this.baseUrl}/direct/payout/${encodeURIComponent(reference)}`;
     try {
@@ -335,13 +365,18 @@ export class NovaSendGateway implements PaymentGateway {
       };
     } catch (err: any) {
       const errorMsg = err?.response?.data || err.message;
-      this.logger.error(`NovaSend payout status error (${url}):`, JSON.stringify(errorMsg));
+      this.logger.error(
+        `NovaSend payout status error (${url}):`,
+        JSON.stringify(errorMsg),
+      );
       return { payoutId: reference, status: 'FAILED', raw: errorMsg };
     }
   }
 
   private simulatePayout(options: PayoutOptions): PayoutResult {
-    this.logger.log(`[NovaSend] Payout simulé (pas de clés API) — ${options.amount} FCFA vers ${options.phone}`);
+    this.logger.log(
+      `[NovaSend] Payout simulé (pas de clés API) — ${options.amount} FCFA vers ${options.phone}`,
+    );
     return {
       payoutId: `sim_payout_${randomUUID().slice(0, 8)}`,
       status: 'PROCESSED',
@@ -351,9 +386,12 @@ export class NovaSendGateway implements PaymentGateway {
 }
 
 /** Normalise le statut NovaSend (processing | processed | failed | expired) en statut interne. */
-function normalizeNovaSendPayoutStatus(status?: string): PayoutResult['status'] {
+function normalizeNovaSendPayoutStatus(
+  status?: string,
+): PayoutResult['status'] {
   const s = String(status || '').toLowerCase();
-  if (s === 'processed' || s === 'success' || s === 'successful') return 'PROCESSED';
+  if (s === 'processed' || s === 'success' || s === 'successful')
+    return 'PROCESSED';
   if (s === 'failed' || s === 'error') return 'FAILED';
   if (s === 'expired') return 'EXPIRED';
   return 'PROCESSING';

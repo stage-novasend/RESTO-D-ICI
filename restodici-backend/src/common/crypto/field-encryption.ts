@@ -47,10 +47,7 @@ export function encryptField(plaintext: string): string {
   const key = keyCandidates()[0]; // clé dédiée si présente, sinon JWT_SECRET (dev)
   const iv = crypto.randomBytes(12); // 96 bits recommandés pour GCM
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
-  const enc = Buffer.concat([
-    cipher.update(plaintext, 'utf8'),
-    cipher.final(),
-  ]);
+  const enc = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const tag = cipher.getAuthTag();
   return `${PREFIX}${iv.toString('hex')}:${tag.toString('hex')}:${enc.toString('hex')}`;
 }

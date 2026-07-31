@@ -16,16 +16,18 @@ describe('verifyNovaSendSignature()', () => {
   });
 
   it('accepte une signature en majuscules ou préfixée `sha256=`', () => {
-    expect(
-      verifyNovaSendSignature(raw, sign(raw).toUpperCase(), SECRET),
-    ).toBe(true);
+    expect(verifyNovaSendSignature(raw, sign(raw).toUpperCase(), SECRET)).toBe(
+      true,
+    );
     expect(verifyNovaSendSignature(raw, `sha256=${sign(raw)}`, SECRET)).toBe(
       true,
     );
   });
 
   it('rejette une signature calculée avec un autre secret', () => {
-    expect(verifyNovaSendSignature(raw, sign(raw, 'autre'), SECRET)).toBe(false);
+    expect(verifyNovaSendSignature(raw, sign(raw, 'autre'), SECRET)).toBe(
+      false,
+    );
   });
 
   it('rejette un corps altéré (montant/statut modifié en transit)', () => {
@@ -44,7 +46,9 @@ describe('verifyNovaSendSignature()', () => {
     const brut = '{\n  "status": "processed",\n  "reference": "cmd-1"\n}';
     const reserialise = JSON.stringify(JSON.parse(brut));
     expect(reserialise).not.toBe(brut);
-    expect(verifyNovaSendSignature(reserialise, sign(brut), SECRET)).toBe(false);
+    expect(verifyNovaSendSignature(reserialise, sign(brut), SECRET)).toBe(
+      false,
+    );
   });
 });
 

@@ -1,6 +1,16 @@
 import {
-  Controller, Get, Post, Patch, Delete, Body, Param, Query,
-  UseGuards, HttpCode, HttpStatus, Req,
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Delete,
+  Body,
+  Param,
+  Query,
+  UseGuards,
+  HttpCode,
+  HttpStatus,
+  Req,
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/guards/roles.guard';
@@ -56,15 +66,18 @@ export class LivraisonsExternesController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN', 'GERANT', 'STAFF')
   @HttpCode(HttpStatus.OK)
-  dispatch(@Body() body: {
-    commandeId: string;
-    fournisseurId: string;
-    adresseLivraison: string;
-    adresseRetrait?: string;
-    clientNom?: string;
-    clientTelephone?: string;
-    montantTotal?: number;
-  }) {
+  dispatch(
+    @Body()
+    body: {
+      commandeId: string;
+      fournisseurId: string;
+      adresseLivraison: string;
+      adresseRetrait?: string;
+      clientNom?: string;
+      clientTelephone?: string;
+      montantTotal?: number;
+    },
+  ) {
     return this.service.dispatch(body);
   }
 

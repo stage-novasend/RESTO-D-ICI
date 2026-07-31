@@ -13,8 +13,7 @@ export class RequestLoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger('HTTP');
 
   use(req: any, res: any, next: () => void): void {
-    const requestId =
-      (req.headers['x-request-id'] as string) || randomUUID();
+    const requestId = (req.headers['x-request-id'] as string) || randomUUID();
     req.requestId = requestId;
     res.setHeader('x-request-id', requestId);
 

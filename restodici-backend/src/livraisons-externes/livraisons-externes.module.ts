@@ -6,9 +6,7 @@ import { LivraisonsExternesService } from './livraisons-externes.service';
 import { LivraisonsExternesController } from './livraisons-externes.controller';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([FournisseurLivraison, LivraisonExterne]),
-  ],
+  imports: [TypeOrmModule.forFeature([FournisseurLivraison, LivraisonExterne])],
   providers: [LivraisonsExternesService],
   controllers: [LivraisonsExternesController],
   exports: [LivraisonsExternesService],

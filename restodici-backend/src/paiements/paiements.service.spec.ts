@@ -4,7 +4,10 @@ import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { getQueueToken } from '@nestjs/bullmq';
 import { PaiementsService } from './paiements.service';
 import { NovaSendService } from './novasend.service';
-import { Commande, ModePaiementCommande } from '../commandes/entities/commande.entity';
+import {
+  Commande,
+  ModePaiementCommande,
+} from '../commandes/entities/commande.entity';
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 import { PaymentMethod } from './entities/payment-method.entity';
 import { Payment } from './entities/payment.entity';
@@ -87,7 +90,9 @@ function makeCommande(overrides: Partial<Commande> = {}): Commande {
   } as Commande;
 }
 
-function makeFacture(overrides: Partial<FactureMensuelleB2B> = {}): FactureMensuelleB2B {
+function makeFacture(
+  overrides: Partial<FactureMensuelleB2B> = {},
+): FactureMensuelleB2B {
   return {
     id: 'facture-uuid-1',
     statut: 'EN_ATTENTE',
@@ -103,7 +108,10 @@ async function buildModule(): Promise<TestingModule> {
     providers: [
       PaiementsService,
       { provide: getRepositoryToken(Commande), useValue: mockCommandeRepo },
-      { provide: getRepositoryToken(FactureMensuelleB2B), useValue: mockFactureRepo },
+      {
+        provide: getRepositoryToken(FactureMensuelleB2B),
+        useValue: mockFactureRepo,
+      },
       {
         provide: getRepositoryToken(PaymentMethod),
         useValue: {
@@ -135,7 +143,7 @@ describe('PaiementsService initiatePayment()', () => {
     service = module.get<PaiementsService>(PaiementsService);
   });
 
-  it('retourne le résultat NovaSend quand la commande existe et n\'est pas payée', async () => {
+  it("retourne le résultat NovaSend quand la commande existe et n'est pas payée", async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
     mockGateway.initiate.mockResolvedValue({
@@ -182,7 +190,9 @@ describe('PaiementsService initiatePayment()', () => {
   });
 
   it('utilise le nom du client comme customerName quand non fourni dans le DTO', async () => {
-    const commande = makeCommande({ client: { id: 'c-1', nom: 'Traoré' } as any });
+    const commande = makeCommande({
+      client: { id: 'c-1', nom: 'Traoré' } as any,
+    });
     mockCommandeRepo.findOne.mockResolvedValue(commande);
     mockGateway.initiate.mockResolvedValue({
       transactionId: 'sim_xyz',
@@ -194,7 +204,7 @@ describe('PaiementsService initiatePayment()', () => {
       montant: 3000,
       telephone: '0707070707',
       provider: 'ORANGE' as const,
-    } as any);
+    });
 
     expect(mockGateway.initiate).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -426,7 +436,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
     expect(mockCommandeRepo.update).not.toHaveBeenCalled();
   });
 
-  it('ignore les statuts inconnus sans lever d\'erreur', async () => {
+  it("ignore les statuts inconnus sans lever d'erreur", async () => {
     await service.handleNovasendWebhook({
       reference: 'cmd-uuid-1',
       status: 'PENDING',
@@ -485,11 +495,14 @@ describe('PaiementsService handleNovasendWebhook() — paiement échoué', () =>
     );
   });
 
-  it('ne plante pas si la commande est introuvable sur un statut d\'échec', async () => {
+  it("ne plante pas si la commande est introuvable sur un statut d'échec", async () => {
     mockCommandeRepo.findOne.mockResolvedValue(null);
 
     await expect(
-      service.handleNovasendWebhook({ reference: 'ghost-id', status: 'CANCELLED' }),
+      service.handleNovasendWebhook({
+        reference: 'ghost-id',
+        status: 'CANCELLED',
+      }),
     ).resolves.toBeUndefined();
   });
 });

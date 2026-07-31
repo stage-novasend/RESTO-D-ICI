@@ -142,7 +142,7 @@ export default function Login() {
        droite  → image héro (masquée sur mobile)
      ═══════════════════════════════════════════════ */
   return (
-    <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF' }}>
+    <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF', fontFamily: "'Inter', system-ui, sans-serif" }}>
 
       {/* ── Colonne de droite (visuellement) : formulaire ── */}
       <div className="flex-1 flex flex-col justify-center px-5 py-10 sm:px-10 lg:px-16 xl:px-24">
@@ -151,7 +151,7 @@ export default function Login() {
           {/* Retour à l'accueil */}
           <Link
             to="/"
-            className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-xl text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
+            className="inline-flex items-center gap-2 mb-8 px-4 py-2 rounded-lg text-sm font-semibold transition-all hover:opacity-90 active:scale-[0.98]"
             style={{ background: '#F1F5F9', color: '#475569', border: '1px solid #E2E8F0' }}
           >
             <ArrowLeft className="w-4 h-4" />{t('back_to_home')}</Link>
@@ -159,17 +159,17 @@ export default function Login() {
           {/* Logo Restodici */}
           <div className="flex items-center gap-2.5 mb-10">
             <BrandMark size={36} />
-            <span className="font-bold text-lg" style={{ color: '#1A0C00' }}>
+            <span className="font-bold text-lg" style={{ color: '#0F172A' }}>
               Resto d'ici
             </span>
           </div>
 
           {/* Titre et sous-titre */}
           <div className="mb-8">
-            <h1 className="text-2xl font-bold" style={{ color: '#1A0C00' }}>
+            <h1 className="text-2xl font-bold" style={{ color: '#0F172A' }}>
               {twoFactorStep ? t('verification') : t('login_title')}
             </h1>
-            <p className="mt-1 text-sm" style={{ color: '#8B6E50' }}>
+            <p className="mt-1 text-sm" style={{ color: '#64748B' }}>
               {twoFactorStep
                 ? t('enter_2fa_code')
                 : t('welcome_back')}
@@ -179,7 +179,7 @@ export default function Login() {
           {/* Message de confirmation après inscription */}
           {registered && (
             <div
-              className="mb-6 flex items-start gap-2.5 rounded-xl px-4 py-3 text-sm"
+              className="mb-6 flex items-start gap-2.5 rounded-lg px-4 py-3 text-sm"
               style={{ background: '#F0FDF4', border: '1px solid #BBF7D0', color: '#15803D' }}
             >
               <CheckCircle className="w-4 h-4 mt-0.5 shrink-0" />{t('register_success_login')}</div>
@@ -188,7 +188,7 @@ export default function Login() {
           {/* ── Formulaire 2FA ── */}
           {twoFactorStep ? (
             <form onSubmit={handle2FA} className="space-y-4">
-              <p className="text-sm" style={{ color: '#8B6E50' }}>{t('enter_6_digit_code')}</p>
+              <p className="text-sm" style={{ color: '#64748B' }}>{t('enter_6_digit_code')}</p>
 
               {/* Champ du code TOTP — grand et centré pour faciliter la saisie */}
               <input
@@ -198,18 +198,18 @@ export default function Login() {
                 value={twoFactorCode}
                 onChange={e => set2FACode(e.target.value.replace(/\s/g, ''))}
                 placeholder="000000"
-                className="w-full px-4 py-3 rounded-xl text-center text-2xl tracking-[0.4em] font-mono outline-none"
+                className="w-full px-4 py-3 rounded-lg text-center text-2xl tracking-[0.4em] font-mono outline-none"
                 style={{
                   background: '#F1F5F9',
                   border: '1.5px solid #E2E8F0',
-                  color: '#1A0C00',
+                  color: '#0F172A',
                 }}
                 autoFocus
                 aria-label="Code de vérification à deux facteurs"
               />
 
               {errors.submit && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-4 py-3">
                   {errors.submit}
                 </p>
               )}
@@ -217,7 +217,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-xl font-semibold text-white text-sm transition disabled:opacity-60"
+                className="w-full py-3 rounded-lg font-semibold text-white text-sm transition disabled:opacity-60"
                 style={{ background: '#EA580C' }}
               >
                 {isSubmitting ? t('verification') + '…' : t('validate')}
@@ -228,13 +228,13 @@ export default function Login() {
                 type="button"
                 onClick={() => { set2FA(false); set2FACode(''); setErrors({}); }}
                 className="w-full py-2 text-sm"
-                style={{ color: '#A89070' }}
+                style={{ color: '#94A3B8' }}
               >{t('back')}</button>
             </form>
 
           ) : (
             /* ── Formulaire de connexion principal ── */
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4" noValidate>
 
               {/* Champ Email */}
               <div>
@@ -246,7 +246,7 @@ export default function Login() {
                 <div className="relative">
                   <Mail
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4"
-                    style={{ color: '#A89070' }}
+                    style={{ color: '#94A3B8' }}
                   />
                   <input
                     id="login-email"
@@ -258,11 +258,11 @@ export default function Login() {
                     onChange={e => setFormData({ ...formData, email: e.target.value })}
                     placeholder={t('email_placeholder')}
                     required title="Email invalide (ex. nom@domaine.com)"
-                    className="w-full pl-10 pr-4 py-3 rounded-xl text-sm outline-none transition"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg text-sm outline-none transition"
                     style={{
-                      background: '#F9F9FC',
+                      background: '#F8FAFC',
                       border: `1.5px solid ${errors.email ? '#FCA5A5' : '#E2E8F0'}`,
-                      color: '#1A0C00',
+                      color: '#0F172A',
                     }}
                   />
                 </div>
@@ -290,7 +290,7 @@ export default function Login() {
                 <div className="relative">
                   <Lock
                     className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4"
-                    style={{ color: '#A89070' }}
+                    style={{ color: '#94A3B8' }}
                   />
                   <input
                     id="login-password"
@@ -301,11 +301,11 @@ export default function Login() {
                     aria-describedby={errors.password ? 'password-error' : undefined}
                     onChange={e => setFormData({ ...formData, password: e.target.value })}
                     placeholder={t('password_placeholder')}
-                    className="w-full pl-10 pr-10 py-3 rounded-xl text-sm outline-none transition"
+                    className="w-full pl-10 pr-10 py-3 rounded-lg text-sm outline-none transition"
                     style={{
-                      background: '#F9F9FC',
+                      background: '#F8FAFC',
                       border: `1.5px solid ${errors.password ? '#FCA5A5' : '#E2E8F0'}`,
-                      color: '#1A0C00',
+                      color: '#0F172A',
                     }}
                   />
                   {/* Bouton afficher / masquer le mot de passe */}
@@ -314,7 +314,7 @@ export default function Login() {
                     tabIndex={-1}
                     onClick={() => setShowPw(!showPassword)}
                     className="absolute right-3.5 top-1/2 -translate-y-1/2 hover:opacity-70 transition"
-                    style={{ color: '#A89070' }}
+                    style={{ color: '#94A3B8' }}
                     aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   >
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -330,7 +330,7 @@ export default function Login() {
               {/* Message d'erreur global (identifiants incorrects, email non vérifié…) */}
               {errors.submit && (
                 <div
-                  className="rounded-xl px-4 py-3 text-sm text-red-700"
+                  className="rounded-lg px-4 py-3 text-sm text-red-700"
                   style={{ background: '#FEF2F2', border: '1px solid #FECACA' }}
                   role="alert"
                   aria-live="polite"
@@ -351,7 +351,7 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 rounded-xl font-semibold text-white text-sm transition disabled:opacity-60 active:scale-[0.99]"
+                className="w-full py-3 rounded-lg font-semibold text-white text-sm transition disabled:opacity-60 active:scale-[0.99]"
                 style={{ background: '#EA580C' }}
               >
                 {isSubmitting ? (
@@ -363,7 +363,7 @@ export default function Login() {
               </button>
 
               {/* Lien vers l'inscription */}
-              <p className="text-center text-sm pt-1" style={{ color: '#A89070' }}>
+              <p className="text-center text-sm pt-1" style={{ color: '#94A3B8' }}>
                 {t('no_account')}{' '}
                 <Link
                   to="/register"

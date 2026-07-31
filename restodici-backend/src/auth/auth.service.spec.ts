@@ -9,6 +9,7 @@ import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { PasswordReset } from './entities/password-reset.entity';
 import { ConfigService } from '@nestjs/config';
 import { EmailService } from '../email/email.service';
+import { AuditLog } from '../common/entities/audit-log.entity';
 
 // ─── Mocks ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +31,10 @@ const mockConfigService = {
 const mockEmailService = {
   sendEmailVerification: jest.fn().mockResolvedValue(undefined),
   sendPasswordReset: jest.fn().mockResolvedValue(undefined),
+};
+const mockAuditLogRepo = {
+  create: jest.fn(),
+  save: jest.fn().mockResolvedValue(undefined),
 };
 
 function makeUser(overrides: Partial<User> = {}): User {
@@ -60,6 +65,10 @@ async function buildModule(): Promise<TestingModule> {
       {
         provide: getRepositoryToken(PasswordReset),
         useValue: mockPasswordResetRepo,
+      },
+      {
+        provide: getRepositoryToken(AuditLog),
+        useValue: mockAuditLogRepo,
       },
       { provide: JwtService, useValue: mockJwtService },
       { provide: ConfigService, useValue: mockConfigService },

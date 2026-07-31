@@ -413,7 +413,7 @@ export default function SettingsTab({ restaurantId, user }) {
     );
   }
 
-  const inputCls = "w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none transition focus:ring-2 focus:ring-[#EA580C]/20 focus:border-[#EA580C]/60";
+  const inputCls = "w-full rounded-lg border px-4 py-3.5 text-[15px] outline-none transition focus:ring-2 focus:ring-[#EA580C]/20 focus:border-[#EA580C]/60";
   const inputStyle = { borderColor: 'rgba(255,140,0,0.2)', background: '#FDF8F3' };
 
   const SEC_NAV = [
@@ -454,7 +454,7 @@ export default function SettingsTab({ restaurantId, user }) {
           <button
             onClick={handleSaveSettings}
             disabled={savingSettings}
-            className="inline-flex items-center gap-2 rounded-xl px-5 py-2.5 text-sm font-bold text-white shadow-sm transition disabled:opacity-60"
+            className="inline-flex items-center gap-2 rounded-lg px-5 py-2.5 text-sm font-bold text-white shadow-sm transition disabled:opacity-60"
             style={{ background: '#EA580C' }}
           >
             <Settings className="h-4 w-4" />
@@ -512,7 +512,7 @@ export default function SettingsTab({ restaurantId, user }) {
         <div className="xl:col-span-2 space-y-6">
 
           {/* Profil */}
-          <div id="sec-profil" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-profil' ? '' : 'none' }}>
+          <div id="sec-profil" className="rounded-lg border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-profil' ? '' : 'none' }}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#EA580C' }}>Identité</p>
               <h3 className="mt-1 text-base font-bold text-[#1A0C00]">Profil du restaurant</h3>
@@ -520,8 +520,8 @@ export default function SettingsTab({ restaurantId, user }) {
             </div>
 
             {/* Logo */}
-            <div className="flex items-start gap-4 mb-6 p-4 rounded-xl" style={{ background: '#FDF8F3', border: '1px solid rgba(255,140,0,0.1)' }}>
-              <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0 border" style={{ borderColor: 'rgba(255,140,0,0.18)' }}>
+            <div className="flex items-start gap-4 mb-6 p-4 rounded-lg" style={{ background: '#FDF8F3', border: '1px solid rgba(255,140,0,0.1)' }}>
+              <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0 border" style={{ borderColor: 'rgba(255,140,0,0.18)' }}>
                 {settings.logo
                   ? <img src={settings.logo} alt="Logo" className="w-full h-full object-cover" />
                   : <div className="w-full h-full flex items-center justify-center text-3xl" style={{ background: '#FFF0DF' }}>🍽️</div>
@@ -530,7 +530,7 @@ export default function SettingsTab({ restaurantId, user }) {
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-[#1A0C00] mb-0.5">Logo du restaurant</p>
                 <p className="text-xs text-[#9CA3AF] mb-3">JPG, PNG, WebP — max 5 Mo</p>
-                <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer border transition ${uploadingLogo ? 'opacity-50 pointer-events-none' : 'hover:bg-[#FFF0DF]'}`}
+                <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer border transition ${uploadingLogo ? 'opacity-50 pointer-events-none' : 'hover:bg-[#FFF0DF]'}`}
                   style={{ borderColor: 'rgba(255,140,0,0.3)', color: '#EA580C', background: '#fff' }}>
                   📷 {uploadingLogo ? 'Téléchargement…' : 'Choisir un fichier'}
                   <input type="file" accept="image/*" className="hidden" disabled={uploadingLogo}
@@ -576,7 +576,7 @@ export default function SettingsTab({ restaurantId, user }) {
                 <textarea value={settings.description}
                   onChange={e => setSettings(p => ({ ...p, description: e.target.value }))}
                   rows={3} placeholder="Décrivez l'ambiance et la spécialité de votre restaurant…"
-                  className="w-full rounded-xl border px-4 py-2.5 text-sm outline-none transition resize-none focus:ring-2 focus:ring-[#EA580C]/20 focus:border-[#EA580C]/60"
+                  className="w-full rounded-lg border px-4 py-2.5 text-sm outline-none transition resize-none focus:ring-2 focus:ring-[#EA580C]/20 focus:border-[#EA580C]/60"
                   style={inputStyle}
                 />
               </div>
@@ -584,7 +584,7 @@ export default function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* ── Mode de versement des recettes ── */}
-          <div id="sec-versement" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-versement' ? '' : 'none' }}>
+          <div id="sec-versement" className="rounded-lg border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-versement' ? '' : 'none' }}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#EA580C' }}>Finances & Reversements</p>
               <h3 className="mt-1 text-base font-bold text-[#1A0C00]">Mode de réception de vos paiements</h3>
@@ -618,7 +618,7 @@ export default function SettingsTab({ restaurantId, user }) {
                   <div
                     key={option.id}
                     onClick={() => setSettings(p => ({ ...p, modeReceptionPaiement: option.id }))}
-                    className={`cursor-pointer rounded-2xl p-4 border transition-all ${
+                    className={`cursor-pointer rounded-lg p-4 border transition-all ${
                       active ? 'border-[#EA580C] bg-[#FFF0DF]/50 shadow-md ring-2 ring-[#EA580C]/30' : 'border-gray-200 bg-white hover:border-[#EA580C]/40'
                     }`}
                   >
@@ -632,7 +632,7 @@ export default function SettingsTab({ restaurantId, user }) {
 
             {/* Formulaires secondaires selon le choix */}
             {settings.modeReceptionPaiement === 'MOBILE_MONEY' && (
-              <div className="p-4 rounded-xl border bg-[#FDF8F3] space-y-4" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
+              <div className="p-4 rounded-lg border bg-[#FDF8F3] space-y-4" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
                 <p className="text-xs font-bold text-[#EA580C] uppercase tracking-wider">Détails Mobile Money</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -669,7 +669,7 @@ export default function SettingsTab({ restaurantId, user }) {
             )}
 
             {settings.modeReceptionPaiement === 'BANCAIRE' && (
-              <div className="p-4 rounded-xl border bg-[#FDF8F3] space-y-4" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
+              <div className="p-4 rounded-lg border bg-[#FDF8F3] space-y-4" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
                 <p className="text-xs font-bold text-[#EA580C] uppercase tracking-wider">Coordonnées Bancaires (RIB / IBAN)</p>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
@@ -716,7 +716,7 @@ export default function SettingsTab({ restaurantId, user }) {
             )}
 
             {settings.modeReceptionPaiement === 'NOVASEND' && (
-              <div className="p-4 rounded-xl border bg-[#FDF8F3]" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
+              <div className="p-4 rounded-lg border bg-[#FDF8F3]" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
                 <p className="text-xs font-bold text-[#EA580C] uppercase tracking-wider mb-1">Intégration NovaSend Direct</p>
                 <p className="text-xs text-[#8B6E50]">
                   Les règlements sont crédités directement sur le compte marchand NovaSend partenaire configuré sur la plateforme.
@@ -726,7 +726,7 @@ export default function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* Horaires */}
-          <div id="sec-horaires" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-horaires' ? '' : 'none' }}>
+          <div id="sec-horaires" className="rounded-lg border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-horaires' ? '' : 'none' }}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#EA580C' }}>Disponibilité</p>
               <h3 className="mt-1 text-base font-bold text-[#1A0C00]">Horaires d'ouverture</h3>
@@ -745,7 +745,7 @@ export default function SettingsTab({ restaurantId, user }) {
                   className={inputCls} style={inputStyle} />
               </div>
             </div>
-            <div className="mt-4 flex items-center gap-3 p-3 rounded-xl" style={{ background: '#FDF8F3' }}>
+            <div className="mt-4 flex items-center gap-3 p-3 rounded-lg" style={{ background: '#FDF8F3' }}>
               <span className="w-2 h-2 rounded-full bg-green-400 flex-shrink-0" />
               <p className="text-xs text-[#8B6E50]">
                 Ouvert de <strong className="text-[#1A0C00]">{settings.horaires.ouverture}</strong> à <strong className="text-[#1A0C00]">{settings.horaires.fermeture}</strong>
@@ -754,7 +754,7 @@ export default function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* Zones de livraison */}
-          <div id="sec-livraison" className="rounded-2xl border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-livraison' ? '' : 'none' }}>
+          <div id="sec-livraison" className="rounded-lg border bg-white p-6 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-livraison' ? '' : 'none' }}>
             <div className="mb-5">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#EA580C' }}>Logistique</p>
               <h3 className="mt-1 text-base font-bold text-[#1A0C00]">Zones de livraison</h3>
@@ -764,11 +764,11 @@ export default function SettingsTab({ restaurantId, user }) {
               <input type="text" value={settings.newZone.nom}
                 onChange={e => setSettings(p => ({ ...p, newZone: { ...p.newZone, nom: e.target.value } }))}
                 placeholder="Nom de la zone (ex: Cocody, Plateau…)"
-                className="flex-1 rounded-xl border px-4 py-2.5 text-sm outline-none"
+                className="flex-1 rounded-lg border px-4 py-2.5 text-sm outline-none"
                 style={inputStyle}
               />
               <button onClick={handleAddZone}
-                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-sm font-bold text-white transition"
+                className="inline-flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-bold text-white transition"
                 style={{ background: '#EA580C' }}>
                 <Plus className="h-4 w-4" /> Ajouter
               </button>
@@ -785,7 +785,7 @@ export default function SettingsTab({ restaurantId, user }) {
                 ))}
               </div>
             )}
-            <div className="rounded-xl overflow-hidden border" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
+            <div className="rounded-lg overflow-hidden border" style={{ borderColor: 'rgba(255,140,0,0.14)' }}>
               <DeliveryZonesMap
                 restaurantPosition={{ lat: settings.latitude, lng: settings.longitude }}
                 selectedPosition={{ lat: settings.newZone.lat, lng: settings.newZone.lng }}
@@ -805,7 +805,7 @@ export default function SettingsTab({ restaurantId, user }) {
         <div className="space-y-5">
 
           {/* Apparence */}
-          <div id="sec-apparence" className="rounded-2xl border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-apparence' ? '' : 'none' }}>
+          <div id="sec-apparence" className="rounded-lg border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-apparence' ? '' : 'none' }}>
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: '#EA580C' }}>Interface</p>
@@ -815,20 +815,20 @@ export default function SettingsTab({ restaurantId, user }) {
               <button onClick={toggleDarkMode}
                 className="relative h-7 w-12 rounded-full flex-shrink-0 transition-colors"
                 style={{ background: settings.darkMode ? '#EA580C' : '#E5E7EB' }}>
-                <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform ${settings.darkMode ? 'translate-x-5' : ''}`} />
+                <span className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow-card transition-transform ${settings.darkMode ? 'translate-x-5' : ''}`} />
               </button>
             </div>
           </div>
 
           {/* Comptes staff */}
-          <div id="sec-staff" className="rounded-2xl border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-staff' ? '' : 'none' }}>
+          <div id="sec-staff" className="rounded-lg border bg-white p-5 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-staff' ? '' : 'none' }}>
             <div className="mb-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#EA580C' }}>Équipe</p>
               <h3 className="mt-1 text-sm font-bold text-[#1A0C00]">Comptes staff</h3>
             </div>
 
             {/* Formulaire création */}
-            <div className="rounded-xl p-4 space-y-3 mb-4" style={{ background: '#FDF8F3', border: '1px solid rgba(255,140,0,0.1)' }}>
+            <div className="rounded-lg p-4 space-y-3 mb-4" style={{ background: '#FDF8F3', border: '1px solid rgba(255,140,0,0.1)' }}>
               <p className="text-xs font-bold text-[#1A0C00] flex items-center gap-2">
                 <UserPlus className="h-3.5 w-3.5" style={{ color: '#EA580C' }} /> Nouveau compte
               </p>
@@ -843,7 +843,7 @@ export default function SettingsTab({ restaurantId, user }) {
                     <input type={f.type} value={staffForm[f.key]}
                       onChange={e => setStaffForm(p => ({ ...p, [f.key]: e.target.value }))}
                       placeholder={f.ph}
-                      className="w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none transition focus:ring-1 focus:ring-[#EA580C]/30"
+                      className="w-full rounded-lg border px-4 py-3.5 text-[15px] outline-none transition focus:ring-1 focus:ring-[#EA580C]/30"
                       style={{ borderColor: 'rgba(255,140,0,0.2)', background: '#fff' }}
                     />
                   </div>
@@ -853,13 +853,13 @@ export default function SettingsTab({ restaurantId, user }) {
                   <input type="password" value={staffForm.password}
                     onChange={e => setStaffForm(p => ({ ...p, password: e.target.value }))}
                     placeholder="Vide = généré auto"
-                    className="w-full rounded-xl border px-4 py-3.5 text-[15px] outline-none"
+                    className="w-full rounded-lg border px-4 py-3.5 text-[15px] outline-none"
                     style={{ borderColor: 'rgba(255,140,0,0.2)', background: '#fff' }}
                   />
                 </div>
               </div>
               <button onClick={handleCreateStaff}
-                className="w-full rounded-xl py-3.5 text-sm font-bold text-white transition"
+                className="w-full rounded-lg py-3.5 text-sm font-bold text-white transition"
                 style={{ background: '#EA580C' }}>
                 Créer le compte
               </button>
@@ -888,7 +888,7 @@ export default function SettingsTab({ restaurantId, user }) {
                 {staffAccounts.map(staff => {
                   const ini = (staff.nom || 'S').split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
                   return (
-                    <div key={staff.id} className="flex items-center gap-3 p-3 rounded-xl border"
+                    <div key={staff.id} className="flex items-center gap-3 p-3 rounded-lg border"
                       style={{ borderColor: 'rgba(255,140,0,0.1)', background: '#FDF8F3' }}>
                       <div className="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0"
                         style={{ background: '#FFF0DF', color: '#EA580C' }}>
@@ -915,17 +915,17 @@ export default function SettingsTab({ restaurantId, user }) {
           </div>
 
           {/* Sécurité */}
-          <div id="sec-securite" className="rounded-2xl border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: (activeSection === 'sec-securite' || activeSection === 'sec-qr') ? '' : 'none' }}>
+          <div id="sec-securite" className="rounded-lg border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: (activeSection === 'sec-securite' || activeSection === 'sec-qr') ? '' : 'none' }}>
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.15em]" style={{ color: '#EA580C' }}>Sécurité</p>
               <h3 className="mt-1 text-sm font-bold text-[#1A0C00]">Authentification & Protection</h3>
             </div>
 
-            {secSuccess && <div className="rounded-xl border border-green-200 bg-green-50 px-3 py-2.5 text-xs text-green-700">{secSuccess}</div>}
-            {secError   && <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">{secError}</div>}
+            {secSuccess && <div className="rounded-lg border border-green-200 bg-green-50 px-3 py-2.5 text-xs text-green-700">{secSuccess}</div>}
+            {secError   && <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">{secError}</div>}
 
             {/* Email */}
-            <div className="flex items-center gap-3 p-3 rounded-xl border"
+            <div className="flex items-center gap-3 p-3 rounded-lg border"
               style={{ borderColor: 'rgba(255,140,0,0.1)', background: '#FDF8F3' }}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center bg-green-50 shrink-0">
                 <Mail className="h-3.5 w-3.5 text-green-600" />
@@ -938,7 +938,7 @@ export default function SettingsTab({ restaurantId, user }) {
             </div>
 
             {/* Mot de passe */}
-            <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(255,140,0,0.1)' }}>
+            <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'rgba(255,140,0,0.1)' }}>
               <div className="flex items-center justify-between gap-3 p-3" style={{ background: '#FDF8F3' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FFF0DF' }}>
@@ -1006,7 +1006,7 @@ export default function SettingsTab({ restaurantId, user }) {
             </div>
 
             {/* 2FA */}
-            <div className="rounded-xl border overflow-hidden" style={{ borderColor: 'rgba(255,140,0,0.1)' }}>
+            <div className="rounded-lg border overflow-hidden" style={{ borderColor: 'rgba(255,140,0,0.1)' }}>
               <div className="flex flex-wrap items-center justify-between gap-3 p-3" style={{ background: '#FDF8F3' }}>
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0" style={{ background: '#FFF0DF' }}>
@@ -1036,7 +1036,7 @@ export default function SettingsTab({ restaurantId, user }) {
                     Scannez avec <strong>Google Authenticator</strong> ou <strong>Authy</strong>, puis saisissez le code à 6 chiffres.
                   </p>
                   {qrData.qrCodeDataUrl ? (
-                    <div className="flex flex-col items-center gap-2 rounded-xl border p-3" style={{ borderColor: 'rgba(255,140,0,0.1)', background: '#fff' }}>
+                    <div className="flex flex-col items-center gap-2 rounded-lg border p-3" style={{ borderColor: 'rgba(255,140,0,0.1)', background: '#fff' }}>
                       <img src={qrData.qrCodeDataUrl} alt="QR 2FA" className="h-36 w-36 rounded-lg" />
                       <div className="text-center">
                         <p className="text-[10px] text-[#9CA3AF] mb-1">Clé manuelle :</p>
@@ -1044,24 +1044,24 @@ export default function SettingsTab({ restaurantId, user }) {
                       </div>
                     </div>
                   ) : (
-                    <div className="rounded-xl border border-dashed p-3 text-center" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
+                    <div className="rounded-lg border border-dashed p-3 text-center" style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
                       <p className="text-[10px] text-[#8B6E50] break-all">{qrData.otpAuthUrl}</p>
                     </div>
                   )}
                   <input type="text" maxLength={6} placeholder="Code à 6 chiffres"
                     value={twoFactorCode}
                     onChange={e => setTwoFactorCode(e.target.value.replace(/\D/g, ''))}
-                    className="w-full rounded-xl border px-4 py-2.5 text-center font-mono text-base tracking-[0.4em] outline-none"
+                    className="w-full rounded-lg border px-4 py-2.5 text-center font-mono text-base tracking-[0.4em] outline-none"
                     style={{ borderColor: 'rgba(255,140,0,0.2)', background: '#FDF8F3' }}
                   />
                   <div className="flex gap-2">
                     <button onClick={handleEnable2FA} disabled={secSaving}
-                      className="flex-1 rounded-xl py-2.5 text-xs font-bold text-white disabled:opacity-50"
+                      className="flex-1 rounded-lg py-2.5 text-xs font-bold text-white disabled:opacity-50"
                       style={{ background: '#EA580C' }}>
                       {secSaving ? 'Activation…' : 'Activer la 2FA'}
                     </button>
                     <button onClick={() => setShow2FA(false)}
-                      className="rounded-xl border px-4 py-2.5 text-xs text-[#8B6E50]"
+                      className="rounded-lg border px-4 py-2.5 text-xs text-[#8B6E50]"
                       style={{ borderColor: 'rgba(255,140,0,0.2)' }}>
                       Annuler
                     </button>
@@ -1071,7 +1071,7 @@ export default function SettingsTab({ restaurantId, user }) {
             </div>
 
             {/* ── QR Codes Tables ── */}
-            <div id="sec-qr" className="rounded-2xl border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-qr' ? '' : 'none' }}>
+            <div id="sec-qr" className="rounded-lg border bg-white p-5 space-y-4 scroll-mt-4" style={{ borderColor: 'rgba(255,140,0,0.14)', display: activeSection === 'sec-qr' ? '' : 'none' }}>
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <QrCode className="h-4 w-4" style={{ color: '#EA580C' }} />
@@ -1087,14 +1087,14 @@ export default function SettingsTab({ restaurantId, user }) {
                     type="number" min={1} max={50}
                     value={nbTables}
                     onChange={e => setNbTables(Math.max(1, Math.min(50, parseInt(e.target.value) || 1)))}
-                    className="w-16 rounded-xl border px-2 py-1.5 text-sm text-center outline-none"
+                    className="w-16 rounded-lg border px-2 py-1.5 text-sm text-center outline-none"
                     style={{ borderColor: 'rgba(255,140,0,0.3)', background: '#FDF8F3' }}
                   />
                 </div>
                 <button
                   onClick={handleGenerateTableQR}
                   disabled={tableQrLoading}
-                  className="inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold text-white disabled:opacity-60 transition"
+                  className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-xs font-bold text-white disabled:opacity-60 transition"
                   style={{ background: '#EA580C' }}
                 >
                   <QrCode className="h-3.5 w-3.5" />
@@ -1103,7 +1103,7 @@ export default function SettingsTab({ restaurantId, user }) {
                 {tableQrCodes.length > 0 && (
                   <button
                     onClick={handlePrintTableQR}
-                    className="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-xs font-bold transition hover:bg-orange-50"
+                    className="inline-flex items-center gap-2 rounded-lg border px-4 py-2 text-xs font-bold transition hover:bg-orange-50"
                     style={{ borderColor: 'rgba(255,140,0,0.35)', color: '#EA580C' }}
                   >
                     <Printer className="h-3.5 w-3.5" /> Imprimer tout
@@ -1113,7 +1113,7 @@ export default function SettingsTab({ restaurantId, user }) {
               {tableQrCodes.length > 0 && (
                 <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 pt-2">
                   {tableQrCodes.map(({ table, dataUrl }) => (
-                    <div key={table} className="flex flex-col items-center gap-1.5 rounded-xl border p-2.5" style={{ borderColor: 'rgba(255,140,0,0.15)', background: '#FDF8F3' }}>
+                    <div key={table} className="flex flex-col items-center gap-1.5 rounded-lg border p-2.5" style={{ borderColor: 'rgba(255,140,0,0.15)', background: '#FDF8F3' }}>
                       <img src={dataUrl} alt={`Table ${table}`} className="w-full aspect-square rounded-lg" />
                       <p className="text-xs font-bold text-[#1A0C00]">Table {table}</p>
                       <a
@@ -1131,7 +1131,7 @@ export default function SettingsTab({ restaurantId, user }) {
             </div>
 
             {backupCodes && (
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <p className="text-xs font-bold text-amber-900">⚠ Codes de secours — notez-les maintenant !</p>
@@ -1148,11 +1148,11 @@ export default function SettingsTab({ restaurantId, user }) {
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => navigator.clipboard.writeText(backupCodes.join('\n'))}
-                    className="flex-1 rounded-xl border border-amber-300 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100">
+                    className="flex-1 rounded-lg border border-amber-300 py-2 text-xs font-semibold text-amber-800 hover:bg-amber-100">
                     Copier
                   </button>
                   <button onClick={() => { const b=new Blob([`Codes de secours 2FA\n\n${backupCodes.join('\n')}`],{type:'text/plain'}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download='codes-secours-2fa.txt'; a.click(); URL.revokeObjectURL(u); }}
-                    className="flex-1 rounded-xl bg-amber-600 py-2 text-xs font-semibold text-white hover:bg-amber-700">
+                    className="flex-1 rounded-lg bg-amber-600 py-2 text-xs font-semibold text-white hover:bg-amber-700">
                     Télécharger
                   </button>
                 </div>

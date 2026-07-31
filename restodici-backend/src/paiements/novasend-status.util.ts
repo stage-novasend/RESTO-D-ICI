@@ -27,7 +27,12 @@ const FAILED_STATUSES = [
 const PENDING_STATUSES = ['processing', 'pending'];
 
 const normalize = (status: unknown): string =>
-  String(status ?? '').trim().toLowerCase();
+  (typeof status === 'string' || typeof status === 'number'
+    ? String(status)
+    : ''
+  )
+    .trim()
+    .toLowerCase();
 
 export const isSuccessStatus = (status: unknown): boolean =>
   SUCCESS_STATUSES.includes(normalize(status));

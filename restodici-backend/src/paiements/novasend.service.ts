@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { randomUUID } from 'crypto';
 import { EXTERNAL_URLS } from '../config/app-config';
-import { toInternationalCiMsisdn, normalizeNovaSendProvider } from './gateways/novasend.gateway';
+import {
+  toInternationalCiMsisdn,
+  normalizeNovaSendProvider,
+} from './gateways/novasend.gateway';
 
 export type NovaSendProvider =
   | 'WAVE'
@@ -72,7 +75,9 @@ export class NovaSendService {
   ): Promise<InitiatePaymentResult> {
     const apiKey = this.config.get<string>('NOVASEND_API_KEY')!;
     const apiSecret = this.config.get<string>('NOVASEND_API_SECRET')!;
-    const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
+    const credentials = Buffer.from(`${apiKey}:${apiSecret}`).toString(
+      'base64',
+    );
     const appUrl =
       this.config.get<string>('PAYMENT_RETURN_URL') ||
       this.config.get<string>('PUBLIC_FRONTEND_URL') ||
@@ -106,7 +111,9 @@ export class NovaSendService {
     };
 
     try {
-      this.logger.log(`[NovaSendService] Calling ${url} (${providerCode}). Payload: ${JSON.stringify(payload)}`);
+      this.logger.log(
+        `[NovaSendService] Calling ${url} (${providerCode}). Payload: ${JSON.stringify(payload)}`,
+      );
       const { data } = await axios.post(url, payload, {
         headers: {
           Authorization: `Basic ${credentials}`,
@@ -130,7 +137,9 @@ export class NovaSendService {
       };
     } catch (err: any) {
       if (err?.response?.status === 401) {
-        this.logger.warn(`[NovaSendService] 401 Unauthorized de NovaSend API — Basculement en mode simulation.`);
+        this.logger.warn(
+          `[NovaSendService] 401 Unauthorized de NovaSend API — Basculement en mode simulation.`,
+        );
         return this.simulateInitiation(params);
       }
       this.logger.error(

@@ -52,7 +52,7 @@ function TextInput({ value, onChange, placeholder, type = 'text', pattern, title
       onChange={onChange}
       placeholder={placeholder}
       pattern={pattern} title={title} inputMode={inputMode} maxLength={maxLength}
-      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+      className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
       style={{ background: SF, border: `1px solid ${BD}` }}
     />
   );
@@ -183,7 +183,7 @@ export default function GerantOnboardingWizard() {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-      <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
+      <div className="bg-white rounded-lg w-full max-w-lg shadow-2xl overflow-hidden max-h-[95vh] overflow-y-auto">
 
         {/* Header */}
         <div className="px-8 pt-8 pb-6" style={{ background: 'linear-gradient(135deg, #181A20 0%, #3A1000 100%)' }}>
@@ -211,7 +211,7 @@ export default function GerantOnboardingWizard() {
           {/* ── STEP 0: Bienvenue ── */}
           {step === 0 && (
             <div className="text-center">
-              <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-5" style={{ background: AL }}>
+              <div className="w-20 h-20 rounded-lg flex items-center justify-center mx-auto mb-5" style={{ background: AL }}>
                 <ChefHat className="w-10 h-10" style={{ color: A }} />
               </div>
               <h2 className="text-2xl font-extrabold text-[#1A0C00] mb-3">
@@ -226,8 +226,8 @@ export default function GerantOnboardingWizard() {
                   { icon: Clock,    label: "Horaires",             desc: 'Jours & heures' },
                   { icon: BookOpen, label: 'Menu & articles',      desc: '1er plat en 1 min' },
                 ].map(({ icon: Icon, label, desc }) => (
-                  <div key={label} className="rounded-2xl p-3 text-center" style={{ background: SF }}>
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center mx-auto mb-2" style={{ background: AL }}>
+                  <div key={label} className="rounded-lg p-3 text-center" style={{ background: SF }}>
+                    <div className="w-8 h-8 rounded-lg flex items-center justify-center mx-auto mb-2" style={{ background: AL }}>
                       <Icon className="w-4 h-4" style={{ color: A }} />
                     </div>
                     <p className="text-[11px] font-bold text-[#1A0C00]">{label}</p>
@@ -236,7 +236,7 @@ export default function GerantOnboardingWizard() {
                 ))}
               </div>
               <button onClick={() => goStep(1)}
-                className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: A }}>
                 Configurer mon restaurant <ArrowRight className="w-4 h-4" />
               </button>
@@ -253,7 +253,7 @@ export default function GerantOnboardingWizard() {
           {step === 1 && (
             <div>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: AL }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: AL }}>
                   <MapPin className="w-5 h-5" style={{ color: A }} />
                 </div>
                 <div>
@@ -273,7 +273,7 @@ export default function GerantOnboardingWizard() {
                     onChange={setA('description')}
                     placeholder="Spécialités, ambiance, particularités…"
                     rows={2}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
+                    className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none"
                     style={{ background: SF, border: `1px solid ${BD}` }}
                   />
                 </Field>
@@ -294,12 +294,12 @@ export default function GerantOnboardingWizard() {
 
               <div className="flex gap-3 mt-6">
                 <button onClick={() => goStep(0)}
-                  className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
+                  className="px-4 py-3 rounded-lg border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
                 </button>
                 <button onClick={handleAdresseSubmit} disabled={saving}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-lg font-bold text-sm text-white flex items-center justify-center gap-2"
                   style={{ background: A, opacity: saving ? 0.7 : 1 }}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                   {saving ? 'Enregistrement…' : 'Continuer'}
@@ -315,7 +315,7 @@ export default function GerantOnboardingWizard() {
           {step === 2 && (
             <div>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: AL }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: AL }}>
                   <Clock className="w-5 h-5" style={{ color: A }} />
                 </div>
                 <div>
@@ -328,20 +328,20 @@ export default function GerantOnboardingWizard() {
                 <Field label="Ouverture">
                   <input type="time" value={horaires.ouverture}
                     onChange={e => setHoraire('ouverture', e.target.value)}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
                     style={{ background: SF, border: `1px solid ${BD}` }}
                   />
                 </Field>
                 <Field label="Fermeture">
                   <input type="time" value={horaires.fermeture}
                     onChange={e => setHoraire('fermeture', e.target.value)}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none"
+                    className="w-full rounded-lg px-4 py-2.5 text-sm outline-none"
                     style={{ background: SF, border: `1px solid ${BD}` }}
                   />
                 </Field>
               </div>
 
-              <div className="rounded-xl px-3 py-2 mb-4 text-xs" style={{ background: SF, color: '#8B6E50' }}>
+              <div className="rounded-lg px-3 py-2 mb-4 text-xs" style={{ background: SF, color: '#8B6E50' }}>
                 Ouvert de <strong>{horaires.ouverture}</strong> à <strong>{horaires.fermeture}</strong>
                 <span className="block mt-1 text-[11px]">Modifiable à tout moment depuis Paramètres → Horaires.</span>
               </div>
@@ -350,12 +350,12 @@ export default function GerantOnboardingWizard() {
 
               <div className="flex gap-3 mt-2">
                 <button onClick={() => goStep(1)}
-                  className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
+                  className="px-4 py-3 rounded-lg border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
                 </button>
                 <button onClick={handleHorairesSubmit} disabled={saving}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-lg font-bold text-sm text-white flex items-center justify-center gap-2"
                   style={{ background: A, opacity: saving ? 0.7 : 1 }}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowRight className="w-4 h-4" />}
                   {saving ? 'Enregistrement…' : 'Continuer'}
@@ -371,7 +371,7 @@ export default function GerantOnboardingWizard() {
           {step === 3 && (
             <div>
               <div className="flex items-center gap-3 mb-5">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ background: AL }}>
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: AL }}>
                   <BookOpen className="w-5 h-5" style={{ color: A }} />
                 </div>
                 <div>
@@ -396,7 +396,7 @@ export default function GerantOnboardingWizard() {
                     onChange={e => setArticle(p => ({ ...p, description: e.target.value }))}
                     placeholder="Ingrédients, accompagnements, allergènes…"
                     rows={2}
-                    className="w-full rounded-xl px-4 py-2.5 text-sm outline-none resize-none"
+                    className="w-full rounded-lg px-4 py-2.5 text-sm outline-none resize-none"
                     style={{ background: SF, border: `1px solid ${BD}` }}
                   />
                 </Field>
@@ -421,12 +421,12 @@ export default function GerantOnboardingWizard() {
 
               <div className="flex gap-3 mt-6">
                 <button onClick={() => goStep(2)}
-                  className="px-4 py-3 rounded-xl border text-sm font-medium text-[#8B6E50]"
+                  className="px-4 py-3 rounded-lg border text-sm font-medium text-[#8B6E50]"
                   style={{ borderColor: BD }}>
                   Retour
                 </button>
                 <button onClick={handleArticleSubmit} disabled={saving}
-                  className="flex-1 py-3 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-lg font-bold text-sm text-white flex items-center justify-center gap-2"
                   style={{ background: A, opacity: saving ? 0.7 : 1 }}>
                   {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
                   {saving ? 'Création…' : 'Ajouter et terminer'}
@@ -449,7 +449,7 @@ export default function GerantOnboardingWizard() {
                   : 'Votre restaurant est configuré. Ajoutez vos plats depuis le tableau de bord.'}
               </p>
 
-              <div className="rounded-2xl p-4 mb-6 text-left" style={{ background: SF }}>
+              <div className="rounded-lg p-4 mb-6 text-left" style={{ background: SF }}>
                 {[
                   'Gérez vos commandes en temps réel (KDS)',
                   'Ajoutez d\'autres articles et catégories',
@@ -466,7 +466,7 @@ export default function GerantOnboardingWizard() {
                   markOnboardingDone(user?.id);
                   navigate('/gerant');
                 }}
-                className="w-full py-4 rounded-2xl font-bold text-white flex items-center justify-center gap-2"
+                className="w-full py-4 rounded-lg font-bold text-white flex items-center justify-center gap-2"
                 style={{ background: A }}>
                 <ChefHat className="w-5 h-5" />
                 Accéder à mon tableau de bord

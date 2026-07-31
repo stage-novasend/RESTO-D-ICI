@@ -23,7 +23,9 @@ describe('field-encryption (AES-256-GCM)', () => {
   });
 
   it('rétrocompat : une valeur en clair (non préfixée) est renvoyée telle quelle', () => {
-    expect(decryptField('ANCIEN_SECRET_EN_CLAIR')).toBe('ANCIEN_SECRET_EN_CLAIR');
+    expect(decryptField('ANCIEN_SECRET_EN_CLAIR')).toBe(
+      'ANCIEN_SECRET_EN_CLAIR',
+    );
   });
 
   it('null/undefined gérés', () => {

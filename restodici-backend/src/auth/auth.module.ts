@@ -17,7 +17,13 @@ import { AuditLog } from '../common/entities/audit-log.entity';
 @Module({
   imports: [
     ConfigModule,
-    TypeOrmModule.forFeature([User, Restaurant, CompteB2B, PasswordReset, AuditLog]),
+    TypeOrmModule.forFeature([
+      User,
+      Restaurant,
+      CompteB2B,
+      PasswordReset,
+      AuditLog,
+    ]),
     PassportModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

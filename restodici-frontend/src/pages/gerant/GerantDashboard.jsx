@@ -61,10 +61,10 @@ export default function GerantDashboard({ restaurantId, token }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto" style={{ position: 'relative' }}>
+    <div className="max-w-6xl mx-auto" style={{ position: 'relative', fontFamily: "'Inter', system-ui, sans-serif" }}>
       <OnboardingWizard />
       <div
-        className={`rounded-3xl p-6 shadow-sm ${
+        className={`rounded-lg p-6 shadow-card ${
           darkMode
             ? "border border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
             : "bg-white border border-[rgba(0,0,0,0.05)]"

@@ -116,7 +116,9 @@ export class CommandesService {
    * de recalculer depuis montantTotal qui inclut les frais de livraison.
    */
   private async processDeliveryCommission(commande: Commande): Promise<void> {
-    const taux = Number(commande.tauxCommission ?? commande.restaurant.tauxCommission ?? 8);
+    const taux = Number(
+      commande.tauxCommission ?? commande.restaurant.tauxCommission ?? 8,
+    );
     const montantCommande = Number(commande.montantTotal);
     const montantCommission = Number(
       commande.montantCommissionPlateforme ??
@@ -138,7 +140,9 @@ export class CommandesService {
       statut: isOnline ? 'A_VERSER' : 'DU',
       dateEcheance: isOnline
         ? null
-        : new Date(Date.now() + COMMISSION_DEBT_DEADLINE_DAYS * 24 * 60 * 60 * 1000),
+        : new Date(
+            Date.now() + COMMISSION_DEBT_DEADLINE_DAYS * 24 * 60 * 60 * 1000,
+          ),
     });
     const saved = await this.commissionRepo.save(row);
 
@@ -187,10 +191,18 @@ export class CommandesService {
       });
 
       await this.commissionRepo.update(commission.id, {
-        statut: result.status === 'PROCESSED' ? 'VERSE' : result.status === 'FAILED' || result.status === 'EXPIRED' ? 'ECHEC' : 'EN_COURS',
+        statut:
+          result.status === 'PROCESSED'
+            ? 'VERSE'
+            : result.status === 'FAILED' || result.status === 'EXPIRED'
+              ? 'ECHEC'
+              : 'EN_COURS',
         payoutReference: result.payoutId,
         dateReglement: result.status === 'PROCESSED' ? new Date() : null,
-        payoutErreur: result.status === 'FAILED' ? JSON.stringify(result.raw).slice(0, 2000) : null,
+        payoutErreur:
+          result.status === 'FAILED'
+            ? JSON.stringify(result.raw).slice(0, 2000)
+            : null,
       });
     } catch (err) {
       this.logger.error(
@@ -260,7 +272,10 @@ export class CommandesService {
         where: { id: restaurantId },
         select: ['id', 'tauxCommission'],
       });
-      const tauxPct = Math.min(50, Math.max(0, Number(restaurant?.tauxCommission ?? 8)));
+      const tauxPct = Math.min(
+        50,
+        Math.max(0, Number(restaurant?.tauxCommission ?? 8)),
+      );
       const tauxFraction = tauxPct / 100;
 
       // [PERF] Chargement de tous les articles en une seule requête (audit §4.1)
@@ -308,12 +323,14 @@ export class CommandesService {
             : Number(article.prix);
         const supplement = Number(ligneDto.variantSupplement || 0);
         // Commission appliquée sur le prix de l'article uniquement (pas sur le supplément)
-        const prixAvecCommission = Math.ceil(prixArticleBase * (1 + tauxFraction));
+        const prixAvecCommission = Math.ceil(
+          prixArticleBase * (1 + tauxFraction),
+        );
         const prixUnitaireClient = prixAvecCommission + supplement;
         const prixBaseUnitaire = prixArticleBase + supplement;
 
-        montantTotal      += prixUnitaireClient * ligneDto.quantite;
-        montantBaseTotal  += prixBaseUnitaire   * ligneDto.quantite;
+        montantTotal += prixUnitaireClient * ligneDto.quantite;
+        montantBaseTotal += prixBaseUnitaire * ligneDto.quantite;
 
         ligneEntities.push(
           this.ligneRepo.create({
@@ -345,12 +362,16 @@ export class CommandesService {
         }
       }
 
-      const montantCommissionPlateforme = Math.max(0, montantTotal - montantBaseTotal);
+      const montantCommissionPlateforme = Math.max(
+        0,
+        montantTotal - montantBaseTotal,
+      );
 
       // Frais de livraison externe ajoutés au total client (séquestrés jusqu'à confirmation réception)
-      const fraisLivraison = dto.modeLivraison === ModeLivraison.LIVRAISON
-        ? Math.max(0, Number(dto.fraisLivraison || 0))
-        : 0;
+      const fraisLivraison =
+        dto.modeLivraison === ModeLivraison.LIVRAISON
+          ? Math.max(0, Number(dto.fraisLivraison || 0))
+          : 0;
       if (fraisLivraison > 0) montantTotal += fraisLivraison;
 
       const created = manager.create(Commande, {
@@ -500,7 +521,7 @@ export class CommandesService {
       throw new NotFoundException('Commande introuvable');
     }
 
-    if (clientId && commande.client.id !== clientId) {
+    if (clientId && commande.client?.id !== clientId) {
       throw new ForbiddenException('Accès refusé à cette commande');
     }
 
@@ -640,17 +661,19 @@ export class CommandesService {
         cancelPayload,
       );
       this.commandesGateway.emitToManagers('commande.statut', cancelPayload);
-      this.commandesGateway.emitToClient(saved.client.id, 'commande.statut', {
-        id: saved.id,
-        statut: saved.statut,
-      });
-      await this.notifyClient(
-        saved.client.id,
-        'commande.statut',
-        'Commande annulée',
-        `Votre commande n°${saved.numero} a été annulée.`,
-        { commandeId: saved.id, statut: saved.statut },
-      );
+      if (saved.client) {
+        this.commandesGateway.emitToClient(saved.client.id, 'commande.statut', {
+          id: saved.id,
+          statut: saved.statut,
+        });
+        await this.notifyClient(
+          saved.client.id,
+          'commande.statut',
+          'Commande annulée',
+          `Votre commande n°${saved.numero} a été annulée.`,
+          { commandeId: saved.id, statut: saved.statut },
+        );
+      }
 
       return saved;
     }
@@ -700,17 +723,19 @@ export class CommandesService {
       statusPayload,
     );
     this.commandesGateway.emitToManagers('commande.statut', statusPayload);
-    this.commandesGateway.emitToClient(saved.client.id, 'commande.statut', {
-      id: saved.id,
-      statut: saved.statut,
-    });
-    await this.notifyClient(
-      saved.client.id,
-      'commande.statut',
-      'Commande mise à jour',
-      `Votre commande n°${saved.numero} est ${STATUT_LABELS[saved.statut] ?? saved.statut}.`,
-      { commandeId: saved.id, statut: saved.statut },
-    );
+    if (saved.client) {
+      this.commandesGateway.emitToClient(saved.client.id, 'commande.statut', {
+        id: saved.id,
+        statut: saved.statut,
+      });
+      await this.notifyClient(
+        saved.client.id,
+        'commande.statut',
+        'Commande mise à jour',
+        `Votre commande n°${saved.numero} est ${STATUT_LABELS[saved.statut] ?? saved.statut}.`,
+        { commandeId: saved.id, statut: saved.statut },
+      );
+    }
 
     if (newStatut === StatutCommande.LIVREE) {
       if (commande.client?.telephone) {
@@ -791,18 +816,20 @@ export class CommandesService {
       paymentPayload,
     );
     this.commandesGateway.emitToManagers('commande.paiement', paymentPayload);
-    this.commandesGateway.emitToClient(saved.client.id, 'commande.paiement', {
-      id: saved.id,
-      estPaye: saved.estPaye,
-    });
-    if (saved.estPaye) {
-      await this.notifyClient(
-        saved.client.id,
-        'commande.paiement',
-        'Paiement confirmé',
-        `Le paiement de votre commande n°${saved.numero} est confirmé.`,
-        { commandeId: saved.id },
-      );
+    if (saved.client) {
+      this.commandesGateway.emitToClient(saved.client.id, 'commande.paiement', {
+        id: saved.id,
+        estPaye: saved.estPaye,
+      });
+      if (saved.estPaye) {
+        await this.notifyClient(
+          saved.client.id,
+          'commande.paiement',
+          'Paiement confirmé',
+          `Le paiement de votre commande n°${saved.numero} est confirmé.`,
+          { commandeId: saved.id },
+        );
+      }
     }
 
     return {
@@ -822,7 +849,7 @@ export class CommandesService {
     });
 
     if (!commande) throw new NotFoundException('Commande introuvable');
-    if (commande.client.id !== clientId)
+    if (commande.client?.id !== clientId)
       throw new ForbiddenException('Accès refusé');
     if (commande.estPaye) throw new BadRequestException('Commande déjà payée');
 
@@ -892,7 +919,7 @@ export class CommandesService {
       relations: ['client', 'restaurant'],
     });
     if (!commande) throw new NotFoundException('Commande introuvable');
-    if (commande.client.id !== clientId)
+    if (commande.client?.id !== clientId)
       throw new ForbiddenException('Accès refusé');
     if (commande.statut !== StatutCommande.LIVREE)
       throw new BadRequestException(
@@ -954,7 +981,7 @@ export class CommandesService {
       relations: ['client', 'restaurant'],
     });
     if (!commande) throw new NotFoundException('Commande introuvable');
-    if (clientId && commande.client.id !== clientId)
+    if (clientId && commande.client?.id !== clientId)
       throw new ForbiddenException('Accès refusé');
     if (restaurantId && commande.restaurant.id !== restaurantId)
       throw new ForbiddenException('Accès refusé');
@@ -996,7 +1023,10 @@ export class CommandesService {
   }
 
   async rembourser(id: string, motif: string, restaurantId?: string) {
-    const commande = await this.commandeRepo.findOne({ where: { id }, relations: ['client', 'restaurant'] });
+    const commande = await this.commandeRepo.findOne({
+      where: { id },
+      relations: ['client', 'restaurant'],
+    });
     if (!commande) throw new NotFoundException('Commande introuvable');
     if (restaurantId && commande.restaurant?.id !== restaurantId)
       throw new ForbiddenException();
@@ -1004,7 +1034,7 @@ export class CommandesService {
 
     // RG-18 : remboursement uniquement dans les 5 minutes suivant le paiement
     if (!commande.payeAt) {
-      throw new BadRequestException('La commande n\'a pas encore été payée');
+      throw new BadRequestException("La commande n'a pas encore été payée");
     }
     const delaiMs = Date.now() - new Date(commande.payeAt).getTime();
     if (delaiMs > 5 * 60 * 1000) {
@@ -1025,11 +1055,15 @@ export class CommandesService {
     });
 
     if (commande.client?.id) {
-      this.commandesGateway.emitToClient(commande.client.id, 'commande.remboursee', {
-        commandeId: id,
-        numero: commande.numero,
-        motif: motif ?? null,
-      });
+      this.commandesGateway.emitToClient(
+        commande.client.id,
+        'commande.remboursee',
+        {
+          commandeId: id,
+          numero: commande.numero,
+          motif: motif ?? null,
+        },
+      );
       await this.notifyClient(
         commande.client.id,
         'commande.remboursee',
@@ -1042,17 +1076,24 @@ export class CommandesService {
     return commande;
   }
 
-  async confirmerReception(commandeId: string, clientId: string): Promise<Commande> {
+  async confirmerReception(
+    commandeId: string,
+    clientId: string,
+  ): Promise<Commande> {
     const commande = await this.commandeRepo.findOne({
       where: { id: commandeId },
       relations: ['client', 'restaurant'],
     });
 
     if (!commande) throw new NotFoundException('Commande introuvable');
-    if (commande.client.id !== clientId) throw new ForbiddenException('Accès refusé');
-    if (commande.receptionConfirmeeAt) throw new BadRequestException('Réception déjà confirmée');
+    if (commande.client?.id !== clientId)
+      throw new ForbiddenException('Accès refusé');
+    if (commande.receptionConfirmeeAt)
+      throw new BadRequestException('Réception déjà confirmée');
     if (commande.statut !== StatutCommande.EN_LIVRAISON) {
-      throw new BadRequestException('La commande n\'est pas en cours de livraison');
+      throw new BadRequestException(
+        "La commande n'est pas en cours de livraison",
+      );
     }
 
     commande.statut = StatutCommande.LIVREE;
@@ -1070,7 +1111,11 @@ export class CommandesService {
       fraisLivraison: Number(saved.fraisLivraison ?? 0),
     };
 
-    this.commandesGateway.emitToKitchen(saved.restaurant.id, 'commande.statut', payload);
+    this.commandesGateway.emitToKitchen(
+      saved.restaurant.id,
+      'commande.statut',
+      payload,
+    );
     this.commandesGateway.emitToManagers('commande.statut', payload);
     this.commandesGateway.emitToClient(clientId, 'commande.statut', {
       id: saved.id,

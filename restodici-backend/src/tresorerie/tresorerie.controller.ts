@@ -81,7 +81,44 @@ export class TresorerieController {
     if (!restaurantId) {
       throw new BadRequestException('Restaurant ID required');
     }
-    return this.tresorerieService.recordExpense(expenseData, restaurantId);
+    if (!expenseData?.categorie) {
+      throw new BadRequestException('Catégorie requise');
+    }
+    const montant = Number(expenseData?.montant);
+    if (!montant || montant <= 0) {
+      throw new BadRequestException('Montant strictement positif requis');
+    }
+    return this.tresorerieService.recordExpense(
+      { ...expenseData, montant },
+      restaurantId,
+    );
+  }
+
+  // GET /tresorerie/expenses — Dépenses opérationnelles persistées (période en cours)
+  @Get('expenses')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  listExpenses(
+    @Req() req,
+    @Query('period') period: 'day' | 'week' | 'month' = 'month',
+  ) {
+    const restaurantId = req.user?.restaurant?.id;
+    if (!restaurantId) {
+      throw new BadRequestException('Restaurant ID required');
+    }
+    return this.tresorerieService.listExpenses(restaurantId, period);
+  }
+
+  // GET /tresorerie/budget-alerts — Config budget persistée
+  @Get('budget-alerts')
+  @UseGuards(AuthGuard('jwt'), RolesGuard)
+  @Roles('GERANT', 'ADMIN')
+  getBudgetAlerts(@Req() req) {
+    const restaurantId = req.user?.restaurant?.id;
+    if (!restaurantId) {
+      throw new BadRequestException('Restaurant ID required');
+    }
+    return this.tresorerieService.getBudgetAlerts(restaurantId);
   }
 
   // GET /tresorerie/reports — Générer rapports financiers/P&L (US-30)

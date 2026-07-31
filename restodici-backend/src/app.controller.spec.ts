@@ -16,8 +16,14 @@ describe('AppController', () => {
       providers: [
         AppService,
         { provide: getRepositoryToken(User), useValue: { count: jest.fn() } },
-        { provide: getRepositoryToken(Restaurant), useValue: { count: jest.fn() } },
-        { provide: getRepositoryToken(Commande), useValue: { count: jest.fn() } },
+        {
+          provide: getRepositoryToken(Restaurant),
+          useValue: { count: jest.fn() },
+        },
+        {
+          provide: getRepositoryToken(Commande),
+          useValue: { count: jest.fn() },
+        },
         {
           provide: getRepositoryToken(SystemConfig),
           useValue: { findOne: jest.fn(), find: jest.fn() },

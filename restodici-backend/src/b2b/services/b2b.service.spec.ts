@@ -137,19 +137,40 @@ async function buildModule(): Promise<TestingModule> {
     providers: [
       B2BService,
       { provide: getRepositoryToken(Team), useValue: teamRepository },
-      { provide: getRepositoryToken(TeamMember), useValue: teamMemberRepository },
+      {
+        provide: getRepositoryToken(TeamMember),
+        useValue: teamMemberRepository,
+      },
       { provide: getRepositoryToken(BulkOrder), useValue: bulkOrderRepository },
       { provide: getRepositoryToken(Invoice), useValue: invoiceRepository },
       { provide: getRepositoryToken(User), useValue: userRepository },
       { provide: getRepositoryToken(CompteB2B), useValue: compteB2BRepository },
-      { provide: getRepositoryToken(CollaborateurB2B), useValue: collaborateurRepository },
-      { provide: getRepositoryToken(CommandeGroupeeB2B), useValue: commandeGroupeeRepository },
-      { provide: getRepositoryToken(LigneCommandeGroupeeB2B), useValue: ligneCommandeRepository },
+      {
+        provide: getRepositoryToken(CollaborateurB2B),
+        useValue: collaborateurRepository,
+      },
+      {
+        provide: getRepositoryToken(CommandeGroupeeB2B),
+        useValue: commandeGroupeeRepository,
+      },
+      {
+        provide: getRepositoryToken(LigneCommandeGroupeeB2B),
+        useValue: ligneCommandeRepository,
+      },
       { provide: getRepositoryToken(AuditLogB2B), useValue: auditRepository },
-      { provide: getRepositoryToken(FactureMensuelleB2B), useValue: factureRepository },
-      { provide: getRepositoryToken(PlanRepasB2B), useValue: planRepasRepository },
+      {
+        provide: getRepositoryToken(FactureMensuelleB2B),
+        useValue: factureRepository,
+      },
+      {
+        provide: getRepositoryToken(PlanRepasB2B),
+        useValue: planRepasRepository,
+      },
       { provide: getRepositoryToken(Article), useValue: articleRepository },
-      { provide: getRepositoryToken(SystemConfig), useValue: { findOne: jest.fn(), find: jest.fn() } },
+      {
+        provide: getRepositoryToken(SystemConfig),
+        useValue: { findOne: jest.fn(), find: jest.fn() },
+      },
       { provide: CommandesGateway, useValue: commandesGateway },
       { provide: EmailService, useValue: emailService },
       { provide: ConfigService, useValue: configService },
@@ -253,8 +274,11 @@ describe('B2BService createBulkOrder() — validations', () => {
     service = module.get<B2BService>(B2BService);
   });
 
-  it('lève ForbiddenException si l\'utilisateur n\'a pas le rôle B2B', async () => {
-    userRepository.findOne.mockResolvedValue({ id: 'client-1', role: 'CLIENT' });
+  it("lève ForbiddenException si l'utilisateur n'a pas le rôle B2B", async () => {
+    userRepository.findOne.mockResolvedValue({
+      id: 'client-1',
+      role: 'CLIENT',
+    });
 
     await expect(
       service.createBulkOrder('client-1', {
@@ -264,7 +288,7 @@ describe('B2BService createBulkOrder() — validations', () => {
     ).rejects.toThrow(ForbiddenException);
   });
 
-  it('lève ForbiddenException si l\'utilisateur est introuvable', async () => {
+  it("lève ForbiddenException si l'utilisateur est introuvable", async () => {
     userRepository.findOne.mockResolvedValue(null);
 
     await expect(
@@ -287,9 +311,7 @@ describe('B2BService createBulkOrder() — validations', () => {
     bulkOrderRepository.save.mockResolvedValue(saved);
 
     const result = await service.createBulkOrder('b2b-1', {
-      items: [
-        { articleId: 'art-1', quantity: 3, unitPrice: 3000 },
-      ],
+      items: [{ articleId: 'art-1', quantity: 3, unitPrice: 3000 }],
       deliveryAddress: 'Marcory',
     } as any);
 
@@ -315,7 +337,9 @@ describe('B2BService updateBulkOrderStatus() — validations', () => {
     bulkOrderRepository.findOne.mockResolvedValue(null);
 
     await expect(
-      service.updateBulkOrderStatus('unknown-id', 'b2b-1', { status: 'CONFIRMED' }),
+      service.updateBulkOrderStatus('unknown-id', 'b2b-1', {
+        status: 'CONFIRMED',
+      }),
     ).rejects.toThrow(NotFoundException);
   });
 

@@ -28,7 +28,10 @@ export class B2bTeamsService {
     private userRepository: Repository<User>,
   ) {}
 
-  async createTeam(userId: string, createTeamDto: CreateTeamDto): Promise<Team> {
+  async createTeam(
+    userId: string,
+    createTeamDto: CreateTeamDto,
+  ): Promise<Team> {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user || user.role !== 'B2B') {
       throw new ForbiddenException('Only B2B users can create teams');

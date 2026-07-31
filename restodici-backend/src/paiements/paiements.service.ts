@@ -31,7 +31,11 @@ import {
   InitiatePaymentResult,
 } from './novasend.service';
 import { InitierPaiementDto } from './dto/initier-paiement.dto';
-import { checkPhoneForOperator, isValidCiMobile, normalizeCiNumber } from './phone.util';
+import {
+  checkPhoneForOperator,
+  isValidCiMobile,
+  normalizeCiNumber,
+} from './phone.util';
 import { PaymentGatewayRegistry } from './gateways/payment-gateway.registry';
 import { isSuccessStatus, isFailedStatus } from './novasend-status.util';
 
@@ -167,21 +171,27 @@ export class PaiementsService implements OnModuleInit {
     } catch (e: any) {
       // Échec d'initiation → on libère le verrou pour permettre un retry immédiat.
       await this.paymentLock.release(dto.commandeId);
-      
-      this.logger.error(`Erreur d'initiation de paiement : ${e.message}`, e.stack);
-      
+
+      this.logger.error(
+        `Erreur d'initiation de paiement : ${e.message}`,
+        e.stack,
+      );
+
       if (e instanceof HttpException) {
         throw e;
       }
-      
+
       const status = e?.response?.status || 500;
-      let message = e?.response?.data?.message || e?.message || 'Erreur lors de l\'initiation du paiement';
-      
+      let message =
+        e?.response?.data?.message ||
+        e?.message ||
+        "Erreur lors de l'initiation du paiement";
+
       // Nettoyer les messages d'erreur complexes de l'API
       if (typeof message === 'object') {
         message = JSON.stringify(message);
       }
-      
+
       if (status >= 400 && status < 500) {
         throw new BadRequestException(`Paiement refusé : ${message}`);
       }
@@ -300,10 +310,18 @@ export class PaiementsService implements OnModuleInit {
       });
       if (!commande || commande.estPaye) return;
       const payload = { id: commandeId, reason: status };
-      this.commandesGateway.emitToKitchen(commande.restaurant?.id, 'commande.paiement.echec', payload);
+      this.commandesGateway.emitToKitchen(
+        commande.restaurant?.id,
+        'commande.paiement.echec',
+        payload,
+      );
       this.commandesGateway.emitToManagers('commande.paiement.echec', payload);
       if (commande.client?.id) {
-        this.commandesGateway.emitToClient(commande.client.id, 'commande.paiement.echec', payload);
+        this.commandesGateway.emitToClient(
+          commande.client.id,
+          'commande.paiement.echec',
+          payload,
+        );
       }
       this.logger.warn(`Paiement échoué: CMD ${commandeId} — statut ${status}`);
       await this.updatePaymentStatus(reference, PaymentStatus.FAILED);
@@ -395,11 +413,13 @@ export class PaiementsService implements OnModuleInit {
       paymentPayload,
     );
     this.commandesGateway.emitToManagers('commande.paiement', paymentPayload);
-    this.commandesGateway.emitToClient(
-      commande.client.id,
-      'commande.paiement',
-      paymentPayload,
-    );
+    if (commande.client?.id) {
+      this.commandesGateway.emitToClient(
+        commande.client.id,
+        'commande.paiement',
+        paymentPayload,
+      );
+    }
 
     // SMS confirmation client (non-bloquant)
     if (commande.client?.telephone) {
@@ -434,9 +454,17 @@ export class PaiementsService implements OnModuleInit {
     );
   }
 
-
   // Moyens ACTIVÉS par l'admin ET dont la gateway est configurée (lus en base).
-  async getPaymentMethods(): Promise<{ methods: { id: string; label: string; provider: string; gateway: string; needsPhone: boolean }[]; configured: boolean }> {
+  async getPaymentMethods(): Promise<{
+    methods: {
+      id: string;
+      label: string;
+      provider: string;
+      gateway: string;
+      needsPhone: boolean;
+    }[];
+    configured: boolean;
+  }> {
     const gateways = await this.gatewayRegistry.getEnabledPaymentGateways();
     const enabledGatewayNames = new Set(gateways.map((gw) => gw.name));
 
@@ -473,13 +501,13 @@ export class PaiementsService implements OnModuleInit {
     // [SÉCURITÉ] Ownership : ADMIN voit tout ; GERANT/STAFF bornés à leur
     // restaurant ; tout autre rôle doit être le client propriétaire.
     const isAdmin = requester.role === 'ADMIN';
-    const isStaff =
-      requester.role === 'GERANT' || requester.role === 'STAFF';
+    const isStaff = requester.role === 'GERANT' || requester.role === 'STAFF';
     if (!isAdmin) {
       const allowed = isStaff
         ? commande.restaurant?.id === requester.restaurant?.id
         : commande.client?.id === requester.id;
-      if (!allowed) throw new ForbiddenException('Accès refusé à cette commande');
+      if (!allowed)
+        throw new ForbiddenException('Accès refusé à cette commande');
     }
 
     const cached = await this.paymentLock.getCachedStatus(commandeId);
@@ -489,8 +517,7 @@ export class PaiementsService implements OnModuleInit {
       where: { reference: commandeId },
       order: { createdAt: 'DESC' },
     });
-    if (payment)
-      return { commandeId, status: payment.status, source: 'db' };
+    if (payment) return { commandeId, status: payment.status, source: 'db' };
 
     // Aucune trace → on se base sur l'état de la commande.
     return {

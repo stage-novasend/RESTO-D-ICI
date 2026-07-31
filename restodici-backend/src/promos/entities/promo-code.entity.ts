@@ -15,9 +15,9 @@ export enum TypePromo {
 }
 
 export enum VisibilitePromo {
-  TOUS = 'TOUS',           // visible par tous (par défaut)
+  TOUS = 'TOUS', // visible par tous (par défaut)
   CONNECTES = 'CONNECTES', // uniquement utilisateurs connectés
-  NOUVEAUX = 'NOUVEAUX',   // uniquement nouveaux clients (0 commande)
+  NOUVEAUX = 'NOUVEAUX', // uniquement nouveaux clients (0 commande)
 }
 
 @Entity('promo_codes')
@@ -52,7 +52,11 @@ export class PromoCode {
   @Column({ default: true })
   actif!: boolean;
 
-  @Column({ type: 'enum', enum: VisibilitePromo, default: VisibilitePromo.TOUS })
+  @Column({
+    type: 'enum',
+    enum: VisibilitePromo,
+    default: VisibilitePromo.TOUS,
+  })
   visibilite!: VisibilitePromo;
 
   @Column()

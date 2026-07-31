@@ -74,7 +74,10 @@ async function buildService(): Promise<B2bFacturationService> {
   const module: TestingModule = await Test.createTestingModule({
     providers: [
       B2bFacturationService,
-      { provide: getRepositoryToken(FactureMensuelleB2B), useValue: factureRepo },
+      {
+        provide: getRepositoryToken(FactureMensuelleB2B),
+        useValue: factureRepo,
+      },
       { provide: getRepositoryToken(CompteB2B), useValue: compteRepo },
       {
         provide: getRepositoryToken(CommandeGroupeeB2B),
@@ -104,7 +107,7 @@ describe('B2bFacturationService generateFactureForCompte()', () => {
     service = await buildService();
   });
 
-  it('crée une facture mensuelle B2B et envoie l\'email au responsable', async () => {
+  it("crée une facture mensuelle B2B et envoie l'email au responsable", async () => {
     const compte = {
       id: 'compte-uuid-1',
       raisonSociale: 'Sankofa SARL',
@@ -145,8 +148,16 @@ describe('B2bFacturationService generateFactureForCompte()', () => {
   });
 
   it('retourne la facture existante sans la recréer (idempotence)', async () => {
-    const compte = { id: 'compte-uuid-1', raisonSociale: 'Sankofa SARL' } as any;
-    const existante = { id: 'facture-existante', mois: 'MAI', annee: 2026, statut: 'PAYEE' };
+    const compte = {
+      id: 'compte-uuid-1',
+      raisonSociale: 'Sankofa SARL',
+    } as any;
+    const existante = {
+      id: 'facture-existante',
+      mois: 'MAI',
+      annee: 2026,
+      statut: 'PAYEE',
+    };
     factureRepo.findOne.mockResolvedValue(existante);
 
     const result = await service.generateFactureForCompte(compte, 'MAI', 2026);
@@ -169,7 +180,11 @@ describe('B2bFacturationService generateFactureForCompte()', () => {
     commandeGroupeeRepo.createQueryBuilder.mockReturnValue(zeroQB);
     bulkOrderRepo.createQueryBuilder.mockReturnValue(zeroQB);
 
-    const result = await service.generateFactureForCompte(compte, 'JANVIER', 2026);
+    const result = await service.generateFactureForCompte(
+      compte,
+      'JANVIER',
+      2026,
+    );
 
     expect(result).toBeNull();
     expect(factureRepo.save).not.toHaveBeenCalled();
@@ -185,7 +200,11 @@ describe('B2bFacturationService payFacture()', () => {
   });
 
   it('marque la facture comme PAYEE', async () => {
-    const compte = { id: 'compte-1', raisonSociale: 'Sankofa SARL', numeroContribuable: 'NIF1' };
+    const compte = {
+      id: 'compte-1',
+      raisonSociale: 'Sankofa SARL',
+      numeroContribuable: 'NIF1',
+    };
     compteRepo.findOne.mockResolvedValue(compte);
 
     const facture = {
@@ -195,7 +214,10 @@ describe('B2bFacturationService payFacture()', () => {
       numeroFacture: 'RDI-B2B-202605-AAAA',
     };
     factureRepo.findOne.mockResolvedValue(facture);
-    factureRepo.save.mockImplementation(async (f: any) => ({ ...f, statut: 'PAYEE' }));
+    factureRepo.save.mockImplementation(async (f: any) => ({
+      ...f,
+      statut: 'PAYEE',
+    }));
 
     const result = (await service.payFacture('facture-1', 'b2b-user-1')) as any;
 
@@ -208,9 +230,9 @@ describe('B2bFacturationService payFacture()', () => {
   it('lève NotFoundException si le compte est introuvable', async () => {
     compteRepo.findOne.mockResolvedValue(null);
 
-    await expect(
-      service.payFacture('facture-1', 'ghost-user'),
-    ).rejects.toThrow(NotFoundException);
+    await expect(service.payFacture('facture-1', 'ghost-user')).rejects.toThrow(
+      NotFoundException,
+    );
   });
 
   it('lève NotFoundException si la facture est introuvable', async () => {
@@ -226,9 +248,9 @@ describe('B2bFacturationService payFacture()', () => {
     compteRepo.findOne.mockResolvedValue({ id: 'compte-1' });
     factureRepo.findOne.mockResolvedValue({ id: 'facture-1', statut: 'PAYEE' });
 
-    await expect(
-      service.payFacture('facture-1', 'b2b-user-1'),
-    ).rejects.toThrow(BadRequestException);
+    await expect(service.payFacture('facture-1', 'b2b-user-1')).rejects.toThrow(
+      BadRequestException,
+    );
   });
 });
 
@@ -257,7 +279,10 @@ describe('B2bFacturationService contestFacture()', () => {
 
   it('throws BadRequestException when facture already PAYEE', async () => {
     compteRepo.findOne.mockResolvedValue(COMPTE);
-    factureRepo.findOne.mockResolvedValue({ ...FACTURE_EN_ATTENTE, statut: 'PAYEE' });
+    factureRepo.findOne.mockResolvedValue({
+      ...FACTURE_EN_ATTENTE,
+      statut: 'PAYEE',
+    });
     await expect(
       service.contestFacture('facture-1', 'user-1', 'Motif'),
     ).rejects.toThrow(BadRequestException);
@@ -352,11 +377,17 @@ describe('B2bFacturationService exportSyscohadaCsv()', () => {
   });
 
   it('uses factureId prefix when numeroFacture is missing', async () => {
-    const factureWithoutNum = { ...FACTURE_EN_ATTENTE, numeroFacture: undefined };
+    const factureWithoutNum = {
+      ...FACTURE_EN_ATTENTE,
+      numeroFacture: undefined,
+    };
     compteRepo.findOne.mockResolvedValue(COMPTE);
     factureRepo.findOne.mockResolvedValue(factureWithoutNum);
 
-    const result = await service.exportSyscohadaCsv('facture-abc12345', 'user-1');
+    const result = await service.exportSyscohadaCsv(
+      'facture-abc12345',
+      'user-1',
+    );
     expect(result.filename).toContain('facture-'); // first 8 chars of id
   });
 });

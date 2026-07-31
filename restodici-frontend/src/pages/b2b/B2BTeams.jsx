@@ -54,7 +54,7 @@ function InviteModal({ onClose, onDone }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
       onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="rounded-2xl w-full max-w-sm overflow-hidden" style={{ background: CARD, boxShadow: SH3 }}>
+      <div className="rounded-lg w-full max-w-sm overflow-hidden" style={{ background: CARD, boxShadow: SH3 }}>
 
         <div className="flex items-center justify-between px-5 py-4" style={{ borderBottom: `1px solid ${BORDER}` }}>
           <div className="flex items-center gap-2.5">
@@ -81,7 +81,7 @@ function InviteModal({ onClose, onDone }) {
               Email envoyé à <strong style={{ color: TEXT }}>{form.email}</strong>
             </p>
             <button onClick={() => { onDone(); onClose(); }}
-              className="px-6 py-2.5 rounded-xl text-sm font-bold text-white transition hover:opacity-90"
+              className="px-6 py-2.5 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
               style={{ background: GREEN }}>
               Fermer
             </button>
@@ -97,7 +97,7 @@ function InviteModal({ onClose, onDone }) {
               <div key={f.k}>
                 <label className="block text-[11px] font-bold mb-1.5" style={{ color: MUTED }}>{f.label}</label>
                 <input type={f.type} value={form[f.k]} placeholder={f.ph} onChange={set(f.k)}
-                  className="w-full rounded-xl px-3 py-2.5 text-sm outline-none transition"
+                  className="w-full rounded-lg px-3 py-2.5 text-sm outline-none transition"
                   style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }} />
               </div>
             ))}
@@ -123,7 +123,7 @@ function InviteModal({ onClose, onDone }) {
                 finally { setSaving(false); }
               }}
               disabled={saving}
-              className="w-full py-2.5 rounded-xl text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
+              className="w-full py-2.5 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
               style={{ background: saving ? MUTED : ORANGE, cursor: saving ? 'wait' : 'pointer' }}>
               {saving ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Send className="w-3.5 h-3.5" />}
               {saving ? 'Envoi en cours…' : "Envoyer l'invitation"}
@@ -179,7 +179,7 @@ export default function B2BTeams() {
           <p style={{ fontSize: 14, fontWeight: 700, color: '#1A0C00', margin: 0, flex: 1 }}>Équipe</p>
           {/* Inviter — orange (CTA principal) */}
           <button onClick={() => setShowInvite(true)}
-            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
             style={{
               background: `linear-gradient(135deg, ${ORANGE}, ${ORANGE_D})`,
               boxShadow: `0 2px 8px ${ORANGE}50`,
@@ -198,7 +198,7 @@ export default function B2BTeams() {
             { label: 'Budget total',    value: formatFCFA(totalBudget),  bg: ORANGE    },
             { label: 'Dépenses mois',   value: formatFCFA(totalSpent),   bg: GREEN     },
           ].map(s => (
-            <div key={s.label} className="rounded-2xl p-4 text-center text-white"
+            <div key={s.label} className="rounded-lg p-4 text-center text-white"
               style={{ background: s.bg, boxShadow: `0 4px 14px ${s.bg}40` }}>
               <p className="text-xl font-bold truncate">{s.value}</p>
               <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.72)' }}>{s.label}</p>
@@ -207,14 +207,14 @@ export default function B2BTeams() {
         </div>
 
         {/* Collaborateurs list */}
-        <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+        <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
           {loading ? (
             <div className="p-4 space-y-2">
-              {[1,2,3].map(i => <div key={i} className="h-16 rounded-xl animate-pulse" style={{ background: BG }} />)}
+              {[1,2,3].map(i => <div key={i} className="h-16 rounded-lg animate-pulse" style={{ background: BG }} />)}
             </div>
           ) : collabs.length === 0 ? (
             <div className="py-20 text-center">
-              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+              <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center"
                 style={{ background: ORANGE_L }}>
                 <Users className="w-7 h-7" style={{ color: ORANGE }} />
               </div>
@@ -223,7 +223,7 @@ export default function B2BTeams() {
                 Invitez votre équipe pour gérer les déjeuners ensemble
               </p>
               <button onClick={() => setShowInvite(true)}
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-bold text-white"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white"
                 style={{ background: ORANGE }}>
                 <Plus className="w-4 h-4" /> Inviter
               </button>
@@ -297,7 +297,7 @@ export default function B2BTeams() {
                 {/* Supprimer — rouge (action risquée / irréversible) */}
                 <button onClick={() => handleDelete(c.id, c.nom)}
                   disabled={deleting === c.id}
-                  className="w-9 h-9 rounded-xl flex items-center justify-center border transition hover:opacity-80 disabled:opacity-40"
+                  className="w-9 h-9 rounded-lg flex items-center justify-center border transition hover:opacity-80 disabled:opacity-40"
                   style={{ borderColor: '#FECACA', background: RED_L, color: RED }}
                   title="Supprimer ce collaborateur">
                   {deleting === c.id

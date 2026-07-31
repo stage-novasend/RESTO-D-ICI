@@ -1257,7 +1257,7 @@ export default function ClientDashboard() {
   );
 
   return (
-    <div className="flex h-screen overflow-hidden" style={{ background: BG }}>
+    <div className="flex h-screen overflow-hidden" style={{ background: BG, fontFamily: "'Inter', system-ui, sans-serif" }}>
       <div className="hidden lg:flex flex-col w-56 shrink-0 h-full">
         <Sidebar />
       </div>
@@ -1287,7 +1287,7 @@ export default function ClientDashboard() {
         <div className="flex-1 overflow-y-auto p-4 sm:p-6" style={{ background: BG }}>
           <div className="max-w-5xl mx-auto">
             {ordersError && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between">
+              <div className="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-xs font-medium flex items-center justify-between">
                 <span>{ordersError}</span>
                 <button onClick={() => loadOrders(false)} className="font-bold underline">Réessayer</button>
               </div>
@@ -1334,7 +1334,7 @@ export default function ClientDashboard() {
                       ))}
                     </div>
 
-                    <div className="bg-white rounded-xl border border-slate-200 overflow-hidden shadow-sm">
+                    <div className="bg-white rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                       <div className="px-5 py-4 border-b border-slate-200 flex items-center justify-between">
                         <span className="text-sm font-bold text-slate-900">Historique des commandes</span>
                         <Link to="/menu" className="text-xs font-bold text-orange-600 flex items-center gap-1">
@@ -1408,15 +1408,15 @@ export default function ClientDashboard() {
         <>
           <div onClick={() => setShowLogoutConfirm(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(3px)', zIndex: 999 }} />
           <div style={{ position: 'fixed', inset: 0, zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16 }}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 p-6 text-center">
+            <div className="bg-white rounded-lg shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200 p-6 text-center">
               <LogOut className="w-8 h-8 text-red-600 mx-auto mb-3" />
               <h3 className="text-base font-bold text-slate-900 mb-1">Confirmation de déconnexion</h3>
               <p className="text-xs text-slate-500 mb-5">Êtes-vous sûr de vouloir fermer votre session client ?</p>
               <div className="flex gap-3">
-                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50">
+                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-2.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50">
                   Annuler
                 </button>
-                <button onClick={() => { setShowLogoutConfirm(false); logout?.(); navigate('/login'); }} className="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700">
+                <button onClick={() => { setShowLogoutConfirm(false); logout?.(); navigate('/login'); }} className="flex-1 py-2.5 rounded-lg text-xs font-bold text-white bg-red-600 hover:bg-red-700">
                   Se déconnecter
                 </button>
               </div>

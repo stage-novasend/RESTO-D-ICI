@@ -27,10 +27,16 @@ const C = {
 const sans = "'Plus Jakarta Sans', 'Manrope', system-ui, sans-serif";
 
 const FOOD_IMGS = [
-  'photo-1665332195309-9d75071138f0','photo-1665400808116-f0e6339b7e9a',
-  'photo-1664993101841-036f189719b6','photo-1664992960082-0ea299a9c53e',
-  'photo-1665333048952-a3ee97714c6b','photo-1665332305771-e49a5dd5ba80',
-  'photo-1665334217407-6688e6941a47','photo-1665332561290-cc6757172890',
+  'photo-1544025162-8111f466cb1e', // Jollof
+  'photo-1604908176997-125f25cc6f3d', // Poulet braisé
+  'photo-1598514982205-f36b96d1e8d4', // Brochettes
+  'photo-1606491956689-2ea866880c84', // Alloco
+  'photo-1555939594-58d7cb561ad1', // BBQ
+  'photo-1605680193132-ce2a9bdffde0', // Poisson braisé
+  'photo-1594221708779-94832f4320d1', // Poulet épicé
+  'photo-1603360946369-dc9bb6258143', // Repas complet
+  'photo-1512621776951-a57141f2eefd', // Salade
+  'photo-1574484284002-952d92456975', // Burger
 ];
 const fallback = (i, w = 480) =>
   `https://images.unsplash.com/${FOOD_IMGS[i % FOOD_IMGS.length]}?q=80&w=${w}&auto=format&fit=crop`;
@@ -643,7 +649,7 @@ export default function BulkOrder() {
       <header className="bg-white border-b sticky top-0 z-20" style={{ borderColor: BD }}>
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center gap-3">
           <button onClick={() => step > 0 ? setStep(s => s - 1) : navigate('/b2b')}
-            className="w-9 h-9 rounded-xl border flex items-center justify-center text-[#8B6E50] hover:text-[#1A0C00] transition shrink-0"
+            className="w-9 h-9 rounded-lg border flex items-center justify-center text-[#8B6E50] hover:text-[#1A0C00] transition shrink-0"
             style={{ borderColor: BD }}>
             <ArrowLeft className="w-4 h-4" />
           </button>
@@ -884,7 +890,7 @@ export default function BulkOrder() {
             <div className="lg:col-span-2 space-y-5">
 
               {/* Date / heure */}
-              <div className="bg-white rounded-2xl border p-5" style={{ borderColor: BD }}>
+              <div className="bg-white rounded-lg border p-5" style={{ borderColor: BD }}>
                 <h3 className="font-bold text-[#1A0C00] mb-4 flex items-center gap-2">
                   <Clock className="w-4 h-4" style={{ color: A }} />
                   {mode === 'instant' ? 'Livraison aujourd\'hui' : 'Choisissez votre créneau'}
@@ -892,9 +898,9 @@ export default function BulkOrder() {
 
                 {mode === 'instant' ? (
                   /* Mode instant — date verrouillée, heure auto */
-                  <div className="rounded-xl p-4 flex items-center gap-3"
+                  <div className="rounded-lg p-4 flex items-center gap-3"
                     style={{ background: '#FFF7ED', border: '1px solid #FDBA74' }}>
-                    <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                    <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: A }}>
                       <span className="text-white text-lg">⚡</span>
                     </div>
@@ -916,13 +922,13 @@ export default function BulkOrder() {
                       <label className="block text-xs font-semibold text-[#374151] mb-1.5">📅 Date *</label>
                       <input type="date" min={minDate} value={livraison.dateLivraison}
                         onChange={e => setLivraison(p => ({ ...p, dateLivraison: e.target.value }))}
-                        className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
+                        className="w-full rounded-lg px-3 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-[#374151] mb-1.5">🕐 Heure *</label>
                       <input type="time" value={livraison.heureLivraison}
                         onChange={e => setLivraison(p => ({ ...p, heureLivraison: e.target.value }))}
-                        className="w-full rounded-xl px-3 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
+                        className="w-full rounded-lg px-3 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
                     </div>
                   </div>
                 )}
@@ -939,7 +945,7 @@ export default function BulkOrder() {
               </div>
 
               {/* Lieu de livraison + map */}
-              <div className="bg-white rounded-2xl border p-5" style={{ borderColor: BD }}>
+              <div className="bg-white rounded-lg border p-5" style={{ borderColor: BD }}>
                 <h3 className="font-bold text-[#1A0C00] mb-4 flex items-center gap-2">
                   <MapPin className="w-4 h-4" style={{ color: A }} /> Lieu de livraison
                 </h3>
@@ -950,20 +956,20 @@ export default function BulkOrder() {
                     <input type="text" placeholder="Ex : Plateau, Zone 4, Cocody…"
                       value={livraison.lieuLivraison}
                       onChange={e => setLivraison(p => ({ ...p, lieuLivraison: e.target.value }))}
-                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
+                      className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-[#374151] mb-1.5">Adresse complète</label>
                     <input type="text" placeholder="Immeuble, étage, repères…"
                       value={livraison.adresseLivraison}
                       onChange={e => setLivraison(p => ({ ...p, adresseLivraison: e.target.value }))}
-                      className="w-full rounded-xl px-4 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
+                      className="w-full rounded-lg px-4 py-2.5 text-sm outline-none" style={{ background: SF, border: `1px solid ${BD}` }} />
                   </div>
                 </div>
 
                 {/* Geoloc button */}
                 <button onClick={handleMyLocation} disabled={locating}
-                  className="flex items-center gap-2 px-4 py-2.5 rounded-xl border text-sm font-semibold transition mb-4"
+                  className="flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm font-semibold transition mb-4"
                   style={{ borderColor: A, color: A, opacity: locating ? 0.6 : 1 }}>
                   {locating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Navigation className="w-4 h-4" />}
                   {locating ? 'Localisation…' : 'Utiliser ma position actuelle'}
@@ -976,7 +982,7 @@ export default function BulkOrder() {
 
               {/* Budget summary per member */}
               {Object.keys(memberTotals).length > 0 && (
-                <div className="bg-white rounded-2xl border p-5" style={{ borderColor: BD }}>
+                <div className="bg-white rounded-lg border p-5" style={{ borderColor: BD }}>
                   <h3 className="font-bold text-[#1A0C00] mb-1 flex items-center gap-2">
                     <Users className="w-4 h-4" style={{ color: A }} /> Impact budgétaire par membre
                   </h3>
@@ -993,7 +999,7 @@ export default function BulkOrder() {
                       const pct      = budget > 0 ? Math.min(100, Math.round((newTotal / budget) * 100)) : 0;
                       const isOver   = budget > 0 && newTotal > budget;
                       return (
-                        <div key={collabId} className="p-3 rounded-xl" style={{ background: SF }}>
+                        <div key={collabId} className="p-3 rounded-lg" style={{ background: SF }}>
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <div className="w-7 h-7 rounded-full flex items-center justify-center text-[11px] font-bold shrink-0"
@@ -1032,7 +1038,7 @@ export default function BulkOrder() {
               )}
 
               {error && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-50 border border-red-200">
+                <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 border border-red-200">
                   <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                   <p className="text-sm text-red-700">{error}</p>
                 </div>
@@ -1040,12 +1046,12 @@ export default function BulkOrder() {
 
               <div className="flex gap-3">
                 <button onClick={() => setStep(0)}
-                  className="px-5 py-3 rounded-2xl border text-sm font-semibold text-[#8B6E50] transition hover:bg-[#F3F4F6]"
+                  className="px-5 py-3 rounded-lg border text-sm font-semibold text-[#8B6E50] transition hover:bg-[#F3F4F6]"
                   style={{ borderColor: BD }}>
                   Retour
                 </button>
                 <button onClick={() => { if (validateStep1()) setStep(2); }}
-                  className="flex-1 py-3 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2"
+                  className="flex-1 py-3 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2"
                   style={{ background: A }}>
                   Vérifier la commande <ArrowRight className="w-4 h-4" />
                 </button>
@@ -1054,7 +1060,7 @@ export default function BulkOrder() {
 
             {/* Right: cart recap */}
             <div className="lg:col-span-1">
-              <div className="sticky top-20 bg-white rounded-2xl border p-5" style={{ borderColor: BD }}>
+              <div className="sticky top-20 bg-white rounded-lg border p-5" style={{ borderColor: BD }}>
                 <h3 className="font-bold text-[#1A0C00] mb-4 flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4" style={{ color: A }} /> Votre sélection
                 </h3>
@@ -1098,7 +1104,7 @@ export default function BulkOrder() {
               </div>
             ) : (
               <>
-                <div className="bg-white rounded-2xl border p-5" style={{ borderColor: BD }}>
+                <div className="bg-white rounded-lg border p-5" style={{ borderColor: BD }}>
                   <h3 className="font-bold text-[#1A0C00] mb-4">Récapitulatif de la commande</h3>
 
                   {/* Items — regroupés par membre */}
@@ -1108,7 +1114,7 @@ export default function BulkOrder() {
                         ? collaborateurs.find(c => c.id === ligne.collaborateurId)
                         : null;
                       return (
-                      <div key={i} className="flex items-center gap-3 p-3 rounded-xl" style={{ background: SF }}>
+                      <div key={i} className="flex items-center gap-3 p-3 rounded-lg" style={{ background: SF }}>
                         <div className="w-8 h-8 rounded-lg flex items-center justify-center text-[11px] font-bold text-white shrink-0" style={{ background: A }}>{ligne.quantite}</div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-[#1A0C00] truncate">{ligne.nomArticle}</p>
@@ -1142,7 +1148,7 @@ export default function BulkOrder() {
                 </div>
 
                 {/* Delivery recap */}
-                <div className="bg-white rounded-2xl border p-5" style={{ borderColor: BD }}>
+                <div className="bg-white rounded-lg border p-5" style={{ borderColor: BD }}>
                   <h3 className="font-bold text-[#1A0C00] mb-3">
                     {mode === 'instant' ? '⚡ Livraison express' : '📅 Livraison planifiée'}
                   </h3>
@@ -1161,7 +1167,7 @@ export default function BulkOrder() {
                 </div>
 
                 {/* SYSCOHADA note */}
-                <div className="flex items-start gap-3 px-4 py-3 rounded-2xl" style={{ background: AL }}>
+                <div className="flex items-start gap-3 px-4 py-3 rounded-lg" style={{ background: AL }}>
                   <div className="w-5 h-5 rounded-full flex items-center justify-center shrink-0 mt-0.5" style={{ background: A }}>
                     <span className="text-white text-[10px] font-bold">i</span>
                   </div>
@@ -1171,7 +1177,7 @@ export default function BulkOrder() {
                 </div>
 
                 {error && (
-                  <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-50 border border-red-200">
+                  <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 border border-red-200">
                     <AlertCircle className="w-4 h-4 text-red-500 shrink-0" />
                     <p className="text-sm text-red-700">{error}</p>
                   </div>
@@ -1179,12 +1185,12 @@ export default function BulkOrder() {
 
                 <div className="flex gap-3">
                   <button onClick={() => setStep(1)}
-                    className="px-5 py-3 rounded-2xl border text-sm font-semibold text-[#8B6E50] transition hover:bg-[#F3F4F6]"
+                    className="px-5 py-3 rounded-lg border text-sm font-semibold text-[#8B6E50] transition hover:bg-[#F3F4F6]"
                     style={{ borderColor: BD }}>
                     Modifier
                   </button>
                   <button onClick={handleSubmit} disabled={submitting}
-                    className="flex-1 py-3 rounded-2xl text-sm font-bold text-white flex items-center justify-center gap-2 transition"
+                    className="flex-1 py-3 rounded-lg text-sm font-bold text-white flex items-center justify-center gap-2 transition"
                     style={{ background: A, opacity: submitting ? 0.7 : 1 }}>
                     {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                     {submitting ? 'Envoi en cours…' : 'Confirmer la commande groupée'}
@@ -1201,7 +1207,7 @@ export default function BulkOrder() {
     {pickerArticle && (
       <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4"
         onClick={e => e.target === e.currentTarget && setPickerArticle(null)}>
-        <div className="bg-white rounded-3xl w-full max-w-sm overflow-hidden shadow-2xl">
+        <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-2xl">
 
           {/* Header */}
           <div className="px-5 py-4 flex items-start justify-between gap-3"
@@ -1253,7 +1259,7 @@ export default function BulkOrder() {
                         if (next === 0) { const { [member.id]: _, ...rest } = p; return rest; }
                         return { ...p, [member.id]: next };
                       })}
-                      className="w-8 h-8 rounded-xl flex items-center justify-center text-lg font-bold transition"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-lg font-bold transition"
                       style={{ background: qty > 0 ? '#FFF0DF' : '#F3F4F6', color: qty > 0 ? A : '#8B6E50' }}>
                       −
                     </button>
@@ -1264,7 +1270,7 @@ export default function BulkOrder() {
                         setPickerMembers(p => ({ ...p, [member.id]: (p[member.id] || 0) + 1 }));
                       }}
                       disabled={isOver}
-                      className="w-8 h-8 rounded-xl flex items-center justify-center text-lg font-bold transition disabled:opacity-30"
+                      className="w-8 h-8 rounded-lg flex items-center justify-center text-lg font-bold transition disabled:opacity-30"
                       style={{ background: isOver ? '#F3F4F6' : AL, color: isOver ? '#8B6E50' : A }}>
                       +
                     </button>
@@ -1277,7 +1283,7 @@ export default function BulkOrder() {
           {/* Footer */}
           <div className="px-5 py-4" style={{ borderTop: `1px solid ${BD}` }}>
             <button onClick={applyPicker}
-              className="w-full py-3 rounded-2xl text-sm font-bold text-white transition hover:opacity-90"
+              className="w-full py-3 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
               style={{ background: totalPickerQty > 0 ? `linear-gradient(135deg, #EA580C, ${A})` : '#D1D5DB' }}>
               {totalPickerQty > 0
                 ? `Valider — ${totalPickerQty} portion${totalPickerQty > 1 ? 's' : ''} · ${formatFCFA(totalPickerQty * prix)}`

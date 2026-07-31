@@ -2,9 +2,23 @@ import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { TresorerieService } from './tresorerie.service';
 import { Commande } from '../commandes/entities/commande.entity';
+import { CommissionPlateforme } from '../commandes/entities/commission-plateforme.entity';
+import { DepenseOperationnelle } from './entities/depense-operationnelle.entity';
+import { Restaurant } from '../restaurants/entities/restaurant.entity';
 
 const mockCommandeRepo = {
   find: jest.fn(),
+};
+
+const mockDepenseRepo = {
+  find: jest.fn().mockResolvedValue([]),
+  create: jest.fn((data) => data),
+  save: jest.fn((data) => Promise.resolve({ id: 'depense-1', ...data })),
+};
+
+const mockRestaurantRepo = {
+  findOne: jest.fn().mockResolvedValue(null),
+  update: jest.fn(),
 };
 
 // ─── Builder ──────────────────────────────────────────────────────────────────
@@ -27,6 +41,20 @@ function buildModule() {
       {
         provide: getRepositoryToken(Commande),
         useValue: mockCommandeRepo,
+      },
+      {
+        provide: getRepositoryToken(CommissionPlateforme),
+        useValue: {
+          find: jest.fn().mockResolvedValue([]),
+        },
+      },
+      {
+        provide: getRepositoryToken(DepenseOperationnelle),
+        useValue: mockDepenseRepo,
+      },
+      {
+        provide: getRepositoryToken(Restaurant),
+        useValue: mockRestaurantRepo,
       },
     ],
   }).compile();
@@ -82,11 +110,52 @@ describe('TresorerieService getRevenueStats()', () => {
     expect(result).toHaveProperty('ticketMoyen');
   });
 
-  it('returns margesBrutes between 60 and 90', async () => {
+  it('margesBrutes reflète le net réel conservé par le restaurant (montantNetRestaurant/montantTotal)', async () => {
+    mockCommandeRepo.find.mockResolvedValue([
+      {
+        id: 'cmd-1',
+        montantTotal: 100000,
+        montantNetRestaurant: 85000, // 15% de commission plateforme sur cette commande
+        createdAt: new Date('2026-07-08T10:00:00.000Z'),
+      },
+    ]);
+
     const result = await service.getRevenueStats('resto-uuid-1', 'day');
 
-    expect(result.margesBrutes).toBeGreaterThanOrEqual(60);
-    expect(result.margesBrutes).toBeLessThanOrEqual(90);
+    expect(result.margesBrutes).toBe(85);
+  });
+
+  it('retombe sur 100% si montantNetRestaurant est absent (commande créée avant la fonctionnalité commission)', async () => {
+    const result = await service.getRevenueStats('resto-uuid-1', 'day');
+
+    expect(result.margesBrutes).toBe(100);
+  });
+
+  it('calcule la répartition réelle des paiements par mode', async () => {
+    mockCommandeRepo.find.mockResolvedValue([
+      {
+        id: 'c1',
+        montantTotal: 1000,
+        modePaiement: 'ESPECES',
+        createdAt: new Date(),
+      },
+      {
+        id: 'c2',
+        montantTotal: 2000,
+        modePaiement: 'WAVE',
+        createdAt: new Date(),
+      },
+      {
+        id: 'c3',
+        montantTotal: 500,
+        modePaiement: 'ESPECES',
+        createdAt: new Date(),
+      },
+    ]);
+
+    const result = await service.getRevenueStats('resto-uuid-1', 'day');
+
+    expect(result.repartitionPaiements).toEqual({ ESPECES: 1500, WAVE: 2000 });
   });
 });
 
@@ -101,36 +170,46 @@ describe('TresorerieService recordExpense()', () => {
     service = module.get<TresorerieService>(TresorerieService);
   });
 
-  it('records an expense and returns the saved object with restaurantId', async () => {
-    const data = { montant: 50000, libelle: 'Achat matières premières' };
+  it('persiste la dépense via le repository et renvoie la ligne enregistrée', async () => {
+    const data = {
+      categorie: 'matieres_premieres',
+      montant: 50000,
+      description: 'Achat viande',
+    };
 
     const result = await service.recordExpense(data, 'resto-uuid-1');
 
+    expect(mockDepenseRepo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        restaurantId: 'resto-uuid-1',
+        categorie: 'matieres_premieres',
+        montant: 50000,
+        description: 'Achat viande',
+      }),
+    );
+    expect(mockDepenseRepo.save).toHaveBeenCalled();
     expect(result).toMatchObject({
-      montant: 50000,
-      libelle: 'Achat matières premières',
       restaurantId: 'resto-uuid-1',
-      status: 'recorded',
+      montant: 50000,
     });
-    expect(result.id).toMatch(/^expense_/);
-    expect(result.createdAt).toBeInstanceOf(Date);
   });
 
   it('records an expense for a different restaurantId', async () => {
-    const data = { montant: 20000, libelle: 'Électricité' };
+    const data = { categorie: 'energie', montant: 20000 };
 
     const result = await service.recordExpense(data, 'resto-uuid-2');
 
     expect(result.restaurantId).toBe('resto-uuid-2');
-    expect(result.status).toBe('recorded');
   });
 
-  it('generates an id prefixed with "expense_"', async () => {
-    const data = { montant: 10000, libelle: 'Test' };
+  it("utilise la date du jour si aucune date n'est fournie", async () => {
+    const before = Date.now();
+    const data = { categorie: 'autre', montant: 10000 };
 
-    const result = await service.recordExpense(data, 'resto-1');
+    await service.recordExpense(data, 'resto-1');
 
-    expect(result.id).toMatch(/^expense_\d+$/);
+    const savedArg = mockDepenseRepo.create.mock.calls[0][0];
+    expect(savedArg.date.getTime()).toBeGreaterThanOrEqual(before);
   });
 });
 
@@ -147,7 +226,10 @@ describe('TresorerieService generateFinancialReport()', () => {
   });
 
   it('returns a report with summary containing totalRevenue, totalExpenses, netProfit', async () => {
-    const result = await service.generateFinancialReport('resto-uuid-1', 'monthly');
+    const result = await service.generateFinancialReport(
+      'resto-uuid-1',
+      'monthly',
+    );
 
     expect(result.period).toBe('monthly');
     expect(result.restaurantId).toBe('resto-uuid-1');
@@ -159,7 +241,10 @@ describe('TresorerieService generateFinancialReport()', () => {
   });
 
   it('returns quarterly report with generatedAt and restaurantId', async () => {
-    const result = await service.generateFinancialReport('resto-uuid-1', 'quarterly');
+    const result = await service.generateFinancialReport(
+      'resto-uuid-1',
+      'quarterly',
+    );
 
     expect(result.restaurantId).toBe('resto-uuid-1');
     expect(result.period).toBe('quarterly');
@@ -167,7 +252,10 @@ describe('TresorerieService generateFinancialReport()', () => {
   });
 
   it('returns yearly report with correct period', async () => {
-    const result = await service.generateFinancialReport('resto-uuid-1', 'yearly');
+    const result = await service.generateFinancialReport(
+      'resto-uuid-1',
+      'yearly',
+    );
 
     expect(result.period).toBe('yearly');
   });

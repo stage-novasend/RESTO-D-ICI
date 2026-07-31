@@ -96,7 +96,8 @@ export function refreshCookieOptions() {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: (process.env.COOKIE_SAMESITE as 'lax' | 'strict' | 'none') || 'lax',
+    sameSite:
+      (process.env.COOKIE_SAMESITE as 'lax' | 'strict' | 'none') || 'lax',
     path: '/api/auth',
     maxAge: REFRESH_COOKIE_MAX_AGE,
   };

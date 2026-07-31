@@ -187,7 +187,7 @@ export default function OrdersTab({ restaurantId }) {
         {orders.map((order) => (
           <div
             key={order.id}
-            className="bg-white rounded-2xl border border-[#E2E8F0] p-4 shadow-sm"
+            className="bg-white rounded-lg border border-[#E2E8F0] p-4 shadow-card"
           >
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
               <div>
@@ -297,7 +297,7 @@ export default function OrdersTab({ restaurantId }) {
         </div>
       )}
       {orders.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center py-12 text-center rounded-2xl" style={{ background: '#FFF7ED' }}>
+        <div className="flex flex-col items-center justify-center py-12 text-center rounded-lg" style={{ background: '#FFF7ED' }}>
           <ClipboardList className="w-12 h-12 mb-3" style={{ color: '#EA580C', opacity: 0.4 }} />
           <p className="text-sm font-medium" style={{ color: '#1A0C00' }}>Aucune commande en cours</p>
           <p className="text-xs mt-1" style={{ color: '#A89070' }}>Les nouvelles commandes arriveront ici en temps réel.</p>
@@ -307,7 +307,7 @@ export default function OrdersTab({ restaurantId }) {
       {/* Modal remboursement */}
       {rembourseModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl w-[420px] max-w-[95vw] shadow-2xl">
+          <div className="bg-white rounded-lg w-[420px] max-w-[95vw] shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b">
               <h3 className="font-bold text-slate-900">Confirmer le remboursement</h3>
               <button onClick={() => setRembourseModal(null)} className="text-slate-400 hover:text-slate-600"><X className="w-5 h-5" /></button>
@@ -322,12 +322,12 @@ export default function OrdersTab({ restaurantId }) {
                 onChange={e => setRembourseMotif(e.target.value)}
                 placeholder="Ex: article indisponible, qualité insuffisante..."
                 rows={3}
-                className="w-full border border-slate-200 rounded-xl px-3 py-2 text-sm outline-none resize-none"
+                className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none resize-none"
               />
             </div>
             <div className="flex gap-3 justify-end px-6 py-4 border-t">
-              <button onClick={() => setRembourseModal(null)} className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition">Annuler</button>
-              <button onClick={handleRembourser} disabled={rembourseLoading} className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-xl hover:bg-red-700 transition disabled:opacity-60">
+              <button onClick={() => setRembourseModal(null)} className="px-4 py-2 text-sm font-semibold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition">Annuler</button>
+              <button onClick={handleRembourser} disabled={rembourseLoading} className="px-4 py-2 text-sm font-semibold text-white bg-red-600 rounded-lg hover:bg-red-700 transition disabled:opacity-60">
                 {rembourseLoading ? 'Traitement…' : 'Confirmer le remboursement'}
               </button>
             </div>

@@ -248,7 +248,7 @@ export default function MenuTab({ restaurantId, token }) {
 
   return (
     <div className="space-y-6">
-      <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-6 shadow-sm">
+      <section className="rounded-[28px] border border-[#E2E8F0] bg-white p-6 shadow-card">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="space-y-3">
             <div className="inline-flex items-center gap-2 rounded-full bg-[#FFF0DF] px-3 py-1 text-xs font-medium text-[#EA580C]">
@@ -276,14 +276,14 @@ export default function MenuTab({ restaurantId, token }) {
           <div className="flex flex-wrap gap-3">
             <button
               onClick={() => setShowCategoryForm(!showCategoryForm)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#EA580C] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#EA580C] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
             >
               <Plus className="h-4 w-4" />
               {showCategoryForm ? "Fermer catégorie" : "Nouvelle catégorie"}
             </button>
             <button
               onClick={() => setShowAddForm(!showAddForm)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-[#EA580C] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
+              className="inline-flex items-center gap-2 rounded-lg bg-[#EA580C] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
             >
               <Plus className="h-4 w-4" />
               {showAddForm ? "Fermer article" : "Nouvel article"}
@@ -293,7 +293,7 @@ export default function MenuTab({ restaurantId, token }) {
       </section>
 
       {showCategoryForm && (
-        <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm space-y-4">
+        <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-card space-y-4">
           <h4 className="text-lg font-bold text-[#1C1917]">Créer une nouvelle catégorie</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -306,7 +306,7 @@ export default function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewCategory({ ...newCategory, nom: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${categoryErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-lg border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A] ${categoryErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: Plats Principaux"
               />
               {categoryErrors.nom && (
@@ -315,23 +315,32 @@ export default function MenuTab({ restaurantId, token }) {
             </div>
             <div>
               <label className="mb-1.5 block text-sm font-semibold text-[#1A0C00]">
-                Icône
+                Icône (Optionnel)
               </label>
-              <input
-                type="text"
+              <select
                 value={newCategory.icone}
                 onChange={(e) =>
                   setNewCategory({ ...newCategory, icone: e.target.value })
                 }
-                className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C]"
-                placeholder="Ex: 🍽️"
-              />
+                className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#0F172A] focus:ring-1 focus:ring-[#0F172A]"
+              >
+                <option value="">Sélectionner une icône (Lucide)</option>
+                <option value="Utensils">🍽️ Repas générique (Utensils)</option>
+                <option value="Pizza">🍕 Pizza / Fast Food</option>
+                <option value="Coffee">☕ Café / Petit Déjeuner</option>
+                <option value="Beef">🥩 Viande / Grillades</option>
+                <option value="Fish">🐟 Poisson / Fruits de mer</option>
+                <option value="Salad">🥗 Salade / Vegan</option>
+                <option value="Sandwich">🥪 Sandwich / Tacos</option>
+                <option value="IceCream">🍦 Dessert / Glace</option>
+                <option value="Drink">🥤 Boisson</option>
+              </select>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               onClick={handleCreateCategory}
-              className="rounded-2xl bg-[#EA580C] px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
+              className="rounded-lg bg-[#EA580C] px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
             >
               Créer la catégorie
             </button>
@@ -340,7 +349,7 @@ export default function MenuTab({ restaurantId, token }) {
                 setShowCategoryForm(false);
                 setCategoryErrors({});
               }}
-              className="rounded-2xl border border-[#E2E8F0] bg-white px-6 py-3 font-semibold text-[#1A0C00] transition hover:bg-[#FFF0DF]"
+              className="rounded-lg border border-[#E2E8F0] bg-white px-6 py-3 font-semibold text-[#1A0C00] transition hover:bg-[#FFF0DF]"
             >
               Annuler
             </button>
@@ -349,7 +358,7 @@ export default function MenuTab({ restaurantId, token }) {
       )}
 
       {showAddForm && (
-        <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-sm space-y-4">
+        <div className="rounded-[26px] border border-[#E2E8F0] bg-white p-6 shadow-card space-y-4">
           <h4 className="text-lg font-bold text-[#1C1917]">Créer un nouvel article</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
@@ -360,7 +369,7 @@ export default function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, nom: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-lg border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.nom ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: Attiéké Poisson"
               />
               {formErrors.nom && <p className="mt-1 text-xs text-red-500">{formErrors.nom}</p>}
@@ -374,7 +383,7 @@ export default function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, prix: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.prix ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-lg border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.prix ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: 3500"
               />
               {formErrors.prix && <p className="mt-1 text-xs text-red-500">{formErrors.prix}</p>}
@@ -386,7 +395,7 @@ export default function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, categorieId: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.categorieId ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-lg border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.categorieId ? "border-red-500" : "border-[#E2E8F0]"}`}
               >
                 <option value="">Sélectionner une catégorie</option>
                 {categories.map((cat) => (
@@ -408,7 +417,7 @@ export default function MenuTab({ restaurantId, token }) {
                 onChange={(e) =>
                   setNewArticle({ ...newArticle, stock: e.target.value })
                 }
-                className={`w-full rounded-2xl border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.stock ? "border-red-500" : "border-[#E2E8F0]"}`}
+                className={`w-full rounded-lg border bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] ${formErrors.stock ? "border-red-500" : "border-[#E2E8F0]"}`}
                 placeholder="Ex: 50"
               />
               {formErrors.stock && <p className="mt-1 text-xs text-red-500">{formErrors.stock}</p>}
@@ -423,7 +432,7 @@ export default function MenuTab({ restaurantId, token }) {
                     onChange={(e) =>
                       setNewArticle({ ...newArticle, photoUrl: e.target.value })
                     }
-                    className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C]"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C]"
                     placeholder="URL de l'image ou laissez vide"
                   />
                   <p className="mt-2 text-xs text-[#78716C]">
@@ -441,7 +450,7 @@ export default function MenuTab({ restaurantId, token }) {
                   )}
                 </div>
                 {newArticle.photoUrl && (
-                  <div className="h-24 w-24 overflow-hidden rounded-2xl border border-[#E2E8F0] shadow-sm">
+                  <div className="h-24 w-24 overflow-hidden rounded-lg border border-[#E2E8F0] shadow-sm">
                     <img
                       src={newArticle.photoUrl}
                       alt="Preview"
@@ -459,33 +468,33 @@ export default function MenuTab({ restaurantId, token }) {
               onChange={(e) =>
                 setNewArticle({ ...newArticle, description: e.target.value })
               }
-              className="w-full rounded-2xl border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C]"
+              className="w-full rounded-lg border border-[#E2E8F0] bg-white px-4 py-4 text-[15px] outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C]"
               rows="3"
               placeholder="Description du plat..."
             />
           </div>
           {/* Variantes (tailles / suppléments) */}
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
             <p className="text-sm font-bold text-blue-900">🔀 Variantes (S/M/L, suppléments…)</p>
             {(newArticle.variants || []).map((v, idx) => (
               <div key={idx} className="flex gap-2 items-center">
                 <input type="text" placeholder="Label (ex: Grande)" value={v.label}
                   onChange={e => setNewArticle(p => { const vs=[...p.variants]; vs[idx]={...vs[idx],label:e.target.value}; return {...p,variants:vs}; })}
-                  className="flex-1 bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
+                  className="flex-1 bg-white border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
                 <input type="number" placeholder="Supplément F CFA" min="0" value={v.prixSupplement}
                   onChange={e => setNewArticle(p => { const vs=[...p.variants]; vs[idx]={...vs[idx],prixSupplement:e.target.value}; return {...p,variants:vs}; })}
-                  className="w-36 bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
+                  className="w-36 bg-white border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
                 <button type="button" onClick={() => setNewArticle(p => ({ ...p, variants: p.variants.filter((_,i)=>i!==idx) }))}
                   className="text-red-400 hover:text-red-600 text-lg font-bold px-1">×</button>
               </div>
             ))}
             <button type="button" onClick={() => setNewArticle(p => ({ ...p, variants: [...(p.variants||[]), { label:'', prixSupplement:0 }] }))}
-              className="text-xs font-semibold text-blue-700 hover:text-blue-900 border border-blue-300 rounded-xl px-3 py-1.5 hover:bg-blue-100 transition">
+              className="text-xs font-semibold text-blue-700 hover:text-blue-900 border border-blue-300 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition">
               + Ajouter une variante
             </button>
           </div>
           {/* Menu du jour */}
-          <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
             <div className="flex items-center gap-2">
               <input type="checkbox" id="new-menu-jour" checked={!!newArticle.estMenuDuJour}
                 onChange={e => setNewArticle(p => ({ ...p, estMenuDuJour: e.target.checked }))}
@@ -500,13 +509,13 @@ export default function MenuTab({ restaurantId, token }) {
                   <label className="mb-1 block text-xs font-semibold text-amber-900">Activation (date & heure)</label>
                   <input type="datetime-local" value={newArticle.activationDate}
                     onChange={e => setNewArticle(p => ({ ...p, activationDate: e.target.value }))}
-                    className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                    className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-semibold text-amber-900">Expiration (date & heure)</label>
                   <input type="datetime-local" value={newArticle.expirationDate}
                     onChange={e => setNewArticle(p => ({ ...p, expirationDate: e.target.value }))}
-                    className="w-full rounded-xl border border-amber-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
+                    className="w-full rounded-lg border border-amber-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-amber-400" />
                   <p className="mt-1 text-[10px] text-amber-700">Désactivé automatiquement à cette heure</p>
                 </div>
               </div>
@@ -516,7 +525,7 @@ export default function MenuTab({ restaurantId, token }) {
           <div className="flex flex-wrap gap-3 pt-2">
             <button
               onClick={handleAddArticle}
-              className="rounded-2xl bg-[#EA580C] px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
+              className="rounded-lg bg-[#EA580C] px-6 py-3 font-semibold text-white shadow-sm transition hover:bg-[#C2410C]"
             >
               Créer l'article
             </button>
@@ -525,7 +534,7 @@ export default function MenuTab({ restaurantId, token }) {
                 setShowAddForm(false);
                 setFormErrors({});
               }}
-              className="rounded-2xl border border-[#E2E8F0] bg-white px-6 py-3 font-semibold text-[#1A0C00] transition hover:bg-[#FFF0DF]"
+              className="rounded-lg border border-[#E2E8F0] bg-white px-6 py-3 font-semibold text-[#1A0C00] transition hover:bg-[#FFF0DF]"
             >
               Annuler
             </button>
@@ -533,7 +542,7 @@ export default function MenuTab({ restaurantId, token }) {
         </div>
       )}
 
-      <div className="rounded-[24px] border border-[#E2E8F0] bg-white p-4 shadow-sm">
+      <div className="rounded-[24px] border border-[#E2E8F0] bg-white p-4 shadow-card">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#A8A29E]" />
           <input
@@ -541,7 +550,7 @@ export default function MenuTab({ restaurantId, token }) {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder="Rechercher un article ou une catégorie..."
-            className="w-full rounded-2xl border border-[#E2E8F0] bg-white py-3 pl-10 pr-4 outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C]"
+            className="w-full rounded-lg border border-[#E2E8F0] bg-white py-3 pl-10 pr-4 outline-none transition focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C]"
           />
         </div>
       </div>
@@ -551,11 +560,11 @@ export default function MenuTab({ restaurantId, token }) {
           filteredArticles.map((a) => (
             <div
               key={a.id}
-              className="rounded-[24px] border border-[#E2E8F0] bg-white p-4 shadow-sm"
+              className="rounded-[24px] border border-[#E2E8F0] bg-white p-4 shadow-card"
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-[#FFF0DF] text-2xl shadow-sm">
+                  <div className="flex h-16 w-16 items-center justify-center overflow-hidden rounded-lg bg-[#FFF0DF] text-2xl shadow-sm">
                     <img
                       src={getArticleImage(a, { width: 128, quality: 70 })}
                       alt={a.nom}
@@ -612,7 +621,7 @@ export default function MenuTab({ restaurantId, token }) {
                   {/* Edit */}
                   <button
                     onClick={() => setEditArticle({ ...a, prix: String(a.prix), stock: String(a.stock ?? 0), categorieId: a.categorie?.id || a.categorieId || '', variants: Array.isArray(a.variants) ? a.variants : [] })}
-                    className="p-1.5 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                    className="p-1.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
                     title="Modifier"
                   >
                     <Pencil className="w-3.5 h-3.5" />
@@ -620,7 +629,7 @@ export default function MenuTab({ restaurantId, token }) {
                   {/* Delete */}
                   <button
                     onClick={() => handleDeleteArticle(a.id)}
-                    className="p-1.5 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
+                    className="p-1.5 rounded-lg bg-red-50 text-red-500 hover:bg-red-100 transition-colors"
                     title="Supprimer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
@@ -641,7 +650,7 @@ export default function MenuTab({ restaurantId, token }) {
       {/* ── Edit Article Modal ── */}
       {editArticle && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.target === e.currentTarget && setEditArticle(null)}>
-          <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden">
+          <div className="bg-white rounded-lg w-full max-w-md shadow-2xl overflow-hidden">
             <div className="bg-[#EA580C] px-6 py-4 flex items-center justify-between">
               <h3 className="text-white font-extrabold">Modifier l'article</h3>
               <button onClick={() => setEditArticle(null)} className="text-white/70 hover:text-white"><X className="w-4 h-4" /></button>
@@ -656,7 +665,7 @@ export default function MenuTab({ restaurantId, token }) {
                 <div key={f.k} className="space-y-1">
                   <label className="text-xs font-semibold text-[#1A1A1A]">{f.label}</label>
                   <input type={f.type} value={editArticle[f.k] || ''} onChange={e => setEditArticle(p => ({ ...p, [f.k]: e.target.value }))}
-                    className="w-full bg-[#FFF0DF] border-0 rounded-xl px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40" />
+                    className="w-full bg-[#FFF0DF] border-0 rounded-lg px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40" />
                 </div>
               ))}
               {/* Photo article */}
@@ -665,38 +674,38 @@ export default function MenuTab({ restaurantId, token }) {
                 <div className="flex gap-3 items-start">
                   <div className="flex-1 space-y-2">
                     <input type="text" value={editArticle.photoUrl || ''} onChange={e => setEditArticle(p => ({ ...p, photoUrl: e.target.value }))}
-                      placeholder="URL de la photo" className="w-full bg-[#FFF0DF] border-0 rounded-xl px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40" />
-                    <label className={`flex items-center gap-2 cursor-pointer text-xs font-semibold px-3 py-2 rounded-xl border border-dashed border-[#EA580C]/40 text-[#EA580C] hover:bg-[#FFF0DF] transition ${uploadingEdit ? 'opacity-60 pointer-events-none' : ''}`}>
+                      placeholder="URL de la photo" className="w-full bg-[#FFF0DF] border-0 rounded-lg px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40" />
+                    <label className={`flex items-center gap-2 cursor-pointer text-xs font-semibold px-3 py-2 rounded-lg border border-dashed border-[#EA580C]/40 text-[#EA580C] hover:bg-[#FFF0DF] transition ${uploadingEdit ? 'opacity-60 pointer-events-none' : ''}`}>
                       {uploadingEdit ? 'Upload en cours…' : '📷 Télécharger une photo'}
                       <input type="file" accept="image/*" className="hidden" disabled={uploadingEdit}
                         onChange={e => handleEditFileUpload(e.target.files[0])} />
                     </label>
                   </div>
                   {editArticle.photoUrl ? (
-                    <div className="w-20 h-20 rounded-xl overflow-hidden border border-[#E2E8F0] shadow-sm flex-shrink-0">
+                    <div className="w-20 h-20 rounded-lg overflow-hidden border border-[#E2E8F0] shadow-sm flex-shrink-0">
                       <img src={editArticle.photoUrl} alt="Aperçu" className="w-full h-full object-cover" />
                     </div>
                   ) : (
-                    <div className="w-20 h-20 rounded-xl bg-[#FFF0DF] flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>
+                    <div className="w-20 h-20 rounded-lg bg-[#FFF0DF] flex items-center justify-center text-2xl flex-shrink-0">🍽️</div>
                   )}
                 </div>
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-[#1A1A1A]">Catégorie</label>
                 <select value={editArticle.categorieId || ''} onChange={e => setEditArticle(p => ({ ...p, categorieId: e.target.value }))}
-                  className="w-full bg-[#FFF0DF] border-0 rounded-xl px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40">
+                  className="w-full bg-[#FFF0DF] border-0 rounded-lg px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40">
                   <option value="">Sélectionner…</option>
                   {categories.map(c => <option key={c.id} value={c.id}>{c.nom}</option>)}
                 </select>
               </div>
               {/* Prix promo */}
-              <div className="rounded-xl bg-[#FFF0DF] p-3 space-y-2">
+              <div className="rounded-lg bg-[#FFF0DF] p-3 space-y-2">
                 <p className="text-xs font-bold text-[#EA580C] uppercase tracking-wide">Prix promotionnel (optionnel)</p>
                 <div className="space-y-1">
                   <label className="text-xs font-semibold text-[#1A1A1A]">Prix promo (F CFA)</label>
                   <input type="number" min="0" value={editArticle.prixPromo || ''} onChange={e => setEditArticle(p => ({ ...p, prixPromo: e.target.value }))}
                     placeholder="Ex : 2 500"
-                    className="w-full bg-white border border-[#E2E8F0] rounded-xl px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40" />
+                    className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3 py-2.5 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-[#EA580C]/40" />
                 </div>
                 <div className="flex items-center gap-2">
                   <input type="checkbox" id="edit-promo-actif" checked={!!editArticle.promoActif}
@@ -705,27 +714,27 @@ export default function MenuTab({ restaurantId, token }) {
                 </div>
               </div>
               {/* Variantes */}
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 space-y-3">
+              <div className="rounded-lg border border-blue-200 bg-blue-50 p-4 space-y-3">
                 <p className="text-xs font-bold text-blue-900">🔀 Variantes (tailles / suppléments)</p>
                 {(editArticle.variants || []).map((v, idx) => (
                   <div key={idx} className="flex gap-2 items-center">
                     <input type="text" placeholder="Label" value={v.label || ''}
                       onChange={e => setEditArticle(p => { const vs=[...( p.variants||[])]; vs[idx]={...vs[idx],label:e.target.value}; return {...p,variants:vs}; })}
-                      className="flex-1 bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
+                      className="flex-1 bg-white border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
                     <input type="number" placeholder="Supplément" min="0" value={v.prixSupplement || 0}
                       onChange={e => setEditArticle(p => { const vs=[...(p.variants||[])]; vs[idx]={...vs[idx],prixSupplement:e.target.value}; return {...p,variants:vs}; })}
-                      className="w-32 bg-white border border-blue-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
+                      className="w-32 bg-white border border-blue-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400/50" />
                     <button type="button" onClick={() => setEditArticle(p => ({ ...p, variants: (p.variants||[]).filter((_,i)=>i!==idx) }))}
                       className="text-red-400 hover:text-red-600 text-lg font-bold px-1">×</button>
                   </div>
                 ))}
                 <button type="button" onClick={() => setEditArticle(p => ({ ...p, variants: [...(p.variants||[]), { label:'', prixSupplement:0 }] }))}
-                  className="text-xs font-semibold text-blue-700 border border-blue-300 rounded-xl px-3 py-1.5 hover:bg-blue-100 transition">
+                  className="text-xs font-semibold text-blue-700 border border-blue-300 rounded-lg px-3 py-1.5 hover:bg-blue-100 transition">
                   + Ajouter une variante
                 </button>
               </div>
               {/* Menu du jour */}
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 space-y-3">
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 space-y-3">
                 <div className="flex items-center gap-2">
                   <input type="checkbox" id="edit-menu-jour" checked={!!editArticle.estMenuDuJour}
                     onChange={e => setEditArticle(p => ({ ...p, estMenuDuJour: e.target.checked }))} />
@@ -736,12 +745,12 @@ export default function MenuTab({ restaurantId, token }) {
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-amber-700">Activation (date & heure)</label>
                       <input type="datetime-local" value={editArticle.activationDate || ''} onChange={e => setEditArticle(p => ({ ...p, activationDate: e.target.value }))}
-                        className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+                        className="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
                     </div>
                     <div className="space-y-1">
                       <label className="text-xs font-semibold text-amber-700">Expiration (date & heure)</label>
                       <input type="datetime-local" value={editArticle.expirationDate || ''} onChange={e => setEditArticle(p => ({ ...p, expirationDate: e.target.value }))}
-                        className="w-full bg-white border border-amber-200 rounded-xl px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
+                        className="w-full bg-white border border-amber-200 rounded-lg px-3 py-2 text-sm text-[#1A1A1A] focus:outline-none focus:ring-2 focus:ring-amber-400/50" />
                     </div>
                   </div>
                 )}
@@ -751,7 +760,7 @@ export default function MenuTab({ restaurantId, token }) {
                 <label htmlFor="edit-dispo" className="text-sm font-semibold text-[#1A1A1A]">Disponible</label>
               </div>
               <button onClick={handleUpdateArticle}
-                className="w-full py-3 rounded-2xl bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-sm flex items-center justify-center gap-2">
+                className="w-full py-3 rounded-lg bg-[#EA580C] hover:bg-[#C2410C] text-white font-bold text-sm flex items-center justify-center gap-2">
                 <Pencil className="w-3.5 h-3.5" />Enregistrer les modifications
               </button>
             </div>

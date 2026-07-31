@@ -164,7 +164,7 @@ export default function StocksTab({ restaurantId }) {
   return (
     <div className="space-y-5">
       {toast && (
-        <div className="fixed bottom-4 right-4 z-50 rounded-2xl bg-[#EA580C] px-4 py-3 text-sm font-semibold text-white shadow-xl">{toast}</div>
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-[#EA580C] px-4 py-3 text-sm font-semibold text-white shadow-xl">{toast}</div>
       )}
 
       {/* KPI header */}
@@ -174,8 +174,8 @@ export default function StocksTab({ restaurantId }) {
           { label: 'Niveaux OK', value: okItems, icon: CheckCircle, iconBg: '#F0FDF4', iconColor: '#16A34A' },
           { label: 'Alertes critiques', value: criticalItems.length, icon: AlertTriangle, iconBg: criticalItems.length > 0 ? '#FEF2F2' : '#F0FDF4', iconColor: criticalItems.length > 0 ? '#DC2626' : '#16A34A' },
         ].map(({ label, value, icon: Icon, iconBg, iconColor }) => (
-          <div key={label} className="rounded-2xl bg-white border border-[#E2E8F0] p-4 shadow-sm flex items-center gap-4">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
+          <div key={label} className="rounded-lg bg-white border border-[#E2E8F0] p-4 shadow-card flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: iconBg }}>
               <Icon className="w-5 h-5" style={{ color: iconColor }} />
             </div>
             <div>
@@ -188,7 +188,7 @@ export default function StocksTab({ restaurantId }) {
 
       {/* Alert banner */}
       {criticalItems.length > 0 && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-3">
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 flex items-start gap-3">
           <AlertTriangle className="w-4 h-4 text-red-500 mt-0.5 flex-shrink-0" />
           <p className="text-sm text-red-700">
             <span className="font-bold">{criticalItems.length} article{criticalItems.length > 1 ? 's' : ''} en alerte :</span>{' '}
@@ -198,14 +198,14 @@ export default function StocksTab({ restaurantId }) {
       )}
 
       {/* Inventory table */}
-      <div className="rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-[#E2E8F0] bg-white shadow-card overflow-hidden">
         <div className="flex items-center justify-between px-5 py-4 border-b border-[#F4F6F8]">
           <div>
             <h4 className="text-sm font-bold text-[#1A0C00]">Inventaire</h4>
             <p className="text-xs text-[#8B6E50] mt-0.5">Vue détaillée par article avec niveau de stock</p>
           </div>
           <button onClick={loadStocks}
-            className="flex items-center gap-2 rounded-xl border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-semibold text-[#475569] hover:border-[#EA580C]/40 hover:text-[#EA580C] transition-colors">
+            className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-semibold text-[#475569] hover:border-[#EA580C]/40 hover:text-[#EA580C] transition-colors">
             <RefreshCcw className="w-3.5 h-3.5" />
             Actualiser
           </button>
@@ -252,7 +252,7 @@ export default function StocksTab({ restaurantId }) {
       </div>
 
       {/* Entrée de stock / Ajustement — tabs */}
-      <div className="rounded-2xl border border-[#E2E8F0] bg-white shadow-sm overflow-hidden">
+      <div className="rounded-lg border border-[#E2E8F0] bg-white shadow-card overflow-hidden">
         {/* Tab switcher */}
         <div className="flex border-b border-[#E2E8F0]">
           <button
@@ -293,7 +293,7 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Article</label>
                   <select value={entreeForm.articleId}
                     onChange={e => setEntreeForm({ ...entreeForm, articleId: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
                     <option value="">Sélectionner un article</option>
                     {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
                   </select>
@@ -303,13 +303,13 @@ export default function StocksTab({ restaurantId }) {
                     Fournisseur <span className="text-red-500">*</span>
                   </label>
                   {fournisseurs.length === 0 ? (
-                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2.5">
+                    <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2.5">
                       Aucun fournisseur actif — contactez l'administrateur
                     </p>
                   ) : (
                     <select value={entreeForm.fournisseurId}
                       onChange={e => setEntreeForm({ ...entreeForm, fournisseurId: e.target.value })}
-                      className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
                       <option value="">Sélectionner un fournisseur</option>
                       {fournisseurs.map(f => <option key={f.id} value={f.id}>{f.nom}{f.delaiLivraison ? ` (${f.delaiLivraison}j)` : ''}</option>)}
                     </select>
@@ -319,19 +319,19 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Quantité reçue</label>
                   <input type="number" min="1" value={entreeForm.quantity}
                     onChange={e => setEntreeForm({ ...entreeForm, quantity: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
                     placeholder="Ex: 10" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Motif / Référence bon de livraison</label>
                   <input type="text" value={entreeForm.motif}
                     onChange={e => setEntreeForm({ ...entreeForm, motif: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
                     placeholder="BL-2026-042, livraison hebdo..." />
                 </div>
               </div>
               <button onClick={handleEntreeStock} disabled={saving || !entreeForm.fournisseurId}
-                className="flex items-center gap-2 rounded-xl bg-[#EA580C] px-5 py-3.5 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[#C2410C] disabled:opacity-60">
+                className="flex items-center gap-2 rounded-lg bg-[#EA580C] px-5 py-3.5 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[#C2410C] disabled:opacity-60">
                 {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
                 {saving ? 'Enregistrement...' : 'Enregistrer la réception'}
               </button>
@@ -346,7 +346,7 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Article</label>
                   <select value={adjustmentForm.articleId}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, articleId: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition">
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition">
                     <option value="">Sélectionner un article</option>
                     {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
                   </select>
@@ -355,19 +355,19 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Quantité (+/-)</label>
                   <input type="number" value={adjustmentForm.quantity}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, quantity: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition"
                     placeholder="Ex: -2 (casse)" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Motif</label>
                   <input type="text" value={adjustmentForm.motif}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, motif: e.target.value })}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition"
                     placeholder="Casse, correction inventaire..." />
                 </div>
               </div>
               <button onClick={handleAdjustStock} disabled={saving}
-                className="mt-4 flex items-center gap-2 rounded-xl bg-slate-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 disabled:opacity-60">
+                className="mt-4 flex items-center gap-2 rounded-lg bg-slate-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-900 disabled:opacity-60">
                 {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <RefreshCcw className="w-4 h-4" />}
                 {saving ? 'Enregistrement...' : 'Ajuster'}
               </button>
@@ -380,7 +380,7 @@ export default function StocksTab({ restaurantId }) {
                   <p className="text-xs text-[#8B6E50] mt-0.5">Saisissez le stock réel compté — l'écart est calculé automatiquement</p>
                 </div>
                 <button onClick={exportRapportCSV} disabled={rapportItems.length === 0}
-                  className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition">
+                  className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50 transition">
                   <FileText className="w-3.5 h-3.5" /> Export CSV (Excel)
                 </button>
               </div>
@@ -433,7 +433,7 @@ export default function StocksTab({ restaurantId }) {
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Fournisseur <span className="text-red-500">*</span></label>
                   <select value={bonForm.fournisseurId} onChange={e => setBonForm(p => ({ ...p, fournisseurId: e.target.value }))}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition">
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-1 focus:ring-violet-400 transition">
                     <option value="">Sélectionner…</option>
                     {fournisseurs.map(f => <option key={f.id} value={f.id}>{f.nom}</option>)}
                   </select>
@@ -441,7 +441,7 @@ export default function StocksTab({ restaurantId }) {
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Date de livraison souhaitée</label>
                   <input type="date" value={bonForm.dateLivraison} onChange={e => setBonForm(p => ({ ...p, dateLivraison: e.target.value }))}
-                    className="w-full rounded-xl border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-1 transition" />
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-violet-400 focus:ring-1 transition" />
                 </div>
               </div>
 
@@ -463,13 +463,13 @@ export default function StocksTab({ restaurantId }) {
                   </div>
                 ))}
                 <button type="button" onClick={() => setBonForm(p => ({ ...p, lignes: [...p.lignes, { article:'', quantite:'', prixUnit:'' }] }))}
-                  className="text-xs font-semibold text-violet-700 border border-violet-300 rounded-xl px-3 py-1.5 hover:bg-violet-50 transition">
+                  className="text-xs font-semibold text-violet-700 border border-violet-300 rounded-lg px-3 py-1.5 hover:bg-violet-50 transition">
                   + Ajouter une ligne
                 </button>
               </div>
 
               <button onClick={generateBonCommande}
-                className="flex items-center gap-2 rounded-xl bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700">
+                className="flex items-center gap-2 rounded-lg bg-violet-600 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-violet-700">
                 <Printer className="w-4 h-4" /> Générer le PDF
               </button>
             </>

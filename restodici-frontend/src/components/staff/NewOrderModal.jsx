@@ -16,12 +16,16 @@ import {
 const sans    = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const FOOD_IMGS = [
-  'photo-1665332195309-9d75071138f0','photo-1665400808116-f0e6339b7e9a',
-  'photo-1664993101841-036f189719b6','photo-1664992960082-0ea299a9c53e',
-  'photo-1665333048952-a3ee97714c6b','photo-1665332305771-e49a5dd5ba80',
-  'photo-1665334217407-6688e6941a47','photo-1665332561290-cc6757172890',
-  'photo-1665401015549-712c0dc5ef85','photo-1603496987674-79600a000f55',
-  'photo-1773620494293-e9e075dd48fd','photo-1665833613236-7c1d087463b1',
+  'photo-1544025162-8111f466cb1e', // Jollof
+  'photo-1604908176997-125f25cc6f3d', // Poulet braisé
+  'photo-1598514982205-f36b96d1e8d4', // Brochettes
+  'photo-1606491956689-2ea866880c84', // Alloco
+  'photo-1555939594-58d7cb561ad1', // BBQ
+  'photo-1605680193132-ce2a9bdffde0', // Poisson braisé
+  'photo-1594221708779-94832f4320d1', // Poulet épicé
+  'photo-1603360946369-dc9bb6258143', // Repas complet
+  'photo-1512621776951-a57141f2eefd', // Salade
+  'photo-1574484284002-952d92456975', // Burger
 ];
 const fallback = (i) =>
   `https://images.unsplash.com/${FOOD_IMGS[i % FOOD_IMGS.length]}?q=80&w=300&auto=format&fit=crop`;

@@ -191,14 +191,23 @@ export default function OnboardingWizard() {
     dismiss();
   };
 
-  if (!visible || !steps.length) return null;
+  if (!steps.length) return null;
 
   const current = steps[step];
   const Icon    = current.icon;
   const isLast  = step === steps.length - 1;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(17,16,13,0.60)', backdropFilter: 'blur(4px)' }}>
+    <AnimatePresence>
+      {visible && (
+      <motion.div
+        key="onboarding-overlay"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15 }}
+        style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, background: 'rgba(17,16,13,0.60)', backdropFilter: 'blur(4px)' }}
+      >
       <div style={{ position: 'relative', width: '100%', maxWidth: 420, borderRadius: 24, background: '#fff', boxShadow: '0 24px 80px rgba(0,0,0,0.20)', overflow: 'hidden' }}>
 
         {/* Bande accent */}
@@ -275,6 +284,8 @@ export default function OnboardingWizard() {
           </button>
         </div>
       </div>
-    </div>
+      </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

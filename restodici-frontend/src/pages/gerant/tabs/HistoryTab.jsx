@@ -58,7 +58,7 @@ export default function HistoryTab({ restaurantId }) {
           <select
             value={limit}
             onChange={e => setLimit(Number(e.target.value))}
-            className="text-sm rounded-xl border border-[#E2E8F0] px-3 py-2 bg-white focus:outline-none"
+            className="text-sm rounded-lg border border-[#E2E8F0] px-3 py-2 bg-white focus:outline-none"
           >
             <option value={20}>20 derniers</option>
             <option value={50}>50 derniers</option>
@@ -68,7 +68,7 @@ export default function HistoryTab({ restaurantId }) {
           <button
             onClick={() => void load()}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold text-white disabled:opacity-60"
+            className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
             style={{ background: '#EA580C' }}
           >
             <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
@@ -78,7 +78,7 @@ export default function HistoryTab({ restaurantId }) {
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-red-50 border border-red-200 text-red-700 text-sm">
+        <div className="flex items-center gap-3 px-4 py-3 rounded-lg bg-red-50 border border-red-200 text-red-700 text-sm">
           <AlertTriangle className="w-4 h-4 shrink-0" />
           {error}
         </div>
@@ -89,7 +89,7 @@ export default function HistoryTab({ restaurantId }) {
           <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#EA580C', borderTopColor: 'transparent' }} />
         </div>
       ) : activity.length === 0 ? (
-        <div className="py-16 text-center rounded-2xl border border-[#E2E8F0] bg-white">
+        <div className="py-16 text-center rounded-lg border border-[#E2E8F0] bg-white">
           <Activity className="w-10 h-10 text-[#D1D5DB] mx-auto mb-3" />
           <p className="text-sm font-semibold text-[#374151]">Aucune activité enregistrée</p>
           <p className="text-xs text-[#9CA3AF] mt-1">Les changements de statut s'afficheront ici</p>
@@ -99,7 +99,7 @@ export default function HistoryTab({ restaurantId }) {
           {Object.entries(byDay).map(([day, entries]) => (
             <div key={day}>
               <p className="text-xs font-bold text-[#9CA3AF] uppercase tracking-wider mb-3">{day}</p>
-              <div className="bg-white rounded-2xl border border-[#E2E8F0] overflow-hidden divide-y divide-[#FFF5E6]">
+              <div className="bg-white rounded-lg border border-[#E2E8F0] overflow-hidden divide-y divide-[#FFF5E6]">
                 {entries.map(entry => {
                   const prevStyle = entry.statutPrecedent ? STATUS_COLORS_MAP[entry.statutPrecedent] : null;
                   const nextStyle = STATUS_COLORS_MAP[entry.statutNouvel] || { bg: '#F3F4F6', color: '#374151' };

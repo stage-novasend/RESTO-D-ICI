@@ -46,7 +46,9 @@ export function isValidCiMobile(raw: string | undefined | null): boolean {
 }
 
 /** Détecte l'opérateur d'un numéro ivoirien, ou null si inconnu/invalide. */
-export function detectCiOperator(raw: string | undefined | null): MobileOperator | null {
+export function detectCiOperator(
+  raw: string | undefined | null,
+): MobileOperator | null {
   const n = normalizeCiNumber(raw);
   if (!/^0\d{9}$/.test(n)) return null;
   const prefix = n.slice(0, 2);
@@ -73,14 +75,20 @@ export function checkPhoneForOperator(
 ): PhoneCheck {
   const normalized = normalizeCiNumber(raw);
   if (!String(raw ?? '').trim()) {
-    return { ok: false, normalized, operator: null, reason: `Numéro requis pour un paiement ${OPERATOR_LABEL[expected]}.` };
+    return {
+      ok: false,
+      normalized,
+      operator: null,
+      reason: `Numéro requis pour un paiement ${OPERATOR_LABEL[expected]}.`,
+    };
   }
   if (!/^0\d{9}$/.test(normalized)) {
     return {
       ok: false,
       normalized,
       operator: null,
-      reason: 'Numéro invalide : un numéro ivoirien comporte 10 chiffres (ex. 07 XX XX XX XX).',
+      reason:
+        'Numéro invalide : un numéro ivoirien comporte 10 chiffres (ex. 07 XX XX XX XX).',
     };
   }
   const operator = detectCiOperator(normalized);

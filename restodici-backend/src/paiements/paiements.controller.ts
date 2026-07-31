@@ -70,10 +70,7 @@ export class PaiementsController {
   // ── Statut d'un paiement (polling front) ────────────────────────────────────
   @Get('statut/:commandeId')
   @UseGuards(AuthGuard('jwt'))
-  async getStatut(
-    @Param('commandeId') commandeId: string,
-    @Req() req: any,
-  ) {
+  async getStatut(@Param('commandeId') commandeId: string, @Req() req: any) {
     return this.paiementsService.getPaymentStatus(commandeId, req.user);
   }
 
@@ -85,7 +82,9 @@ export class PaiementsController {
     // [SÉCURITÉ] Signature obligatoire — webhook rejeté sans secret ou signature (audit §3.2)
     const secret = this.config.get<string>('NOVASEND_WEBHOOK_SECRET');
     if (!secret) {
-      this.logger.error('NOVASEND_WEBHOOK_SECRET non configuré — webhook rejeté');
+      this.logger.error(
+        'NOVASEND_WEBHOOK_SECRET non configuré — webhook rejeté',
+      );
       return { status: 'misconfigured' };
     }
 
@@ -121,7 +120,9 @@ export class PaiementsController {
     // pourrait POST {cpm_trans_id, cpm_result:'00'} et valider une commande sans payer.
     const secret = this.config.get<string>('CINETPAY_WEBHOOK_SECRET');
     if (!secret) {
-      this.logger.error('CINETPAY_WEBHOOK_SECRET non configuré — webhook rejeté');
+      this.logger.error(
+        'CINETPAY_WEBHOOK_SECRET non configuré — webhook rejeté',
+      );
       return { status: 'misconfigured' };
     }
     if (!tokenHeader) {

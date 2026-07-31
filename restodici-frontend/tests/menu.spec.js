@@ -85,6 +85,5 @@ test('page / : la navigation principale est visible', async ({ page }) => {
   await page.goto('/');
   // Au moins un élément de navigation doit exister (header, nav, ou lien de connexion)
   const navElements = page.locator('nav, header, a[href="/login"]');
-  const count = await navElements.count();
-  expect(count).toBeGreaterThan(0);
+  await expect(navElements).not.toHaveCount(0);
 });

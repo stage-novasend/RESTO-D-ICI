@@ -125,8 +125,39 @@ export const YELLOW_L     = YELLOW_LIGHT;
 export const RED_L        = RED_LIGHT;
 export const GREEN_L      = GREEN_LIGHT;
 
-/* ── Dégradés prêts à l'emploi ── */
+/* ── Dégradés prêts à l'emploi ──
+   Conservé pour compat, mais le style "flat enterprise" (cf. SHADOW/RADIUS
+   ci-dessous) n'en fait plus l'état par défaut des boutons/cartes : préférer
+   un remplissage plat + SHADOW.sm, réserver le dégradé aux accents ponctuels
+   (ex: icône de marque). */
 export const GRADIENT_ORANGE = `linear-gradient(135deg, ${ORANGE}, ${ORANGE_DARK})`;
+
+/* ═══════════════════════════════════════════════════════════════
+   Système "flat enterprise" — ombres naturelles restreintes (pas de glow
+   coloré ni de glassmorphism), rayons cohérents, grille d'espacement 8px.
+   Toute nouvelle surface (carte, bouton, modal, champ) doit piocher ici
+   plutôt que d'inventer un box-shadow/border-radius ad hoc.
+   ═══════════════════════════════════════════════════════════════ */
+export const SHADOW = {
+  xs: '0 1px 2px rgba(15, 23, 42, 0.05)',
+  sm: '0 1px 3px rgba(15, 23, 42, 0.06), 0 1px 2px rgba(15, 23, 42, 0.04)',
+  md: '0 4px 12px rgba(15, 23, 42, 0.08)',
+  lg: '0 12px 28px rgba(15, 23, 42, 0.10)',
+  // Anneau de focus clavier — accessibilité, pas décoratif.
+  focus: `0 0 0 3px ${ORANGE}33`,
+};
+
+export const RADIUS = {
+  sm: 8,
+  md: 12,
+  lg: 16,
+  xl: 20,
+  pill: 999,
+};
+
+/* Grille d'espacement 8px : 4 (demi-pas, exception ponctuelle) puis
+   multiples de 8. Utiliser SPACE[n] plutôt qu'un nombre magique. */
+export const SPACE = [0, 4, 8, 12, 16, 20, 24, 32, 40, 48, 64];
 
 /* ── Objet regroupé (import unique pratique) ── */
 export const COLORS = {
@@ -139,6 +170,9 @@ export const COLORS = {
   green: GREEN, greenDark: GREEN_DARK, greenLight: GREEN_LIGHT,
   blue: BLUE, blueLight: BLUE_LIGHT,
   gradientOrange: GRADIENT_ORANGE,
+  shadow: SHADOW,
+  radius: RADIUS,
+  space: SPACE,
 };
 
 export default COLORS;

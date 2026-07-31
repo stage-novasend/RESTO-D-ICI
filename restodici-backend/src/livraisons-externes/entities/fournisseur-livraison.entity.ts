@@ -1,13 +1,17 @@
 import {
-  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn,
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from 'typeorm';
 
 export enum TypeFournisseurLivraison {
-  YANGO    = 'YANGO',
-  GOZEM    = 'GOZEM',
-  KOOLI    = 'KOOLI',
+  YANGO = 'YANGO',
+  GOZEM = 'GOZEM',
+  KOOLI = 'KOOLI',
   JUMIA_FOOD = 'JUMIA_FOOD',
-  CUSTOM   = 'CUSTOM',
+  CUSTOM = 'CUSTOM',
 }
 
 @Entity('fournisseurs_livraison')
@@ -18,7 +22,11 @@ export class FournisseurLivraison {
   @Column()
   nom!: string;
 
-  @Column({ type: 'enum', enum: TypeFournisseurLivraison, default: TypeFournisseurLivraison.CUSTOM })
+  @Column({
+    type: 'enum',
+    enum: TypeFournisseurLivraison,
+    default: TypeFournisseurLivraison.CUSTOM,
+  })
   type!: TypeFournisseurLivraison;
 
   @Column({ nullable: true })

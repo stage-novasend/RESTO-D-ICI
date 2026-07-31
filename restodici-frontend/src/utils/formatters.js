@@ -2,8 +2,9 @@
 
 // 10 000 → "10.000 FCFA" (point comme séparateur de milliers)
 export const formatFCFA = (amount) => {
+  if (amount === null || amount === undefined || amount === '') return '-';
   const n = Number(amount);
-  if (isNaN(n)) return '—';
+  if (isNaN(n)) return '-';
   return Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') + ' FCFA';
 };
 

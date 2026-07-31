@@ -244,7 +244,12 @@ export class AdminController {
     @Body('note') note: string,
     @Req() req: { user: { id: string } },
   ) {
-    return this.adminService.resolveContestation(id, req.user.id, accepted, note || '');
+    return this.adminService.resolveContestation(
+      id,
+      req.user.id,
+      accepted,
+      note || '',
+    );
   }
 
   @Patch('b2b/:id/valider')
@@ -417,7 +422,11 @@ export class AdminController {
   @Roles('ADMIN')
   @HttpCode(HttpStatus.OK)
   purgeHistorique(
-    @Body() body: { target: 'audit' | 'commandes' | 'livraisons' | 'notifications' | 'all'; before?: string },
+    @Body()
+    body: {
+      target: 'audit' | 'commandes' | 'livraisons' | 'notifications' | 'all';
+      before?: string;
+    },
   ) {
     return this.adminService.purgeHistorique(body.target, body.before);
   }

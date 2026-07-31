@@ -1,4 +1,4 @@
-import { MigrationInterface, QueryRunner } from "typeorm";
+import { MigrationInterface, QueryRunner } from 'typeorm';
 
 /**
  * Crée le compte Admin Système par défaut si aucun compte avec cet email
@@ -15,25 +15,26 @@ import { MigrationInterface, QueryRunner } from "typeorm";
  * force son remplacement.
  */
 export class SeedAdminUser1785451722364 implements MigrationInterface {
+  public async up(queryRunner: QueryRunner): Promise<void> {
+    const existing = await queryRunner.query(
+      `SELECT id FROM users WHERE email = $1`,
+      ['admin@restodici.ci'],
+    );
+    if (existing.length > 0) return;
 
-    public async up(queryRunner: QueryRunner): Promise<void> {
-        const existing = await queryRunner.query(
-            `SELECT id FROM users WHERE email = $1`,
-            ['admin@restodici.ci'],
-        );
-        if (existing.length > 0) return;
-
-        await queryRunner.query(
-            `INSERT INTO users (id, nom, prenom, email, password, role, actif, "emailVerified", "createdAt", "updatedAt")
+    await queryRunner.query(
+      `INSERT INTO users (id, nom, prenom, email, password, role, actif, "emailVerified", "createdAt", "updatedAt")
              VALUES (gen_random_uuid(), 'Admin', 'Système', $1, $2, 'ADMIN', true, true, NOW(), NOW())`,
-            ['admin@restodici.ci', '$2b$12$3pF8YzcYxOZt7NOS7R6tyOVE5eJjwp8y8QomEPBWEN/Obm5in6ebG'],
-        );
-    }
+      [
+        'admin@restodici.ci',
+        '$2b$12$3pF8YzcYxOZt7NOS7R6tyOVE5eJjwp8y8QomEPBWEN/Obm5in6ebG',
+      ],
+    );
+  }
 
-    public async down(queryRunner: QueryRunner): Promise<void> {
-        await queryRunner.query(
-            `DELETE FROM users WHERE email = 'admin@restodici.ci' AND role = 'ADMIN'`,
-        );
-    }
-
+  public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(
+      `DELETE FROM users WHERE email = 'admin@restodici.ci' AND role = 'ADMIN'`,
+    );
+  }
 }

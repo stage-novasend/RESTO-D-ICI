@@ -70,23 +70,8 @@ function PageLoader() {
 
 // fondu opacity 0→1 à chaque changement de route
 function RouteTransition({ children }) {
-  const location = useLocation();
-  const ref = useRef(null);
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    el.style.animationName = 'none';
-    void el.offsetHeight; // force reflow
-    el.style.animationName = 'pageIn';
-  }, [location.key]);
-  return (
-    <div ref={ref} style={{
-      animationName: 'pageIn', animationDuration: '0.18s',
-      animationTimingFunction: 'ease-out', animationFillMode: 'both',
-    }}>
-      {children}
-    </div>
-  );
+  // Désactivé pour une navigation instantanée et sans clignotement (grande fluidité)
+  return <>{children}</>;
 }
 
 // gardes de route — redirigent si le rôle ne correspond pas

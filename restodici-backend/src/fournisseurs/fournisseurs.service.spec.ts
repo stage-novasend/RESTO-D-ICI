@@ -44,7 +44,10 @@ describe('FournisseursService', () => {
 
   it('findOneOrFail : renvoie le fournisseur actif', async () => {
     repo.findOne.mockResolvedValue({ id: 'f1', actif: true });
-    expect(await service.findOneOrFail('f1')).toEqual({ id: 'f1', actif: true });
+    expect(await service.findOneOrFail('f1')).toEqual({
+      id: 'f1',
+      actif: true,
+    });
   });
 
   it('findOneOrFail : 404 si introuvable/inactif', async () => {

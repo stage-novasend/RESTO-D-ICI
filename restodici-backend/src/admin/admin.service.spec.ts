@@ -30,7 +30,10 @@ describe('AdminService', () => {
   const paymentRepo: any = {};
   // Le service diffuse les changements aux admins connectés : on vérifie
   // seulement qu'il n'explose pas, la diffusion est testée de bout en bout.
-  const gatewayMock: any = { emitToAdmins: jest.fn(), emitToManagers: jest.fn() };
+  const gatewayMock: any = {
+    emitToAdmins: jest.fn(),
+    emitToManagers: jest.fn(),
+  };
 
   beforeEach(async () => {
     Object.assign(userRepo, {
@@ -83,7 +86,10 @@ describe('AdminService', () => {
         { provide: getRepositoryToken(SystemConfig), useValue: configRepo },
         { provide: getRepositoryToken(Integration), useValue: integRepo },
         { provide: getRepositoryToken(CommissionPlateforme), useValue: {} },
-        { provide: getRepositoryToken(FactureMensuelleB2B), useValue: factureRepo },
+        {
+          provide: getRepositoryToken(FactureMensuelleB2B),
+          useValue: factureRepo,
+        },
         { provide: getRepositoryToken(PaymentMethod), useValue: paymentRepo },
         { provide: CommandesGateway, useValue: gatewayMock },
       ],
@@ -95,12 +101,23 @@ describe('AdminService', () => {
   describe('createUser', () => {
     it('conflit si email existe', async () => {
       userRepo.findOne.mockResolvedValue({ id: 'x' });
-      await expect(service.createUser({ nom: 'D', email: 'a@b.com', password: 'p', role: Role.CLIENT } as any))
-        .rejects.toThrow(ConflictException);
+      await expect(
+        service.createUser({
+          nom: 'D',
+          email: 'a@b.com',
+          password: 'p',
+          role: Role.CLIENT,
+        } as any),
+      ).rejects.toThrow(ConflictException);
     });
     it('crée et ne renvoie pas le mot de passe', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      const r: any = await service.createUser({ nom: 'D', email: 'a@b.com', password: 'ValidPass1', role: Role.CLIENT } as any);
+      const r: any = await service.createUser({
+        nom: 'D',
+        email: 'a@b.com',
+        password: 'ValidPass1',
+        role: Role.CLIENT,
+      });
       expect(r.password).toBeUndefined();
       expect(r.email).toBe('a@b.com');
     });
@@ -109,7 +126,9 @@ describe('AdminService', () => {
   describe('updateUser', () => {
     it('404 si introuvable', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateUser('x', { nom: 'Z' })).rejects.toThrow(NotFoundException);
+      await expect(service.updateUser('x', { nom: 'Z' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('met à jour', async () => {
       userRepo.findOne.mockResolvedValue({ id: 'u1', nom: 'A', password: 'h' });
@@ -126,7 +145,10 @@ describe('AdminService', () => {
     });
     it('inverse actif', async () => {
       userRepo.findOne.mockResolvedValue({ id: 'u1', actif: true });
-      expect(await service.toggleUser('u1')).toEqual({ id: 'u1', actif: false });
+      expect(await service.toggleUser('u1')).toEqual({
+        id: 'u1',
+        actif: false,
+      });
     });
   });
 
@@ -134,27 +156,43 @@ describe('AdminService', () => {
   describe('restaurants', () => {
     it('getRestaurants liste (plafond 500)', async () => {
       await service.getRestaurants();
-      expect(restoRepo.find).toHaveBeenCalledWith(expect.objectContaining({ take: 500 }));
+      expect(restoRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ take: 500 }),
+      );
     });
     it('createRestaurant crée actif', async () => {
-      const r: any = await service.createRestaurant({ nom: 'R', telephone: '07', adresse: 'A' });
+      const r: any = await service.createRestaurant({
+        nom: 'R',
+        telephone: '07',
+        adresse: 'A',
+      });
       expect(r.actif).toBe(true);
     });
     it('updateRestaurant 404 si introuvable', async () => {
       restoRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateRestaurant('x', { nom: 'Z' })).rejects.toThrow(NotFoundException);
+      await expect(service.updateRestaurant('x', { nom: 'Z' })).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('toggleRestaurant inverse actif', async () => {
       restoRepo.findOne.mockResolvedValue({ id: 'r1', actif: false });
-      expect(await service.toggleRestaurant('r1')).toEqual({ id: 'r1', actif: true });
+      expect(await service.toggleRestaurant('r1')).toEqual({
+        id: 'r1',
+        actif: true,
+      });
     });
     it('updateTauxCommission rejette un taux invalide', async () => {
       restoRepo.findOne.mockResolvedValue({ id: 'r1' });
-      await expect(service.updateTauxCommission('r1', 80)).rejects.toThrow(BadRequestException);
+      await expect(service.updateTauxCommission('r1', 80)).rejects.toThrow(
+        BadRequestException,
+      );
     });
     it('updateTauxCommission applique un taux valide', async () => {
       restoRepo.findOne.mockResolvedValue({ id: 'r1' });
-      expect(await service.updateTauxCommission('r1', 8)).toEqual({ restaurantId: 'r1', tauxCommission: 8 });
+      expect(await service.updateTauxCommission('r1', 8)).toEqual({
+        restaurantId: 'r1',
+        tauxCommission: 8,
+      });
     });
   });
 
@@ -162,11 +200,15 @@ describe('AdminService', () => {
   describe('B2B', () => {
     it('getPendingB2B filtre EN_ATTENTE', async () => {
       await service.getPendingB2B();
-      expect(b2bRepo.find).toHaveBeenCalledWith(expect.objectContaining({ where: { statutValidation: 'EN_ATTENTE' } }));
+      expect(b2bRepo.find).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { statutValidation: 'EN_ATTENTE' } }),
+      );
     });
     it('validateB2B 404 si introuvable', async () => {
       b2bRepo.findOne.mockResolvedValue(null);
-      await expect(service.validateB2B('x', 'admin', true)).rejects.toThrow(NotFoundException);
+      await expect(service.validateB2B('x', 'admin', true)).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('validateB2B approuve', async () => {
       b2bRepo.findOne.mockResolvedValue({ id: 'c1' });
@@ -176,7 +218,9 @@ describe('AdminService', () => {
     });
     it('resolveContestation 404 si facture absente', async () => {
       factureRepo.findOne.mockResolvedValue(null);
-      await expect(service.resolveContestation('x', 'admin', true, 'note')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.resolveContestation('x', 'admin', true, 'note'),
+      ).rejects.toThrow(NotFoundException);
     });
     it('resolveContestation trace un audit', async () => {
       factureRepo.findOne.mockResolvedValue({ id: 'f1', numeroFacture: 'F1' });
@@ -189,10 +233,15 @@ describe('AdminService', () => {
   describe('setConfig', () => {
     it('rejette une clé inconnue', async () => {
       configRepo.findOne.mockResolvedValue(null);
-      await expect(service.setConfig('cle_totalement_inconnue', 'v', 'admin')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.setConfig('cle_totalement_inconnue', 'v', 'admin'),
+      ).rejects.toThrow(BadRequestException);
     });
     it('met à jour une clé existante', async () => {
-      configRepo.findOne.mockResolvedValue({ key: 'delivery_enabled', value: 'false' });
+      configRepo.findOne.mockResolvedValue({
+        key: 'delivery_enabled',
+        value: 'false',
+      });
       const r = await service.setConfig('delivery_enabled', 'true', 'admin');
       expect(r.key).toBe('delivery_enabled');
     });
@@ -201,17 +250,23 @@ describe('AdminService', () => {
   describe('changeAdminPassword', () => {
     it('404 si introuvable', async () => {
       userRepo.findOne.mockResolvedValue(null);
-      await expect(service.changeAdminPassword('x', 'old', 'NewPass12')).rejects.toThrow(NotFoundException);
+      await expect(
+        service.changeAdminPassword('x', 'old', 'NewPass12'),
+      ).rejects.toThrow(NotFoundException);
     });
     it('rejette un mot de passe actuel incorrect', async () => {
       const hash = await bcrypt.hash('realpass', 8);
       userRepo.findOne.mockResolvedValue({ id: 'a1', password: hash });
-      await expect(service.changeAdminPassword('a1', 'wrong', 'NewPass12')).rejects.toThrow(BadRequestException);
+      await expect(
+        service.changeAdminPassword('a1', 'wrong', 'NewPass12'),
+      ).rejects.toThrow(BadRequestException);
     });
     it('change le mot de passe', async () => {
       const hash = await bcrypt.hash('realpass', 8);
       userRepo.findOne.mockResolvedValue({ id: 'a1', password: hash });
-      expect(await service.changeAdminPassword('a1', 'realpass', 'NewPass12')).toEqual({ success: true });
+      expect(
+        await service.changeAdminPassword('a1', 'realpass', 'NewPass12'),
+      ).toEqual({ success: true });
     });
   });
 
@@ -219,17 +274,22 @@ describe('AdminService', () => {
   describe('intégrations', () => {
     it('createIntegration crée (clé masquée)', async () => {
       const r: any = await service.createIntegration(
-        { name: 'NovaSend', type: 'PAYMENT' as any, apiKey: 'secret' }, 'admin',
+        { name: 'NovaSend', type: 'PAYMENT' as any, apiKey: 'secret' },
+        'admin',
       );
       expect(r.name).toBe('NovaSend');
     });
     it('updateIntegration 404 si introuvable', async () => {
       integRepo.findOne.mockResolvedValue(null);
-      await expect(service.updateIntegration('x', { name: 'Z' })).rejects.toThrow(NotFoundException);
+      await expect(
+        service.updateIntegration('x', { name: 'Z' }),
+      ).rejects.toThrow(NotFoundException);
     });
     it('deleteIntegration 404 si introuvable', async () => {
       integRepo.findOne.mockResolvedValue(null);
-      await expect(service.deleteIntegration('x')).rejects.toThrow(NotFoundException);
+      await expect(service.deleteIntegration('x')).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('deleteIntegration supprime', async () => {
       integRepo.findOne.mockResolvedValue({ id: 'i1' });

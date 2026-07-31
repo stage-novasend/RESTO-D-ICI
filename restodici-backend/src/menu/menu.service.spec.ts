@@ -73,7 +73,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as Article;
+  };
 }
 
 function makeCategorie(overrides: Partial<Categorie> = {}): Categorie {
@@ -88,7 +88,7 @@ function makeCategorie(overrides: Partial<Categorie> = {}): Categorie {
     createdAt: new Date(),
     updatedAt: new Date(),
     ...overrides,
-  } as Categorie;
+  };
 }
 
 // ─── Builder ──────────────────────────────────────────────────────────────────
@@ -185,7 +185,7 @@ describe('MenuService createArticle()', () => {
       stock: 10,
     };
 
-    const result = await service.createArticle(dto as any, gerantUser);
+    const result = await service.createArticle(dto, gerantUser);
 
     expect(mockCategorieRepo.findOne).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -264,7 +264,7 @@ describe('MenuService createArticle()', () => {
     );
 
     await service.createArticle(
-      { nom: 'Test', prix: 1000, categorieId: 'cat-uuid-1', stock: 5 } as any,
+      { nom: 'Test', prix: 1000, categorieId: 'cat-uuid-1', stock: 5 },
       gerantUser,
     );
 
@@ -281,7 +281,7 @@ describe('MenuService createArticle()', () => {
     );
 
     await service.createArticle(
-      { nom: 'Test', prix: 1000, categorieId: 'cat-uuid-1', stock: 0 } as any,
+      { nom: 'Test', prix: 1000, categorieId: 'cat-uuid-1', stock: 0 },
       gerantUser,
     );
 
@@ -316,7 +316,7 @@ describe('MenuService updateArticle()', () => {
 
     const result = await service.updateArticle(
       'article-uuid-1',
-      { nom: 'Nouveau Nom', prix: 3000 } as any,
+      { nom: 'Nouveau Nom', prix: 3000 },
       gerantUser,
     );
 
@@ -357,15 +357,9 @@ describe('MenuService updateArticle()', () => {
   it('forces disponible=false when stock is set to 0', async () => {
     const article = makeArticle({ disponible: true, stock: 10 });
     mockArticleRepo.findOne.mockResolvedValue(article);
-    mockArticleRepo.save.mockImplementation((a: Article) =>
-      Promise.resolve(a),
-    );
+    mockArticleRepo.save.mockImplementation((a: Article) => Promise.resolve(a));
 
-    await service.updateArticle(
-      'article-uuid-1',
-      { stock: 0 } as any,
-      gerantUser,
-    );
+    await service.updateArticle('article-uuid-1', { stock: 0 }, gerantUser);
 
     expect(article.disponible).toBe(false);
     expect(article.stock).toBe(0);
@@ -384,7 +378,7 @@ describe('MenuService updateArticle()', () => {
 
     await service.updateArticle(
       'article-uuid-1',
-      { categorieId: 'cat-uuid-2' } as any,
+      { categorieId: 'cat-uuid-2' },
       gerantUser,
     );
 
@@ -431,7 +425,10 @@ describe('MenuService softDeleteArticle()', () => {
     mockArticleRepo.findOne.mockResolvedValue(article);
     mockArticleRepo.update.mockResolvedValue(undefined);
 
-    const result = await service.softDeleteArticle('article-uuid-1', gerantUser);
+    const result = await service.softDeleteArticle(
+      'article-uuid-1',
+      gerantUser,
+    );
 
     expect(mockArticleRepo.update).toHaveBeenCalledWith('article-uuid-1', {
       disponible: false,
@@ -567,8 +564,15 @@ describe('MenuService getPlatsPopulaires()', () => {
   const makeQb = (rows: unknown[]) => {
     const qb: Record<string, jest.Mock> = {};
     for (const m of [
-      'innerJoin', 'leftJoinAndSelect', 'select', 'addSelect', 'where',
-      'andWhere', 'groupBy', 'orderBy', 'limit',
+      'innerJoin',
+      'leftJoinAndSelect',
+      'select',
+      'addSelect',
+      'where',
+      'andWhere',
+      'groupBy',
+      'orderBy',
+      'limit',
     ]) {
       qb[m] = jest.fn(() => qb);
     }

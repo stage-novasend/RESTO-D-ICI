@@ -564,7 +564,7 @@ export default function StaffLayout() {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Topbar blanc */}
-        <header className="staff-topbar" style={{ height: 56, flexShrink: 0, background: CARD, borderBottom: `1px solid ${BORDER}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', boxShadow: SH }}>
+        <header className="staff-topbar" style={{ height: 56, flexShrink: 0, background: '#FFFFFF', borderBottom: `1px solid #E2E8F0`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', boxShadow: 'none' }}>
           {/* Fil d'ariane / page courante */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <span style={{ fontSize: 11, color: MUTED, fontWeight: 600 }}>Staff</span>
@@ -586,9 +586,9 @@ export default function StaffLayout() {
             <button
               data-tour="staff-avatar"
               onClick={() => setDrawer(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 12px 5px 5px', borderRadius: 12, border: `1.5px solid ${BORDER}`, background: CARD, cursor: 'pointer', transition: 'all 0.13s', boxShadow: SH }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = OG; e.currentTarget.style.boxShadow = `0 0 0 3px ${OG_L}`; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = BORDER; e.currentTarget.style.boxShadow = SH; }}
+              style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '5px 12px 5px 5px', borderRadius: 8, border: `1px solid #E2E8F0`, background: '#FFFFFF', cursor: 'pointer', transition: 'all 0.13s', boxShadow: 'none' }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#0F172A'; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#E2E8F0'; }}
             >
               <Initials name={fullName} size={30} fontSize={11} />
               <div style={{ textAlign: 'left' }}>

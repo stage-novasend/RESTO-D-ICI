@@ -19,6 +19,7 @@ import { PromosService } from '../promos/promos.service';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { PaymentGatewayRegistry } from '../paiements/gateways/payment-gateway.registry';
 
 // Couvre les méthodes de lecture / avis / historique non testées par le spec principal.
 describe('CommandesService — méthodes complémentaires', () => {
@@ -59,27 +60,56 @@ describe('CommandesService — méthodes complémentaires', () => {
       providers: [
         CommandesService,
         { provide: getRepositoryToken(Commande), useValue: cmdRepo },
-        { provide: getRepositoryToken(LigneCommande), useValue: { save: jest.fn(), create: jest.fn() } },
+        {
+          provide: getRepositoryToken(LigneCommande),
+          useValue: { save: jest.fn(), create: jest.fn() },
+        },
         { provide: getRepositoryToken(AvisCommande), useValue: avisRepo },
-        { provide: getRepositoryToken(CommandeStatusHistory), useValue: historyRepo },
+        {
+          provide: getRepositoryToken(CommandeStatusHistory),
+          useValue: historyRepo,
+        },
         { provide: getRepositoryToken(Restaurant), useValue: restoRepo },
-        { provide: getRepositoryToken(CommissionPlateforme), useValue: { save: jest.fn(), create: jest.fn() } },
+        {
+          provide: getRepositoryToken(CommissionPlateforme),
+          useValue: { save: jest.fn(), create: jest.fn() },
+        },
         { provide: DataSource, useValue: { transaction: jest.fn() } },
-        { provide: CommandesGateway, useValue: { emitToManagers: jest.fn(), emitToKitchen: jest.fn(), emitToClient: jest.fn() } },
+        {
+          provide: CommandesGateway,
+          useValue: {
+            emitToManagers: jest.fn(),
+            emitToKitchen: jest.fn(),
+            emitToClient: jest.fn(),
+          },
+        },
         { provide: TresorerieService, useValue: {} },
         { provide: PromosService, useValue: {} },
         { provide: SmsService, useValue: {} },
         { provide: FcmService, useValue: {} },
-        { provide: NotificationsService, useValue: { create: jest.fn().mockResolvedValue({ id: 'n1' }) } },
+        {
+          provide: NotificationsService,
+          useValue: { create: jest.fn().mockResolvedValue({ id: 'n1' }) },
+        },
+        {
+          provide: PaymentGatewayRegistry,
+          useValue: { getGateway: jest.fn(), refundPayment: jest.fn() },
+        },
       ],
     }).compile();
     service = module.get(CommandesService);
   });
 
   const cmd = (o: any = {}): any => ({
-    id: 'cmd-1', numero: 'CMD-2026-X', statut: StatutCommande.RECUE,
-    montantTotal: 5000, client: { id: 'client-1' }, restaurant: { id: 'resto-1' },
-    createdAt: new Date(), updatedAt: new Date(), ...o,
+    id: 'cmd-1',
+    numero: 'CMD-2026-X',
+    statut: StatutCommande.RECUE,
+    montantTotal: 5000,
+    client: { id: 'client-1' },
+    restaurant: { id: 'resto-1' },
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...o,
   });
 
   describe('findAllByUser', () => {
@@ -87,7 +117,10 @@ describe('CommandesService — méthodes complémentaires', () => {
       cmdRepo.find.mockResolvedValue([cmd()]);
       const r = await service.findAllByUser('client-1');
       expect(cmdRepo.find).toHaveBeenCalledWith(
-        expect.objectContaining({ where: { client: { id: 'client-1' } }, take: 20 }),
+        expect.objectContaining({
+          where: { client: { id: 'client-1' } },
+          take: 20,
+        }),
       );
       expect(r).toHaveLength(1);
     });
@@ -110,22 +143,30 @@ describe('CommandesService — méthodes complémentaires', () => {
     });
     it('403 si mauvais client', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd());
-      await expect(service.findOne('cmd-1', 'autre-client')).rejects.toThrow(ForbiddenException);
+      await expect(service.findOne('cmd-1', 'autre-client')).rejects.toThrow(
+        ForbiddenException,
+      );
     });
     it('403 si mauvais restaurant', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd());
-      await expect(service.findOne('cmd-1', undefined, 'autre-resto')).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.findOne('cmd-1', undefined, 'autre-resto'),
+      ).rejects.toThrow(ForbiddenException);
     });
     it('renvoie la commande si accès valide', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd());
-      expect(await service.findOne('cmd-1', 'client-1', 'resto-1')).toMatchObject({ id: 'cmd-1' });
+      expect(
+        await service.findOne('cmd-1', 'client-1', 'resto-1'),
+      ).toMatchObject({ id: 'cmd-1' });
     });
   });
 
   describe('setDelai', () => {
     it('404 si introuvable', async () => {
       cmdRepo.findOne.mockResolvedValue(null);
-      await expect(service.setDelai('x', 30)).rejects.toThrow(NotFoundException);
+      await expect(service.setDelai('x', 30)).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('enregistre le délai', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd());
@@ -137,43 +178,61 @@ describe('CommandesService — méthodes complémentaires', () => {
   describe('updateS3Key', () => {
     it('met à jour la clé S3', async () => {
       await service.updateS3Key('cmd-1', 'key/recu.pdf');
-      expect(cmdRepo.update).toHaveBeenCalledWith('cmd-1', { recuPdfS3Key: 'key/recu.pdf' });
+      expect(cmdRepo.update).toHaveBeenCalledWith('cmd-1', {
+        recuPdfS3Key: 'key/recu.pdf',
+      });
     });
   });
 
   describe('annulerByClient', () => {
     it('404 si introuvable', async () => {
       cmdRepo.findOne.mockResolvedValue(null);
-      await expect(service.annulerByClient('x', 'client-1')).rejects.toThrow(NotFoundException);
+      await expect(service.annulerByClient('x', 'client-1')).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('refuse si déjà en préparation/terminée', async () => {
-      cmdRepo.findOne.mockResolvedValue(cmd({ statut: StatutCommande.EN_PREP }));
-      await expect(service.annulerByClient('cmd-1', 'client-1')).rejects.toThrow(BadRequestException);
+      cmdRepo.findOne.mockResolvedValue(
+        cmd({ statut: StatutCommande.EN_PREP }),
+      );
+      await expect(
+        service.annulerByClient('cmd-1', 'client-1'),
+      ).rejects.toThrow(BadRequestException);
     });
   });
 
   describe('submitAvis', () => {
     it('rejette une note hors 1-5', async () => {
-      await expect(service.submitAvis('cmd-1', 'client-1', 6)).rejects.toThrow(BadRequestException);
+      await expect(service.submitAvis('cmd-1', 'client-1', 6)).rejects.toThrow(
+        BadRequestException,
+      );
     });
     it('404 si commande introuvable', async () => {
       cmdRepo.findOne.mockResolvedValue(null);
-      await expect(service.submitAvis('x', 'client-1', 5)).rejects.toThrow(NotFoundException);
+      await expect(service.submitAvis('x', 'client-1', 5)).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('403 si autre client', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd({ statut: StatutCommande.LIVREE }));
-      await expect(service.submitAvis('cmd-1', 'autre', 5)).rejects.toThrow(ForbiddenException);
+      await expect(service.submitAvis('cmd-1', 'autre', 5)).rejects.toThrow(
+        ForbiddenException,
+      );
     });
     it('refuse si commande non livrée', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd({ statut: StatutCommande.RECUE }));
-      await expect(service.submitAvis('cmd-1', 'client-1', 5)).rejects.toThrow(BadRequestException);
+      await expect(service.submitAvis('cmd-1', 'client-1', 5)).rejects.toThrow(
+        BadRequestException,
+      );
     });
     it('refuse un avis déjà soumis', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd({ statut: StatutCommande.LIVREE }));
       avisRepo.findOne.mockResolvedValue({ id: 'existing' });
-      await expect(service.submitAvis('cmd-1', 'client-1', 5)).rejects.toThrow(BadRequestException);
+      await expect(service.submitAvis('cmd-1', 'client-1', 5)).rejects.toThrow(
+        BadRequestException,
+      );
     });
-    it('enregistre l\'avis et recalcule la moyenne (agrégation SQL)', async () => {
+    it("enregistre l'avis et recalcule la moyenne (agrégation SQL)", async () => {
       cmdRepo.findOne.mockResolvedValue(cmd({ statut: StatutCommande.LIVREE }));
       avisRepo.findOne.mockResolvedValue(null);
       avisRepo
@@ -187,22 +246,28 @@ describe('CommandesService — méthodes complémentaires', () => {
   });
 
   describe('getAvisForOrder', () => {
-    it('renvoie l\'avis du client', async () => {
+    it("renvoie l'avis du client", async () => {
       avisRepo.findOne.mockResolvedValue({ id: 'avis-1', note: 5 });
-      expect(await service.getAvisForOrder('cmd-1', 'client-1')).toMatchObject({ note: 5 });
+      expect(await service.getAvisForOrder('cmd-1', 'client-1')).toMatchObject({
+        note: 5,
+      });
     });
   });
 
   describe('getCommandeHistory', () => {
     it('404 si commande introuvable', async () => {
       cmdRepo.findOne.mockResolvedValue(null);
-      await expect(service.getCommandeHistory('x')).rejects.toThrow(NotFoundException);
+      await expect(service.getCommandeHistory('x')).rejects.toThrow(
+        NotFoundException,
+      );
     });
     it('403 si mauvais client', async () => {
       cmdRepo.findOne.mockResolvedValue(cmd());
-      await expect(service.getCommandeHistory('cmd-1', 'autre')).rejects.toThrow(ForbiddenException);
+      await expect(
+        service.getCommandeHistory('cmd-1', 'autre'),
+      ).rejects.toThrow(ForbiddenException);
     });
-    it('renvoie l\'historique trié', async () => {
+    it("renvoie l'historique trié", async () => {
       cmdRepo.findOne.mockResolvedValue(cmd());
       historyRepo.find.mockResolvedValue([{ id: 'h1' }]);
       const r = await service.getCommandeHistory('cmd-1', 'client-1');

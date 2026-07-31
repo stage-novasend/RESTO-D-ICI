@@ -77,12 +77,15 @@ export class AuthService {
     refreshToken: string;
     user: Record<string, any>;
   }> {
-    if (!refreshToken) throw new UnauthorizedException('Token de rafraîchissement manquant');
+    if (!refreshToken)
+      throw new UnauthorizedException('Token de rafraîchissement manquant');
 
     // Format attendu : « <sessionId>.<tokenSecret> »
     const [sessionId, tokenSecret] = refreshToken.split('.');
     if (!sessionId || !tokenSecret) {
-      throw new UnauthorizedException('Session expirée, veuillez vous reconnecter');
+      throw new UnauthorizedException(
+        'Session expirée, veuillez vous reconnecter',
+      );
     }
 
     // Lookup direct par identifiant de session indexé — plus d'itération sur tous les users
@@ -98,7 +101,9 @@ export class AuthService {
       matchedUser.refreshTokenExpires <= new Date() ||
       !(await bcrypt.compare(tokenSecret, matchedUser.refreshToken))
     ) {
-      throw new UnauthorizedException('Session expirée, veuillez vous reconnecter');
+      throw new UnauthorizedException(
+        'Session expirée, veuillez vous reconnecter',
+      );
     }
 
     const newRefreshToken = await this.attachRefreshToken(matchedUser);
@@ -170,8 +175,10 @@ export class AuthService {
               deliveryZones: user.restaurant.deliveryZones,
               latitude: user.restaurant.latitude,
               longitude: user.restaurant.longitude,
-              modeReceptionPaiement: user.restaurant.modeReceptionPaiement || 'NOVASEND',
-              modeReceptionDetails: user.restaurant.modeReceptionDetails || null,
+              modeReceptionPaiement:
+                user.restaurant.modeReceptionPaiement || 'NOVASEND',
+              modeReceptionDetails:
+                user.restaurant.modeReceptionDetails || null,
             }
           : undefined,
       },
@@ -351,7 +358,14 @@ export class AuthService {
       );
     }
 
-    this.auditRepository.save(this.auditRepository.create({ action: 'REGISTER_SUCCESS', userId: savedUser.id })).catch(() => {});
+    this.auditRepository
+      .save(
+        this.auditRepository.create({
+          action: 'REGISTER_SUCCESS',
+          userId: savedUser.id,
+        }),
+      )
+      .catch(() => {});
     // Retourner le token et les infos utilisateur pour la redirection
     return this.buildAuthResponse(
       savedUser,
@@ -368,7 +382,14 @@ export class AuthService {
 
     if (!user || !(await bcrypt.compare(dto.password, user.password))) {
       if (user) {
-        this.auditRepository.save(this.auditRepository.create({ action: 'LOGIN_FAILED', userId: user.id })).catch(() => {});
+        this.auditRepository
+          .save(
+            this.auditRepository.create({
+              action: 'LOGIN_FAILED',
+              userId: user.id,
+            }),
+          )
+          .catch(() => {});
       }
       throw new UnauthorizedException('Identifiants incorrects');
     }
@@ -391,7 +412,14 @@ export class AuthService {
       await this.userRepository.save(user);
       return { requiresTwoFactor: true, tempToken };
     }
-    this.auditRepository.save(this.auditRepository.create({ action: 'LOGIN_SUCCESS', userId: user.id })).catch(() => {});
+    this.auditRepository
+      .save(
+        this.auditRepository.create({
+          action: 'LOGIN_SUCCESS',
+          userId: user.id,
+        }),
+      )
+      .catch(() => {});
     return this.buildAuthResponse(user);
   }
 
@@ -689,8 +717,14 @@ export class AuthService {
     await this.userRepository
       .createQueryBuilder()
       .update()
-      .set({ twoFactorTempToken: undefined, twoFactorTempTokenExpires: undefined })
-      .where('twoFactorTempTokenExpires IS NOT NULL AND twoFactorTempTokenExpires < :now', { now })
+      .set({
+        twoFactorTempToken: undefined,
+        twoFactorTempTokenExpires: undefined,
+      })
+      .where(
+        'twoFactorTempTokenExpires IS NOT NULL AND twoFactorTempTokenExpires < :now',
+        { now },
+      )
       .execute();
 
     await this.userRepository
@@ -701,7 +735,9 @@ export class AuthService {
         refreshTokenId: undefined,
         refreshTokenExpires: undefined,
       })
-      .where('refreshTokenExpires IS NOT NULL AND refreshTokenExpires < :now', { now })
+      .where('refreshTokenExpires IS NOT NULL AND refreshTokenExpires < :now', {
+        now,
+      })
       .execute();
   }
 }

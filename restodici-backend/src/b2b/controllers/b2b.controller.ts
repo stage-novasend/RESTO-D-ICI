@@ -267,7 +267,11 @@ export class B2BController {
     @Param('teamId') teamId: string,
     @Body() addTeamMemberDto: AddTeamMemberDto,
   ) {
-    return this.teamsService.addTeamMember(teamId, req.user.id, addTeamMemberDto);
+    return this.teamsService.addTeamMember(
+      teamId,
+      req.user.id,
+      addTeamMemberDto,
+    );
   }
 
   @Delete('teams/:teamId/members/:userId')
@@ -306,10 +310,7 @@ export class B2BController {
   }
 
   @Get('orders')
-  async getOrders(
-    @Req() req: RequestWithUser,
-    @Query('limit') limit?: string,
-  ) {
+  async getOrders(@Req() req: RequestWithUser, @Query('limit') limit?: string) {
     return this.b2bService.getOrdersByUser(req.user.id, {
       limit: limit ? parseInt(limit, 10) : 100,
     });
@@ -427,7 +428,14 @@ export class B2BController {
   @Post('plans-repas')
   async createPlanRepas(
     @Req() req: RequestWithUser,
-    @Body() body: { nom: string; frequence: string; nbRepas: number; budgetRepas: number; notes?: string },
+    @Body()
+    body: {
+      nom: string;
+      frequence: string;
+      nbRepas: number;
+      budgetRepas: number;
+      notes?: string;
+    },
   ) {
     return this.plansRepasService.createPlanRepas(req.user.id, body);
   }

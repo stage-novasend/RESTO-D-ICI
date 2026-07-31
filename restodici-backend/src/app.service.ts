@@ -16,9 +16,11 @@ const BANNER_DEFAULTS = [
 export class AppService {
   constructor(
     @InjectRepository(User) private userRepo: Repository<User>,
-    @InjectRepository(Restaurant) private restaurantRepo: Repository<Restaurant>,
+    @InjectRepository(Restaurant)
+    private restaurantRepo: Repository<Restaurant>,
     @InjectRepository(Commande) private commandeRepo: Repository<Commande>,
-    @InjectRepository(SystemConfig) private configRepo: Repository<SystemConfig>,
+    @InjectRepository(SystemConfig)
+    private configRepo: Repository<SystemConfig>,
   ) {}
 
   getHello(): string {
@@ -26,11 +28,14 @@ export class AppService {
   }
 
   async getBannerMessages(): Promise<{ messages: string[] }> {
-    const config = await this.configRepo.findOne({ where: { key: 'banner_messages' } });
+    const config = await this.configRepo.findOne({
+      where: { key: 'banner_messages' },
+    });
     if (!config?.value) return { messages: BANNER_DEFAULTS };
     try {
       const parsed = JSON.parse(config.value);
-      const messages = Array.isArray(parsed) && parsed.length > 0 ? parsed : BANNER_DEFAULTS;
+      const messages =
+        Array.isArray(parsed) && parsed.length > 0 ? parsed : BANNER_DEFAULTS;
       return { messages };
     } catch {
       return { messages: BANNER_DEFAULTS };
@@ -38,15 +43,40 @@ export class AppService {
   }
 
   async getClientModules(): Promise<{
-    delivery:  { enabled: boolean; provider: string | null; apiUrl: string | null };
-    messaging: { enabled: boolean; provider: string | null; apiUrl: string | null };
+    delivery: {
+      enabled: boolean;
+      provider: string | null;
+      apiUrl: string | null;
+    };
+    messaging: {
+      enabled: boolean;
+      provider: string | null;
+      apiUrl: string | null;
+    };
   }> {
-    const keys = ['delivery_enabled', 'delivery_provider', 'delivery_api_url', 'messaging_enabled', 'messaging_provider', 'messaging_api_url'];
-    const configs = await this.configRepo.find({ where: keys.map(key => ({ key })) });
-    const get = (k: string) => configs.find(c => c.key === k)?.value ?? null;
+    const keys = [
+      'delivery_enabled',
+      'delivery_provider',
+      'delivery_api_url',
+      'messaging_enabled',
+      'messaging_provider',
+      'messaging_api_url',
+    ];
+    const configs = await this.configRepo.find({
+      where: keys.map((key) => ({ key })),
+    });
+    const get = (k: string) => configs.find((c) => c.key === k)?.value ?? null;
     return {
-      delivery:  { enabled: get('delivery_enabled')  === 'true', provider: get('delivery_provider'),  apiUrl: get('delivery_api_url')  },
-      messaging: { enabled: get('messaging_enabled') === 'true', provider: get('messaging_provider'), apiUrl: get('messaging_api_url') },
+      delivery: {
+        enabled: get('delivery_enabled') === 'true',
+        provider: get('delivery_provider'),
+        apiUrl: get('delivery_api_url'),
+      },
+      messaging: {
+        enabled: get('messaging_enabled') === 'true',
+        provider: get('messaging_provider'),
+        apiUrl: get('messaging_api_url'),
+      },
     };
   }
 
@@ -55,7 +85,9 @@ export class AppService {
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const [clients, commandesMois, restaurants] = await Promise.all([
       this.userRepo.count({ where: { role: Role.CLIENT } }),
-      this.commandeRepo.count({ where: { createdAt: Between(startOfMonth, now) } }),
+      this.commandeRepo.count({
+        where: { createdAt: Between(startOfMonth, now) },
+      }),
       this.restaurantRepo.count({ where: { actif: true } }),
     ]);
     return { clients, commandesMois, restaurants };

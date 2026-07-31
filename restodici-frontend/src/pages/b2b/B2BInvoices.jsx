@@ -181,7 +181,7 @@ export default function B2BInvoices() {
                 URL.revokeObjectURL(url);
               } catch { /* ignore */ }
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
             style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, boxShadow: `0 2px 8px ${GREEN}50` }}>
             <Download className="w-3.5 h-3.5" /> CSV SYSCOHADA
           </button>
@@ -196,7 +196,7 @@ export default function B2BInvoices() {
                 downloadBlob(buildInvoicePdfBlob(f, ht, t, m), `facture-${f.numeroFacture ?? f.id?.slice(0, 8)}.pdf`);
               }
             }}
-            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
             style={{ background: 'linear-gradient(135deg, #374151, #1F2937)', boxShadow: '0 2px 8px rgba(55,65,81,0.35)' }}>
             <Download className="w-3.5 h-3.5" /> PDF
           </button>
@@ -213,14 +213,14 @@ export default function B2BInvoices() {
 
           {/* Messages */}
           {error && (
-            <div className="rounded-xl border px-4 py-3 flex items-center gap-3"
+            <div className="rounded-lg border px-4 py-3 flex items-center gap-3"
               style={{ background: RED_L, borderColor: '#FECACA' }}>
               <AlertCircle className="w-4 h-4 shrink-0" style={{ color: RED }} />
               <p className="text-sm font-medium" style={{ color: '#B91C1C' }}>{error}</p>
             </div>
           )}
           {success && (
-            <div className="rounded-xl border px-4 py-3 flex items-center gap-3"
+            <div className="rounded-lg border px-4 py-3 flex items-center gap-3"
               style={{ background: GREEN_L, borderColor: '#BBF7D0' }}>
               <CheckCircle className="w-4 h-4 shrink-0" style={{ color: GREEN }} />
               <p className="text-sm font-medium" style={{ color: GREEN_D }}>{success}</p>
@@ -229,9 +229,9 @@ export default function B2BInvoices() {
 
           {/* Compte bloqué — rouge (risque) */}
           {hasRetardee && (
-            <div className="rounded-2xl border px-5 py-4 flex items-start gap-4"
+            <div className="rounded-lg border px-5 py-4 flex items-start gap-4"
               style={{ background: RED_L, borderColor: '#FECACA' }}>
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                 style={{ background: '#FEE2E2' }}>
                 <ShieldAlert className="w-5 h-5" style={{ color: RED }} />
               </div>
@@ -248,10 +248,10 @@ export default function B2BInvoices() {
 
           {/* Solde dû */}
           {totalDu > 0 && (
-            <div className="rounded-2xl p-5 flex items-center justify-between gap-4"
+            <div className="rounded-lg p-5 flex items-center justify-between gap-4"
               style={{ background: AMBER_L, border: `1.5px solid #FDE68A` }}>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center"
+                <div className="w-10 h-10 rounded-lg flex items-center justify-center"
                   style={{ background: '#FEF3C7' }}>
                   <AlertCircle className="w-5 h-5" style={{ color: AMBER }} />
                 </div>
@@ -275,7 +275,7 @@ export default function B2BInvoices() {
               { label: 'Payées',         value: paidCount,                   bg: GREEN    },
               { label: 'En attente',     value: factures.length - paidCount, bg: AMBER    },
             ].map(s => (
-              <div key={s.label} className="rounded-2xl p-4 text-center text-white"
+              <div key={s.label} className="rounded-lg p-4 text-center text-white"
                 style={{ background: s.bg, boxShadow: `0 4px 14px ${s.bg}40` }}>
                 <p className="text-2xl font-bold">{s.value}</p>
                 <p className="text-[11px] mt-1" style={{ color: 'rgba(255,255,255,0.72)' }}>{s.label}</p>
@@ -285,8 +285,8 @@ export default function B2BInvoices() {
 
           {/* Liste factures */}
           {factures.length === 0 ? (
-            <div className="rounded-2xl py-20 text-center" style={{ background: CARD, boxShadow: SH }}>
-              <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+            <div className="rounded-lg py-20 text-center" style={{ background: CARD, boxShadow: SH }}>
+              <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center"
                 style={{ background: '#F5F3FF' }}>
                 <FileText className="w-7 h-7" style={{ color: '#7C3AED' }} />
               </div>
@@ -294,7 +294,7 @@ export default function B2BInvoices() {
               <p className="text-xs" style={{ color: FAINT }}>Générées automatiquement en fin de mois</p>
             </div>
           ) : (
-            <div className="rounded-2xl overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
+            <div className="rounded-lg overflow-hidden" style={{ background: CARD, boxShadow: SH2 }}>
               {factures.map((facture, idx, arr) => {
                 const isPaid    = facture.statut === 'PAYEE' || facture.statut === 'paid';
                 const isOverdue = facture.statut === 'RETARDEE';
@@ -313,7 +313,7 @@ export default function B2BInvoices() {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-4">
 
                       {/* Icône statut */}
-                      <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                      <div className="w-11 h-11 rounded-lg flex items-center justify-center shrink-0"
                         style={{
                           background: isPaid ? GREEN_L : isOverdue ? RED_L : AMBER_L,
                           border: `1.5px solid ${isPaid ? '#BBF7D0' : isOverdue ? '#FECACA' : '#FDE68A'}`,
@@ -361,7 +361,7 @@ export default function B2BInvoices() {
                             buildInvoicePdfBlob(facture, montantHT, tva, montant),
                             `facture-${facture.numeroFacture ?? facture.id?.slice(0, 8)}.pdf`
                           )}
-                          className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+                          className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
                           style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, boxShadow: `0 2px 8px ${GREEN}40` }}>
                           <Download className="w-3.5 h-3.5" />
                           PDF
@@ -371,7 +371,7 @@ export default function B2BInvoices() {
                           /* Payer — orange (CTA principal) */
                           <button
                             onClick={() => handlePay(facture)}
-                            className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[12px] font-bold text-white transition hover:opacity-90"
+                            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
                             style={{ background: isOverdue ? RED : ORANGE, boxShadow: `0 2px 8px ${isOverdue ? RED : ORANGE}40` }}>
                             <CreditCard className="w-3.5 h-3.5" />
                             Payer maintenant
@@ -419,7 +419,7 @@ export default function B2BInvoices() {
       {/* ── NovaSend payment modal ─────────────────────────────────────────── */}
       {payModal && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-          <div className="w-full max-w-sm bg-white rounded-3xl overflow-hidden shadow-2xl">
+          <div className="w-full max-w-sm bg-white rounded-lg overflow-hidden shadow-2xl">
 
             <div className="px-6 py-5 flex items-center gap-3"
               style={{ background: '#FFF0DF', borderBottom: '1px solid rgba(89,67,42,0.08)' }}>
@@ -446,12 +446,12 @@ export default function B2BInvoices() {
                     Choisissez Orange Money, MTN MoMo, Moov Money ou Wave.
                   </p>
                   <button onClick={startPayment}
-                    className="w-full py-3 rounded-2xl text-white font-bold text-sm mb-3 hover:opacity-90 transition"
+                    className="w-full py-3 rounded-lg text-white font-bold text-sm mb-3 hover:opacity-90 transition"
                     style={{ background: `linear-gradient(135deg, ${ORANGE}, #C2410C)`, boxShadow: `0 4px 14px ${ORANGE}50` }}>
                     Procéder au paiement
                   </button>
                   <button onClick={closePayModal}
-                    className="w-full py-2.5 rounded-xl border text-sm font-medium hover:bg-[#F8FAFC] transition"
+                    className="w-full py-2.5 rounded-lg border text-sm font-medium hover:bg-[#F8FAFC] transition"
                     style={{ borderColor: 'rgba(89,67,42,0.12)', color: MUTED }}>
                     Annuler
                   </button>
@@ -469,7 +469,7 @@ export default function B2BInvoices() {
 
               {payState === 'redirect' && (
                 <div className="text-center">
-                  <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
+                  <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center"
                     style={{ background: '#FFF0DF' }}>
                     <ExternalLink className="w-7 h-7" style={{ color: ORANGE }} />
                   </div>
@@ -480,7 +480,7 @@ export default function B2BInvoices() {
                   </p>
                   {payUrl && (
                     <a href={payUrl} target="_blank" rel="noopener noreferrer"
-                      className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-white font-bold text-sm mb-3 hover:opacity-90 transition"
+                      className="w-full flex items-center justify-center gap-2 py-3 rounded-lg text-white font-bold text-sm mb-3 hover:opacity-90 transition"
                       style={{ background: `linear-gradient(135deg, ${ORANGE}, #C2410C)` }}>
                       <ExternalLink className="w-4 h-4" />
                       Ouvrir la page de paiement
@@ -518,13 +518,13 @@ export default function B2BInvoices() {
                   <p className="font-bold text-[#1A0C00] mb-1">Échec de l'initiation</p>
                   {payError && <p className="text-sm mb-4 leading-relaxed" style={{ color: RED }}>{payError}</p>}
                   <button onClick={startPayment}
-                    className="w-full py-3 rounded-2xl text-white font-bold text-sm mb-3 flex items-center justify-center gap-2 hover:opacity-90 transition"
+                    className="w-full py-3 rounded-lg text-white font-bold text-sm mb-3 flex items-center justify-center gap-2 hover:opacity-90 transition"
                     style={{ background: ORANGE }}>
                     <RefreshCw className="w-4 h-4" />
                     Réessayer
                   </button>
                   <button onClick={closePayModal}
-                    className="w-full py-2.5 rounded-xl border text-sm font-medium hover:bg-[#F8FAFC] transition"
+                    className="w-full py-2.5 rounded-lg border text-sm font-medium hover:bg-[#F8FAFC] transition"
                     style={{ borderColor: 'rgba(89,67,42,0.12)', color: MUTED }}>
                     Retour
                   </button>

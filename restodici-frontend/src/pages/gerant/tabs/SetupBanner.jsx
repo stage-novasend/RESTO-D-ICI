@@ -43,7 +43,7 @@ export default function SetupBanner({ restaurant, navigate }) {
   };
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white px-5 py-4 shadow-sm">
+    <div className="relative overflow-hidden rounded-lg border border-[#E2E8F0] bg-white px-5 py-4 shadow-card">
       <div className="absolute inset-y-0 left-0 w-1 rounded-l-2xl bg-[#EA580C]" />
       <button onClick={dismiss} className="absolute right-3 top-3 rounded-full p-1 text-[#737373] hover:bg-[#F4F6F8] transition" aria-label="Fermer">
         <X className="h-4 w-4" />
@@ -61,7 +61,7 @@ export default function SetupBanner({ restaurant, navigate }) {
             </div>
             {nextIncomplete && (
               <button onClick={() => navigate(`/gerant?tab=${nextIncomplete.tab}`)}
-                className="rounded-xl bg-[#EA580C] px-3 py-2 text-xs font-bold text-white hover:bg-[#C2410C] transition">
+                className="rounded-lg bg-[#EA580C] px-3 py-2 text-xs font-bold text-white hover:bg-[#C2410C] transition">
                 Compléter →
               </button>
             )}

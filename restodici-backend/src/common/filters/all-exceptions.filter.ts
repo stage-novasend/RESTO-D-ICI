@@ -52,8 +52,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       statusCode: status,
       error: isHttp ? exception.name : 'InternalServerError',
       // En prod, on ne révèle pas le détail des erreurs internes (5xx).
-      message:
-        !isHttp && isProd ? 'Erreur interne du serveur' : message,
+      message: !isHttp && isProd ? 'Erreur interne du serveur' : message,
       path,
       // Corrélation avec les logs (cf. RequestLoggerMiddleware).
       requestId: request?.requestId,

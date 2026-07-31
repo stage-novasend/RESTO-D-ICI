@@ -140,12 +140,12 @@ export default function B2BOrderTracking() {
   if (error || !order) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center p-6">
-        <div className="bg-white rounded-2xl p-8 max-w-sm w-full text-center border shadow" style={{ borderColor: BD }}>
+        <div className="bg-white rounded-lg p-8 max-w-sm w-full text-center border shadow" style={{ borderColor: BD }}>
           <AlertTriangle className="w-10 h-10 text-red-400 mx-auto mb-4" />
           <p className="font-bold text-[#1A0C00] mb-2">Commande introuvable</p>
           <p className="text-sm text-[#8B6E50] mb-6">{error || 'Aucune commande trouvée.'}</p>
           <button onClick={() => navigate('/b2b')}
-            className="w-full text-white font-bold py-3 px-6 rounded-xl transition"
+            className="w-full text-white font-bold py-3 px-6 rounded-lg transition"
             style={{ background: A }}>
             Retour au tableau de bord
           </button>
@@ -166,7 +166,7 @@ export default function B2BOrderTracking() {
       <header className="sticky top-0 z-30 bg-white/95 backdrop-blur border-b shadow-sm" style={{ borderColor: BD }}>
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center gap-3">
           <button onClick={() => navigate('/b2b')}
-            className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-[#FFFFFF] text-[#8B6E50] transition">
+            className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-[#FFFFFF] text-[#8B6E50] transition">
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div className="flex-1 min-w-0">
@@ -187,7 +187,7 @@ export default function B2BOrderTracking() {
 
         {/* Status hero */}
         {isCancelled ? (
-          <div className="bg-red-50 border border-red-100 rounded-2xl p-5 flex items-center gap-4">
+          <div className="bg-red-50 border border-red-100 rounded-lg p-5 flex items-center gap-4">
             <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center shrink-0">
               <XCircle className="w-6 h-6 text-red-500" />
             </div>
@@ -198,7 +198,7 @@ export default function B2BOrderTracking() {
           </div>
         ) : isDelivered ? (
           <>
-            <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-5 flex items-center gap-4">
+            <div className="bg-emerald-50 border border-emerald-100 rounded-lg p-5 flex items-center gap-4">
               <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
                 <CheckCircle className="w-6 h-6 text-emerald-500" />
               </div>
@@ -208,7 +208,7 @@ export default function B2BOrderTracking() {
               </div>
             </div>
             {user?.email && (
-              <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-xl px-4 py-3">
+              <div className="flex items-center gap-3 bg-stone-50 border border-stone-200 rounded-lg px-4 py-3">
                 <Mail className="w-5 h-5 text-stone-500 shrink-0" />
                 <p className="text-sm text-stone-700">
                   Reçu de commande groupée envoyé à{' '}
@@ -218,7 +218,7 @@ export default function B2BOrderTracking() {
             )}
           </>
         ) : (
-          <div className="bg-white rounded-2xl border p-5 flex items-center gap-4" style={{ borderColor: BD }}>
+          <div className="bg-white rounded-lg border p-5 flex items-center gap-4" style={{ borderColor: BD }}>
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center shrink-0">
               <div className="w-5 h-5 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: A }} />
             </div>
@@ -233,7 +233,7 @@ export default function B2BOrderTracking() {
 
         {/* Progress pipeline */}
         {!isCancelled && (
-          <div className="bg-white rounded-2xl border p-5" style={{ borderColor: BD }}>
+          <div className="bg-white rounded-lg border p-5" style={{ borderColor: BD }}>
             <h2 className="font-bold text-[#1A0C00] text-sm mb-5">Progression</h2>
             <div className="space-y-0">
               {PIPELINE.map((s, idx) => {
@@ -270,20 +270,20 @@ export default function B2BOrderTracking() {
 
         {/* Cancel button — before preparation */}
         {['EN_ATTENTE', 'CONFIRMEE'].includes(order.statut) && (
-          <div className="bg-red-50 border border-red-100 rounded-2xl p-4 flex items-center justify-between gap-4">
+          <div className="bg-red-50 border border-red-100 rounded-lg p-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-red-700">Annuler la commande</p>
               <p className="text-xs text-red-500 mt-0.5">Possible avant le début de la préparation</p>
             </div>
             <button onClick={handleCancel} disabled={cancelling}
-              className="px-4 py-2 rounded-xl bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition disabled:opacity-60 shrink-0">
+              className="px-4 py-2 rounded-lg bg-red-600 hover:bg-red-700 text-white text-sm font-semibold transition disabled:opacity-60 shrink-0">
               {cancelling ? 'Annulation…' : 'Annuler'}
             </button>
           </div>
         )}
 
         {/* Delivery info */}
-        <div className="bg-white rounded-2xl border overflow-hidden" style={{ borderColor: BD }}>
+        <div className="bg-white rounded-lg border overflow-hidden" style={{ borderColor: BD }}>
           <div className="px-5 py-4 border-b flex items-center gap-3" style={{ borderColor: BD }}>
             <Truck className="w-4 h-4 text-[#8B6E50]" />
             <div className="flex-1 min-w-0">
@@ -341,7 +341,7 @@ export default function B2BOrderTracking() {
 
           {/* Company info */}
           {(order.compteB2B || order.entreprise) && (
-            <div className="mx-5 mb-4 rounded-xl px-4 py-3 flex items-center gap-3" style={{ background: '#FFF0DF' }}>
+            <div className="mx-5 mb-4 rounded-lg px-4 py-3 flex items-center gap-3" style={{ background: '#FFF0DF' }}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: A }}>
                 <Building2 className="w-4 h-4 text-white" />
               </div>
@@ -365,11 +365,11 @@ export default function B2BOrderTracking() {
 
         {/* ── Avis section (LIVREE only) ─────────────────────────────────────── */}
         {isDelivered && (
-          <div className="bg-white rounded-2xl border p-5 space-y-4" style={{ borderColor: BD }}>
+          <div className="bg-white rounded-lg border p-5 space-y-4" style={{ borderColor: BD }}>
 
             {/* Existing avis */}
             {order.avisNote && (
-              <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#F0FDF4' }}>
+              <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#F0FDF4' }}>
                 <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
                 <div>
                   <p className="text-sm font-semibold text-green-800">Avis soumis · {order.avisNote}/5 ⭐</p>
@@ -387,11 +387,11 @@ export default function B2BOrderTracking() {
                 </div>
                 <div className="flex gap-3">
                   <button onClick={() => { setReceptionStatus('OUI'); setShowRating(true); }}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-emerald-500 hover:bg-emerald-600 px-4 py-3 font-bold text-white text-sm transition">
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 px-4 py-3 font-bold text-white text-sm transition">
                     <ThumbsUp className="w-4 h-4" /> Oui, reçue
                   </button>
                   <button onClick={() => setReceptionStatus('NON')}
-                    className="flex-1 flex items-center justify-center gap-2 rounded-xl border px-4 py-3 font-bold text-red-500 text-sm transition hover:bg-red-50"
+                    className="flex-1 flex items-center justify-center gap-2 rounded-lg border px-4 py-3 font-bold text-red-500 text-sm transition hover:bg-red-50"
                     style={{ borderColor: BD }}>
                     <ThumbsDown className="w-4 h-4" /> Problème
                   </button>
@@ -401,7 +401,7 @@ export default function B2BOrderTracking() {
 
             {/* Problem */}
             {receptionStatus === 'NON' && (
-              <div className="rounded-xl bg-red-50 border border-red-100 px-4 py-3">
+              <div className="rounded-lg bg-red-50 border border-red-100 px-4 py-3">
                 <p className="text-sm font-semibold text-red-700">Problème signalé</p>
                 <p className="text-xs text-red-500 mt-1">Contactez le restaurant ou notre support.</p>
                 <button onClick={() => setReceptionStatus(null)} className="mt-2 text-xs text-red-600 underline">← Revenir</button>
@@ -429,12 +429,12 @@ export default function B2BOrderTracking() {
                   onChange={e => setComment(e.target.value)}
                   placeholder="Un commentaire ? (optionnel)"
                   rows={3}
-                  className="w-full rounded-xl px-4 py-3 text-sm outline-none resize-none"
+                  className="w-full rounded-lg px-4 py-3 text-sm outline-none resize-none"
                   style={{ background: '#FFFFFF', border: `1px solid ${BD}` }}
                 />
                 {ratingError && <p className="text-xs text-red-500 font-semibold">{ratingError}</p>}
                 <button onClick={handleSubmitAvis} disabled={ratingSubmitting || rating === 0}
-                  className="w-full flex items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-white transition"
+                  className="w-full flex items-center justify-center gap-2 rounded-lg py-3 text-sm font-bold text-white transition"
                   style={{ background: A, opacity: ratingSubmitting || rating === 0 ? 0.6 : 1 }}>
                   {ratingSubmitting
                     ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -446,7 +446,7 @@ export default function B2BOrderTracking() {
 
             {/* Rating done */}
             {ratingDone && !order.avisNote && (
-              <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: '#F0FDF4' }}>
+              <div className="flex items-center gap-3 p-3 rounded-lg" style={{ background: '#F0FDF4' }}>
                 <CheckCircle className="w-5 h-5 text-green-600 shrink-0" />
                 <p className="text-sm font-semibold text-green-800">Merci pour votre avis !</p>
               </div>

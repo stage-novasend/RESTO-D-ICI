@@ -402,25 +402,25 @@ export default function OverviewTab({ restaurantId }) {
           <p className="mt-0.5 text-sm text-[#8B6E50]">Pilotez votre restaurant en temps réel.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="rounded-xl border border-[#FFF0DF] bg-white p-1">
+          <div className="rounded-lg border border-[#FFF0DF] bg-white p-1">
             <NotificationBell accentColor="#EA580C" />
           </div>
           <button
             onClick={() => void loadOverviewData({ silent: true })}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#FFF0DF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-[#EA580C]/40 hover:text-[#EA580C]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#FFF0DF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-card transition hover:border-[#EA580C]/40 hover:text-[#EA580C]"
           >
             <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Sync…" : "Actualiser"}
           </button>
           <button
             onClick={() => navigate("/gerant?tab=orders")}
-            className="inline-flex items-center gap-2 rounded-xl border border-[#FFF0DF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-sm transition hover:border-[#EA580C]/40 hover:text-[#EA580C]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#FFF0DF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-card transition hover:border-[#EA580C]/40 hover:text-[#EA580C]"
           >
             <ClipboardList className="h-4 w-4" /> Commandes
           </button>
           <button
             onClick={() => navigate("/gerant/kds")}
-            className="inline-flex items-center gap-2 rounded-xl bg-[#EA580C] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#EA580C]/25 transition hover:bg-[#C2410C]"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#EA580C] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#EA580C]/25 transition hover:bg-[#C2410C]"
           >
             <ChefHat className="h-4 w-4" /> KDS live
           </button>
@@ -431,18 +431,18 @@ export default function OverviewTab({ restaurantId }) {
       <SetupBanner restaurant={restaurantProfile} navigate={navigate} />
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">{error}</div>
       )}
 
       {/* ── 4 KPI cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Card 1 — primary dark (CA du jour) */}
-        <div className="relative overflow-hidden rounded-2xl p-5 shadow-md" style={{ background: '#EA580C' }}>
+        <div className="relative overflow-hidden rounded-lg p-5 shadow-md" style={{ background: '#EA580C' }}>
           <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-20" style={{ background: '#EA580C', filter: 'blur(28px)' }} />
           <div className="relative">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">CA du jour</p>
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl" style={{ background: 'rgba(224,78,26,0.25)' }}>
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(224,78,26,0.25)' }}>
                 <TrendingUp className="h-4 w-4 text-[#EA580C]" />
               </div>
             </div>
@@ -457,10 +457,10 @@ export default function OverviewTab({ restaurantId }) {
         </div>
 
         {/* Card 2 — commandes actives */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-lg border border-slate-100 bg-white p-5 shadow-card">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8B6E50]">En cuisine</p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-orange-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50">
               <ClipboardList className="h-4 w-4 text-[#EA580C]" />
             </div>
           </div>
@@ -474,10 +474,10 @@ export default function OverviewTab({ restaurantId }) {
         </div>
 
         {/* Card 3 — alertes stock */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-lg border border-slate-100 bg-white p-5 shadow-card">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8B6E50]">Alertes stock</p>
-            <div className={`flex h-8 w-8 items-center justify-center rounded-xl ${stats.lowStockItems > 0 ? 'bg-red-50' : 'bg-emerald-50'}`}>
+            <div className={`flex h-8 w-8 items-center justify-center rounded-lg ${stats.lowStockItems > 0 ? 'bg-red-50' : 'bg-emerald-50'}`}>
               <AlertTriangle className={`h-4 w-4 ${stats.lowStockItems > 0 ? 'text-red-500' : 'text-emerald-500'}`} />
             </div>
           </div>
@@ -490,10 +490,10 @@ export default function OverviewTab({ restaurantId }) {
         </div>
 
         {/* Card 4 — équipe */}
-        <div className="relative overflow-hidden rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        <div className="relative overflow-hidden rounded-lg border border-slate-100 bg-white p-5 shadow-card">
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8B6E50]">Équipe</p>
-            <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-50">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
               <Users className="h-4 w-4 text-[#EA580C]" />
             </div>
           </div>
@@ -511,18 +511,18 @@ export default function OverviewTab({ restaurantId }) {
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-5">
 
         {/* Chart — BIG */}
-        <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+        <section className="rounded-lg border border-slate-100 bg-white p-5 shadow-card">
           <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-base font-bold text-[#1A0C00]">Analyse des performances</h3>
               <p className="mt-0.5 text-xs text-[#8B6E50]">Commandes & revenus sur 7 jours</p>
             </div>
             <div className="flex gap-3">
-              <div className="rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
+              <div className="rounded-lg border border-slate-100 bg-white px-4 py-2 text-center">
                 <p className="text-[10px] font-medium text-[#8B6E50] uppercase tracking-wider">Commandes</p>
                 <p className="mt-0.5 text-xl font-bold text-[#EA580C]">{weekOrdersTotal}</p>
               </div>
-              <div className="rounded-xl border border-slate-100 bg-white px-4 py-2 text-center">
+              <div className="rounded-lg border border-slate-100 bg-white px-4 py-2 text-center">
                 <p className="text-[10px] font-medium text-[#8B6E50] uppercase tracking-wider">Revenus</p>
                 <p className="mt-0.5 text-xl font-bold text-[#EA580C]">{formatFCFA(weekRevenueTotal)}</p>
               </div>
@@ -537,10 +537,10 @@ export default function OverviewTab({ restaurantId }) {
         <div className="flex flex-col gap-4">
 
           {/* Indicateurs clés */}
-          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-100 bg-white p-5 shadow-card">
             <h3 className="mb-4 text-sm font-bold text-[#1A0C00]">Indicateurs clés</h3>
             <div className="space-y-3">
-              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-orange-50 to-white px-4 py-3 border border-orange-100">
+              <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-orange-50 to-white px-4 py-3 border border-orange-100">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100">
                     <CreditCard className="h-4 w-4 text-[#EA580C]" />
@@ -549,7 +549,7 @@ export default function OverviewTab({ restaurantId }) {
                 </div>
                 <span className="text-base font-bold text-[#1A0C00]">{formatFCFA(financialHighlights.ticketMoyen)}</span>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-amber-50 to-white px-4 py-3 border border-amber-100">
+              <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-amber-50 to-white px-4 py-3 border border-amber-100">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
                     <PieChart className="h-4 w-4 text-[#EA580C]" />
@@ -558,7 +558,7 @@ export default function OverviewTab({ restaurantId }) {
                 </div>
                 <span className="text-base font-bold text-[#1A0C00]">{financialHighlights.margesBrutes}%</span>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-emerald-50 to-white px-4 py-3 border border-emerald-100">
+              <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-emerald-50 to-white px-4 py-3 border border-emerald-100">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100">
                     <Users className="h-4 w-4 text-emerald-600" />
@@ -567,7 +567,7 @@ export default function OverviewTab({ restaurantId }) {
                 </div>
                 <span className="text-base font-bold text-[#1A0C00]">{stats.uniqueCustomers}</span>
               </div>
-              <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-sky-50 to-white px-4 py-3 border border-sky-100">
+              <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-sky-50 to-white px-4 py-3 border border-sky-100">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-sky-100">
                     <Activity className="h-4 w-4 text-sky-600" />
@@ -580,7 +580,7 @@ export default function OverviewTab({ restaurantId }) {
           </section>
 
           {/* Accès rapides */}
-          <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+          <section className="rounded-lg border border-slate-100 bg-white p-5 shadow-card">
             <h3 className="mb-3 text-sm font-bold text-[#1A0C00]">Accès rapides</h3>
             <div className="grid grid-cols-2 gap-2">
               {[
@@ -596,7 +596,7 @@ export default function OverviewTab({ restaurantId }) {
                 <button
                   key={label}
                   onClick={() => navigate(path)}
-                  className="flex items-center gap-2 rounded-xl border border-slate-100 bg-white px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#EA580C]"
+                  className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#EA580C]"
                 >
                   <Icon className="h-4 w-4 shrink-0" style={{ color }} />
                   {label}
@@ -608,7 +608,7 @@ export default function OverviewTab({ restaurantId }) {
       </div>
 
       {/* ── Recent orders ── */}
-      <section className="rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+      <section className="rounded-lg border border-slate-100 bg-white p-5 shadow-card">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h3 className="text-sm font-bold text-[#1A0C00]">Commandes récentes</h3>
@@ -639,7 +639,7 @@ export default function OverviewTab({ restaurantId }) {
               return (
                 <div key={order.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#FFF0DF] text-[11px] font-bold text-[#EA580C]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FFF0DF] text-[11px] font-bold text-[#EA580C]">
                       #{(order.numero ?? '').toString().slice(-3)}
                     </div>
                     <div>
@@ -660,7 +660,7 @@ export default function OverviewTab({ restaurantId }) {
             })}
           </div>
         ) : (
-          <div className="rounded-xl border border-dashed border-[#FFF0DF] bg-white py-10 text-center text-sm text-[#8B6E50]">
+          <div className="rounded-lg border border-dashed border-[#FFF0DF] bg-white py-10 text-center text-sm text-[#8B6E50]">
             Aucune commande récente
           </div>
         )}

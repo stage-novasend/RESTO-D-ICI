@@ -294,8 +294,8 @@ function ActivityHeatmap({ heatmap }) {
         ))}
         {/* Rows par heure */}
         {hours.map(h => (
-          <>
-            <div key={`h${h}`} style={{ fontSize: 10, color: '#94A3B8', textAlign: 'right', paddingRight: 8, lineHeight: '22px' }}>{h}h</div>
+          <div style={{display: 'contents'}} key={`h${h}`}>
+            <div style={{ fontSize: 10, color: '#94A3B8', textAlign: 'right', paddingRight: 8, lineHeight: '22px' }}>{h}h</div>
             {Array.from({ length: 7 }, (_, dow) => {
               const count = getCount(dow, h);
               return (
@@ -308,7 +308,7 @@ function ActivityHeatmap({ heatmap }) {
                 />
               );
             })}
-          </>
+          </div>
         ))}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 10, justifyContent: 'flex-end' }}>
@@ -2153,13 +2153,12 @@ function ConfigTab() {
                 <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#FFF5EB', border: '1px solid rgba(234,88,12,0.2)', borderRadius: 6, padding: '6px 10px', marginBottom: 12, wordBreak: 'break-all', color: '#EA580C', letterSpacing: '0.1em' }}>
                   {twoFAData.secret}
                 </div>
-                {Field({
-                  label: 'Code de vérification', children: (
-                    <input type="text" inputMode="numeric" maxLength={6} placeholder="000000" value={twoFACode}
-                      onChange={e => setTwoFACode(e.target.value.replace(/\D/g, ''))}
-                      style={{ ...inputStyle, letterSpacing: '0.4em', fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#0F172A' }} />
-                  )
-                })}
+                <div>
+                  <label style={labelStyle}>Code de vérification</label>
+                  <input type="text" inputMode="numeric" maxLength={6} placeholder="000000" value={twoFACode}
+                    onChange={e => setTwoFACode(e.target.value.replace(/\D/g, ''))}
+                    style={{ ...inputStyle, letterSpacing: '0.4em', fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#0F172A' }} />
+                </div>
                 <button onClick={handleEnable2FA} disabled={twoFASaving || twoFACode.length !== 6}
                   style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, width: '100%', background: '#7C3AED', color: '#fff', border: 'none', borderRadius: 8, padding: '9px 0', fontWeight: 700, fontSize: 12, cursor: 'pointer', opacity: (twoFASaving || twoFACode.length !== 6) ? 0.55 : 1 }}>
                   <Check style={{ width: 13, height: 13 }} />
@@ -3040,6 +3039,11 @@ function AlertesTab() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  // Évite un setState après démontage (changement d'onglet pendant le fetch) :
+  // sans ce garde, une réponse qui arrive après un unmount peut entrer en
+  // collision avec la transition de route (React insertBefore/removeChild).
+  const mountedRef = useRef(true);
+  useEffect(() => () => { mountedRef.current = false; }, []);
 
   const CATEGORIES = {
     security: { label: 'Sécurité', color: '#DC2626', bg: '#FEF2F2', icon: Shield },
@@ -3096,9 +3100,9 @@ function AlertesTab() {
       const merged = [...b2bNotifs, ...logs].sort(
         (a, b) => new Date(b.createdAt) - new Date(a.createdAt),
       );
-      setItems(merged);
+      if (mountedRef.current) setItems(merged);
     } catch { /* ignore */ }
-    finally { setLoading(false); }
+    finally { if (mountedRef.current) setLoading(false); }
   }, []);
 
   useEffect(() => { load(); }, [load, revision]);
@@ -3208,7 +3212,7 @@ function AlertesTab() {
               const label = ACTION_LABELS[item.action] || item.action;
               const isB2BPending = item.source === 'b2b';
               return (
-                <div key={item.id}
+                <div key={item.id ? `${item.id}-${i}` : `alert-${i}`}
                   style={{
                     display: 'flex', alignItems: 'flex-start', gap: 14, padding: '14px 20px',
                     borderBottom: i < displayed.length - 1 ? '1px solid #F1F5F9' : 'none',
@@ -3609,14 +3613,14 @@ function AdminDashboardInner() {
           marginBottom: 28, padding: '20px 24px', borderRadius: 20,
           background: '#FFFFFF',
           border: '1px solid #E2E8F0',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.02)',
+          boxShadow: 'none',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <div style={{
               width: 48, height: 48, borderRadius: 14,
-              background: 'linear-gradient(135deg, #0F172A 0%, #1E293B 100%)',
+              background: '#0F172A',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 6px 20px rgba(15,23,42,0.25)',
+              boxShadow: 'none',
             }}>
               <Shield style={{ width: 22, height: 22, color: '#fff' }} />
             </div>
@@ -3643,8 +3647,8 @@ function AdminDashboardInner() {
           background: 'rgba(255, 255, 255, 0.94)',
           backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)',
           borderRadius: 16, padding: '6px',
-          border: '1px solid #CBD5E1',
-          boxShadow: '0 10px 30px -4px rgba(15, 23, 42, 0.12), 0 4px 12px rgba(0,0,0,0.04)',
+          border: '1px solid #E2E8F0',
+          boxShadow: 'none',
           overflowX: 'auto',
         }}>
           {TABS.map(t => {

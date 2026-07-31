@@ -3,7 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
-import { Integration, IntegrationType } from '../common/entities/integration.entity';
+import {
+  Integration,
+  IntegrationType,
+} from '../common/entities/integration.entity';
 
 @Injectable()
 export class SmsService {
@@ -15,7 +18,7 @@ export class SmsService {
     @InjectRepository(Integration)
     private integrationRepo: Repository<Integration>,
   ) {
-    const sid   = config.get('TWILIO_ACCOUNT_SID');
+    const sid = config.get('TWILIO_ACCOUNT_SID');
     const token = config.get('TWILIO_AUTH_TOKEN');
     if (sid && token && sid !== 'your-twilio-sid') {
       try {
@@ -40,7 +43,11 @@ export class SmsService {
 
   // ── Envoi via NovaSMS / fournisseur DB ────────────────────────
 
-  private async sendViaDynamicProvider(integration: Integration, to: string, body: string): Promise<boolean> {
+  private async sendViaDynamicProvider(
+    integration: Integration,
+    to: string,
+    body: string,
+  ): Promise<boolean> {
     if (!integration.baseUrl || !integration.apiKey) return false;
     try {
       await axios.post(
@@ -57,7 +64,9 @@ export class SmsService {
       this.logger.log(`[${integration.name}] SMS envoyé à ${to}`);
       return true;
     } catch (err: any) {
-      this.logger.error(`[${integration.name}] Échec SMS à ${to}: ${err.message}`);
+      this.logger.error(
+        `[${integration.name}] Échec SMS à ${to}: ${err.message}`,
+      );
       return false;
     }
   }
@@ -94,18 +103,29 @@ export class SmsService {
 
   // ── Messages métier ───────────────────────────────────────────
 
-  async sendOrderConfirmation(telephone: string, numero: string, montant: number): Promise<void> {
+  async sendOrderConfirmation(
+    telephone: string,
+    numero: string,
+    montant: number,
+  ): Promise<void> {
     const fcfa = Math.round(montant).toLocaleString('fr-FR');
-    await this.sendSms(telephone, `RestoDici ✓ Commande #${numero} confirmée. Montant: ${fcfa} FCFA. Suivez votre commande sur l'app.`);
+    await this.sendSms(
+      telephone,
+      `RestoDici ✓ Commande #${numero} confirmée. Montant: ${fcfa} FCFA. Suivez votre commande sur l'app.`,
+    );
   }
 
-  async sendStatusUpdate(telephone: string, numero: string, statut: string): Promise<void> {
+  async sendStatusUpdate(
+    telephone: string,
+    numero: string,
+    statut: string,
+  ): Promise<void> {
     const labels: Record<string, string> = {
-      EN_PREP:      'En préparation 🍳',
-      PRETE:        'Prête ! Récupérez votre commande 🎉',
+      EN_PREP: 'En préparation 🍳',
+      PRETE: 'Prête ! Récupérez votre commande 🎉',
       EN_LIVRAISON: 'En cours de livraison 🛵',
-      LIVREE:       'Livrée avec succès ✅',
-      ANNULEE:      'Annulée. Contactez-nous pour toute question.',
+      LIVREE: 'Livrée avec succès ✅',
+      ANNULEE: 'Annulée. Contactez-nous pour toute question.',
     };
     const label = labels[statut];
     if (!label) return;
@@ -113,6 +133,9 @@ export class SmsService {
   }
 
   async sendOtp(telephone: string, code: string): Promise<void> {
-    await this.sendSms(telephone, `RestoDici — Votre code de vérification : ${code}. Valable 10 minutes.`);
+    await this.sendSms(
+      telephone,
+      `RestoDici — Votre code de vérification : ${code}. Valable 10 minutes.`,
+    );
   }
 }

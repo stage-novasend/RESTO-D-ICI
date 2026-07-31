@@ -308,11 +308,16 @@ export const tresorerieAPI = {
 
   recordExpense: (data) => api.post("/tresorerie/expenses", data),
 
+  getExpenses: (period = "month") =>
+    api.get("/tresorerie/expenses", { params: { period } }),
+
   generateReport: (period = "monthly") =>
     api.get("/tresorerie/reports", { params: { period } }),
 
   configureBudgetAlerts: (config) =>
     api.post("/tresorerie/budget-alerts", config),
+
+  getBudgetAlerts: () => api.get("/tresorerie/budget-alerts"),
 
   getCommissionsResume: () => api.get("/tresorerie/commissions"),
 };

@@ -208,7 +208,9 @@ export class CommandesController {
     // Default-deny : seul l'ADMIN voit toutes les commandes. Le staff/gérant est
     // borné à son restaurant ; TOUT autre rôle (CLIENT, B2B…) doit être le
     // client propriétaire de la commande.
-    const restaurantId = isRestaurantStaff ? req.user.restaurant?.id : undefined;
+    const restaurantId = isRestaurantStaff
+      ? req.user.restaurant?.id
+      : undefined;
     const clientId = isAdmin || isRestaurantStaff ? undefined : req.user.id;
 
     return this.commandesService.findOne(id, clientId, restaurantId);

@@ -14,7 +14,10 @@ export const NOVASEND_SIGNATURE_HEADERS = [
 
 /** Retire un éventuel préfixe d'algorithme (`sha256=…`) et normalise la casse. */
 const cleanSignature = (signature: string): string =>
-  signature.trim().replace(/^sha256=/i, '').toLowerCase();
+  signature
+    .trim()
+    .replace(/^sha256=/i, '')
+    .toLowerCase();
 
 /**
  * Compare en temps constant la signature reçue au HMAC-SHA256 du corps BRUT.

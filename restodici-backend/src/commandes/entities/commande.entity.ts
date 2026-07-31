@@ -37,6 +37,7 @@ export enum ModePaiementCommande {
   MTN_MONEY = 'MTN_MONEY',
   MOOV_MONEY = 'MOOV_MONEY',
   CARTE_BANCAIRE = 'CARTE_BANCAIRE',
+  CHEQUE = 'CHEQUE',
 }
 // Note: si TypeORM synchronize ne met pas à jour l'enum PG, executer :
 // ALTER TYPE commandes_modepaiement_enum ADD VALUE IF NOT EXISTS 'WAVE';

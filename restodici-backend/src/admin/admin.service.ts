@@ -20,7 +20,10 @@ import { CommissionPlateforme } from '../commandes/entities/commission-plateform
 import { FactureMensuelleB2B } from '../b2b/entities/facture-mensuelle-b2b.entity';
 import { PaymentMethod } from '../paiements/entities/payment-method.entity';
 import { CommandesGateway } from '../commandes/commandes.gateway';
-import { paginationParams, buildPaginated } from '../common/pagination/pagination';
+import {
+  paginationParams,
+  buildPaginated,
+} from '../common/pagination/pagination';
 
 /* ── Clés de config avec leurs métadonnées ── */
 const CONFIG_DEFAULTS: Array<{
@@ -150,13 +153,13 @@ const CONFIG_DEFAULTS: Array<{
   {
     key: 'platform_nom',
     value: null,
-    description: 'Nom commercial de la plateforme (ex: Resto d\'ici)',
+    description: "Nom commercial de la plateforme (ex: Resto d'ici)",
     category: 'platform',
   },
   {
     key: 'platform_nif',
     value: null,
-    description: 'Numéro d\'identification fiscale de la plateforme',
+    description: "Numéro d'identification fiscale de la plateforme",
     category: 'platform',
   },
   {
@@ -179,7 +182,8 @@ const CONFIG_DEFAULTS: Array<{
       'Livraison rapide dans toute la ville',
       'Paiement mobile sécurisé',
     ]),
-    description: "Messages défilants de la bannière d'accueil (tableau JSON de chaînes)",
+    description:
+      "Messages défilants de la bannière d'accueil (tableau JSON de chaînes)",
     category: 'platform',
   },
   // Système
@@ -272,16 +276,23 @@ export class AdminService {
 
     // 5. Novasend (paiements) — vérifie la config
     try {
-      const novasendKey = await this.configRepo.findOne({ where: { key: 'novasend_api_key' } });
-      checks.push({ label: 'Novasend (paiements)', ok: !!(novasendKey?.value) });
+      const novasendKey = await this.configRepo.findOne({
+        where: { key: 'novasend_api_key' },
+      });
+      checks.push({ label: 'Novasend (paiements)', ok: !!novasendKey?.value });
     } catch {
       checks.push({ label: 'Novasend (paiements)', ok: false });
     }
 
     // 6. Intégrations actives
     try {
-      const activeIntegrations = await this.integrationRepo.count({ where: { enabled: true } });
-      checks.push({ label: 'Intégrations actives', ok: activeIntegrations >= 0 });
+      const activeIntegrations = await this.integrationRepo.count({
+        where: { enabled: true },
+      });
+      checks.push({
+        label: 'Intégrations actives',
+        ok: activeIntegrations >= 0,
+      });
     } catch {
       checks.push({ label: 'Intégrations actives', ok: false });
     }
@@ -469,7 +480,9 @@ export class AdminService {
 
   async deleteUser(id: string, currentAdminId: string) {
     if (id === currentAdminId) {
-      throw new BadRequestException('Vous ne pouvez pas supprimer votre propre compte admin.');
+      throw new BadRequestException(
+        'Vous ne pouvez pas supprimer votre propre compte admin.',
+      );
     }
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
@@ -481,7 +494,12 @@ export class AdminService {
       this.auditRepo.create({
         action: 'USER_DELETED',
         userId: currentAdminId,
-        payload: { deletedUserId: id, email: user.email, nom: user.nom, role: user.role },
+        payload: {
+          deletedUserId: id,
+          email: user.email,
+          nom: user.nom,
+          role: user.role,
+        },
       }),
     );
 
@@ -612,7 +630,12 @@ export class AdminService {
       this.auditRepo.create({
         action: 'CONTESTATION_RESOLUE',
         userId: adminId,
-        payload: { factureId, accepted, note, numeroFacture: facture.numeroFacture },
+        payload: {
+          factureId,
+          accepted,
+          note,
+          numeroFacture: facture.numeroFacture,
+        },
       }),
     );
 
@@ -856,8 +879,7 @@ export class AdminService {
     id: string,
   ): Promise<{ id: string; enabled: boolean }> {
     const method = await this.paymentMethodRepo.findOne({ where: { id } });
-    if (!method)
-      throw new NotFoundException('Moyen de paiement introuvable');
+    if (!method) throw new NotFoundException('Moyen de paiement introuvable');
     method.enabled = !method.enabled;
     const saved = await this.paymentMethodRepo.save(method);
     this.notifyAdmins('payment-methods', {
@@ -1048,7 +1070,10 @@ export class AdminService {
       });
 
       const ok = response.status < 500;
-      const status = response.status === 405 || response.status === 404 ? 200 : response.status;
+      const status =
+        response.status === 405 || response.status === 404
+          ? 200
+          : response.status;
 
       if (isNovasend || ok) {
         return {
@@ -1111,7 +1136,9 @@ export class AdminService {
     >();
 
     // Initialiser avec TOUS les restaurants existants pour afficher le vrai taux actuel
-    const restaurants = await this.restaurantRepo.find({ select: ['id', 'nom', 'tauxCommission'] });
+    const restaurants = await this.restaurantRepo.find({
+      select: ['id', 'nom', 'tauxCommission'],
+    });
     for (const r of restaurants) {
       parRestaurant.set(r.id, {
         restaurantId: r.id,
@@ -1155,9 +1182,13 @@ export class AdminService {
           entry.bloque = true;
         }
       } else if (c.statut === 'A_VERSER' || c.statut === 'EN_COURS') {
-        entry.aVerser += Number(c.montantNet ?? c.montantCommande - c.montantCommission);
+        entry.aVerser += Number(
+          c.montantNet ?? c.montantCommande - c.montantCommission,
+        );
       } else if (c.statut === 'VERSE') {
-        entry.verse += Number(c.montantNet ?? c.montantCommande - c.montantCommission);
+        entry.verse += Number(
+          c.montantNet ?? c.montantCommande - c.montantCommission,
+        );
       }
     }
 
@@ -1203,15 +1234,22 @@ export class AdminService {
 
   /** Admin marque une dette espèces comme réglée (virement reçu manuellement). */
   async regulariserDetteCommission(commissionId: string) {
-    const ligne = await this.commissionRepo.findOne({ where: { id: commissionId } });
+    const ligne = await this.commissionRepo.findOne({
+      where: { id: commissionId },
+    });
     if (!ligne) throw new NotFoundException('Ligne de commission introuvable');
     if (ligne.statut !== 'DU') {
-      throw new BadRequestException('Cette ligne n\'est pas une dette en attente');
+      throw new BadRequestException(
+        "Cette ligne n'est pas une dette en attente",
+      );
     }
     ligne.statut = 'PAYE';
     ligne.dateReglement = new Date();
     await this.commissionRepo.save(ligne);
-    this.notifyAdmins('commissions', { restaurantId: ligne.restaurantId, dettePayee: commissionId });
+    this.notifyAdmins('commissions', {
+      restaurantId: ligne.restaurantId,
+      dettePayee: commissionId,
+    });
     return { id: ligne.id, statut: ligne.statut };
   }
 
@@ -1232,7 +1270,10 @@ export class AdminService {
   // `before` est une date ISO; si absent, purge TOUT.
   // On utilise le manager de l'auditRepo pour les tables sans repo injecté.
 
-  async purgeHistorique(target: 'audit' | 'commandes' | 'livraisons' | 'notifications' | 'all', before?: string) {
+  async purgeHistorique(
+    target: 'audit' | 'commandes' | 'livraisons' | 'notifications' | 'all',
+    before?: string,
+  ) {
     const mgr = this.auditRepo.manager;
     const cutoff = before ? new Date(before) : null;
     const results: Record<string, number> = {};
@@ -1240,36 +1281,54 @@ export class AdminService {
     const runDelete = async (table: string, key: string) => {
       let q = `DELETE FROM "${table}"`;
       const params: any[] = [];
-      if (cutoff) { q += ` WHERE "createdAt" < $1`; params.push(cutoff); }
+      if (cutoff) {
+        q += ` WHERE "createdAt" < $1`;
+        params.push(cutoff);
+      }
       const res = await mgr.query(q, params);
-      results[key] = typeof res === 'object' && 'affected' in res ? (res as any).affected : (res?.rowCount ?? 0);
+      results[key] =
+        typeof res === 'object' && 'affected' in res
+          ? res.affected
+          : (res?.rowCount ?? 0);
     };
 
-    if (target === 'audit' || target === 'all') await runDelete('audit_logs', 'audit');
-    if (target === 'commandes' || target === 'all') await runDelete('commandes', 'commandes');
-    if (target === 'livraisons' || target === 'all') await runDelete('livraisons_externes', 'livraisons');
-    if (target === 'notifications' || target === 'all') await runDelete('notifications', 'notifications');
+    if (target === 'audit' || target === 'all')
+      await runDelete('audit_logs', 'audit');
+    if (target === 'commandes' || target === 'all')
+      await runDelete('commandes', 'commandes');
+    if (target === 'livraisons' || target === 'all')
+      await runDelete('livraisons_externes', 'livraisons');
+    if (target === 'notifications' || target === 'all')
+      await runDelete('notifications', 'notifications');
 
     return { purged: results, before: cutoff?.toISOString() ?? 'total' };
   }
 
   /* ── Onboarding Administrateur ── */
   async getOnboardingStatus(adminId: string) {
-    const config = await this.configRepo.findOne({ where: { key: 'ADMIN_NOVASEND_NUMBER' } });
+    const config = await this.configRepo.findOne({
+      where: { key: 'ADMIN_NOVASEND_NUMBER' },
+    });
     const user = await this.userRepo.findOne({ where: { id: adminId } });
-    
+
     // Le mot de passe par défaut est Admin@2025!
     // S'il correspond ou si le numéro novasend manque, onboarding = false
     let usesDefaultPassword = false;
     if (user) {
       usesDefaultPassword = await bcrypt.compare('Admin@2025!', user.password);
     }
-    
-    const isComplete = config?.value != null && config.value.trim() !== '' && !usesDefaultPassword;
+
+    const isComplete =
+      config?.value != null &&
+      config.value.trim() !== '' &&
+      !usesDefaultPassword;
     return { isComplete };
   }
 
-  async completeOnboarding(adminId: string, payload: { newPassword?: string; novasendNumber?: string }) {
+  async completeOnboarding(
+    adminId: string,
+    payload: { newPassword?: string; novasendNumber?: string },
+  ) {
     if (!payload.newPassword || !payload.novasendNumber) {
       throw new BadRequestException('Mot de passe et numéro Novasend requis');
     }
@@ -1286,7 +1345,9 @@ export class AdminService {
     await this.userRepo.save(user);
 
     // 2. Mise à jour de la config globale pour Novasend
-    let config = await this.configRepo.findOne({ where: { key: 'ADMIN_NOVASEND_NUMBER' } });
+    let config = await this.configRepo.findOne({
+      where: { key: 'ADMIN_NOVASEND_NUMBER' },
+    });
     if (!config) {
       config = this.configRepo.create({
         key: 'ADMIN_NOVASEND_NUMBER',
