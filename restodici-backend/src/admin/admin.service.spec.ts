@@ -107,7 +107,7 @@ describe('AdminService', () => {
           email: 'a@b.com',
           password: 'p',
           role: Role.CLIENT,
-        } as any),
+        }),
       ).rejects.toThrow(ConflictException);
     });
     it('crée et ne renvoie pas le mot de passe', async () => {

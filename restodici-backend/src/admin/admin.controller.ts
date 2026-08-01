@@ -35,13 +35,16 @@ export class AdminController {
 
   /* ── Onboarding Administrateur ── */
   @Get('onboarding-status')
-  getOnboardingStatus(@Req() req: any) {
-    return this.adminService.getOnboardingStatus(req.user.userId);
+  getOnboardingStatus(@Req() req: { user: { id: string } }) {
+    return this.adminService.getOnboardingStatus(req.user.id);
   }
 
   @Post('onboarding')
-  completeOnboarding(@Req() req: any, @Body() body: any) {
-    return this.adminService.completeOnboarding(req.user.userId, body);
+  completeOnboarding(
+    @Req() req: { user: { id: string } },
+    @Body() body: { newPassword?: string; novasendNumber?: string },
+  ) {
+    return this.adminService.completeOnboarding(req.user.id, body);
   }
 
   /* ── Statistiques plateforme ── */
@@ -127,8 +130,8 @@ export class AdminController {
   }
 
   @Delete('users/:id')
-  deleteUser(@Param('id') id: string, @Req() req: any) {
-    return this.adminService.deleteUser(id, req.user?.id);
+  deleteUser(@Param('id') id: string, @Req() req: { user: { id: string } }) {
+    return this.adminService.deleteUser(id, req.user.id);
   }
 
   /* ── Gestion restaurants ── */
@@ -174,8 +177,11 @@ export class AdminController {
   }
 
   @Delete('restaurants/:id')
-  deleteRestaurant(@Param('id') id: string, @Req() req: any) {
-    return this.adminService.deleteRestaurant(id, req.user?.id);
+  deleteRestaurant(
+    @Param('id') id: string,
+    @Req() req: { user: { id: string } },
+  ) {
+    return this.adminService.deleteRestaurant(id, req.user.id);
   }
 
   /* ── Logs d'audit ── */

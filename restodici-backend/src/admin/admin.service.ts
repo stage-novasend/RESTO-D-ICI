@@ -680,7 +680,7 @@ export class AdminService {
       .where('u."createdAt" >= :ago7', { ago7 })
       .groupBy('day')
       .orderBy('day', 'ASC')
-      .getRawMany();
+      .getRawMany<{ day: string; count: string }>();
 
     // Activité audit par jour — 7 derniers jours
     const auditByDayRaw = await this.auditRepo
@@ -690,7 +690,7 @@ export class AdminService {
       .where('al."createdAt" >= :ago7', { ago7 })
       .groupBy('day')
       .orderBy('day', 'ASC')
-      .getRawMany();
+      .getRawMany<{ day: string; count: string }>();
 
     // Heatmap activité — 30 derniers jours (heure × jour semaine)
     const heatmapRaw = await this.auditRepo
@@ -700,7 +700,7 @@ export class AdminService {
       .addSelect('COUNT(*)', 'count')
       .where('al."createdAt" >= :ago30', { ago30 })
       .groupBy('dow, hour')
-      .getRawMany();
+      .getRawMany<{ dow: string; hour: string; count: string }>();
 
     // Répartition rôles utilisateurs
     const roleDistRaw = await this.userRepo
@@ -708,7 +708,7 @@ export class AdminService {
       .select('u.role', 'role')
       .addSelect('COUNT(*)', 'count')
       .groupBy('u.role')
-      .getRawMany();
+      .getRawMany<{ role: string; count: string }>();
 
     // 10 dernières actions d'audit
     const recentLogs = await this.auditRepo
@@ -723,7 +723,7 @@ export class AdminService {
       return d.toISOString().slice(0, 10);
     });
 
-    const toMap = (raw: any[]) =>
+    const toMap = (raw: { day: string; count: string }[]) =>
       Object.fromEntries(raw.map((r) => [r.day, parseInt(r.count, 10)]));
 
     const usersMap = toMap(usersByDayRaw);

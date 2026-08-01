@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Truck, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
+import { X, Truck, CheckCircle, Loader2 } from 'lucide-react';
 import { livraisonsExtAPI, commandesService } from '../../services/api';
 
 import { ORANGE as O } from '../../theme/colors';

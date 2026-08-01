@@ -1,6 +1,6 @@
 // src/App.jsx — routage et gardes de route par rôle
-import { lazy, Suspense, useRef, useLayoutEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { AuthProvider, useAuth } from './hooks/useAuth';
 import { getAccessToken } from './services/token-store.js';

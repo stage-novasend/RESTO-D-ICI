@@ -48,7 +48,7 @@ export default class ErrorBoundary extends Component {
             Une erreur est survenue
           </h1>
           <p style={{ fontSize: 14, color: TEXT_MUTED, margin: '0 0 24px', lineHeight: 1.5 }}>
-            L'application a rencontré un problème inattendu. Vous pouvez recharger la page pour continuer.
+            L&apos;application a rencontré un problème inattendu. Vous pouvez recharger la page pour continuer.
           </p>
           <button
             onClick={this.handleReload}

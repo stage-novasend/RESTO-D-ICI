@@ -6,8 +6,7 @@
    ═══════════════════════════════════════════════════════════════ */
 import { useState } from 'react';
 import {
-  SlidersHorizontal, X, RotateCcw, Star, Truck, Clock,
-  DollarSign, Utensils, Check, ChevronDown, Flame, Sparkles
+  SlidersHorizontal, X, RotateCcw, Star, Truck, Clock, ChevronDown,
 } from 'lucide-react';
 
 const C = {
