@@ -46,7 +46,7 @@ function addPageHeader(doc, title, subtitle = '') {
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(180, 180, 180);
   doc.text('Plateforme de restauration B2B · Côte d\'Ivoire', 14, 18);
-  doc.text('contact@restodici.ci · www.restodici.ci', 14, 23);
+  doc.text('akwaba@sankofa-lab.co · +225 01 01 50 00 48', 14, 23);
 
   // Type de document (droite) — cartouche filaire : un en-tête comptable
   // n'a pas besoin d'un aplat de couleur pour être lisible.

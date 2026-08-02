@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MapPin, Building2, ArrowRight, Send, CheckCircle } from 'lucide-react';
+import { Mail, Phone, MapPin, Building2, ArrowRight, Send, CheckCircle } from 'lucide-react';
 import BrandLogo from '../components/shared/BrandLogo';
 import MiniFooter from '../components/shared/MiniFooter';
 
@@ -107,6 +107,7 @@ export default function Contact() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {[
               { icon: Mail, label: 'Email', value: 'akwaba@sankofa-lab.co', sub: 'Réponse sous 24h ouvrées' },
+              { icon: Phone, label: 'Téléphone', value: '+225 01 01 50 00 48', sub: 'Du lundi au samedi, 8h–19h' },
               { icon: MapPin, label: 'Adresse', value: 'Cocody Belle Côte, Cité Tuileries', sub: 'Abidjan · Côte d\'Ivoire' },
               { icon: Building2, label: 'Éditeur', value: 'SANKOFA-LAB', sub: 'Côte d\'Ivoire · Cameroun' },
             ].map(({ icon: Icon, label, value, sub }) => (

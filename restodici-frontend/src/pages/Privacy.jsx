@@ -44,7 +44,7 @@ export default function Privacy() {
 
         <Section title="Qui collecte vos données ?">
           <P><strong>SANKOFA-LAB (AROAPP)</strong>, société ivoirienne créée en 2024 et dont le siège est situé à Abidjan, Cocody Belle Côte, Cité Tuileries, est le responsable du traitement de vos données personnelles collectées via la plateforme Resto d'ici.</P>
-          <P>Pour toute question, vous pouvez écrire à <a href="mailto:akwaba@sankofa-lab.co" style={{ color: T.accent, textDecoration: 'none', fontWeight: 600 }}>akwaba@sankofa-lab.co</a>.</P>
+          <P>Pour toute question, vous pouvez écrire à <a href="mailto:akwaba@sankofa-lab.co" style={{ color: T.accent, textDecoration: 'none', fontWeight: 600 }}>akwaba@sankofa-lab.co</a> ou nous appeler au <a href="tel:+2250101500048" style={{ color: T.accent, textDecoration: 'none', fontWeight: 600 }}>+225 01 01 50 00 48</a>.</P>
         </Section>
 
         <Section title="Données collectées">

@@ -1060,8 +1060,8 @@ function Footer() {
 
             <div style={{ display: "flex", flexDirection: "column", gap: 8, fontFamily: sans, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
               <span>📍 Abidjan, Côte d'Ivoire</span>
-              <span>📞 +225 07 00 00 00 00 / +225 05 00 00 00 00</span>
-              <span>✉️ contact@restodici.ci</span>
+              <span>📞 +225 01 01 50 00 48</span>
+              <span>✉️ akwaba@sankofa-lab.co</span>
             </div>
           </div>
 

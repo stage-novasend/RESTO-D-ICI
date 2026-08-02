@@ -32,6 +32,7 @@ export default function Legal() {
             <P><strong>Forme :</strong> société ivoirienne, créée en 2024</P>
             <P><strong>Siège social :</strong> Abidjan, Cocody Belle Côte, Cité Tuileries, Côte d'Ivoire</P>
             <P><strong>Email :</strong> <a href="mailto:akwaba@sankofa-lab.co" style={{ color: T.accent, textDecoration: 'none', fontWeight: 600 }}>akwaba@sankofa-lab.co</a></P>
+            <P><strong>Téléphone :</strong> <a href="tel:+2250101500048" style={{ color: T.accent, textDecoration: 'none', fontWeight: 600 }}>+225 01 01 50 00 48</a></P>
             <P><strong>Directeur de la publication :</strong> la direction de SANKOFA-LAB</P>
             <P>
               Resto d'ici est une plateforme éditée par SANKOFA-LAB, société

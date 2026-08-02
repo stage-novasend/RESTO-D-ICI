@@ -800,7 +800,7 @@ function SyscohadaViewerModal({ collabs, factures, compte, monthlyExp, isLastDay
                 <div>
                   <p className="text-[10px] font-bold uppercase tracking-widest mb-1" style={{ color: '#FF3A03' }}>Rapport Mensuel SYSCOHADA</p>
                   <p className="text-white font-bold text-base">Resto d'ici · Plateforme B2B</p>
-                  <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>contact@restodici.ci · Abidjan, Côte d'Ivoire</p>
+                  <p className="text-[12px] mt-0.5" style={{ color: 'rgba(255,255,255,0.45)' }}>akwaba@sankofa-lab.co · +225 01 01 50 00 48 · Abidjan, Côte d'Ivoire</p>
                 </div>
                 <div className="text-right shrink-0">
                   <span className="px-3 py-1.5 rounded-lg text-xs font-bold text-white" style={{ background: '#FF3A03' }}>SYSCOHADA</span>
@@ -1577,7 +1577,7 @@ export default function B2BDashboard() {
                   <div className="mt-3 flex flex-wrap items-center gap-4 text-[11px] text-[#92400E] font-semibold">
                     <span>🏢 RCCM : {compte.numeroRCCM || 'En cours'}</span>
                     <span>📑 NIF : {compte.numeroContribuable || 'En cours'}</span>
-                    <span className="text-[#D97706]">📞 Support : +225 07 00 00 00 00</span>
+                    <span className="text-[#D97706]">📞 Support : +225 01 01 50 00 48</span>
                   </div>
                 </div>
               </div>

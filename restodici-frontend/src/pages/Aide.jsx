@@ -42,7 +42,7 @@ const FAQ = {
     },
     {
       q: 'Que faire si ma commande n\'arrive pas ?',
-      a: 'Consultez le suivi en temps réel dans votre espace. Si le délai est dépassé de plus de 20 minutes, contactez notre support via le bouton "Aide" dans la page de suivi ou écrivez-nous à contact@restodici.ci.',
+      a: 'Consultez le suivi en temps réel dans votre espace. Si le délai est dépassé de plus de 20 minutes, contactez notre support via le bouton "Aide" dans la page de suivi, écrivez-nous à akwaba@sankofa-lab.co ou appelez le +225 01 01 50 00 48.',
     },
   ],
   paiements: [
@@ -56,7 +56,7 @@ const FAQ = {
     },
     {
       q: 'Comment obtenir un remboursement ?',
-      a: 'En cas de commande non livrée ou de produit manquant, envoyez une demande à contact@restodici.ci avec votre numéro de commande. Nous traitons les remboursements sous 48h ouvrées.',
+      a: 'En cas de commande non livrée ou de produit manquant, envoyez une demande à akwaba@sankofa-lab.co avec votre numéro de commande. Nous traitons les remboursements sous 48h ouvrées.',
     },
   ],
   compte: [
@@ -70,7 +70,7 @@ const FAQ = {
     },
     {
       q: 'Comment supprimer mon compte ?',
-      a: 'Envoyez une demande à privacy@restodici.ci depuis l\'adresse associée à votre compte. La suppression est définitive et irréversible. Vos données de transaction sont conservées 10 ans pour obligation légale.',
+      a: 'Envoyez une demande à akwaba@sankofa-lab.co depuis l\'adresse associée à votre compte. La suppression est définitive et irréversible. Vos données de transaction sont conservées 10 ans pour obligation légale.',
     },
   ],
   b2b: [
@@ -80,7 +80,7 @@ const FAQ = {
     },
     {
       q: 'Comment souscrire à l\'offre B2B ?',
-      a: 'Créez un compte de type "Entreprise" depuis la page d\'inscription ou contactez-nous à contact@restodici.ci. Notre équipe vous accompagnera pour paramétrer votre espace et former vos équipes.',
+      a: 'Créez un compte de type "Entreprise" depuis la page d\'inscription ou contactez-nous à akwaba@sankofa-lab.co / +225 01 01 50 00 48. Notre équipe vous accompagnera pour paramétrer votre espace et former vos équipes.',
     },
     {
       q: 'Quels sont les documents requis pour un compte B2B ?',
