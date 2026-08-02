@@ -301,11 +301,16 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
   ══════════════════════════════════════════════════════════ */
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop
+          z-index élevé (au-dessus de tous les overlays de page : menu resto
+          150, modales de personnalisation/livraison 200-201, tiroirs des
+          dashboards clients 999-2000) — sinon le panier s'ouvre visuellement
+          derrière la page et devient inaccessible (bouton "Voir le panier"
+          mobile sans effet une fois un article ajouté depuis la page resto). */}
       <div
         onClick={onClose}
         style={{
-          position: 'fixed', inset: 0, zIndex: 49,
+          position: 'fixed', inset: 0, zIndex: 3000,
           background: 'rgba(0,0,0,0.52)',
           backdropFilter: 'blur(4px)',
           opacity: isOpen ? 1 : 0,
@@ -317,7 +322,7 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
       {/* Panel */}
       <div
         style={{
-          position: 'fixed', right: 0, top: 0, bottom: 0, zIndex: 50,
+          position: 'fixed', right: 0, top: 0, bottom: 0, zIndex: 3001,
           width: 'min(440px, 100vw)',
           background: BG,
           boxShadow: '-16px 0 60px rgba(0,0,0,0.22)',

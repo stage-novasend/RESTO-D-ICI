@@ -89,7 +89,13 @@ const CSS = `
   .menu-resto-topbar { flex-wrap: wrap !important; height: auto !important; padding: 14px 16px !important; gap: 12px !important; }
   .menu-resto-info { border-right: none !important; padding-right: 0 !important; margin-right: 0 !important; }
   .menu-resto-search { order: 3; flex: 1 1 100% !important; max-width: none !important; }
-  .menu-resto-cart-btn { padding: 0 16px !important; }
+  /* Le bouton panier du haut n'affiche plus le détail (nb d'articles + prix) sur
+     mobile : ce texte forçait le nom du resto à se réduire à une seule lettre
+     (ex: "A." pour "Afro Fusion Kitchen") faute de place. Le détail complet
+     reste visible dans la barre panier rouge en bas d'écran (.cart-mobile-bar). */
+  .menu-resto-cart-btn { padding: 0 !important; width: 44px; justify-content: center; }
+  .menu-resto-cart-btn .cart-btn-label { display: none !important; }
+  .menu-resto-cart-btn .cart-btn-badge { display: flex !important; }
 }
 `;
 
@@ -641,6 +647,7 @@ export default function MenuPage() {
   const [loading,         setLoading]         = useState(true);
   const [menuLoading,     setMenuLoading]     = useState(false);
   const [search,          setSearch]          = useState('');
+  const [isMenuSearchFocused, setIsMenuSearchFocused] = useState(false);
   const [discoSearch,     setDiscoSearch]     = useState('');
   const [activeCat,       setActiveCat]       = useState('__all__');
   const [discoCat,        setDiscoCat]        = useState('__all__');
@@ -980,11 +987,20 @@ export default function MenuPage() {
 
   const menuCats = useMemo(() => buildDynCats(menuData, categories), [menuData, categories]);
 
-  const filteredProducts = useMemo(() => menuData.filter(p => {
-    const matchSearch = !search || p.nom.toLowerCase().includes(search.toLowerCase()) || (p.description || '').toLowerCase().includes(search.toLowerCase());
+  // Index flou (fautes de frappe, synonymes, pondération nom > catégorie > description) —
+  // même moteur que la recherche de restaurants, réutilisé ici pour les plats d'un resto.
+  const menuProductIndex = useMemo(() => createProductIndex(menuData), [menuData]);
+
+  const searchMatchedProducts = useMemo(() => {
+    const q = search.trim();
+    if (!q) return menuData;
+    return menuProductIndex.search(expandQuery(q)).map(r => r.item);
+  }, [menuData, search, menuProductIndex]);
+
+  const filteredProducts = useMemo(() => searchMatchedProducts.filter(p => {
     const matchCat = activeCat === '__all__' || p.categorieId === activeCat || p.categorie?.id === activeCat;
-    return matchSearch && matchCat;
-  }), [menuData, search, activeCat]);
+    return matchCat;
+  }), [searchMatchedProducts, activeCat]);
 
   const grouped = useMemo(() => {
     if (activeCat !== '__all__') return { single: filteredProducts };
@@ -1420,18 +1436,61 @@ export default function MenuPage() {
               </div>
 
               {/* Search Bar */}
-              <div className="menu-resto-search" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid rgba(234,60,12,0.15)', borderRadius: 50, padding: '0 18px', height: 46, width: '100%', maxWidth: 340, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div className="menu-resto-search" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid rgba(234,60,12,0.15)', borderRadius: 50, padding: '0 18px', height: 46, width: '100%', maxWidth: 340, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)', position: 'relative' }}>
                 <Search size={16} color={C.accent} />
-                <input type="text" placeholder={'Rechercher un plat…'} value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent', fontWeight: 600 }} />
+                <input
+                  type="text"
+                  placeholder={'Rechercher un plat…'}
+                  value={search}
+                  onChange={e => setSearch(e.target.value)}
+                  onFocus={() => setIsMenuSearchFocused(true)}
+                  onBlur={() => setTimeout(() => setIsMenuSearchFocused(false), 200)}
+                  style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent', fontWeight: 600 }}
+                />
                 {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
+
+                {/* Suggestions de recherche — plats du restaurant */}
+                {isMenuSearchFocused && search.trim() && (
+                  <div style={{ position: 'absolute', top: '100%', left: 0, right: 0, marginTop: 8, background: '#fff', borderRadius: 16, boxShadow: '0 10px 40px rgba(0,0,0,0.15)', border: `1px solid ${C.line}`, padding: '8px 0', zIndex: 1000, maxHeight: '60vh', overflowY: 'auto' }}>
+                    {searchMatchedProducts.length === 0 ? (
+                      <div style={{ padding: '18px 16px', textAlign: 'center', color: C.muted, fontFamily: sans, fontSize: 13 }}>Aucun plat trouvé pour « {search.trim()} »</div>
+                    ) : (
+                      searchMatchedProducts.slice(0, 6).map((p, i) => (
+                        <div
+                          key={p.id}
+                          onMouseDown={() => { setActiveCat('__all__'); handleCustomize(p); setIsMenuSearchFocused(false); }}
+                          style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 16px', cursor: 'pointer', transition: 'background 0.15s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = C.bg}
+                          onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                        >
+                          <div style={{ width: 40, height: 40, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: C.bg }}>
+                            <img src={getArticleImage(p) || fallback(i, 100)} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.src = fallback(i, 100); }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontFamily: sans, fontSize: 13.5, fontWeight: 700, color: C.dark, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.nom}</div>
+                            <div style={{ fontFamily: sans, fontSize: 12, color: C.muted, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>{p.categorie?.nom || 'Plat'}</div>
+                          </div>
+                          <div style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: C.accent, flexShrink: 0 }}>{formatFCFA(p.prixClient ?? p.prix)}</div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Cart Button */}
-              <button className="menu-resto-cart-btn" onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#FF3A03,#CC2402)' : '#fff', border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.dark, borderRadius: 50, padding: '0 24px', height: 46, fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 8px 24px rgba(234,60,12,0.3)' : '0 4px 12px rgba(0,0,0,0.04)', transition: 'all 0.2s', transform: 'translateY(0)' }}
+              <button className="menu-resto-cart-btn" onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#FF3A03,#CC2402)' : '#fff', border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.dark, borderRadius: 50, padding: '0 24px', height: 46, fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 8px 24px rgba(234,60,12,0.3)' : '0 4px 12px rgba(0,0,0,0.04)', transition: 'all 0.2s', transform: 'translateY(0)', position: 'relative' }}
                       onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                       onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
-                <ShoppingCart size={17} color={cartCount > 0 ? '#fff' : C.accent} />
-                {cartCount > 0 ? <><span>{cartCount} art.</span><span style={{ opacity: 0.6 }}>|</span><span>{formatFCFA(total())}</span></> : <span>Panier</span>}
+                <span style={{ position: 'relative', display: 'flex' }}>
+                  <ShoppingCart size={17} color={cartCount > 0 ? '#fff' : C.accent} />
+                  {cartCount > 0 && (
+                    <span className="cart-btn-badge" style={{ display: 'none', position: 'absolute', top: -8, right: -8, background: '#fff', color: '#FF3A03', borderRadius: '50%', minWidth: 16, height: 16, fontSize: 10, fontWeight: 900, alignItems: 'center', justifyContent: 'center', padding: '0 3px', lineHeight: 1 }}>{cartCount}</span>
+                  )}
+                </span>
+                <span className="cart-btn-label">
+                  {cartCount > 0 ? <><span>{cartCount} art.</span><span style={{ opacity: 0.6 }}>|</span><span>{formatFCFA(total())}</span></> : <span>Panier</span>}
+                </span>
               </button>
 
             </div>
@@ -1477,7 +1536,7 @@ export default function MenuPage() {
           </div>
 
           {cartCount > 0 && (
-            <div className="cart-mobile-bar" style={{ padding: '12px 16px 20px', background: C.card, borderTop: '1px solid ' + C.line, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', flexShrink: 0 }}>
+            <div className="cart-mobile-bar" style={{ padding: '12px 16px max(20px, env(safe-area-inset-bottom))', background: C.card, borderTop: '1px solid ' + C.line, boxShadow: '0 -4px 20px rgba(0,0,0,0.08)', flexShrink: 0 }}>
               <button onClick={() => setCartOpen(true)} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'linear-gradient(135deg,#EF4444,#DC2626)', color: '#fff', border: 'none', borderRadius: 14, padding: '14px 20px', cursor: 'pointer', fontFamily: sans, fontSize: 14, fontWeight: 800, boxShadow: '0 4px 16px rgba(246, 39, 39, 0.4)' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}><ShoppingCart size={16} /> {cartCount} article{cartCount > 1 ? 's' : ''}</span>
                 <span>Voir le panier · {formatFCFA(total())}</span>
