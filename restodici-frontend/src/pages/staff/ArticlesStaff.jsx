@@ -5,9 +5,9 @@ import { useAuth } from '../../hooks/useAuth';
 import { getArticleImage } from '../../utils/articleImage';
 
 const T = {
-  primary:          '#EA580C',
-  primaryLight:     'rgba(255,140,0,0.10)',
-  primaryGlow:      'rgba(255,140,0,0.22)',
+  primary:          '#FF3A03',
+  primaryLight:     'rgba(255,108,0,0.10)',
+  primaryGlow:      'rgba(255,108,0,0.22)',
   secondary:        '#16A34A',
   secondaryLight:   'rgba(22,163,74,0.09)',
   amber:            '#D97706',

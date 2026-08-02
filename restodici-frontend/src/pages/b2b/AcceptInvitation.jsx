@@ -101,7 +101,7 @@ export default function AcceptInvitation() {
             {/* Form */}
             {!loadingInvit && invitation && !success && (
               <>
-                <div className="mb-6 p-4 rounded-lg" style={{ background: '#FFF0DF' }}>
+                <div className="mb-6 p-4 rounded-lg" style={{ background: '#FFECDF' }}>
                   <p className="text-sm font-bold" style={{ color: A }}>
                     {invitation.entreprise}
                   </p>

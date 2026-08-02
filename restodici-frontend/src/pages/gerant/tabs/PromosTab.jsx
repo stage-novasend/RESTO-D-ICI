@@ -106,7 +106,7 @@ export default function PromosTab({ restaurantId }) {
   const statusOf = (p) => {
     if (!p.actif) return { label: 'Inactif', color: '#9CA3AF', bg: '#FFF5E6', banner: false };
     if (isExpired(p)) return { label: 'Expiré', color: '#DC2626', bg: '#FEF2F2', banner: false };
-    if (p.maxUses != null && p.usedCount >= p.maxUses) return { label: 'Épuisé', color: '#EA580C', bg: '#FFF7ED', banner: false };
+    if (p.maxUses != null && p.usedCount >= p.maxUses) return { label: 'Épuisé', color: '#FF3A03', bg: '#FFF5ED', banner: false };
     return { label: 'Actif ⚡', color: '#059669', bg: '#F0FDF4', banner: true };
   };
 
@@ -120,12 +120,12 @@ export default function PromosTab({ restaurantId }) {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h3 className="text-lg font-extrabold text-[#1A0C00] flex items-center gap-2">
-            <Tag className="w-5 h-5 text-[#EA580C]" /> Codes promos & Réductions
+            <Tag className="w-5 h-5 text-[#FF3A03]" /> Codes promos & Réductions
           </h3>
           <p className="text-xs text-[#8B6E50] mt-0.5">Créez des codes à partager avec vos clients · Les prix promo s'activent directement sur chaque article du menu</p>
         </div>
         <button onClick={openCreate}
-          className="flex items-center gap-2 rounded-lg bg-[#EA580C] px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#C2410C] transition">
+          className="flex items-center gap-2 rounded-lg bg-[#FF3A03] px-4 py-2.5 text-sm font-bold text-white shadow-sm hover:bg-[#CC2402] transition">
           <Plus className="w-4 h-4" /> Nouveau code promo
         </button>
       </div>
@@ -133,7 +133,7 @@ export default function PromosTab({ restaurantId }) {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         {[
-          { label: 'Codes créés', value: promos.length, icon: Tag, bg: '#FFF0DF', color: '#EA580C' },
+          { label: 'Codes créés', value: promos.length, icon: Tag, bg: '#FFECDF', color: '#FF3A03' },
           { label: 'Codes actifs', value: actifCount, icon: CheckCircle, bg: '#F0FDF4', color: '#059669' },
           { label: 'Total utilisations', value: totalUses, icon: TrendingUp, bg: '#EFF6FF', color: '#2563EB' },
         ].map(({ label, value, icon: Icon, bg, color }) => (
@@ -153,14 +153,14 @@ export default function PromosTab({ restaurantId }) {
       <div className="rounded-lg bg-white border border-[#E2E8F0] shadow-card overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center py-12">
-            <div className="w-8 h-8 rounded-full border-4 border-[#EA580C] border-t-transparent animate-spin" />
+            <div className="w-8 h-8 rounded-full border-4 border-[#FF3A03] border-t-transparent animate-spin" />
           </div>
         ) : promos.length === 0 ? (
           <div className="text-center py-14">
             <Tag className="w-10 h-10 text-[#E2E8F0] mx-auto mb-3" />
             <p className="font-semibold text-[#334155]">Aucun code promo</p>
             <p className="text-xs text-[#8B6E50] mt-1">Créez votre premier code et partagez-le avec vos clients</p>
-            <button onClick={openCreate} className="mt-4 rounded-lg bg-[#EA580C] px-4 py-2 text-xs font-bold text-white hover:bg-[#C2410C] transition">
+            <button onClick={openCreate} className="mt-4 rounded-lg bg-[#FF3A03] px-4 py-2 text-xs font-bold text-white hover:bg-[#CC2402] transition">
               + Créer un code
             </button>
           </div>
@@ -197,7 +197,7 @@ export default function PromosTab({ restaurantId }) {
                       </td>
                       {/* Valeur */}
                       <td className="px-4 py-3">
-                        <span className="font-bold text-[#EA580C]">
+                        <span className="font-bold text-[#FF3A03]">
                           {p.type === 'PERCENT' ? `-${p.valeur}%` : `-${Number(p.valeur).toLocaleString('fr-FR')} FCFA`}
                         </span>
                       </td>
@@ -229,7 +229,7 @@ export default function PromosTab({ restaurantId }) {
                         <div className="flex flex-col gap-1">
                           <span className="rounded-full px-2.5 py-1 text-[10px] font-bold" style={{ background: st.bg, color: st.color }}>{st.label}</span>
                           {st.banner && (
-                            <span className="rounded-full px-2 py-0.5 text-[9px] font-bold bg-[#EA580C] text-[#E07A2D]">Visible dans menu</span>
+                            <span className="rounded-full px-2 py-0.5 text-[9px] font-bold bg-[#FF3A03] text-[#E07A2D]">Visible dans menu</span>
                           )}
                         </div>
                       </td>
@@ -263,8 +263,8 @@ export default function PromosTab({ restaurantId }) {
 
       {/* Info box */}
       <div className="rounded-lg border border-[#E2E8F0] bg-white p-4 flex gap-3">
-        <div className="w-8 h-8 rounded-lg bg-[#FFF0DF] flex items-center justify-center flex-shrink-0">
-          <Percent className="w-4 h-4 text-[#EA580C]" />
+        <div className="w-8 h-8 rounded-lg bg-[#FFECDF] flex items-center justify-center flex-shrink-0">
+          <Percent className="w-4 h-4 text-[#FF3A03]" />
         </div>
         <div>
           <p className="text-sm font-bold text-[#1A0C00]">Comment ça marche ?</p>
@@ -281,7 +281,7 @@ export default function PromosTab({ restaurantId }) {
       {modal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={e => e.target === e.currentTarget && setModal(null)}>
           <div className="bg-white rounded-lg w-full max-w-md shadow-2xl overflow-hidden">
-            <div className="bg-[#EA580C] px-6 py-4 flex items-center justify-between">
+            <div className="bg-[#FF3A03] px-6 py-4 flex items-center justify-between">
               <h3 className="text-white font-extrabold flex items-center gap-2">
                 <Tag className="w-4 h-4" /> {modal === 'create' ? 'Nouveau code promo' : `Modifier "${modal.code}"`}
               </h3>
@@ -295,7 +295,7 @@ export default function PromosTab({ restaurantId }) {
                 <input value={form.code} onChange={e => setForm(f => ({ ...f, code: e.target.value.toUpperCase().replace(/\s/g, '') }))}
                   placeholder="Ex: RESTO10, BIENVENUE, NOEL2025"
                   maxLength={30}
-                  className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 font-mono font-bold text-sm text-[#1A0C00] uppercase tracking-widest focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] outline-none transition" />
+                  className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 font-mono font-bold text-sm text-[#1A0C00] uppercase tracking-widest focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] outline-none transition" />
               </div>
 
               {/* Type */}
@@ -304,7 +304,7 @@ export default function PromosTab({ restaurantId }) {
                 <div className="mt-1.5 grid grid-cols-2 gap-2">
                   {PROMO_TYPES.map(t => (
                     <button key={t.value} onClick={() => setForm(f => ({ ...f, type: t.value }))}
-                      className={`rounded-lg border px-3 py-2.5 text-xs font-bold transition text-center ${form.type === t.value ? 'border-[#EA580C] bg-[#FFF0DF] text-[#EA580C]' : 'border-[#E2E8F0] bg-[#F9F9FC] text-[#8B6E50] hover:border-[#EA580C]'}`}>
+                      className={`rounded-lg border px-3 py-2.5 text-xs font-bold transition text-center ${form.type === t.value ? 'border-[#FF3A03] bg-[#FFECDF] text-[#FF3A03]' : 'border-[#E2E8F0] bg-[#F9F9FC] text-[#8B6E50] hover:border-[#FF3A03]'}`}>
                       {t.label}
                     </button>
                   ))}
@@ -319,7 +319,7 @@ export default function PromosTab({ restaurantId }) {
                 <div className="mt-1 flex items-center gap-2">
                   <input type="number" min="0" value={form.valeur} onChange={e => setForm(f => ({ ...f, valeur: e.target.value }))}
                     placeholder={form.type === 'PERCENT' ? 'Ex: 10' : 'Ex: 5000'}
-                    className="flex-1 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] outline-none transition" />
+                    className="flex-1 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] outline-none transition" />
                   <span className="text-sm font-bold text-[#8B6E50]">{form.type === 'PERCENT' ? '%' : 'FCFA'}</span>
                 </div>
               </div>
@@ -331,7 +331,7 @@ export default function PromosTab({ restaurantId }) {
                 </label>
                 <input value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))}
                   placeholder="Ex: Livraison offerte ce weekend, -20% sur tous les plats…"
-                  className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] outline-none transition" />
+                  className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] outline-none transition" />
                 <p className="mt-1 text-[10px] text-[#9CA3AF]">Ce texte s'affiche comme titre du bandeau ⚡ Offre Limitée dans votre menu client</p>
               </div>
 
@@ -341,7 +341,7 @@ export default function PromosTab({ restaurantId }) {
                   <p className="text-[10px] font-bold uppercase tracking-widest text-[#9CA3AF] px-3 py-2 bg-[#F9F9FC] border-b border-[#E2E8F0]">
                     Aperçu bandeau client
                   </p>
-                  <div className="p-3 bg-[#EA580C] flex gap-3 items-center">
+                  <div className="p-3 bg-[#FF3A03] flex gap-3 items-center">
                     <div className="flex-1 min-w-0">
                       <span className="inline-block bg-red-500 text-white text-[9px] font-bold tracking-widest uppercase px-2 py-0.5 rounded mb-1.5">⚡ OFFRE LIMITÉE</span>
                       <p className="text-white font-bold text-sm leading-tight truncate">
@@ -349,7 +349,7 @@ export default function PromosTab({ restaurantId }) {
                       </p>
                       {form.minMontant > 0 && <p className="text-white/50 text-[10px] mt-0.5">Dès {Number(form.minMontant).toLocaleString('fr-FR')} FCFA d'achat</p>}
                     </div>
-                    <div className="bg-[#EA580C]/20 border border-[#EA580C]/30 rounded-lg px-3 py-2 text-center flex-shrink-0">
+                    <div className="bg-[#FF3A03]/20 border border-[#FF3A03]/30 rounded-lg px-3 py-2 text-center flex-shrink-0">
                       <p className="text-[#E07A2D] font-black text-base leading-none">
                         {form.type === 'PERCENT' ? `-${form.valeur || 'X'}%` : `-${Number(form.valeur || 0).toLocaleString('fr-FR')}`}
                       </p>
@@ -364,13 +364,13 @@ export default function PromosTab({ restaurantId }) {
                   <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Montant min (FCFA)</label>
                   <input type="number" min="0" value={form.minMontant} onChange={e => setForm(f => ({ ...f, minMontant: e.target.value }))}
                     placeholder="0 = aucun"
-                    className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] outline-none transition" />
+                    className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] outline-none transition" />
                 </div>
                 <div>
                   <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Max utilisations</label>
                   <input type="number" min="1" value={form.maxUses} onChange={e => setForm(f => ({ ...f, maxUses: e.target.value }))}
                     placeholder="Illimité"
-                    className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] outline-none transition" />
+                    className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] outline-none transition" />
                 </div>
               </div>
 
@@ -379,14 +379,14 @@ export default function PromosTab({ restaurantId }) {
                 <label className="text-xs font-bold text-[#475569] uppercase tracking-wide">Date d'expiration</label>
                 <input type="date" value={form.expiresAt} onChange={e => setForm(f => ({ ...f, expiresAt: e.target.value }))}
                   min={new Date().toISOString().slice(0, 10)}
-                  className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] outline-none transition" />
+                  className="mt-1 w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] outline-none transition" />
                 <p className="mt-1 text-[10px] text-[#9CA3AF]">Laissez vide pour un code sans expiration</p>
               </div>
 
               {/* Actif */}
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={form.actif} onChange={e => setForm(f => ({ ...f, actif: e.target.checked }))}
-                  className="h-4 w-4 rounded" style={{ accentColor: '#EA580C' }} />
+                  className="h-4 w-4 rounded" style={{ accentColor: '#FF3A03' }} />
                 <span className="text-sm font-semibold text-[#1A0C00]">Code actif dès la création</span>
               </label>
 
@@ -397,10 +397,10 @@ export default function PromosTab({ restaurantId }) {
                   {VISIBILITE_OPTIONS.map(opt => (
                     <button key={opt.value} type="button"
                       onClick={() => setForm(f => ({ ...f, visibilite: opt.value }))}
-                      className={`rounded-lg border px-3 py-2.5 text-left transition flex items-start gap-3 ${form.visibilite === opt.value ? 'border-[#EA580C] bg-[#FFF0DF]' : 'border-[#E2E8F0] bg-[#F9F9FC] hover:border-[#EA580C]'}`}>
+                      className={`rounded-lg border px-3 py-2.5 text-left transition flex items-start gap-3 ${form.visibilite === opt.value ? 'border-[#FF3A03] bg-[#FFECDF]' : 'border-[#E2E8F0] bg-[#F9F9FC] hover:border-[#FF3A03]'}`}>
                       <div className="w-3 h-3 rounded-full mt-0.5 flex-shrink-0" style={{ background: opt.color, boxShadow: form.visibilite === opt.value ? `0 0 0 3px ${opt.color}22` : 'none' }} />
                       <div>
-                        <p className="text-xs font-bold" style={{ color: form.visibilite === opt.value ? '#EA580C' : '#1A0C00' }}>{opt.label}</p>
+                        <p className="text-xs font-bold" style={{ color: form.visibilite === opt.value ? '#FF3A03' : '#1A0C00' }}>{opt.label}</p>
                         <p className="text-[10px] text-[#8B6E50] mt-0.5">{opt.desc}</p>
                       </div>
                     </button>
@@ -409,7 +409,7 @@ export default function PromosTab({ restaurantId }) {
               </div>
 
               <button onClick={handleSave} disabled={saving}
-                className="w-full rounded-lg bg-[#EA580C] py-3 text-sm font-bold text-white shadow-sm hover:bg-[#C2410C] disabled:opacity-60 transition flex items-center justify-center gap-2">
+                className="w-full rounded-lg bg-[#FF3A03] py-3 text-sm font-bold text-white shadow-sm hover:bg-[#CC2402] disabled:opacity-60 transition flex items-center justify-center gap-2">
                 {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <CheckCircle className="w-4 h-4" />}
                 {saving ? 'Enregistrement…' : modal === 'create' ? 'Créer le code' : 'Enregistrer les modifications'}
               </button>

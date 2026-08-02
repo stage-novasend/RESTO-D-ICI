@@ -12,7 +12,7 @@ import BrandLogo from './BrandLogo';
 import MiniFooter from './MiniFooter';
 
 const DARK  = '#1A0C00';
-const ACCENT = '#EA580C';
+const ACCENT = '#FF3A03';
 const sans  = "'Manrope', system-ui, sans-serif";
 const serif = "'Playfair Display', Georgia, serif";
 
@@ -70,9 +70,9 @@ export default function StaticPageShell({
       }}>
         {badge && (
           <span style={{
-            display: 'inline-block', background: 'rgba(234,88,12,0.16)',
-            border: '1px solid rgba(234,88,12,0.32)', borderRadius: 20,
-            padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#FB923C',
+            display: 'inline-block', background: 'rgba(234,60,12,0.16)',
+            border: '1px solid rgba(234,60,12,0.32)', borderRadius: 20,
+            padding: '5px 16px', fontSize: 11, fontWeight: 700, color: '#FF7938',
             letterSpacing: '0.08em', textTransform: 'uppercase',
             marginBottom: 20, fontFamily: sans,
           }}>

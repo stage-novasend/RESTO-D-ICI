@@ -44,7 +44,7 @@ export default function SetupBanner({ restaurant, navigate }) {
 
   return (
     <div className="relative overflow-hidden rounded-lg border border-[#E2E8F0] bg-white px-5 py-4 shadow-card">
-      <div className="absolute inset-y-0 left-0 w-1 rounded-l-2xl bg-[#EA580C]" />
+      <div className="absolute inset-y-0 left-0 w-1 rounded-l-2xl bg-[#FF3A03]" />
       <button onClick={dismiss} className="absolute right-3 top-3 rounded-full p-1 text-[#737373] hover:bg-[#F4F6F8] transition" aria-label="Fermer">
         <X className="h-4 w-4" />
       </button>
@@ -56,19 +56,19 @@ export default function SetupBanner({ restaurant, navigate }) {
           </div>
           <div className="flex items-center gap-3 shrink-0">
             <div className="text-right">
-              <span className="text-2xl font-extrabold text-[#EA580C]">{pct}%</span>
+              <span className="text-2xl font-extrabold text-[#FF3A03]">{pct}%</span>
               <p className="text-[10px] text-[#737373]">complété</p>
             </div>
             {nextIncomplete && (
               <button onClick={() => navigate(`/gerant?tab=${nextIncomplete.tab}`)}
-                className="rounded-lg bg-[#EA580C] px-3 py-2 text-xs font-bold text-white hover:bg-[#C2410C] transition">
+                className="rounded-lg bg-[#FF3A03] px-3 py-2 text-xs font-bold text-white hover:bg-[#CC2402] transition">
                 Compléter →
               </button>
             )}
           </div>
         </div>
         <div className="mt-3 h-1.5 w-full rounded-full bg-[#F4F6F8] overflow-hidden">
-          <div className="h-full rounded-full bg-[#EA580C] transition-all duration-500" style={{ width: pct + '%' }} />
+          <div className="h-full rounded-full bg-[#FF3A03] transition-all duration-500" style={{ width: pct + '%' }} />
         </div>
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1.5">
           {steps.map((s) => (
@@ -80,7 +80,7 @@ export default function SetupBanner({ restaurant, navigate }) {
               ) : (
                 <div className="h-3.5 w-3.5 rounded-full border-2 border-[#E2E8F0] shrink-0" />
               )}
-              <span className={'text-xs ' + (s.done ? 'text-emerald-600 font-medium' : s.tab ? 'text-[#EA580C] hover:underline underline-offset-2' : 'text-[#737373]')}>
+              <span className={'text-xs ' + (s.done ? 'text-emerald-600 font-medium' : s.tab ? 'text-[#FF3A03] hover:underline underline-offset-2' : 'text-[#737373]')}>
                 {s.label}
               </span>
             </button>

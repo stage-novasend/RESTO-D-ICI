@@ -131,7 +131,7 @@ export class EmailService {
   private renderButton(href: string, label: string): string {
     return `<p style="text-align:center;margin:0 0 32px;">
                 <a href="${href}"
-                   style="display:inline-block;background:#EA580C;color:#ffffff;font-size:15px;font-weight:700;
+                   style="display:inline-block;background:#FF3A03;color:#ffffff;font-size:15px;font-weight:700;
                           text-decoration:none;padding:14px 36px;border-radius:10px;letter-spacing:0.2px;">
                   ${label}
                 </a>

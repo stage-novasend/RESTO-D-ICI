@@ -30,7 +30,7 @@ export default function AuthCard({
   backLabel = 'Retour à la connexion',
 }) {
   const TONES = {
-    brand:   { bg: '#FFF7ED', border: '#FED7AA', color: '#EA580C' },
+    brand:   { bg: '#FFF5ED', border: '#FED7AA', color: '#FF3A03' },
     success: { bg: '#F0FDF4', border: '#BBF7D0', color: '#16A34A' },
     danger:  { bg: '#FEF2F2', border: '#FECACA', color: '#DC2626' },
   };

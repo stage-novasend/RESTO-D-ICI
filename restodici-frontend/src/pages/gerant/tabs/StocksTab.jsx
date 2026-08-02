@@ -153,7 +153,7 @@ export default function StocksTab({ restaurantId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="h-9 w-9 rounded-full border-4 border-[#EA580C] border-t-transparent animate-spin" />
+        <div className="h-9 w-9 rounded-full border-4 border-[#FF3A03] border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -164,13 +164,13 @@ export default function StocksTab({ restaurantId }) {
   return (
     <div className="space-y-5">
       {toast && (
-        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-[#EA580C] px-4 py-3 text-sm font-semibold text-white shadow-xl">{toast}</div>
+        <div className="fixed bottom-4 right-4 z-50 rounded-lg bg-[#FF3A03] px-4 py-3 text-sm font-semibold text-white shadow-xl">{toast}</div>
       )}
 
       {/* KPI header */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { label: 'Articles suivis', value: stocks.length, icon: Package, iconBg: '#FFF0DF', iconColor: '#EA580C' },
+          { label: 'Articles suivis', value: stocks.length, icon: Package, iconBg: '#FFECDF', iconColor: '#FF3A03' },
           { label: 'Niveaux OK', value: okItems, icon: CheckCircle, iconBg: '#F0FDF4', iconColor: '#16A34A' },
           { label: 'Alertes critiques', value: criticalItems.length, icon: AlertTriangle, iconBg: criticalItems.length > 0 ? '#FEF2F2' : '#F0FDF4', iconColor: criticalItems.length > 0 ? '#DC2626' : '#16A34A' },
         ].map(({ label, value, icon: Icon, iconBg, iconColor }) => (
@@ -205,14 +205,14 @@ export default function StocksTab({ restaurantId }) {
             <p className="text-xs text-[#8B6E50] mt-0.5">Vue détaillée par article avec niveau de stock</p>
           </div>
           <button onClick={loadStocks}
-            className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-semibold text-[#475569] hover:border-[#EA580C]/40 hover:text-[#EA580C] transition-colors">
+            className="flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-white px-3 py-2 text-xs font-semibold text-[#475569] hover:border-[#FF3A03]/40 hover:text-[#FF3A03] transition-colors">
             <RefreshCcw className="w-3.5 h-3.5" />
             Actualiser
           </button>
         </div>
         {stocks.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-12 text-center" style={{ background: '#FFF7ED' }}>
-            <Package className="w-12 h-12 mb-3" style={{ color: '#EA580C', opacity: 0.4 }} />
+          <div className="flex flex-col items-center justify-center py-12 text-center" style={{ background: '#FFF5ED' }}>
+            <Package className="w-12 h-12 mb-3" style={{ color: '#FF3A03', opacity: 0.4 }} />
             <p className="text-sm font-medium" style={{ color: '#1A0C00' }}>Aucun article en stock</p>
             <p className="text-xs mt-1" style={{ color: '#A89070' }}>Le stock de vos articles apparaîtra ici dès qu'ils seront créés.</p>
           </div>
@@ -257,7 +257,7 @@ export default function StocksTab({ restaurantId }) {
         <div className="flex border-b border-[#E2E8F0]">
           <button
             onClick={() => setStockTab('entree')}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${stockTab === 'entree' ? 'bg-[#FFF0DF] text-[#EA580C] border-b-2 border-[#EA580C]' : 'text-[#8B6E50] hover:bg-[#F9F9FC]'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 text-sm font-semibold transition ${stockTab === 'entree' ? 'bg-[#FFECDF] text-[#FF3A03] border-b-2 border-[#FF3A03]' : 'text-[#8B6E50] hover:bg-[#F9F9FC]'}`}
           >
             <Plus className="w-4 h-4" /> Entrée de stock
           </button>
@@ -285,7 +285,7 @@ export default function StocksTab({ restaurantId }) {
           {stockTab === 'entree' ? (
             <>
               <p className="text-xs text-[#8B6E50] mb-4 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-[#EA580C] inline-block" />
+                <span className="w-2 h-2 rounded-full bg-[#FF3A03] inline-block" />
                 Réception marchandise — fournisseur <strong>obligatoire</strong>
               </p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -293,7 +293,7 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Article</label>
                   <select value={entreeForm.articleId}
                     onChange={e => setEntreeForm({ ...entreeForm, articleId: e.target.value })}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition">
                     <option value="">Sélectionner un article</option>
                     {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
                   </select>
@@ -309,7 +309,7 @@ export default function StocksTab({ restaurantId }) {
                   ) : (
                     <select value={entreeForm.fournisseurId}
                       onChange={e => setEntreeForm({ ...entreeForm, fournisseurId: e.target.value })}
-                      className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
+                      className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition">
                       <option value="">Sélectionner un fournisseur</option>
                       {fournisseurs.map(f => <option key={f.id} value={f.id}>{f.nom}{f.delaiLivraison ? ` (${f.delaiLivraison}j)` : ''}</option>)}
                     </select>
@@ -319,19 +319,19 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Quantité reçue</label>
                   <input type="number" min="1" value={entreeForm.quantity}
                     onChange={e => setEntreeForm({ ...entreeForm, quantity: e.target.value })}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition"
                     placeholder="Ex: 10" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Motif / Référence bon de livraison</label>
                   <input type="text" value={entreeForm.motif}
                     onChange={e => setEntreeForm({ ...entreeForm, motif: e.target.value })}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-3.5 text-[15px] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition"
                     placeholder="BL-2026-042, livraison hebdo..." />
                 </div>
               </div>
               <button onClick={handleEntreeStock} disabled={saving || !entreeForm.fournisseurId}
-                className="flex items-center gap-2 rounded-lg bg-[#EA580C] px-5 py-3.5 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[#C2410C] disabled:opacity-60">
+                className="flex items-center gap-2 rounded-lg bg-[#FF3A03] px-5 py-3.5 text-[15px] font-semibold text-white shadow-sm transition hover:bg-[#CC2402] disabled:opacity-60">
                 {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
                 {saving ? 'Enregistrement...' : 'Enregistrer la réception'}
               </button>
@@ -346,7 +346,7 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Article</label>
                   <select value={adjustmentForm.articleId}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, articleId: e.target.value })}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition">
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#FF3A03] focus:ring-1 transition">
                     <option value="">Sélectionner un article</option>
                     {stocks.map(item => <option key={item.id} value={item.id}>{item.nom}</option>)}
                   </select>
@@ -355,14 +355,14 @@ export default function StocksTab({ restaurantId }) {
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Quantité (+/-)</label>
                   <input type="number" value={adjustmentForm.quantity}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, quantity: e.target.value })}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#FF3A03] focus:ring-1 transition"
                     placeholder="Ex: -2 (casse)" />
                 </div>
                 <div>
                   <label className="mb-1 block text-sm font-semibold text-[#475569]">Motif</label>
                   <input type="text" value={adjustmentForm.motif}
                     onChange={e => setAdjustmentForm({ ...adjustmentForm, motif: e.target.value })}
-                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#EA580C] focus:ring-1 transition"
+                    className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm outline-none focus:border-[#FF3A03] focus:ring-1 transition"
                     placeholder="Casse, correction inventaire..." />
                 </div>
               </div>

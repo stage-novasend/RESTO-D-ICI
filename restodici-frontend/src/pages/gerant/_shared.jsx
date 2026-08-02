@@ -97,7 +97,7 @@ export function DeliveryZonesMap({ restaurantPosition, selectedPosition, zones, 
           type="button"
           onClick={handleLocate}
           disabled={locating}
-          className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-[#1A0C00] shadow-sm transition hover:bg-[#FFF0DF] hover:text-[#EA580C] disabled:opacity-50"
+          className="flex items-center gap-1.5 rounded-lg bg-white px-3 py-1.5 text-sm font-medium text-[#1A0C00] shadow-sm transition hover:bg-[#FFECDF] hover:text-[#FF3A03] disabled:opacity-50"
         >
           <LocateFixed className={`h-4 w-4 ${locating ? 'animate-pulse' : ''}`} />
           {locating ? 'Localisation…' : 'Utiliser ma position'}

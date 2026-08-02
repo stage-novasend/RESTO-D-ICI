@@ -13,8 +13,8 @@ const ROLE_EVENTS = {
 };
 
 const EVENT_META = {
-  'commande.nouvelle':     { icon: ChefHat,       color: '#EA580C', label: 'Nouvelle commande',   body: (p) => p?.numero ? `Commande #${p.numero} reçue` : 'Nouvelle commande reçue' },
-  'commande.creee':        { icon: ChefHat,       color: '#EA580C', label: 'Commande enregistrée', body: (p) => p?.numero ? `Votre commande #${p.numero} est bien enregistrée` : 'Commande enregistrée' },
+  'commande.nouvelle':     { icon: ChefHat,       color: '#FF3A03', label: 'Nouvelle commande',   body: (p) => p?.numero ? `Commande #${p.numero} reçue` : 'Nouvelle commande reçue' },
+  'commande.creee':        { icon: ChefHat,       color: '#FF3A03', label: 'Commande enregistrée', body: (p) => p?.numero ? `Votre commande #${p.numero} est bien enregistrée` : 'Commande enregistrée' },
   'commande.statut':       { icon: Truck,         color: '#2563EB', label: 'Mise à jour commande', body: (p) => {
     if (!p?.numero) return 'Statut de commande mis à jour';
     if (p.statut === 'LIVREE')       return `🎉 Commande #${p.numero} livrée avec succès !`;
@@ -83,7 +83,7 @@ function timeAgo(iso) {
 
 // light=true → fond blanc (top bar staff/client)
 // light=false (défaut) → fond sombre (sidebar B2B/gérant)
-export default function NotificationBell({ accentColor = '#EA580C', size = 'md', light = false }) {
+export default function NotificationBell({ accentColor = '#FF3A03', size = 'md', light = false }) {
   const { user } = useAuth();
   const isClient = user?.role?.toUpperCase() === 'CLIENT';
   const [notifications, setNotifications] = useState([]);

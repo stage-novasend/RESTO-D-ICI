@@ -129,15 +129,15 @@ export default function OrdersTab({ restaurantId }) {
 
   const getStatusColor = (status) => {
     const colors = {
-      RECUE: "bg-[#FFF0DF] text-[#EA580C]",
-      CONFIRMEE: "bg-[#FFF0DF] text-[#1A1A1A]",
-      EN_PREP: "bg-[#FFF0DF] text-[#C2410C]",
-      PRETE: "bg-[#FFF0DF] text-[#1C1917]",
-      LIVREE: "bg-[#FFF0DF] text-[#57534E]",
+      RECUE: "bg-[#FFECDF] text-[#FF3A03]",
+      CONFIRMEE: "bg-[#FFECDF] text-[#1A1A1A]",
+      EN_PREP: "bg-[#FFECDF] text-[#CC2402]",
+      PRETE: "bg-[#FFECDF] text-[#1C1917]",
+      LIVREE: "bg-[#FFECDF] text-[#57534E]",
       ANNULEE: "bg-red-50 text-red-700",
       EN_ATTENTE: "bg-[#FFFBEB] text-[#92400E]",
     };
-    return colors[status] || "bg-[#FFF0DF] text-[#1A1A1A]";
+    return colors[status] || "bg-[#FFECDF] text-[#1A1A1A]";
   };
 
   const getStatusLabel = (status) => {
@@ -167,7 +167,7 @@ export default function OrdersTab({ restaurantId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="w-8 h-8 border-4 border-[#EA580C] border-t-transparent rounded-full animate-spin" />
+        <div className="w-8 h-8 border-4 border-[#FF3A03] border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
@@ -193,7 +193,7 @@ export default function OrdersTab({ restaurantId }) {
               <div>
                 <div className="flex flex-wrap items-center gap-2 mb-2">
                   <span className="font-semibold">Commande #{order.numero}</span>
-                  <span className="text-xs px-2 py-1 rounded-full bg-[#FFF0DF] text-slate-700">
+                  <span className="text-xs px-2 py-1 rounded-full bg-[#FFECDF] text-slate-700">
                     {order.source}
                   </span>
                   <span
@@ -222,7 +222,7 @@ export default function OrdersTab({ restaurantId }) {
                 {order.type === "CLIENT" && canConfirmOrder(order) && (
                   <button
                     onClick={() => updateOrderStatus(order.id, "CONFIRMEE")}
-                    className="px-3 py-1.5 bg-[#EA580C] text-white rounded-lg text-sm hover:bg-[#C2410C] transition"
+                    className="px-3 py-1.5 bg-[#FF3A03] text-white rounded-lg text-sm hover:bg-[#CC2402] transition"
                   >
                     Valider
                   </button>
@@ -230,7 +230,7 @@ export default function OrdersTab({ restaurantId }) {
                 {order.type === "CLIENT" && canPrepareOrder(order) && (
                   <button
                     onClick={() => updateOrderStatus(order.id, "EN_PREP")}
-                    className="px-3 py-1.5 bg-[#EA580C] text-white rounded-lg text-sm hover:bg-[#C2410C] transition"
+                    className="px-3 py-1.5 bg-[#FF3A03] text-white rounded-lg text-sm hover:bg-[#CC2402] transition"
                   >
                     En préparation
                   </button>
@@ -252,7 +252,7 @@ export default function OrdersTab({ restaurantId }) {
                   </button>
                 )}
                 {order.type === "B2B" && (
-                  <span className="px-3 py-1.5 bg-[#FFF0DF] text-slate-700 rounded-lg text-sm">
+                  <span className="px-3 py-1.5 bg-[#FFECDF] text-slate-700 rounded-lg text-sm">
                     Commande entreprise - lecture seule
                   </span>
                 )}
@@ -264,7 +264,7 @@ export default function OrdersTab({ restaurantId }) {
                     <button
                       onClick={() => handleDownloadReceipt(order)}
                       disabled={receiptLoading[order.id]}
-                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[#EA580C] text-[#EA580C] rounded-lg text-sm hover:bg-[#FFF0DF] transition disabled:opacity-60"
+                      className="flex items-center gap-1.5 px-3 py-1.5 border border-[#FF3A03] text-[#FF3A03] rounded-lg text-sm hover:bg-[#FFECDF] transition disabled:opacity-60"
                       title="Télécharger le reçu PDF"
                     >
                       <FileText className="w-3.5 h-3.5" />
@@ -297,8 +297,8 @@ export default function OrdersTab({ restaurantId }) {
         </div>
       )}
       {orders.length === 0 && !error && (
-        <div className="flex flex-col items-center justify-center py-12 text-center rounded-lg" style={{ background: '#FFF7ED' }}>
-          <ClipboardList className="w-12 h-12 mb-3" style={{ color: '#EA580C', opacity: 0.4 }} />
+        <div className="flex flex-col items-center justify-center py-12 text-center rounded-lg" style={{ background: '#FFF5ED' }}>
+          <ClipboardList className="w-12 h-12 mb-3" style={{ color: '#FF3A03', opacity: 0.4 }} />
           <p className="text-sm font-medium" style={{ color: '#1A0C00' }}>Aucune commande en cours</p>
           <p className="text-xs mt-1" style={{ color: '#A89070' }}>Les nouvelles commandes arriveront ici en temps réel.</p>
         </div>

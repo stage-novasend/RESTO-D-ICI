@@ -69,7 +69,7 @@ export default function HistoryTab({ restaurantId }) {
             onClick={() => void load()}
             disabled={loading}
             className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold text-white disabled:opacity-60"
-            style={{ background: '#EA580C' }}
+            style={{ background: '#FF3A03' }}
           >
             <RefreshCcw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
             Actualiser
@@ -86,7 +86,7 @@ export default function HistoryTab({ restaurantId }) {
 
       {loading ? (
         <div className="flex justify-center py-16">
-          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#EA580C', borderTopColor: 'transparent' }} />
+          <div className="w-8 h-8 border-2 border-t-transparent rounded-full animate-spin" style={{ borderColor: '#FF3A03', borderTopColor: 'transparent' }} />
         </div>
       ) : activity.length === 0 ? (
         <div className="py-16 text-center rounded-lg border border-[#E2E8F0] bg-white">

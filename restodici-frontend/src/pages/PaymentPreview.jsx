@@ -95,7 +95,7 @@ export default function PaymentPreviewPage() {
       <header className="max-w-4xl mx-auto w-full flex items-center justify-between py-2 mb-6">
         <button
           onClick={() => navigate(-1)}
-          className="inline-flex items-center gap-2 text-xs font-bold text-[#8B6E50] hover:text-[#EA580C] bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-orange-100 shadow-sm transition-all"
+          className="inline-flex items-center gap-2 text-xs font-bold text-[#8B6E50] hover:text-[#FF3A03] bg-white/80 backdrop-blur-md px-3.5 py-2 rounded-xl border border-orange-100 shadow-sm transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
           Retour
@@ -112,10 +112,10 @@ export default function PaymentPreviewPage() {
       <main className="max-w-4xl mx-auto w-full grid grid-cols-1 md:grid-cols-12 gap-6 my-auto items-stretch">
 
         {/* Left Column: Order Summary & Details */}
-        <div className="md:col-span-5 bg-white/90 backdrop-blur-lg rounded-[28px] border border-orange-100/80 p-6 shadow-[0_20px_50px_rgba(234,88,12,0.08)] flex flex-col justify-between">
+        <div className="md:col-span-5 bg-white/90 backdrop-blur-lg rounded-[28px] border border-orange-100/80 p-6 shadow-[0_20px_50px_rgba(234,60,12,0.08)] flex flex-col justify-between">
           <div>
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#EA580C] to-[#C2410C] flex items-center justify-center text-white shadow-md shadow-orange-200">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FF3A03] to-[#CC2402] flex items-center justify-center text-white shadow-md shadow-orange-200">
                 <Receipt className="w-6 h-6" />
               </div>
               <div>
@@ -136,7 +136,7 @@ export default function PaymentPreviewPage() {
                 <button
                   onClick={copyReference}
                   title="Copier le numéro"
-                  className="p-1.5 text-[#8B6E50] hover:text-[#EA580C] rounded-lg hover:bg-orange-100/60 transition"
+                  className="p-1.5 text-[#8B6E50] hover:text-[#FF3A03] rounded-lg hover:bg-orange-100/60 transition"
                 >
                   {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
                 </button>
@@ -159,7 +159,7 @@ export default function PaymentPreviewPage() {
               )}
               <div className="border-t border-orange-100 pt-3 flex justify-between items-baseline">
                 <span className="font-black text-[#1A0C00]">Montant à payer</span>
-                <span className="text-2xl font-black text-[#EA580C] tracking-tight">{formattedAmount}</span>
+                <span className="text-2xl font-black text-[#FF3A03] tracking-tight">{formattedAmount}</span>
               </div>
             </div>
           </div>
@@ -174,14 +174,14 @@ export default function PaymentPreviewPage() {
         </div>
 
         {/* Right Column: Payment Provider Selector & Action */}
-        <div className="md:col-span-7 bg-white rounded-[28px] border border-orange-100 p-6 sm:p-7 shadow-[0_20px_50px_rgba(234,88,12,0.12)] flex flex-col justify-between">
+        <div className="md:col-span-7 bg-white rounded-[28px] border border-orange-100 p-6 sm:p-7 shadow-[0_20px_50px_rgba(234,60,12,0.12)] flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between mb-5">
               <div>
                 <h1 className="text-xl font-black text-[#1A0C00] tracking-tight">Méthode de Règlement</h1>
                 <p className="text-xs text-[#8B6E50] font-medium mt-0.5">Choisissez l'opérateur pour simuler le paiement</p>
               </div>
-              <span className="px-2.5 py-1 bg-orange-50 text-[#EA580C] font-extrabold text-[11px] rounded-lg border border-orange-100">
+              <span className="px-2.5 py-1 bg-orange-50 text-[#FF3A03] font-extrabold text-[11px] rounded-lg border border-orange-100">
                 SANDBOX
               </span>
             </div>
@@ -197,7 +197,7 @@ export default function PaymentPreviewPage() {
                     onClick={() => setSelectedProvider(p.id)}
                     className={`flex items-center justify-between p-3.5 rounded-2xl border-2 transition-all cursor-pointer text-left ${
                       active
-                        ? 'border-[#EA580C] bg-[#FFF8F2] shadow-sm'
+                        ? 'border-[#FF3A03] bg-[#FFF8F2] shadow-sm'
                         : 'border-slate-100 hover:border-slate-200 bg-white'
                     }`}
                   >
@@ -219,7 +219,7 @@ export default function PaymentPreviewPage() {
                       </div>
                     </div>
                     <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
-                      active ? 'border-[#EA580C] bg-[#EA580C]' : 'border-slate-300'
+                      active ? 'border-[#FF3A03] bg-[#FF3A03]' : 'border-slate-300'
                     }`}>
                       {active && <div className="w-2 h-2 rounded-full bg-white" />}
                     </div>
@@ -230,7 +230,7 @@ export default function PaymentPreviewPage() {
 
             {/* Status Notifications */}
             {status === 'loading' && (
-              <div className="rounded-2xl bg-orange-50 border border-orange-200 p-4 text-center text-sm font-extrabold text-[#EA580C] flex items-center justify-center gap-2 animate-pulse mb-4">
+              <div className="rounded-2xl bg-orange-50 border border-orange-200 p-4 text-center text-sm font-extrabold text-[#FF3A03] flex items-center justify-center gap-2 animate-pulse mb-4">
                 <Loader2 className="w-4 h-4 animate-spin" />
                 Traitement de la transaction en cours…
               </div>
@@ -262,7 +262,7 @@ export default function PaymentPreviewPage() {
           <button
             onClick={handleConfirm}
             disabled={status === 'loading' || status === 'success'}
-            className="w-full inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#EA580C] to-[#C2410C] hover:from-[#D94E07] hover:to-[#B0380B] text-white font-extrabold py-4 px-6 text-sm shadow-xl shadow-orange-200/80 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="w-full inline-flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-[#FF3A03] to-[#CC2402] hover:from-[#D94E07] hover:to-[#B0380B] text-white font-extrabold py-4 px-6 text-sm shadow-xl shadow-orange-200/80 transition-all hover:-translate-y-0.5 active:translate-y-0 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             {status === 'loading' ? (
               <>

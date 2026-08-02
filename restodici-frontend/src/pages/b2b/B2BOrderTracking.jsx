@@ -255,7 +255,7 @@ export default function B2BOrderTracking() {
                     </div>
                     <div className={`pb-5 ${isLast ? 'pb-0' : ''} flex items-start pt-1.5`}>
                       <div>
-                        <p className={`text-sm font-semibold ${current ? 'text-[#EA580C]' : done ? 'text-[#1A0C00]' : 'text-[#8B6E50]/40'}`}>
+                        <p className={`text-sm font-semibold ${current ? 'text-[#FF3A03]' : done ? 'text-[#1A0C00]' : 'text-[#8B6E50]/40'}`}>
                           {s.label}
                         </p>
                         {current && <p className="text-xs text-[#8B6E50] mt-0.5 animate-pulse">En cours…</p>}
@@ -341,7 +341,7 @@ export default function B2BOrderTracking() {
 
           {/* Company info */}
           {(order.compteB2B || order.entreprise) && (
-            <div className="mx-5 mb-4 rounded-lg px-4 py-3 flex items-center gap-3" style={{ background: '#FFF0DF' }}>
+            <div className="mx-5 mb-4 rounded-lg px-4 py-3 flex items-center gap-3" style={{ background: '#FFECDF' }}>
               <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: A }}>
                 <Building2 className="w-4 h-4 text-white" />
               </div>

@@ -7,7 +7,7 @@ import autoTable from 'jspdf-autotable';
 
 // ── Palette ───────────────────────────────────────────────────────────────────
 const NAVY   = [15, 23, 42];       // #0F172A
-const ORANGE = [255, 140, 0];      // #FF8C00 — filet d'accent de l'en-tête uniquement
+const ORANGE = [255,108,0];      // #FF6C00 — filet d'accent de l'en-tête uniquement
 const GREEN  = [22, 163, 74];      // #16A34A
 const GRAY   = [100, 116, 139];    // #64748B
 const LIGHT  = [248, 250, 252];    // #F8FAFC
@@ -486,7 +486,7 @@ export function buildFactureBlob(facture, compte) {
 export function buildFinanceReportBlob(period, restaurantName, summary = {}, expenses = []) {
   const doc  = new jsPDF({ unit: 'mm', format: 'a4' });
   const W    = doc.internal.pageSize.getWidth();
-  const AMBER = [255, 140, 0];
+  const AMBER = [255,108,0];
 
   const periodLabel = period === 'monthly'    ? 'Mensuel'
                     : period === 'quarterly'  ? 'Trimestriel'

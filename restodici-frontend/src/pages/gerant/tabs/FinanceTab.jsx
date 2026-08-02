@@ -15,7 +15,7 @@ const MODE_PAIEMENT_LABEL = {
 };
 const MODE_PAIEMENT_COLOR = {
   ESPECES: '#9CA3AF', CARTE_BANCAIRE: '#1A0C00', WAVE: '#2563EB',
-  ORANGE_MONEY: '#EA580C', MTN_MONEY: '#EAB308', MOOV_MONEY: '#059669',
+  ORANGE_MONEY: '#FF3A03', MTN_MONEY: '#EAB308', MOOV_MONEY: '#059669',
   NOVASEND: '#7C3AED', LIVRAISON: '#0891B2', AUTRE: '#94A3B8',
 };
 
@@ -159,7 +159,7 @@ export default function FinanceTab({ restaurantId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-64">
-        <div className="h-9 w-9 rounded-full border-4 border-[#EA580C] border-t-transparent animate-spin" />
+        <div className="h-9 w-9 rounded-full border-4 border-[#FF3A03] border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -198,7 +198,7 @@ export default function FinanceTab({ restaurantId }) {
         <div className="flex p-1 bg-[#F4F6F8] rounded-lg gap-1">
           {[{ v: 'day', l: "Aujourd'hui" }, { v: 'week', l: 'Semaine' }, { v: 'month', l: 'Mois' }].map(p => (
             <button key={p.v} onClick={() => setPeriod(p.v)}
-              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${period === p.v ? 'bg-white text-[#EA580C] shadow-card' : 'text-[#8B6E50] hover:text-[#EA580C]'}`}>
+              className={`rounded-lg px-4 py-2 text-xs font-semibold transition ${period === p.v ? 'bg-white text-[#FF3A03] shadow-card' : 'text-[#8B6E50] hover:text-[#FF3A03]'}`}>
               {p.l}
             </button>
           ))}
@@ -207,13 +207,13 @@ export default function FinanceTab({ restaurantId }) {
 
       {/* ── KPI cards ── */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-3">
-        <div className="rounded-lg p-5 shadow-sm col-span-2 xl:col-span-1" style={{ background: '#EA580C' }}>
+        <div className="rounded-lg p-5 shadow-sm col-span-2 xl:col-span-1" style={{ background: '#FF3A03' }}>
           <p className="text-xs font-semibold uppercase tracking-wide text-white/50 mb-1">{caLabel}</p>
           <p className="text-2xl font-extrabold text-white leading-none">{formatFCFA(caValue)}</p>
           <p className="text-xs text-white/30 mt-2">Chiffre d'affaires</p>
         </div>
         {[
-          { label: 'Commandes', value: kpiData.nbCommandes, sub: 'période sélectionnée', icon: ShoppingBag, bg: '#FFF0DF', color: '#EA580C' },
+          { label: 'Commandes', value: kpiData.nbCommandes, sub: 'période sélectionnée', icon: ShoppingBag, bg: '#FFECDF', color: '#FF3A03' },
           { label: 'Ticket moyen', value: formatFCFA(kpiData.ticketMoyen), sub: 'par commande', icon: CreditCard, bg: '#F0FDF4', color: '#16A34A' },
           { label: 'Marge brute', value: (kpiData.margesBrutes || 0) + '%', sub: '(PV−Coût)/PV ', icon: PieChart, bg: '#EFF6FF', color: '#2563EB' },
         ].map(({ label, value, sub, icon: Icon, bg, color }) => (
@@ -234,8 +234,8 @@ export default function FinanceTab({ restaurantId }) {
       {commissions && (
         <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
-              <Wallet className="w-3.5 h-3.5 text-[#EA580C]" />
+            <div className="w-7 h-7 rounded-lg bg-[#FFECDF] flex items-center justify-center">
+              <Wallet className="w-3.5 h-3.5 text-[#FF3A03]" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-[#1A0C00]">Commission plateforme</h4>
@@ -305,8 +305,8 @@ export default function FinanceTab({ restaurantId }) {
         {/* Répartition paiements */}
         <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-3">
-            <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
-              <CreditCard className="w-3.5 h-3.5 text-[#EA580C]" />
+            <div className="w-7 h-7 rounded-lg bg-[#FFECDF] flex items-center justify-center">
+              <CreditCard className="w-3.5 h-3.5 text-[#FF3A03]" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-[#1A0C00]">Répartition modes de paiement</h4>
@@ -339,8 +339,8 @@ export default function FinanceTab({ restaurantId }) {
         {/* Budget & Alertes  */}
         <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
-              <Wallet className="w-3.5 h-3.5 text-[#EA580C]" />
+            <div className="w-7 h-7 rounded-lg bg-[#FFECDF] flex items-center justify-center">
+              <Wallet className="w-3.5 h-3.5 text-[#FF3A03]" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-[#1A0C00]">Plafond budgétaire</h4>
@@ -351,10 +351,10 @@ export default function FinanceTab({ restaurantId }) {
           {/* Config plafond */}
           <div className="flex gap-2 mb-4">
             <input type="number" min="0" value={budget.plafond} onChange={e => setBudget(b => ({ ...b, plafond: e.target.value }))}
-              className="flex-1 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+              className="flex-1 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2 text-sm text-[#1A0C00] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition"
               placeholder="Plafond mensuel (FCFA)" />
             <button onClick={handleSaveBudget} disabled={budget.saving}
-              className="rounded-lg bg-[#EA580C] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#C2410C] disabled:opacity-60">
+              className="rounded-lg bg-[#FF3A03] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#CC2402] disabled:opacity-60">
               {budget.saving ? '…' : 'Définir'}
             </button>
           </div>
@@ -368,7 +368,7 @@ export default function FinanceTab({ restaurantId }) {
               </div>
               <div className="relative h-3 w-full rounded-full bg-[#FFF5E6] overflow-hidden">
                 <div className="h-full rounded-full transition-all duration-500"
-                  style={{ width: budgetPct + '%', background: budgetAlert === 'rouge' ? '#DC2626' : budgetAlert === 'orange' ? '#EA580C' : '#059669' }} />
+                  style={{ width: budgetPct + '%', background: budgetAlert === 'rouge' ? '#DC2626' : budgetAlert === 'orange' ? '#FF3A03' : '#059669' }} />
                 {/* Markers */}
                 <div className="absolute top-0 h-full w-0.5 bg-orange-400" style={{ left: '80%' }} title="80%" />
                 <div className="absolute top-0 h-full w-0.5 bg-red-600" style={{ left: '100%' }} title="100%" />
@@ -388,7 +388,7 @@ export default function FinanceTab({ restaurantId }) {
 
           {/* Checkboxes alertes */}
           <div className="flex gap-4">
-            {[{ key: 'alerte80', label: 'Alerte 80%', color: '#EA580C' }, { key: 'alerte100', label: 'Alerte 100%', color: '#DC2626' }].map(({ key, label, color }) => (
+            {[{ key: 'alerte80', label: 'Alerte 80%', color: '#FF3A03' }, { key: 'alerte100', label: 'Alerte 100%', color: '#DC2626' }].map(({ key, label, color }) => (
               <label key={key} className="flex items-center gap-2 cursor-pointer">
                 <input type="checkbox" checked={budget[key]} onChange={e => setBudget(b => ({ ...b, [key]: e.target.checked }))}
                   className="h-4 w-4 rounded" style={{ accentColor: color }} />
@@ -405,8 +405,8 @@ export default function FinanceTab({ restaurantId }) {
         {/* Saisie dépenses + liste */}
         <div className="rounded-lg bg-white border border-[#E2E8F0] p-5 shadow-card">
           <div className="flex items-center gap-2 mb-4">
-            <div className="w-7 h-7 rounded-lg bg-[#FFF0DF] flex items-center justify-center">
-              <DollarSign className="w-3.5 h-3.5 text-[#EA580C]" />
+            <div className="w-7 h-7 rounded-lg bg-[#FFECDF] flex items-center justify-center">
+              <DollarSign className="w-3.5 h-3.5 text-[#FF3A03]" />
             </div>
             <div>
               <h4 className="text-sm font-bold text-[#1A0C00]">Saisir une dépense opérationnelle</h4>
@@ -417,7 +417,7 @@ export default function FinanceTab({ restaurantId }) {
             <div>
               <label className="mb-1 block text-sm font-semibold text-[#475569]">Catégorie *</label>
               <select value={expenseForm.categorie} onChange={e => setExpenseForm(f => ({ ...f, categorie: e.target.value }))}
-                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition">
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition">
                 <option value="">Catégorie…</option>
                 {EXPENSE_CATS.map(c => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
@@ -425,18 +425,18 @@ export default function FinanceTab({ restaurantId }) {
             <div>
               <label className="mb-1 block text-sm font-semibold text-[#475569]">Montant (FCFA) *</label>
               <input type="number" min="1" value={expenseForm.montant} onChange={e => setExpenseForm(f => ({ ...f, montant: e.target.value }))}
-                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition"
                 placeholder="Ex: 50 000" />
             </div>
             <div>
               <label className="mb-1 block text-sm font-semibold text-[#475569]">Description</label>
               <input type="text" value={expenseForm.description} onChange={e => setExpenseForm(f => ({ ...f, description: e.target.value }))}
-                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#EA580C] focus:ring-1 focus:ring-[#EA580C] transition"
+                className="w-full rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-3 py-2.5 text-sm text-[#1A0C00] outline-none focus:border-[#FF3A03] focus:ring-1 focus:ring-[#FF3A03] transition"
                 placeholder="Optionnel" />
             </div>
           </div>
           <button onClick={handleRecordExpense} disabled={saving}
-            className="flex items-center gap-2 rounded-lg bg-[#EA580C] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#C2410C] disabled:opacity-60 mb-5">
+            className="flex items-center gap-2 rounded-lg bg-[#FF3A03] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#CC2402] disabled:opacity-60 mb-5">
             {saving ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
             {saving ? 'Enregistrement…' : 'Enregistrer'}
           </button>
@@ -455,14 +455,14 @@ export default function FinanceTab({ restaurantId }) {
                         <span className="text-xs font-semibold text-[#334155]">{cat?.label || exp.categorie}</span>
                         {exp.description && <span className="text-[10px] text-[#8B6E50]">— {exp.description}</span>}
                       </div>
-                      <span className="text-xs font-bold text-[#EA580C] flex-shrink-0">{formatFCFA(exp.montant)}</span>
+                      <span className="text-xs font-bold text-[#FF3A03] flex-shrink-0">{formatFCFA(exp.montant)}</span>
                     </div>
                   );
                 })}
               </div>
               <div className="mt-2 flex justify-between text-xs font-bold border-t border-[#FFF5E6] pt-2">
                 <span className="text-[#475569]">Total session</span>
-                <span className="text-[#EA580C]">{formatFCFA(depTotal)}</span>
+                <span className="text-[#FF3A03]">{formatFCFA(depTotal)}</span>
               </div>
             </div>
           )}
@@ -484,7 +484,7 @@ export default function FinanceTab({ restaurantId }) {
           <p className="text-[10px] font-bold text-[#8B6E50] uppercase tracking-wide mb-2">Export SYSCOHADA</p>
           <div className="space-y-2 mb-4">
             {[
-              { period: 'monthly',   label: 'Mensuel',      color: '#EA580C' },
+              { period: 'monthly',   label: 'Mensuel',      color: '#FF3A03' },
               { period: 'quarterly', label: 'Trimestriel',  color: '#1A0C00' },
               { period: 'yearly',    label: 'Annuel',       color: '#059669' },
             ].map(({ period: p, label, color }) => (
@@ -506,7 +506,7 @@ export default function FinanceTab({ restaurantId }) {
               { rp: 'yearly',    label: 'Rapport annuel' },
             ].map(({ rp, label }) => (
               <button key={rp} onClick={() => downloadReport(rp)} disabled={dlState[`rp_${rp}`]}
-                className="w-full flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-2.5 text-xs font-semibold text-[#334155] transition hover:border-[#EA580C] hover:text-[#EA580C] disabled:opacity-60">
+                className="w-full flex items-center gap-2 rounded-lg border border-[#E2E8F0] bg-[#F9F9FC] px-4 py-2.5 text-xs font-semibold text-[#334155] transition hover:border-[#FF3A03] hover:text-[#FF3A03] disabled:opacity-60">
                 <FileText className="w-3.5 h-3.5 flex-shrink-0" />
                 {dlState[`rp_${rp}`] ? 'Génération…' : label}
               </button>

@@ -104,7 +104,7 @@ export default function AdminOnboardingWizard() {
             {step === 0 && (
               <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
                 <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(234, 88, 12, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(234,60,12, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     <Lock style={{ width: 28, height: 28, color: ACCENT }} />
                   </div>
                 </div>

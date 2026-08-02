@@ -14,7 +14,7 @@ const SH = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';
 
 const STATUS = {
   EN_ATTENTE:     { label: 'En attente',     color: '#D97706', bg: '#FFFBEB', dot: '#FBBF24' },
-  RECUE:          { label: 'Reçue',          color: '#EA580C', bg: '#FFF7ED', dot: '#FB923C' },
+  RECUE:          { label: 'Reçue',          color: '#FF3A03', bg: '#FFF5ED', dot: '#FF7938' },
   CONFIRMEE:      { label: 'Confirmée',      color: '#059669', bg: '#ECFDF5', dot: '#34D399' },
   EN_PREP:        { label: 'En préparation', color: '#D97706', bg: '#FFFBEB', dot: '#FBBF24' },
   EN_PREPARATION: { label: 'En préparation', color: '#D97706', bg: '#FFFBEB', dot: '#FBBF24' },
@@ -74,7 +74,7 @@ export default function B2BOrders() {
             <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
           </Link>
           <span style={{ color: 'rgba(0,0,0,0.15)' }}>›</span>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #EA580C, #C2410C)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #FF3A03, #CC2402)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <ShoppingBag className="w-3.5 h-3.5 text-white" />
           </div>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#1A0C00', margin: 0, flex: 1 }}>Commandes</p>
@@ -88,12 +88,12 @@ export default function B2BOrders() {
             <div className="flex items-center gap-2">
               <Link to="/b2b/order?mode=schedule"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-semibold transition hover:opacity-80"
-                style={{ background: '#FFF7ED', color: '#C2410C', border: '1px solid #FED7AA' }}>
+                style={{ background: '#FFF5ED', color: '#CC2402', border: '1px solid #FED7AA' }}>
                 <CalendarDays className="w-3.5 h-3.5" /> Planifier
               </Link>
               <Link to="/b2b/order?mode=instant"
                 className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-[12px] font-bold text-white transition hover:opacity-90"
-                style={{ background: 'linear-gradient(135deg, #EA580C, #C2410C)', boxShadow: '0 2px 8px rgba(255,140,0,0.40)' }}>
+                style={{ background: 'linear-gradient(135deg, #FF3A03, #CC2402)', boxShadow: '0 2px 8px rgba(255,108,0,0.40)' }}>
                 <Plus className="w-3.5 h-3.5" /> Nouvelle commande
               </Link>
             </div>
@@ -125,7 +125,7 @@ export default function B2BOrders() {
         <div className="grid grid-cols-3 gap-3">
           {[
             { label: 'Total',     value: orders.length, bg: '#1A0C00' },
-            { label: 'En cours',  value: active.length, bg: '#EA580C' },
+            { label: 'En cours',  value: active.length, bg: '#FF3A03' },
             { label: 'Terminées', value: done.length,   bg: '#10B981' },
           ].map(s => (
             <div key={s.label} className="rounded-lg p-4 text-center" style={{ background: s.bg }}>

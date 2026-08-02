@@ -50,7 +50,7 @@ const TRANSLATIONS = {
     
     // Pillars
     commitments: "Engagements Resto d'ici",
-    excellence_simplified: "L'excellence de la restauration, <em style='color: #EA580C; font-style: italic'>simplifiée.</em>",
+    excellence_simplified: "L'excellence de la restauration, <em style='color: #FF3A03; font-style: italic'>simplifiée.</em>",
     pillar_1_title: "Livraison Express",
     pillar_1_desc: "Vos plats chauds livrés en moins de 30 minutes, à domicile ou sur votre lieu de travail.",
     pillar_2_title: "Gastronomie Ivoirienne",
@@ -138,7 +138,7 @@ const TRANSLATIONS = {
     b2b_feat_4: "Support prioritaire dédié 7j/7",
     
     // Payment section
-    payments_secure: "Paiements <em style='color: #EA580C; font-style: italic'>100% Sécurisés</em>",
+    payments_secure: "Paiements <em style='color: #FF3A03; font-style: italic'>100% Sécurisés</em>",
     payments_desc: "Réglez vos commandes en un clic avec vos solutions de paiement préférées.",
     payments: "PAIEMENTS",
     direct_secure: "Direct & Sécurisé",
@@ -228,7 +228,7 @@ const TRANSLATIONS = {
     
     // Pillars
     commitments: "Resto d'ici Commitments",
-    excellence_simplified: "Restaurant excellence, <em style='color: #EA580C; font-style: italic'>simplified.</em>",
+    excellence_simplified: "Restaurant excellence, <em style='color: #FF3A03; font-style: italic'>simplified.</em>",
     pillar_1_title: "Express Delivery",
     pillar_1_desc: "Your hot meals delivered in under 30 minutes, at home or at your workplace.",
     pillar_2_title: "Ivorian Gastronomy",
@@ -316,7 +316,7 @@ const TRANSLATIONS = {
     b2b_feat_4: "Dedicated 24/7 priority support",
     
     // Payment section
-    payments_secure: "<em style='color: #EA580C; font-style: italic'>100% Secure</em> Payments",
+    payments_secure: "<em style='color: #FF3A03; font-style: italic'>100% Secure</em> Payments",
     payments_desc: "Pay for your orders in one click with your favorite payment solutions.",
     payments: "PAYMENTS",
     direct_secure: "Direct & Secure",

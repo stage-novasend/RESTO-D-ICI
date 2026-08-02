@@ -36,8 +36,8 @@ const T = {
   muted: "#64748B", // slate-500
   mutedL: "#94A3B8", // slate-400
   card: "#FFFFFF",
-  accent: "#EA580C", // orange-600
-  accentD: "#C2410C", // orange-700
+  accent: "#FF3A03", // orange-600
+  accentD: "#CC2402", // orange-700
   accentL: "#F97316", // orange-500
   yellow: "#F59E0B", // amber-500
   yellowL: "#FCD34D", // amber-300
@@ -49,7 +49,7 @@ const T = {
   shadowM: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
 };
 
-const KENTE = ["#EA580C", "#F97316", "#C2410C", "#9A3412"];
+const KENTE = ["#FF3A03", "#F97316", "#CC2402", "#9A3412"];
 /* Une seule famille moderne sans-serif pour un look SaaS pur */
 const serif = "'Inter', system-ui, sans-serif";
 const sans = "'Inter', system-ui, sans-serif";
@@ -520,7 +520,7 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
               { icon: Building2, text: t('b2b_enterprise'), sub: t('b2b_sub') },
             ].map(({ icon: Icon, text, sub }) => (
               <div key={text} style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(234,88,12,0.2)", border: "1px solid rgba(234,88,12,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 38, height: 38, borderRadius: 12, background: "rgba(234,60,12,0.2)", border: "1px solid rgba(234,60,12,0.4)", display: "flex", alignItems: "center", justifyContent: "center" }}>
                   <Icon size={18} color={T.yellow} />
                 </div>
                 <div style={{ textAlign: "left" }}>
@@ -1041,7 +1041,7 @@ function Footer() {
           {/* Brand info */}
           <div style={{ gridColumn: "span 1" }}>
             <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
-              <div style={{ padding: 3, background: "rgba(234,88,12,0.15)", borderRadius: 16, border: "1px solid rgba(234,88,12,0.3)" }}>
+              <div style={{ padding: 3, background: "rgba(234,60,12,0.15)", borderRadius: 16, border: "1px solid rgba(234,60,12,0.3)" }}>
                 <BrandMark size={42} shadow />
               </div>
               <div>

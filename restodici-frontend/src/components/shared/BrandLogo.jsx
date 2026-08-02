@@ -34,7 +34,7 @@ export function BrandMark({ size = 40, shadow = false, className = '', style }) 
       style={{
         display: 'block',
         borderRadius: size * 0.336,
-        boxShadow: shadow ? `0 4px ${size * 0.43}px rgba(234,88,12,0.40)` : undefined,
+        boxShadow: shadow ? `0 4px ${size * 0.43}px rgba(234,60,12,0.40)` : undefined,
         ...style,
       }}
       role="img"
@@ -42,7 +42,7 @@ export function BrandMark({ size = 40, shadow = false, className = '', style }) 
     >
       <defs>
         <linearGradient id={bg} x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="#EA580C" />
+          <stop offset="0%" stopColor="#FF3A03" />
           <stop offset="100%" stopColor="#F59E0B" />
         </linearGradient>
       </defs>
@@ -94,7 +94,7 @@ export default function BrandLogo({
             whiteSpace: 'nowrap',
           }}
         >
-          <span style={{ color: onDark ? '#FFFFFF' : '#EA580C' }}>Resto</span>
+          <span style={{ color: onDark ? '#FFFFFF' : '#FF3A03' }}>Resto</span>
           <span style={{ color: onDark ? 'rgba(255,255,255,0.85)' : '#1A0C00' }}>&nbsp;d&apos;ici</span>
         </span>
       )}

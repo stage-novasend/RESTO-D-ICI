@@ -83,7 +83,7 @@ export default function GerantLayout() {
           background: rgba(139,110,80,0.92) !important; color: #f8fafc !important;
           border-color: rgba(148,163,184,0.2) !important;
         }
-        .nav-item-hover:hover { background: rgba(255,140,0,0.08) !important; }
+        .nav-item-hover:hover { background: rgba(255,108,0,0.08) !important; }
       `}</style>
 
       {/* ── Sidebar bureau — masquée sur mobile, toujours visible sur écran ≥ 1024px ── */}
@@ -95,7 +95,7 @@ export default function GerantLayout() {
         <button
           onClick={() => setCollapsed(!collapsed)}
           className="absolute -right-3 top-6 flex h-7 w-7 items-center justify-center rounded-full text-white shadow-md transition"
-          style={{ background: '#EA580C' }}
+          style={{ background: '#FF3A03' }}
           aria-label={collapsed ? 'Développer' : 'Réduire'}
         >
           <ChevronRight className={`h-4 w-4 transition-transform ${collapsed ? '' : 'rotate-180'}`} />
@@ -108,12 +108,12 @@ export default function GerantLayout() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <BrandMark size={36} style={{ flexShrink: 0 }} />
                 <div>
-                  <p style={{ fontSize: 9, fontWeight: 700, color: '#EA580C', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
+                  <p style={{ fontSize: 9, fontWeight: 700, color: '#FF3A03', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
                   <p style={{ fontSize: 15, fontWeight: 800, color: '#1F2937', margin: 0, lineHeight: 1.2 }}>Resto d'ici</p>
                 </div>
               </div>
               {restaurantName && (
-                <div style={{ background: 'rgba(255,140,0,0.07)', borderRadius: 8, padding: '6px 10px' }}>
+                <div style={{ background: 'rgba(255,108,0,0.07)', borderRadius: 8, padding: '6px 10px' }}>
                   <p style={{ fontSize: 10, color: '#9CA3AF', margin: '0 0 1px' }}>Restaurant actif</p>
                   <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurantName}</p>
                 </div>
@@ -141,13 +141,13 @@ export default function GerantLayout() {
                   justifyContent: collapsed ? 'center' : 'flex-start',
                   width: '100%', padding: collapsed ? '12px' : '10px 12px',
                   border: 'none', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                  background: isActive ? '#EA580C' : 'transparent',
-                  boxShadow: isActive ? '0 4px 14px rgba(255,140,0,0.30)' : 'none',
+                  background: isActive ? '#FF3A03' : 'transparent',
+                  boxShadow: isActive ? '0 4px 14px rgba(255,108,0,0.30)' : 'none',
                   transition: 'all 0.18s',
                 }}
                 className={isActive ? '' : 'nav-item-hover'}
               >
-                <span style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? 'rgba(255,255,255,0.22)' : 'rgba(255,140,0,0.10)', color: isActive ? '#fff' : '#EA580C', transition: 'all 0.18s' }}>
+                <span style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? 'rgba(255,255,255,0.22)' : 'rgba(255,108,0,0.10)', color: isActive ? '#fff' : '#FF3A03', transition: 'all 0.18s' }}>
                   <Icon style={{ width: 16, height: 16 }} />
                 </span>
                 {!collapsed && (
@@ -222,12 +222,12 @@ export default function GerantLayout() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
               <BrandMark size={36} style={{ flexShrink: 0 }} />
               <div>
-                <p style={{ fontSize: 9, fontWeight: 700, color: '#EA580C', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
+                <p style={{ fontSize: 9, fontWeight: 700, color: '#FF3A03', textTransform: 'uppercase', letterSpacing: '0.2em', margin: 0 }}>Espace gérant</p>
                 <p style={{ fontSize: 15, fontWeight: 800, color: '#1F2937', margin: 0, lineHeight: 1.2 }}>Resto d'ici</p>
               </div>
             </div>
             {restaurantName && (
-              <div style={{ background: 'rgba(255,140,0,0.07)', borderRadius: 8, padding: '6px 10px' }}>
+              <div style={{ background: 'rgba(255,108,0,0.07)', borderRadius: 8, padding: '6px 10px' }}>
                 <p style={{ fontSize: 10, color: '#9CA3AF', margin: '0 0 1px' }}>Restaurant actif</p>
                 <p style={{ fontSize: 12, fontWeight: 700, color: '#374151', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{restaurantName}</p>
               </div>
@@ -246,13 +246,13 @@ export default function GerantLayout() {
                     justifyContent: 'flex-start',
                     width: '100%', padding: '10px 12px',
                     border: 'none', borderRadius: 10, cursor: 'pointer', textAlign: 'left',
-                    background: isActive ? '#EA580C' : 'transparent',
-                    boxShadow: isActive ? '0 4px 14px rgba(255,140,0,0.30)' : 'none',
+                    background: isActive ? '#FF3A03' : 'transparent',
+                    boxShadow: isActive ? '0 4px 14px rgba(255,108,0,0.30)' : 'none',
                     transition: 'all 0.18s',
                   }}
                   className={isActive ? '' : 'nav-item-hover'}
                 >
-                  <span style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? 'rgba(255,255,255,0.22)' : 'rgba(255,140,0,0.10)', color: isActive ? '#fff' : '#EA580C' }}>
+                  <span style={{ width: 34, height: 34, borderRadius: 8, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: isActive ? 'rgba(255,255,255,0.22)' : 'rgba(255,108,0,0.10)', color: isActive ? '#fff' : '#FF3A03' }}>
                     <Icon style={{ width: 16, height: 16 }} />
                   </span>
                   <span style={{ flex: 1, minWidth: 0 }}>
@@ -272,7 +272,7 @@ export default function GerantLayout() {
         onClick={() => setMobileOpen(true)}
         aria-label="Ouvrir le menu"
       >
-        <Menu style={{ width: 16, height: 16, color: '#EA580C' }} />
+        <Menu style={{ width: 16, height: 16, color: '#FF3A03' }} />
       </button>
 
       {/* ── Contenu principal ── */}

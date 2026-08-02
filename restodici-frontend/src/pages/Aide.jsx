@@ -4,13 +4,13 @@ import { ChevronDown, Search, ShoppingBag, CreditCard, Building2, Headphones, Ar
 import BrandLogo from '../components/shared/BrandLogo';
 import MiniFooter from '../components/shared/MiniFooter';
 
-const T = { accent: '#EA580C', accentD: '#C2410C', bg: '#FFFFFF', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
+const T = { accent: '#FF3A03', accentD: '#CC2402', bg: '#FFFFFF', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
 const serif = "'Playfair Display', Georgia, serif";
 const sans  = "'Manrope', system-ui, sans-serif";
 
 function MiniNav() {
   return (
-    <nav style={{ background: '#fff', borderBottom: '1px solid rgba(255,140,0,0.12)', position: 'sticky', top: 0, zIndex: 50 }}>
+    <nav style={{ background: '#fff', borderBottom: '1px solid rgba(255,108,0,0.12)', position: 'sticky', top: 0, zIndex: 50 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BrandLogo size={34} to="/" />
         <Link to="/" style={{ fontFamily: sans, fontSize: 13, color: T.muted, textDecoration: 'none', fontWeight: 500 }}>← Accueil</Link>
@@ -20,7 +20,7 @@ function MiniNav() {
 }
 
 const CATEGORIES = [
-  { id: 'commandes', icon: ShoppingBag,  label: 'Commandes',       color: '#EA580C' },
+  { id: 'commandes', icon: ShoppingBag,  label: 'Commandes',       color: '#FF3A03' },
   { id: 'paiements', icon: CreditCard,   label: 'Paiements',       color: '#059669' },
   { id: 'compte',    icon: Headphones,   label: 'Mon compte',      color: '#7C3AED' },
   { id: 'b2b',       icon: Building2,    label: 'Entreprises B2B', color: '#2563EB' },

@@ -25,9 +25,9 @@ const C = {
   page:   '#FFFFFF',
   bg:     '#F1F5F9',
   card:   '#FFFFFF',
-  accent: '#EA580C',
-  aD:     '#C2410C',
-  aL:     '#FFF7ED', // orange-50
+  accent: '#FF3A03',
+  aD:     '#CC2402',
+  aL:     '#FFF5ED', // orange-50
   yellow: '#F59E0B',
   red:    '#EF4444',
   green:  '#10B981',
@@ -122,7 +122,7 @@ function Logo() {
     <Link to="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
       <BrandMark size={36} shadow />
       <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, letterSpacing: '-0.04em' }}>
-        <span style={{ color: '#EA580C' }}>Resto</span>
+        <span style={{ color: '#FF3A03' }}>Resto</span>
         <span style={{ color: '#1C1C1E' }}>&nbsp;d'ici</span>
       </span>
     </Link>
@@ -250,11 +250,11 @@ function DeliveryMapModal({ onClose, onConfirm, initial }) {
             disabled={!loc}
             style={{
               width: '100%', padding: '14px', borderRadius: 14, border: 'none',
-              background: loc ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line,
+              background: loc ? 'linear-gradient(135deg,#FF3A03,#CC2402)' : C.line,
               color: loc ? '#fff' : C.muted,
               fontFamily: sans, fontSize: 14, fontWeight: 800,
               cursor: loc ? 'pointer' : 'not-allowed',
-              boxShadow: loc ? '0 6px 20px #EA580C55' : 'none',
+              boxShadow: loc ? '0 6px 20px #FF3A0355' : 'none',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               transition: 'all 0.15s',
             }}
@@ -347,7 +347,7 @@ function RestaurantCard({ restaurant, idx, onSelect, matched, favorites, onFav, 
             {restaurant.fraisLivraison != null && <span style={{ fontFamily: sans, fontSize: 10, fontWeight: 700, background: '#F0FFF4', color: C.green, borderRadius: 99, padding: '3px 8px' }}>{restaurant.fraisLivraison === 0 ? '🚴 Livraison offerte' : '🚴 ' + formatFCFA(restaurant.fraisLivraison)}</span>}
           </div>
         )}
-        <button onClick={e => { if (!isOpen) return; e.stopPropagation(); onSelect(restaurant); }} disabled={!isOpen} style={{ width: '100%', padding: '10px', borderRadius: 12, border: 'none', background: isOpen ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isOpen ? '#fff' : C.muted, fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: isOpen ? 'pointer' : 'not-allowed', boxShadow: isOpen ? '0 4px 14px #EA580C44' : 'none', transition: 'all 0.15s' }}>
+        <button onClick={e => { if (!isOpen) return; e.stopPropagation(); onSelect(restaurant); }} disabled={!isOpen} style={{ width: '100%', padding: '10px', borderRadius: 12, border: 'none', background: isOpen ? 'linear-gradient(135deg,#FF3A03,#CC2402)' : C.line, color: isOpen ? '#fff' : C.muted, fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: isOpen ? 'pointer' : 'not-allowed', boxShadow: isOpen ? '0 4px 14px #FF3A0344' : 'none', transition: 'all 0.15s' }}>
           {isOpen ? 'Voir le menu →' : 'Restaurant fermé'}
         </button>
       </div>
@@ -413,13 +413,13 @@ function ProductCard({ product, qty, onAdd, onRemove, onCustomize, idx, isFav, o
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 10, gap: 8 }}>
           <span style={{ fontFamily: sans, fontSize: 18, fontWeight: 900, color: C.dark }}>{formatFCFA(price)}</span>
           {qty > 0 ? (
-            <div style={{ display: 'flex', alignItems: 'center', background: C.accent, borderRadius: 99, overflow: 'hidden', boxShadow: '0 4px 14px #EA580C55' }}>
+            <div style={{ display: 'flex', alignItems: 'center', background: C.accent, borderRadius: 99, overflow: 'hidden', boxShadow: '0 4px 14px #FF3A0355' }}>
               <button onClick={e => { e.stopPropagation(); onRemove(product); }} style={{ width: 34, height: 34, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={14} /></button>
               <span style={{ fontFamily: sans, fontSize: 15, fontWeight: 800, color: '#fff', minWidth: 20, textAlign: 'center' }}>{qty}</span>
               <button onClick={e => { e.stopPropagation(); onAdd(product); }} style={{ width: 34, height: 34, border: 'none', background: 'transparent', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={14} /></button>
             </div>
           ) : (
-            <button onClick={e => { e.stopPropagation(); if (isAvail) onAdd(product); }} disabled={!isAvail} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: isAvail ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.line, color: isAvail ? '#fff' : C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isAvail ? 'pointer' : 'not-allowed', boxShadow: isAvail ? '0 4px 14px #EA580C55' : 'none', flexShrink: 0, transition: 'all 0.15s' }}>
+            <button onClick={e => { e.stopPropagation(); if (isAvail) onAdd(product); }} disabled={!isAvail} style={{ width: 40, height: 40, borderRadius: '50%', border: 'none', background: isAvail ? 'linear-gradient(135deg,#FF3A03,#CC2402)' : C.line, color: isAvail ? '#fff' : C.muted, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: isAvail ? 'pointer' : 'not-allowed', boxShadow: isAvail ? '0 4px 14px #FF3A0355' : 'none', flexShrink: 0, transition: 'all 0.15s' }}>
               <Plus size={19} />
             </button>
           )}
@@ -526,7 +526,7 @@ function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMo
             </div>
             {items.length > 0 && (
               <button onClick={onClear} title="Vider le panier"
-                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(234,88,12,0.1)', border: '1px solid rgba(255,140,0,0.25)', borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: C.accent, fontSize: 11, fontWeight: 700, lineHeight: 1, marginTop: 2 }}>
+                style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(234,60,12,0.1)', border: '1px solid rgba(255,108,0,0.25)', borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: C.accent, fontSize: 11, fontWeight: 700, lineHeight: 1, marginTop: 2 }}>
                 <Trash2 size={11} /> Vider
               </button>
             )}
@@ -538,7 +538,7 @@ function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMo
           {DELIVERY_MODES.map(({ key, label, Icon }) => {
             const isActive = deliveryMode === key;
             return (
-              <button key={key} onClick={() => onDeliveryMode(key)} title={label} style={{ flex: 1, padding: '8px 4px', borderRadius: 9, border: 'none', background: isActive ? C.accent : 'transparent', color: isActive ? '#fff' : C.muted, fontFamily: sans, fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', boxShadow: isActive ? '0 2px 8px #EA580C44' : 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+              <button key={key} onClick={() => onDeliveryMode(key)} title={label} style={{ flex: 1, padding: '8px 4px', borderRadius: 9, border: 'none', background: isActive ? C.accent : 'transparent', color: isActive ? '#fff' : C.muted, fontFamily: sans, fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s', boxShadow: isActive ? '0 2px 8px #FF3A0344' : 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
                 <Icon size={14} />
                 <span>{label}</span>
               </button>
@@ -615,7 +615,7 @@ function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMo
               <span style={{ fontFamily: sans, fontSize: 16, fontWeight: 900, color: C.accent }}>{formatFCFA(grandTotal)}</span>
             </div>
           </div>
-          <button onClick={onCheckout} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#EA580C,#C2410C)', color: '#fff', fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 20px #EA580C55', transition: 'all 0.15s' }}
+          <button onClick={onCheckout} style={{ width: '100%', padding: '14px', borderRadius: 14, border: 'none', background: 'linear-gradient(135deg,#FF3A03,#CC2402)', color: '#fff', fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: '0 6px 20px #FF3A0355', transition: 'all 0.15s' }}
             onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.02)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
@@ -1095,7 +1095,7 @@ export default function MenuPage() {
                            </div>
                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                               {['Pizza', 'Burger', 'Poulet braisé', 'Garba', 'Chawarma', 'Alloco'].map((s, i) => (
-                                <button key={i} onClick={() => { setDiscoSearch(s); saveSearchToHistory(s); setIsSearchFocused(false); }} style={{ background: '#FFF5E8', border: `1px solid #FFE4C4`, color: C.accent, borderRadius: 99, padding: '6px 12px', fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{s}</button>
+                                <button key={i} onClick={() => { setDiscoSearch(s); saveSearchToHistory(s); setIsSearchFocused(false); }} style={{ background: '#FFF2E8', border: `1px solid #FFE4C4`, color: C.accent, borderRadius: 99, padding: '6px 12px', fontFamily: sans, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>{s}</button>
                               ))}
                            </div>
                         </div>
@@ -1124,7 +1124,7 @@ export default function MenuPage() {
                              
                              {discoMatchedProducts.slice(0, 4).map((p, i) => (
                                <div key={p.id + '_' + i} onClick={() => { saveSearchToHistory(discoSearch); setSelectedResto(p.fakeResto); setIsSearchFocused(false); }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px', borderRadius: 8, cursor: 'pointer', transition: 'background 0.2s' }} onMouseEnter={e => e.currentTarget.style.background = C.bg} onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
-                                 <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#FFF5E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                 <div style={{ width: 40, height: 40, borderRadius: 8, overflow: 'hidden', flexShrink: 0, background: '#FFF2E8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                    <Utensils size={18} color={C.accent} />
                                  </div>
                                  <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -1142,18 +1142,18 @@ export default function MenuPage() {
                 )}
               </div>
               <LanguageSwitcher variant="light" />
-              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 50, padding: '8px 16px', fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 4px 14px #EA580C44' : 'none', transition: 'all 0.2s' }}>
+              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#FF3A03,#CC2402)' : C.bg, border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.muted, borderRadius: 50, padding: '8px 16px', fontFamily: sans, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 4px 14px #FF3A0344' : 'none', transition: 'all 0.2s' }}>
                 <ShoppingCart size={15} />
                 {cartCount > 0 && <><span>{cartCount}</span><span style={{ opacity: 0.85 }}>·</span><span>{formatFCFA(total())}</span></>}
               </button>
               <Link
                 to={!user ? '/login' : user.role === 'B2B' ? '/b2b' : '/account'}
-                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF5E8', border: '1.5px solid ' + C.line, borderRadius: 50, padding: '4px 14px 4px 4px', textDecoration: 'none', color: C.accent, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}
+                style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#FFF2E8', border: '1.5px solid ' + C.line, borderRadius: 50, padding: '4px 14px 4px 4px', textDecoration: 'none', color: C.accent, fontFamily: sans, fontSize: 13, fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', flexShrink: 0 }}
                 onMouseEnter={e => { e.currentTarget.style.borderColor = C.accent; }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = C.line; }}
               >
                 <span
-                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#EA580C,#C2410C)', color: '#fff', fontSize: 14, fontWeight: 800 }}
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg,#FF3A03,#CC2402)', color: '#fff', fontSize: 14, fontWeight: 800 }}
                 >
                   {(user?.prenom?.charAt(0) || user?.nom?.charAt(0) || 'P').toUpperCase()}
                 </span>
@@ -1165,13 +1165,13 @@ export default function MenuPage() {
           <div style={{ padding: 'clamp(16px,3vw,24px) clamp(12px,4vw,28px) 40px', maxWidth: 1380, margin: '0 auto' }}>
             {/* Bannière défilante */}
             <div style={{ background: '#0E0600', borderRadius: 22, marginBottom: 26, overflow: 'hidden', position: 'relative', boxShadow: '0 10px 36px rgba(0,0,0,0.24)' }}>
-              <div style={{ height: 3, background: 'linear-gradient(90deg, #EA580C, #FFB800, #EA580C)' }} />
+              <div style={{ height: 3, background: 'linear-gradient(90deg, #FF3A03, #FFB800, #FF3A03)' }} />
               <div style={{ padding: 'clamp(14px,3vw,20px) clamp(14px,4vw,24px) 12px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <p style={{ margin: 0, fontFamily: sans, fontSize: 'clamp(13px,3vw,15px)', fontWeight: 800, color: 'rgba(255,255,255,0.55)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
                   Restaurants partenaires à Abidjan
                 </p>
                 {restaurants.length > 0 && (
-                  <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: '#EA580C', background: 'rgba(255,140,0,0.12)', border: '1px solid rgba(255,140,0,0.25)', borderRadius: 99, padding: '3px 12px' }}>
+                  <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: '#FF3A03', background: 'rgba(255,108,0,0.12)', border: '1px solid rgba(255,108,0,0.25)', borderRadius: 99, padding: '3px 12px' }}>
                     {restaurants.length} Restos
                   </span>
                 )}
@@ -1181,7 +1181,7 @@ export default function MenuPage() {
                   {[...bannerItems, ...bannerItems, ...bannerItems].map((nom, i) => (
                     <span key={i} style={{ display: 'inline-flex', alignItems: 'center' }}>
                       <span style={{ fontFamily: sans, fontSize: 'clamp(16px,4vw,22px)', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap', letterSpacing: '-0.02em' }}>{nom}</span>
-                      <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#EA580C', margin: '0 clamp(16px,4vw,28px)', flexShrink: 0, opacity: 0.7 }} />
+                      <span style={{ display: 'inline-block', width: 5, height: 5, borderRadius: '50%', background: '#FF3A03', margin: '0 clamp(16px,4vw,28px)', flexShrink: 0, opacity: 0.7 }} />
                     </span>
                   ))}
                 </div>
@@ -1197,7 +1197,7 @@ export default function MenuPage() {
                   background: `linear-gradient(135deg, ${C.accent}, ${C.aD})`,
                   color: "#fff", border: "none", fontFamily: sans, fontSize: 14, fontWeight: 800,
                   display: "flex", alignItems: "center", justifyContent: "space-between",
-                  boxShadow: "0 6px 20px rgba(234,88,12,0.3)"
+                  boxShadow: "0 6px 20px rgba(234,60,12,0.3)"
                 }}
               >
                 <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -1369,7 +1369,7 @@ export default function MenuPage() {
 
           {cartCount > 0 && (
             <div style={{ position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)', zIndex: 200, animation: 'barIn 0.35s cubic-bezier(.4,0,.2,1) both' }}>
-              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#EA580C,#C2410C)', color: '#fff', border: 'none', borderRadius: 99, padding: '14px 24px', cursor: 'pointer', fontFamily: sans, fontSize: 14, fontWeight: 800, boxShadow: '0 8px 32px #EA580C66', whiteSpace: 'nowrap' }}>
+              <button onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, background: 'linear-gradient(135deg,#FF3A03,#CC2402)', color: '#fff', border: 'none', borderRadius: 99, padding: '14px 24px', cursor: 'pointer', fontFamily: sans, fontSize: 14, fontWeight: 800, boxShadow: '0 8px 32px #FF3A0366', whiteSpace: 'nowrap' }}>
                 <div style={{ width: 24, height: 24, borderRadius: '50%', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}><ShoppingCart size={13} color="#EF4444" /></div>
                 Voir le panier ({cartCount}) · {formatFCFA(total())}
                 <ChevronRight size={15} />
@@ -1420,14 +1420,14 @@ export default function MenuPage() {
               </div>
 
               {/* Search Bar */}
-              <div className="menu-resto-search" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid rgba(234,88,12,0.15)', borderRadius: 50, padding: '0 18px', height: 46, width: '100%', maxWidth: 340, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
+              <div className="menu-resto-search" style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#fff', border: '1.5px solid rgba(234,60,12,0.15)', borderRadius: 50, padding: '0 18px', height: 46, width: '100%', maxWidth: 340, boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.02)' }}>
                 <Search size={16} color={C.accent} />
                 <input type="text" placeholder={'Rechercher un plat…'} value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1, minWidth: 0, border: 'none', outline: 'none', fontFamily: sans, fontSize: 13.5, color: C.dark, background: 'transparent', fontWeight: 600 }} />
                 {search && <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex' }}><X size={14} color={C.muted} /></button>}
               </div>
 
               {/* Cart Button */}
-              <button className="menu-resto-cart-btn" onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#EA580C,#C2410C)' : '#fff', border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.dark, borderRadius: 50, padding: '0 24px', height: 46, fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 8px 24px rgba(234,88,12,0.3)' : '0 4px 12px rgba(0,0,0,0.04)', transition: 'all 0.2s', transform: 'translateY(0)' }}
+              <button className="menu-resto-cart-btn" onClick={() => setCartOpen(true)} style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0, background: cartCount > 0 ? 'linear-gradient(135deg,#FF3A03,#CC2402)' : '#fff', border: '1.5px solid ' + (cartCount > 0 ? 'transparent' : C.line), color: cartCount > 0 ? '#fff' : C.dark, borderRadius: 50, padding: '0 24px', height: 46, fontFamily: sans, fontSize: 14, fontWeight: 800, cursor: 'pointer', boxShadow: cartCount > 0 ? '0 8px 24px rgba(234,60,12,0.3)' : '0 4px 12px rgba(0,0,0,0.04)', transition: 'all 0.2s', transform: 'translateY(0)' }}
                       onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-2px)'}
                       onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}>
                 <ShoppingCart size={17} color={cartCount > 0 ? '#fff' : C.accent} />

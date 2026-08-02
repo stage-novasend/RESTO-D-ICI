@@ -3,7 +3,7 @@ import StaticPageShell, {
   LegalSection as Section, LegalP as P,
 } from '../components/shared/StaticPageShell';
 
-const T = { accent: '#EA580C', dark: '#1A0C00', muted: '#64748B' };
+const T = { accent: '#FF3A03', dark: '#1A0C00', muted: '#64748B' };
 const sans = "'Manrope', system-ui, sans-serif";
 
 /* Resume en tete de page. Les emojis precedents (cadenas, interdit, coche)
@@ -33,7 +33,7 @@ export default function Privacy() {
       <div style={{ border: '1px solid #E2E8F0', borderRadius: 12, padding: 24, marginBottom: 44, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
         {GUARANTEES.map(({ Icon, title, desc }) => (
           <div key={title} style={{ textAlign: 'center', padding: '18px 10px', background: '#F8FAFC', borderRadius: 10 }}>
-            <span style={{ display: 'inline-flex', width: 38, height: 38, borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
+            <span style={{ display: 'inline-flex', width: 38, height: 38, borderRadius: 10, background: '#FFF5ED', border: '1px solid #FED7AA', alignItems: 'center', justifyContent: 'center', marginBottom: 10 }}>
               <Icon size={18} color={T.accent} />
             </span>
             <p style={{ fontSize: 13, fontWeight: 700, color: T.dark, margin: '0 0 4px', fontFamily: sans }}>{title}</p>

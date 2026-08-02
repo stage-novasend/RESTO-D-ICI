@@ -5,15 +5,15 @@ export const EXPENSE_CATS = [
   { value: 'salaires',     label: 'Salaires',       color: '#F59E0B' },
   { value: 'charges',      label: 'Charges sociales',color:'#EC4899' },
   { value: 'fournitures',  label: 'Fournitures',    color: '#10B981' },
-  { value: 'electricite',  label: 'Électricité',    color: '#EA580C' },
+  { value: 'electricite',  label: 'Électricité',    color: '#FF3A03' },
   { value: 'eau',          label: 'Eau',            color: '#0EA5E9' },
   { value: 'maintenance',  label: 'Maintenance',    color: '#8B6E50' },
-  { value: 'marketing',    label: 'Marketing',      color: '#EA580C' },
+  { value: 'marketing',    label: 'Marketing',      color: '#FF3A03' },
   { value: 'autre',        label: 'Autre',          color: '#334155' },
 ];
 
 export const PROMO_TYPES = [
-  { value: 'PERCENT', label: '% de réduction',   color: '#EA580C', bg: '#FFF0DF' },
+  { value: 'PERCENT', label: '% de réduction',   color: '#FF3A03', bg: '#FFECDF' },
   { value: 'FIXED',   label: 'Montant fixe (FCFA)', color: '#1A0C00', bg: '#FFF5E6' },
 ];
 

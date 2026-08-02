@@ -173,7 +173,7 @@ export default function B2BTeams() {
             <ArrowLeft className="w-3.5 h-3.5" /> Dashboard
           </Link>
           <span style={{ color: 'rgba(0,0,0,0.15)' }}>›</span>
-          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #EA580C, #C2410C)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: 8, background: 'linear-gradient(135deg, #FF3A03, #CC2402)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Users className="w-3.5 h-3.5 text-white" />
           </div>
           <p style={{ fontSize: 14, fontWeight: 700, color: '#1A0C00', margin: 0, flex: 1 }}>Équipe</p>
@@ -268,7 +268,7 @@ export default function B2BTeams() {
                         value={editingBudget.value}
                         onChange={e => setEditingBudget(p => ({ ...p, value: e.target.value }))}
                         className="w-24 rounded-lg px-2 py-1 text-xs font-medium"
-                        style={{ border: '1.5px solid #EA580C', outline: 'none', background: '#FFF0DF', color: '#1A0C00' }}
+                        style={{ border: '1.5px solid #FF3A03', outline: 'none', background: '#FFECDF', color: '#1A0C00' }}
                         autoFocus
                       />
                       <button
@@ -289,7 +289,7 @@ export default function B2BTeams() {
                     <button
                       onClick={() => setEditingBudget({ id: c.id, value: String(budget) })}
                       className="text-[10px] font-semibold px-2 py-0.5 rounded-md mt-1 transition hover:opacity-80"
-                      style={{ background: '#FFF0DF', color: '#EA580C', border: 'none', cursor: 'pointer' }}>
+                      style={{ background: '#FFECDF', color: '#FF3A03', border: 'none', cursor: 'pointer' }}>
                       Modifier budget
                     </button>
                   )}

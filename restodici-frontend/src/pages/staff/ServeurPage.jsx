@@ -24,7 +24,7 @@ import {
 } from '../../theme/colors';
 const SHADOW           = '0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)';
 const SHADOW_MD        = '0 4px 16px rgba(0,0,0,0.10)';
-const ORANGE_GRADIENT  = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';
+const ORANGE_GRADIENT  = 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)';
 
 // Tables initialisées depuis localStorage, extensibles sans limite
 
@@ -62,7 +62,7 @@ function ArticleCard({ art, qty, onAdd, onRemove }) {
         boxShadow: !dispo
           ? `0 0 0 3px rgba(220,38,38,0.08), ${SHADOW}`
           : qty > 0
-            ? `0 4px 20px ${ORANGE_GLOW}, 0 0 0 1px rgba(255,140,0,0.08)`
+            ? `0 4px 20px ${ORANGE_GLOW}, 0 0 0 1px rgba(255,108,0,0.08)`
             : SHADOW,
         opacity: dispo ? 1 : 0.75,
         position: 'relative',
@@ -73,14 +73,14 @@ function ArticleCard({ art, qty, onAdd, onRemove }) {
         if (dispo) {
           e.currentTarget.style.transform = 'translateY(-3px)';
           e.currentTarget.style.boxShadow = qty > 0
-            ? `0 8px 28px rgba(255,140,0,0.22), 0 0 0 1px rgba(255,140,0,0.12)`
+            ? `0 8px 28px rgba(255,108,0,0.22), 0 0 0 1px rgba(255,108,0,0.12)`
             : SHADOW_MD;
         }
       }}
       onMouseLeave={e => {
         e.currentTarget.style.transform = '';
         e.currentTarget.style.boxShadow = qty > 0
-          ? `0 4px 20px ${ORANGE_GLOW}, 0 0 0 1px rgba(255,140,0,0.08)`
+          ? `0 4px 20px ${ORANGE_GLOW}, 0 0 0 1px rgba(255,108,0,0.08)`
           : SHADOW;
       }}
     >
@@ -142,7 +142,7 @@ function ArticleCard({ art, qty, onAdd, onRemove }) {
             )}
             <button
               onClick={() => onAdd(art)}
-              style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: ORANGE_GRADIENT, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 10px rgba(255,140,0,0.28)`, transition: 'transform 0.1s' }}
+              style={{ width: 30, height: 30, borderRadius: '50%', border: 'none', background: ORANGE_GRADIENT, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 3px 10px rgba(255,108,0,0.28)`, transition: 'transform 0.1s' }}
               onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.1)')}
               onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}
             >
@@ -326,7 +326,7 @@ export default function ServeurPage() {
         <div style={{ background: SURFACE, borderRadius: 20, overflow: 'hidden', boxShadow: SHADOW_MD, marginBottom: 20, border: `1px solid ${BORDER}` }}>
           {/* Header bande sombre */}
           <div style={{ background: SIDEBAR_BG, padding: '13px 20px', display: 'flex', alignItems: 'center', gap: 12, borderTop: `3px solid ${ORANGE}` }}>
-            <div style={{ width: 30, height: 30, borderRadius: 9, background: ORANGE_GLOW, border: `1px solid rgba(255,140,0,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 30, height: 30, borderRadius: 9, background: ORANGE_GLOW, border: `1px solid rgba(255,108,0,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <LayoutGrid size={14} color={ORANGE} />
             </div>
             <div>
@@ -336,7 +336,7 @@ export default function ServeurPage() {
               <span style={{ fontSize: 11, fontWeight: 700, background: GREEN_BG, color: GREEN, padding: '3px 10px', borderRadius: 99, border: `1px solid ${GREEN_BORDER}` }}>
                 {tablesLibres} libre{tablesLibres !== 1 ? 's' : ''}
               </span>
-              <span style={{ fontSize: 11, fontWeight: 700, background: ORANGE_LIGHT, color: ORANGE_DARK, padding: '3px 10px', borderRadius: 99, border: `1px solid rgba(255,140,0,0.25)` }}>
+              <span style={{ fontSize: 11, fontWeight: 700, background: ORANGE_LIGHT, color: ORANGE_DARK, padding: '3px 10px', borderRadius: 99, border: `1px solid rgba(255,108,0,0.25)` }}>
                 {tablesOccupees} occupée{tablesOccupees !== 1 ? 's' : ''}
               </span>
               {/* Contrôle nombre de tables */}
@@ -369,7 +369,7 @@ export default function ServeurPage() {
                 labelColor = 'rgba(255,255,255,0.85)';
               } else if (isOccupied) {
                 bg = ORANGE_LIGHT;
-                border = `1px solid rgba(255,140,0,0.25)`;
+                border = `1px solid rgba(255,108,0,0.25)`;
                 numColor = ORANGE_DARK;
                 labelColor = ORANGE;
               }
@@ -390,7 +390,7 @@ export default function ServeurPage() {
                     alignItems: 'center',
                     gap: 3,
                     transition: 'transform 0.1s, box-shadow 0.1s',
-                    boxShadow: isSelected ? `0 4px 14px rgba(255,140,0,0.3)` : SHADOW,
+                    boxShadow: isSelected ? `0 4px 14px rgba(255,108,0,0.3)` : SHADOW,
                   }}
                   onMouseEnter={e => {
                     if (!isSelected) {
@@ -400,7 +400,7 @@ export default function ServeurPage() {
                   }}
                   onMouseLeave={e => {
                     e.currentTarget.style.transform = '';
-                    e.currentTarget.style.boxShadow = isSelected ? `0 4px 14px rgba(255,140,0,0.3)` : SHADOW;
+                    e.currentTarget.style.boxShadow = isSelected ? `0 4px 14px rgba(255,108,0,0.3)` : SHADOW;
                   }}
                 >
                   {/* Status dot */}
@@ -494,7 +494,7 @@ export default function ServeurPage() {
                       fontSize: 12, fontWeight: 700,
                       cursor: 'pointer',
                       whiteSpace: 'nowrap',
-                      boxShadow: active ? `0 3px 12px rgba(255,140,0,0.25)` : SHADOW,
+                      boxShadow: active ? `0 3px 12px rgba(255,108,0,0.25)` : SHADOW,
                       transform: active ? 'scale(1.03)' : 'scale(1)',
                       transition: 'all 0.14s',
                       flexShrink: 0,
@@ -572,7 +572,7 @@ export default function ServeurPage() {
               background: SURFACE,
               borderRadius: 24,
               overflow: 'hidden',
-              border: entries.length > 0 ? `1.5px solid rgba(255,140,0,0.22)` : `1px solid ${BORDER}`,
+              border: entries.length > 0 ? `1.5px solid rgba(255,108,0,0.22)` : `1px solid ${BORDER}`,
               boxShadow: entries.length > 0 ? `0 8px 32px ${ORANGE_GLOW}` : SHADOW_MD,
             }}>
               {/* En-tête panier */}
@@ -658,7 +658,7 @@ export default function ServeurPage() {
                           <span style={{ fontSize: 14, fontWeight: 900, color: TEXT, minWidth: 16, textAlign: 'center' }}>{e.qty}</span>
                           <button
                             onClick={() => addToCart(e.art)}
-                            style={{ width: 26, height: 26, borderRadius: '50%', border: 'none', background: ORANGE_GRADIENT, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 8px rgba(255,140,0,0.22)` }}
+                            style={{ width: 26, height: 26, borderRadius: '50%', border: 'none', background: ORANGE_GRADIENT, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 2px 8px rgba(255,108,0,0.22)` }}
                           >
                             <Plus size={10} color="#fff" />
                           </button>
@@ -684,7 +684,7 @@ export default function ServeurPage() {
                   padding: '11px 14px',
                   background: entries.length > 0 ? ORANGE_LIGHT : SURFACE,
                   borderRadius: 12,
-                  border: `1px solid ${entries.length > 0 ? 'rgba(255,140,0,0.2)' : BORDER}`,
+                  border: `1px solid ${entries.length > 0 ? 'rgba(255,108,0,0.2)' : BORDER}`,
                 }}>
                   <span style={{ fontSize: 14, fontWeight: 800, color: TEXT }}>Total TTC</span>
                   <span style={{ fontSize: 20, fontWeight: 900, color: entries.length > 0 ? ORANGE : TEXT_MUTED, letterSpacing: '-0.02em', lineHeight: 1 }}>
@@ -705,7 +705,7 @@ export default function ServeurPage() {
                     fontSize: 14, fontWeight: 800,
                     cursor: entries.length === 0 || sending ? 'not-allowed' : 'pointer',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9,
-                    boxShadow: entries.length > 0 ? `0 6px 22px rgba(255,140,0,0.32)` : 'none',
+                    boxShadow: entries.length > 0 ? `0 6px 22px rgba(255,108,0,0.32)` : 'none',
                     transition: 'all 0.15s',
                     letterSpacing: '0.01em',
                   }}

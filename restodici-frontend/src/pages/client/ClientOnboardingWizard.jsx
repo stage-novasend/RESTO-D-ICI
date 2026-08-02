@@ -115,7 +115,7 @@ export default function ClientOnboardingWizard() {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${A}, #C2410C)`, boxShadow: `0 4px 16px ${A}40` }}>
+            style={{ background: `linear-gradient(135deg, ${A}, #CC2402)`, boxShadow: `0 4px 16px ${A}40` }}>
             <UtensilsCrossed className="w-7 h-7 text-white" />
           </div>
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: A }}>Resto d'ici</p>

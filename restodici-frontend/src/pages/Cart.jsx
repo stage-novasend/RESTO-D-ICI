@@ -259,7 +259,7 @@ export default function CartPage() {
               width: '100%', background: ORANGE, color: '#fff', border: 'none',
               borderRadius: 16, padding: '15px 0', fontSize: 15, fontWeight: 800,
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 8, boxShadow: '0 6px 24px rgba(255,140,0,0.35)', transition: 'background 0.2s',
+              gap: 8, boxShadow: '0 6px 24px rgba(255,108,0,0.35)', transition: 'background 0.2s',
             }}
             onMouseEnter={e => e.currentTarget.style.background = ORANGE_D}
             onMouseLeave={e => e.currentTarget.style.background = ORANGE}>

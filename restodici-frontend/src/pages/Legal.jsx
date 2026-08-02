@@ -4,7 +4,7 @@ import StaticPageShell, {
   LegalSection as Section, LegalP as P, LegalTabs,
 } from '../components/shared/StaticPageShell';
 
-const T = { accent: '#EA580C', dark: '#1A0C00', muted: '#64748B' };
+const T = { accent: '#FF3A03', dark: '#1A0C00', muted: '#64748B' };
 const sans = "'Manrope', system-ui, sans-serif";
 
 const TABS = [
@@ -89,7 +89,7 @@ export default function Legal() {
         </div>
 
         <div style={{ background: '#F8FAFC', border: '1px solid #E2E8F0', borderRadius: 12, padding: '20px 24px', display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FFF7ED', border: '1px solid #FED7AA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ width: 40, height: 40, borderRadius: 10, background: '#FFF5ED', border: '1px solid #FED7AA', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <Mail size={18} color={T.accent} />
           </div>
           <div>

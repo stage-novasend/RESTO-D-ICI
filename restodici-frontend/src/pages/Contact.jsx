@@ -4,13 +4,13 @@ import { Mail, MapPin, Building2, ArrowRight, Send, CheckCircle } from 'lucide-r
 import BrandLogo from '../components/shared/BrandLogo';
 import MiniFooter from '../components/shared/MiniFooter';
 
-const T = { accent: '#EA580C', accentD: '#C2410C', bg: '#FFFFFF', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
+const T = { accent: '#FF3A03', accentD: '#CC2402', bg: '#FFFFFF', dark: '#1A0C00', text: '#3B2409', muted: '#7A5E3A' };
 const serif = "'Playfair Display', Georgia, serif";
 const sans  = "'Manrope', system-ui, sans-serif";
 
 function MiniNav() {
   return (
-    <nav style={{ background: '#fff', borderBottom: '1px solid rgba(255,140,0,0.12)', position: 'sticky', top: 0, zIndex: 50 }}>
+    <nav style={{ background: '#fff', borderBottom: '1px solid rgba(255,108,0,0.12)', position: 'sticky', top: 0, zIndex: 50 }}>
       <div style={{ maxWidth: 1200, margin: '0 auto', padding: '0 32px', height: 64, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <BrandLogo size={34} to="/" />
         <Link to="/" style={{ fontFamily: sans, fontSize: 13, color: T.muted, textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 5, fontWeight: 500 }}>

@@ -1,11 +1,11 @@
 // Palette Tailwind partagée par les onglets du GerantDashboard
 export const COLORS = {
   primary: {
-    bg: "bg-[#FFF0DF]",
-    border: "border-[rgba(255,140,0,0.10)]",
-    text: "text-[#EA580C]",
-    button: "bg-[#EA580C] hover:bg-[#C2410C]",
-    light: "bg-[#FFF0DF]",
+    bg: "bg-[#FFECDF]",
+    border: "border-[rgba(255,108,0,0.10)]",
+    text: "text-[#FF3A03]",
+    button: "bg-[#FF3A03] hover:bg-[#CC2402]",
+    light: "bg-[#FFECDF]",
   },
   secondary: {
     bg: "bg-emerald-50",
@@ -16,10 +16,10 @@ export const COLORS = {
   },
   accent: {
     bg: "bg-white",
-    border: "border-[rgba(255,140,0,0.10)]",
-    text: "text-[#EA580C]",
-    button: "bg-[#EA580C] hover:bg-[#C2410C]",
-    light: "bg-[#FFF0DF]",
+    border: "border-[rgba(255,108,0,0.10)]",
+    text: "text-[#FF3A03]",
+    button: "bg-[#FF3A03] hover:bg-[#CC2402]",
+    light: "bg-[#FFECDF]",
   },
   warning: {
     bg: "bg-amber-50",

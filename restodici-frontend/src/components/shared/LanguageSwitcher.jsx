@@ -35,12 +35,12 @@ export default function LanguageSwitcher({ style = {}, className = '', variant }
       className={`rd-lang-switch inline-flex items-center select-none ${className}`}
       data-variant={variant}
       style={{
-        backgroundColor: '#EA580C',
+        backgroundColor: '#FF3A03',
         borderRadius: '9999px',
         padding: '4px',
         display: 'inline-flex',
         alignItems: 'center',
-        boxShadow: '0 2px 8px rgba(234, 88, 12, 0.25)',
+        boxShadow: '0 2px 8px rgba(234,60,12, 0.25)',
         flexShrink: 0,
         ...style,
       }}

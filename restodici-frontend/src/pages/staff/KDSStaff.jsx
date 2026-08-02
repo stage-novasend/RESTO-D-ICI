@@ -21,7 +21,7 @@ import {
   GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, AMBER, RED_STRONG as RED, RED_SALMON as RED_L,
   PURPLE, PURPLE as VIO, PURPLE_GLOW as VIO_L, BLUE_BRIGHT as BLUE, BLUE_GLOW as BLUE_L,
 } from '../../theme/colors';
-const OG_G   = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';
+const OG_G   = 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)';
 const GREEN_G= 'linear-gradient(135deg,#15803D,#16A34A)';
 const AMBER_G= 'linear-gradient(135deg,#B45309,#D97706)';
 const PURPLE_G='linear-gradient(135deg,#6D28D9,#8B5CF6)';
@@ -404,7 +404,7 @@ function OrderCard({ order, onAction, onPay, saving, col, onDragStart, onDragEnd
               cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
               transition: 'background 0.15s',
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,140,0,0.12)'; }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,108,0,0.12)'; }}
             onMouseLeave={e => { e.currentTarget.style.background = OG_L; }}
           >
             <Truck size={13} /> Dispatcher la livraison

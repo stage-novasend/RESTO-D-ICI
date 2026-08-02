@@ -134,7 +134,7 @@ export default function DispatchModal({ commande, onClose, onDispatched }) {
 
               {/* Info provider externe */}
               {!isManuel && fournisseurs.length > 0 && (
-                <div style={{ padding: '10px 12px', borderRadius: 8, background: '#FFF7ED', border: '1px solid #FED7AA' }}>
+                <div style={{ padding: '10px 12px', borderRadius: 8, background: '#FFF5ED', border: '1px solid #FED7AA' }}>
                   <p style={{ margin: 0, fontSize: 12, color: '#92400E' }}>
                     La commande sera transmise à <strong>{fournisseurs.find(f => f.id === fournisseurId)?.nom}</strong> via son API. La clé API doit être configurée dans Admin → Livraisons ext.
                   </p>

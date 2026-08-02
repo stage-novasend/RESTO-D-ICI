@@ -115,7 +115,7 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
           <div className="border-b border-[#EFE3D9] p-5 sm:p-6 lg:border-b-0 lg:border-r">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <span className="inline-flex items-center gap-2 rounded-full bg-[#FFF0DF] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#EA580C]">
+                <span className="inline-flex items-center gap-2 rounded-full bg-[#FFECDF] px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-[#FF3A03]">
                   <Sparkles className="h-4 w-4" />
                   Personnalisation
                 </span>
@@ -126,7 +126,7 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
               </div>
               <button
                 onClick={onClose}
-                className="rounded-full border border-[#E2E8F0] bg-white p-2 text-[#737373] transition hover:border-[#EA580C] hover:text-[#EA580C]"
+                className="rounded-full border border-[#E2E8F0] bg-white p-2 text-[#737373] transition hover:border-[#FF3A03] hover:text-[#FF3A03]"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -143,7 +143,7 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold text-[#737373]">Prix unitaire</p>
-                    <p className="mt-1 text-2xl font-bold text-[#EA580C]">
+                    <p className="mt-1 text-2xl font-bold text-[#FF3A03]">
                       {formatFCFA(effectiveUnitPrice)}
                     </p>
                     {product.promoActif && product.prixPromo && (
@@ -212,13 +212,13 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
                         onClick={() => setSelectedVariant(active ? null : v)}
                         className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
                           active
-                            ? 'border-[#EA580C] bg-[#FFF0DF] shadow-sm'
+                            ? 'border-[#FF3A03] bg-[#FFECDF] shadow-sm'
                             : 'border-[#E2E8F0] bg-white hover:border-[#F1C5AF] hover:bg-[#FFFAF6]'
                         }`}
                       >
                         <p className="font-semibold text-[#1A0C00]">{v.label}</p>
                         {Number(v.prixSupplement) > 0 && (
-                          <span className="text-sm font-bold text-[#EA580C]">+ {formatFCFA(Number(v.prixSupplement))}</span>
+                          <span className="text-sm font-bold text-[#FF3A03]">+ {formatFCFA(Number(v.prixSupplement))}</span>
                         )}
                       </button>
                     );
@@ -239,7 +239,7 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
                       onClick={() => toggleSupplement(supplement.id)}
                       className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
                         active
-                          ? 'border-[#EA580C] bg-[#FFF0DF] shadow-sm'
+                          ? 'border-[#FF3A03] bg-[#FFECDF] shadow-sm'
                           : 'border-[#E2E8F0] bg-white hover:border-[#F1C5AF] hover:bg-[#FFFAF6]'
                       }`}
                     >
@@ -247,7 +247,7 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
                         <p className="font-semibold text-[#1A0C00]">{supplement.name}</p>
                         <p className="mt-1 text-xs text-[#737373]">Ajout premium pour enrichir votre plat</p>
                       </div>
-                      <span className="text-sm font-bold text-[#EA580C]">+ {formatFCFA(supplement.price)}</span>
+                      <span className="text-sm font-bold text-[#FF3A03]">+ {formatFCFA(supplement.price)}</span>
                     </button>
                   );
                 })}
@@ -283,7 +283,7 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
                 value={instructions}
                 onChange={(event) => setInstructions(event.target.value)}
                 placeholder="Ex: sauce à part, sans oignon, livraison soignée..."
-                className="min-h-[120px] w-full rounded-2xl border border-[#E2E8F0] bg-[#FFFDFC] px-4 py-3 text-[#1A0C00] outline-none transition focus:border-[#EA580C] focus:ring-2 focus:ring-[#EA580C]/15"
+                className="min-h-[120px] w-full rounded-2xl border border-[#E2E8F0] bg-[#FFFDFC] px-4 py-3 text-[#1A0C00] outline-none transition focus:border-[#FF3A03] focus:ring-2 focus:ring-[#FF3A03]/15"
               />
               <div className="mt-3 flex flex-wrap gap-2">
                 {quickInstructionTags.map((tag) => (
@@ -291,7 +291,7 @@ export default function ProductCustomizationModal({ product, onClose, onAdd }) {
                     key={tag}
                     type="button"
                     onClick={() => handleAppendInstruction(tag)}
-                    className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#737373] transition hover:border-[#EA580C] hover:bg-[#FFF0DF] hover:text-[#EA580C]"
+                    className="rounded-full border border-[#E2E8F0] bg-white px-3 py-1.5 text-xs font-semibold text-[#737373] transition hover:border-[#FF3A03] hover:bg-[#FFECDF] hover:text-[#FF3A03]"
                   >
                     {tag}
                   </button>
@@ -348,8 +348,8 @@ function OptionGroup({ label, options, value, onChange }) {
               onClick={() => onChange(option)}
               className={`rounded-full px-4 py-2 text-sm font-semibold transition ${
                 active
-                  ? 'bg-[#EA580C] text-white shadow-sm'
-                  : 'border border-[#E2E8F0] bg-[#FFFDFC] text-[#6F5C49] hover:border-[#EA580C] hover:text-[#EA580C]'
+                  ? 'bg-[#FF3A03] text-white shadow-sm'
+                  : 'border border-[#E2E8F0] bg-[#FFFDFC] text-[#6F5C49] hover:border-[#FF3A03] hover:text-[#FF3A03]'
               }`}
             >
               {option}

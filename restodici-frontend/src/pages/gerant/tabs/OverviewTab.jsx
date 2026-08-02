@@ -233,7 +233,7 @@ export default function OverviewTab({ restaurantId }) {
             data: weeklyPerformance.orders,
             backgroundColor: weeklyPerformance.orders.map((_, i) =>
               i === weeklyPerformance.orders.indexOf(Math.max(...weeklyPerformance.orders))
-                ? "#EA580C"
+                ? "#FF3A03"
                 : "rgba(224,78,26,0.18)"
             ),
             borderRadius: 8,
@@ -244,13 +244,13 @@ export default function OverviewTab({ restaurantId }) {
             label: "Revenus (FCFA)",
             data: weeklyPerformance.revenue,
             type: "line",
-            borderColor: "#EA580C",
+            borderColor: "#FF3A03",
             backgroundColor: "rgba(197,138,85,0.08)",
             fill: true,
             tension: 0.42,
             pointRadius: 5,
             pointBackgroundColor: "#fff",
-            pointBorderColor: "#EA580C",
+            pointBorderColor: "#FF3A03",
             pointBorderWidth: 2,
             yAxisID: "y1",
           },
@@ -277,7 +277,7 @@ export default function OverviewTab({ restaurantId }) {
             grid: { drawOnChartArea: false },
             border: { display: false },
             ticks: {
-              color: "#EA580C",
+              color: "#FF3A03",
               font: { size: 10 },
               callback: (v) => v >= 1000 ? `${(v/1000).toFixed(0)}k` : String(v),
             },
@@ -373,13 +373,13 @@ export default function OverviewTab({ restaurantId }) {
     }
 
     return {
-      badge: "bg-[#FFF0DF] text-[#1A1A1A]",
+      badge: "bg-[#FFECDF] text-[#1A1A1A]",
       label: `${Math.max(ageMinutes, 0)} min`,
     };
   };
 
   const getOrderStatusClasses = (status) =>
-    STATUS_COLORS[status] || "bg-[#FFF0DF] text-slate-700";
+    STATUS_COLORS[status] || "bg-[#FFECDF] text-slate-700";
 
   const getOrderStatusLabel = (status) =>
     STATUS_LABELS[status] || status?.replace(/_/g, " ") || "-";
@@ -387,7 +387,7 @@ export default function OverviewTab({ restaurantId }) {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-96">
-        <div className="h-10 w-10 rounded-full border-4 border-[#EA580C] border-t-transparent animate-spin" />
+        <div className="h-10 w-10 rounded-full border-4 border-[#FF3A03] border-t-transparent animate-spin" />
       </div>
     );
   }
@@ -397,30 +397,30 @@ export default function OverviewTab({ restaurantId }) {
       {/* ── Header ── */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#EA580C]">Dashboard</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#FF3A03]">Dashboard</p>
           <h2 className="mt-1 text-2xl font-bold text-[#1A0C00]">{restaurantName}</h2>
           <p className="mt-0.5 text-sm text-[#8B6E50]">Pilotez votre restaurant en temps réel.</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <div className="rounded-lg border border-[#FFF0DF] bg-white p-1">
-            <NotificationBell accentColor="#EA580C" />
+          <div className="rounded-lg border border-[#FFECDF] bg-white p-1">
+            <NotificationBell accentColor="#FF3A03" />
           </div>
           <button
             onClick={() => void loadOverviewData({ silent: true })}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#FFF0DF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-card transition hover:border-[#EA580C]/40 hover:text-[#EA580C]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#FFECDF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-card transition hover:border-[#FF3A03]/40 hover:text-[#FF3A03]"
           >
             <RefreshCcw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Sync…" : "Actualiser"}
           </button>
           <button
             onClick={() => navigate("/gerant?tab=orders")}
-            className="inline-flex items-center gap-2 rounded-lg border border-[#FFF0DF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-card transition hover:border-[#EA580C]/40 hover:text-[#EA580C]"
+            className="inline-flex items-center gap-2 rounded-lg border border-[#FFECDF] bg-white px-4 py-2.5 text-sm font-medium text-slate-600 shadow-card transition hover:border-[#FF3A03]/40 hover:text-[#FF3A03]"
           >
             <ClipboardList className="h-4 w-4" /> Commandes
           </button>
           <button
             onClick={() => navigate("/gerant/kds")}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#EA580C] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#EA580C]/25 transition hover:bg-[#C2410C]"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#FF3A03] px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-[#FF3A03]/25 transition hover:bg-[#CC2402]"
           >
             <ChefHat className="h-4 w-4" /> KDS live
           </button>
@@ -437,13 +437,13 @@ export default function OverviewTab({ restaurantId }) {
       {/* ── 4 KPI cards ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         {/* Card 1 — primary dark (CA du jour) */}
-        <div className="relative overflow-hidden rounded-lg p-5 shadow-md" style={{ background: '#EA580C' }}>
-          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-20" style={{ background: '#EA580C', filter: 'blur(28px)' }} />
+        <div className="relative overflow-hidden rounded-lg p-5 shadow-md" style={{ background: '#FF3A03' }}>
+          <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full opacity-20" style={{ background: '#FF3A03', filter: 'blur(28px)' }} />
           <div className="relative">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-white/50">CA du jour</p>
               <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: 'rgba(224,78,26,0.25)' }}>
-                <TrendingUp className="h-4 w-4 text-[#EA580C]" />
+                <TrendingUp className="h-4 w-4 text-[#FF3A03]" />
               </div>
             </div>
             <p className="text-3xl font-bold text-white leading-none">{formatFCFA(stats.todayRevenue)}</p>
@@ -461,12 +461,12 @@ export default function OverviewTab({ restaurantId }) {
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8B6E50]">En cuisine</p>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-50">
-              <ClipboardList className="h-4 w-4 text-[#EA580C]" />
+              <ClipboardList className="h-4 w-4 text-[#FF3A03]" />
             </div>
           </div>
           <p className="text-4xl font-bold text-[#1A0C00] leading-none">{stats.activeOrders}</p>
           <div className="mt-3 flex items-center gap-1.5">
-            <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-[#EA580C]">
+            <span className="rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-semibold text-[#FF3A03]">
               {stats.b2bOrders} B2B
             </span>
             <span className="text-xs text-[#8B6E50]">commandes actives</span>
@@ -494,12 +494,12 @@ export default function OverviewTab({ restaurantId }) {
           <div className="mb-3 flex items-center justify-between">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[#8B6E50]">Équipe</p>
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-50">
-              <Users className="h-4 w-4 text-[#EA580C]" />
+              <Users className="h-4 w-4 text-[#FF3A03]" />
             </div>
           </div>
           <p className="text-4xl font-bold text-[#1A0C00] leading-none">{stats.staffCount}</p>
           <div className="mt-3 flex items-center gap-1.5">
-            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-[#EA580C]">
+            <span className="rounded-full bg-amber-50 px-2.5 py-1 text-[11px] font-semibold text-[#FF3A03]">
               {stats.uniqueCustomers} clients
             </span>
             <span className="text-xs text-[#8B6E50]">uniques</span>
@@ -520,11 +520,11 @@ export default function OverviewTab({ restaurantId }) {
             <div className="flex gap-3">
               <div className="rounded-lg border border-slate-100 bg-white px-4 py-2 text-center">
                 <p className="text-[10px] font-medium text-[#8B6E50] uppercase tracking-wider">Commandes</p>
-                <p className="mt-0.5 text-xl font-bold text-[#EA580C]">{weekOrdersTotal}</p>
+                <p className="mt-0.5 text-xl font-bold text-[#FF3A03]">{weekOrdersTotal}</p>
               </div>
               <div className="rounded-lg border border-slate-100 bg-white px-4 py-2 text-center">
                 <p className="text-[10px] font-medium text-[#8B6E50] uppercase tracking-wider">Revenus</p>
-                <p className="mt-0.5 text-xl font-bold text-[#EA580C]">{formatFCFA(weekRevenueTotal)}</p>
+                <p className="mt-0.5 text-xl font-bold text-[#FF3A03]">{formatFCFA(weekRevenueTotal)}</p>
               </div>
             </div>
           </div>
@@ -543,7 +543,7 @@ export default function OverviewTab({ restaurantId }) {
               <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-orange-50 to-white px-4 py-3 border border-orange-100">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-orange-100">
-                    <CreditCard className="h-4 w-4 text-[#EA580C]" />
+                    <CreditCard className="h-4 w-4 text-[#FF3A03]" />
                   </div>
                   <span className="text-sm font-medium text-slate-600">Ticket moyen</span>
                 </div>
@@ -552,7 +552,7 @@ export default function OverviewTab({ restaurantId }) {
               <div className="flex items-center justify-between rounded-lg bg-gradient-to-r from-amber-50 to-white px-4 py-3 border border-amber-100">
                 <div className="flex items-center gap-3">
                   <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-amber-100">
-                    <PieChart className="h-4 w-4 text-[#EA580C]" />
+                    <PieChart className="h-4 w-4 text-[#FF3A03]" />
                   </div>
                   <span className="text-sm font-medium text-slate-600">Marge brute</span>
                 </div>
@@ -584,19 +584,19 @@ export default function OverviewTab({ restaurantId }) {
             <h3 className="mb-3 text-sm font-bold text-[#1A0C00]">Accès rapides</h3>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { icon: Package, label: "Menu", path: "/gerant?tab=menu", color: '#EA580C' },
-                { icon: ClipboardList, label: "Commandes", path: "/gerant?tab=orders", color: '#EA580C' },
-                { icon: AlertTriangle, label: "Stocks", path: "/gerant?tab=stocks", color: '#EA580C' },
-                { icon: Wallet, label: "Trésorerie", path: "/gerant?tab=finance", color: '#EA580C' },
-                { icon: Tag, label: "Promos", path: "/gerant?tab=promos", color: '#EA580C' },
+                { icon: Package, label: "Menu", path: "/gerant?tab=menu", color: '#FF3A03' },
+                { icon: ClipboardList, label: "Commandes", path: "/gerant?tab=orders", color: '#FF3A03' },
+                { icon: AlertTriangle, label: "Stocks", path: "/gerant?tab=stocks", color: '#FF3A03' },
+                { icon: Wallet, label: "Trésorerie", path: "/gerant?tab=finance", color: '#FF3A03' },
+                { icon: Tag, label: "Promos", path: "/gerant?tab=promos", color: '#FF3A03' },
                 { icon: Users, label: "Équipe", path: "/gerant?tab=settings", color: '#8B6E50' },
-                { icon: ChefHat, label: "KDS live", path: "/gerant/kds", color: '#EA580C' },
+                { icon: ChefHat, label: "KDS live", path: "/gerant/kds", color: '#FF3A03' },
                 { icon: History, label: "Historique", path: "/gerant?tab=history", color: '#6366F1' },
               ].map(({ icon: Icon, label, path, color }) => (
                 <button
                   key={label}
                   onClick={() => navigate(path)}
-                  className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#EA580C]"
+                  className="flex items-center gap-2 rounded-lg border border-slate-100 bg-white px-3 py-2.5 text-left text-sm font-medium text-slate-700 transition hover:border-orange-200 hover:bg-orange-50 hover:text-[#FF3A03]"
                 >
                   <Icon className="h-4 w-4 shrink-0" style={{ color }} />
                   {label}
@@ -618,14 +618,14 @@ export default function OverviewTab({ restaurantId }) {
             <button
               onClick={handleExportPDF}
               disabled={recentOrders.length === 0}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FFF0DF] bg-white px-3 py-2 text-xs font-medium text-[#8B6E50] transition hover:bg-[#FFF0DF] disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-[#FFECDF] bg-white px-3 py-2 text-xs font-medium text-[#8B6E50] transition hover:bg-[#FFECDF] disabled:opacity-40"
             >
               <Download className="h-3.5 w-3.5" /> PDF
             </button>
             <button
               onClick={handleExportSyscohada}
               disabled={!restaurantId}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-[#EA580C] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#C2410C] disabled:opacity-40"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-[#FF3A03] px-3 py-2 text-xs font-medium text-white transition hover:bg-[#CC2402] disabled:opacity-40"
             >
               <Download className="h-3.5 w-3.5" /> SYSCOHADA
             </button>
@@ -639,7 +639,7 @@ export default function OverviewTab({ restaurantId }) {
               return (
                 <div key={order.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FFF0DF] text-[11px] font-bold text-[#EA580C]">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#FFECDF] text-[11px] font-bold text-[#FF3A03]">
                       #{(order.numero ?? '').toString().slice(-3)}
                     </div>
                     <div>
@@ -660,7 +660,7 @@ export default function OverviewTab({ restaurantId }) {
             })}
           </div>
         ) : (
-          <div className="rounded-lg border border-dashed border-[#FFF0DF] bg-white py-10 text-center text-sm text-[#8B6E50]">
+          <div className="rounded-lg border border-dashed border-[#FFECDF] bg-white py-10 text-center text-sm text-[#8B6E50]">
             Aucune commande récente
           </div>
         )}

@@ -7,8 +7,8 @@ import { authAPI } from '../../services/api';
 function PanelAlert({ type, msg }) {
   const isErr = type === 'error';
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 9, background: '#FFF0DF', border: `1px solid ${isErr ? '#E8906A' : '#86EFAC'}`, marginBottom: 12 }}>
-      <span style={{ fontFamily: 'sans-serif', fontSize: 13, color: isErr ? '#EA580C' : '#166534' }}>{msg}</span>
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 14px', borderRadius: 9, background: '#FFECDF', border: `1px solid ${isErr ? '#E8906A' : '#86EFAC'}`, marginBottom: 12 }}>
+      <span style={{ fontFamily: 'sans-serif', fontSize: 13, color: isErr ? '#FF3A03' : '#166534' }}>{msg}</span>
     </div>
   );
 }
@@ -16,7 +16,7 @@ function PanelAlert({ type, msg }) {
 function StrengthBar({ password }) {
   if (!password) return null;
   const score = Math.min(Math.floor(password.length / 3), 4);
-  const color = password.length < 6 ? '#EF4444' : password.length < 9 ? '#EA580C' : password.length < 12 ? '#F59E0B' : '#16A34A';
+  const color = password.length < 6 ? '#EF4444' : password.length < 9 ? '#FF3A03' : password.length < 12 ? '#F59E0B' : '#16A34A';
   return (
     <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
       {[1,2,3,4].map(i => (
@@ -26,7 +26,7 @@ function StrengthBar({ password }) {
   );
 }
 
-export default function SecurityPanel({ user, accentColor = '#EA580C' }) {
+export default function SecurityPanel({ user, accentColor = '#FF3A03' }) {
   const [showPasswordForm, setShowPasswordForm] = useState(false);
   const [pwd,      setPwd]      = useState({ current: '', next: '', confirm: '' });
   const [showPwd,  setShowPwd]  = useState({ current: false, next: false, confirm: false });
@@ -84,7 +84,7 @@ export default function SecurityPanel({ user, accentColor = '#EA580C' }) {
 
   const s = {
     card:   { background: '#fff', border: '1px solid rgba(89,67,42,0.1)', borderRadius: 14, padding: '16px 18px', marginBottom: 10 },
-    iconBox: { width: 38, height: 38, borderRadius: 10, background: '#FFF0DF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
+    iconBox: { width: 38, height: 38, borderRadius: 10, background: '#FFECDF', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
     label:  { fontFamily: 'sans-serif', fontSize: 13, fontWeight: 700, color: '#1A0C00', margin: '0 0 2px' },
     sub:    { fontFamily: 'sans-serif', fontSize: 11, color: '#8B6E50', margin: 0 },
     btn:    { border: 'none', borderRadius: 9, padding: '8px 16px', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'sans-serif' },
@@ -105,7 +105,7 @@ export default function SecurityPanel({ user, accentColor = '#EA580C' }) {
       <div style={s.card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={s.iconBox}><Mail style={{ width: 16, height: 16, color: '#C2410C' }} /></div>
+            <div style={s.iconBox}><Mail style={{ width: 16, height: 16, color: '#CC2402' }} /></div>
             <div>
               <p style={s.label}>Vérification email</p>
               <p style={s.sub}>{user?.email || '—'}</p>
@@ -176,7 +176,7 @@ export default function SecurityPanel({ user, accentColor = '#EA580C' }) {
       <div style={s.card}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ ...s.iconBox, background: twoFactorEnabled ? '#F0FDF4' : '#FFF0DF' }}>
+            <div style={{ ...s.iconBox, background: twoFactorEnabled ? '#F0FDF4' : '#FFECDF' }}>
               <Shield style={{ width: 16, height: 16, color: twoFactorEnabled ? '#16A34A' : accentColor }} />
             </div>
             <div>

@@ -155,7 +155,7 @@ export default function Register() {
                 className="flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-semibold transition-all"
                 style={{
                   background: userType === key ? '#FFFFFF' : 'transparent',
-                  color: userType === key ? '#EA580C' : '#94A3B8',
+                  color: userType === key ? '#FF3A03' : '#94A3B8',
                   boxShadow: userType === key ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                 }}>
                 <Icon className="w-3.5 h-3.5" />
@@ -262,7 +262,7 @@ export default function Register() {
 
             <button type="submit" disabled={loading}
               className="w-full py-3 rounded-lg font-semibold text-white text-sm transition disabled:opacity-60 active:scale-[0.99]"
-              style={{ background: '#EA580C' }}>
+              style={{ background: '#FF3A03' }}>
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
                   <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />{t('creating')}</span>
@@ -276,7 +276,7 @@ export default function Register() {
 
           <p className="mt-5 text-center text-sm" style={{ color: '#94A3B8' }}>
             {t('already_have_account')}{' '}
-            <Link to={`/login${location.search}`} className="font-semibold hover:underline" style={{ color: '#EA580C' }}>{t('login_title')}</Link>
+            <Link to={`/login${location.search}`} className="font-semibold hover:underline" style={{ color: '#FF3A03' }}>{t('login_title')}</Link>
           </p>
         </div>
       </div>

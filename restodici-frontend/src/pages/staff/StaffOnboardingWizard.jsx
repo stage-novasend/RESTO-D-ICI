@@ -104,13 +104,13 @@ export default function StaffOnboardingWizard() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-10"
-      style={{ background: 'linear-gradient(135deg, #FDF8F0 0%, #FFF5E8 100%)' }}>
+      style={{ background: 'linear-gradient(135deg, #FDF8F0 0%, #FFF2E8 100%)' }}>
       <div className="w-full max-w-md">
 
         {/* Header */}
         <div className="text-center mb-8">
           <div className="w-14 h-14 rounded-lg mx-auto mb-4 flex items-center justify-center"
-            style={{ background: `linear-gradient(135deg, ${A}, #C2410C)`, boxShadow: `0 4px 16px ${A}40` }}>
+            style={{ background: `linear-gradient(135deg, ${A}, #CC2402)`, boxShadow: `0 4px 16px ${A}40` }}>
             <UtensilsCrossed className="w-7 h-7 text-white" />
           </div>
           <p className="text-xs font-bold uppercase tracking-widest" style={{ color: A }}>Resto d'ici · Espace Staff</p>

@@ -516,7 +516,7 @@ function OverviewTab() {
                 ) : charts.recentLogs.map((log, i) => (
                   <tr key={log.id}
                     style={{ borderBottom: '1px solid #E2E8F0', background: i % 2 === 0 ? '#fff' : '#FAFBFF' }}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(234,88,12,0.04)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(234,60,12,0.04)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#FAFBFF'; }}
                   >
                     <td style={{ padding: '9px 14px', fontFamily: 'monospace', fontSize: 11, color: '#94A3B8' }}>#{log.id?.slice(0, 6)}</td>
@@ -524,7 +524,7 @@ function OverviewTab() {
                       {(() => {
                         const isNovasend = log.action?.toLowerCase().includes('novasend');
                         return (
-                          <span style={{ background: isNovasend ? 'rgba(22,163,74,0.10)' : 'rgba(234,88,12,0.10)', color: isNovasend ? '#16A34A' : '#EA580C', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{log.action}</span>
+                          <span style={{ background: isNovasend ? 'rgba(22,163,74,0.10)' : 'rgba(234,60,12,0.10)', color: isNovasend ? '#16A34A' : '#FF3A03', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>{log.action}</span>
                         );
                       })()}
                     </td>
@@ -565,7 +565,7 @@ function OverviewTab() {
       <div style={{ ...card, marginTop: 16 }}>
         <div style={{ padding: '18px 20px', borderBottom: '1px solid #E2E8F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Shield style={{ width: 16, height: 16, color: '#EA580C' }} />
+            <Shield style={{ width: 16, height: 16, color: '#FF3A03' }} />
             <p style={{ fontSize: 15, fontWeight: 700, color: '#0F172A', margin: 0 }}>Alertes de sécurité</p>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -590,7 +590,7 @@ function OverviewTab() {
               {secAlerts.map((alert, i) => (
                 <div key={alert.id ?? i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#FEF2F2', border: '1px solid #FECACA', borderRadius: 10, padding: '8px 14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <AlertTriangle style={{ width: 14, height: 14, color: '#EA580C', flexShrink: 0 }} />
+                    <AlertTriangle style={{ width: 14, height: 14, color: '#FF3A03', flexShrink: 0 }} />
                     <div>
                       <span style={{ fontSize: 12, fontWeight: 700, color: '#991B1B' }}>{alert.action}</span>
                       {alert.userId && (
@@ -1009,7 +1009,7 @@ function RestaurantsTab() {
               ) : restaurants.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF7ED' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF5ED' }}>
                       <UtensilsCrossed style={{ width: 48, height: 48, marginBottom: 12, color: '#973100', opacity: 0.4 }} />
                       <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Aucun restaurant enregistré</p>
                       <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>Les restaurants créés sur la plateforme apparaîtront ici.</p>
@@ -1028,7 +1028,7 @@ function RestaurantsTab() {
                   <td style={{ padding: '10px 14px', fontSize: 12, color: '#475569' }}>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                        <span style={{ fontWeight: 700, color: Number(r.noteMoyenne || 0) >= 4 ? '#16A34A' : Number(r.noteMoyenne || 0) >= 3 ? '#D97706' : '#EA580C' }}>
+                        <span style={{ fontWeight: 700, color: Number(r.noteMoyenne || 0) >= 4 ? '#16A34A' : Number(r.noteMoyenne || 0) >= 3 ? '#D97706' : '#FF3A03' }}>
                           {Number(r.noteMoyenne || 0).toFixed(1)}
                         </span>
                         <span style={{ color: '#F59E0B', fontSize: 13, letterSpacing: 1 }}>
@@ -1041,10 +1041,10 @@ function RestaurantsTab() {
                   <td style={{ padding: '10px 14px' }}><span style={{ background: r.actif ? '#DCFCE7' : '#FEE2E2', color: r.actif ? '#166534' : '#991B1B', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>{r.actif ? 'Actif' : 'Inactif'}</span></td>
                   <td style={{ padding: '10px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <button onClick={() => openEdit(r)} title="Modifier" style={{ background: 'rgba(234,88,12,0.10)', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => openEdit(r)} title="Modifier" style={{ background: 'rgba(234,60,12,0.10)', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
                         <Pencil style={{ width: 14, height: 14 }} />
                       </button>
-                      <button onClick={() => toggle(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: r.actif ? '#EA580C' : '#16A34A' }}>
+                      <button onClick={() => toggle(r.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: r.actif ? '#FF3A03' : '#16A34A' }}>
                         {r.actif ? <ToggleRight style={{ width: 20, height: 20 }} /> : <ToggleLeft style={{ width: 20, height: 20 }} />}
                       </button>
                       <button onClick={() => setDeleteTarget({ type: 'restaurant', item: r })} title="Supprimer définitivement" style={{ background: '#FEE2E2', border: 'none', borderRadius: 7, padding: '4px 8px', cursor: 'pointer', color: '#DC2626', display: 'flex', alignItems: 'center' }}>
@@ -1106,7 +1106,7 @@ function RestaurantsTab() {
                   <div><label style={labelStyle}>Email</label><input type="email" pattern={EMAIL_PATTERN} title={MSG.email} value={editForm.email} onChange={e => setEditForm(f => ({ ...f, email: e.target.value }))} style={inputStyle} /></div>
                 </div>
                 <div><label style={labelStyle}>Adresse *</label><input required value={editForm.adresse} onChange={e => setEditForm(f => ({ ...f, adresse: e.target.value }))} style={inputStyle} /></div>
-                {editError && <p style={{ color: '#EA580C', fontSize: 12, margin: 0 }}>{editError}</p>}
+                {editError && <p style={{ color: '#FF3A03', fontSize: 12, margin: 0 }}>{editError}</p>}
                 <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
                   <button type="button" onClick={() => setEditResto(null)} style={{ flex: 1, padding: 10, border: '1px solid #E2E8F0', borderRadius: 10, cursor: 'pointer', fontWeight: 600, color: '#475569', background: '#fff' }}>Annuler</button>
                   <button type="submit" disabled={editSaving} style={{ flex: 1, padding: 10, border: 'none', borderRadius: 10, cursor: editSaving ? 'not-allowed' : 'pointer', fontWeight: 700, color: '#fff', background: ACCENT, opacity: editSaving ? 0.7 : 1 }}>
@@ -1146,7 +1146,7 @@ const ACTION_STYLE = (action = '') => {
   const a = action.toUpperCase();
   if (a.includes('LOGIN') || a.includes('AUTH')) return { bg: '#DCFCE7', text: '#166534' };
   if (a.includes('DELETE') || a.includes('REMOVE')) return { bg: '#FEE2E2', text: '#991B1B' };
-  if (a.includes('CREATE') || a.includes('ADD')) return { bg: 'rgba(234,88,12,0.10)', text: '#EA580C' };
+  if (a.includes('CREATE') || a.includes('ADD')) return { bg: 'rgba(234,60,12,0.10)', text: '#FF3A03' };
   if (a.includes('UPDATE') || a.includes('PATCH') || a.includes('EDIT')) return { bg: '#FEF3C7', text: '#92400E' };
   if (a.includes('EXPORT') || a.includes('DOWNLOAD')) return { bg: '#F3E8FF', text: '#6B21A8' };
   if (a.includes('VALIDER') || a.includes('APPROVE')) return { bg: '#D1FAE5', text: '#065F46' };
@@ -1275,7 +1275,7 @@ function AuditTab() {
         <div style={{ overflowX: 'auto' }}>
           <div className="overflow-x-auto w-full"><table style={{ width: '100%', borderCollapse: 'collapse' }}>
             <thead>
-              <tr style={{ background: '#FFF8F0', borderBottom: '2px solid #E8EDF5' }}>
+              <tr style={{ background: '#FFF6F0', borderBottom: '2px solid #E8EDF5' }}>
                 {['Date', 'Heure', 'Utilisateur', 'Action', 'Restaurant', 'Payload', ''].map(h => (
                   <th key={h} style={{ padding: '10px 14px', fontSize: 10, fontWeight: 700, color: '#94A3B8', textAlign: 'left', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.06em' }}>{h}</th>
                 ))}
@@ -1287,7 +1287,7 @@ function AuditTab() {
               ) : logs.length === 0 ? (
                 <tr>
                   <td colSpan={7}>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF7ED' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF5ED' }}>
                       <ScrollText style={{ width: 48, height: 48, marginBottom: 12, color: '#973100', opacity: 0.4 }} />
                       <p style={{ fontSize: 14, fontWeight: 700, color: '#0F172A', margin: '0 0 4px' }}>Aucun log disponible</p>
                       <p style={{ fontSize: 12, color: '#94A3B8', margin: 0 }}>Aucune activité ne correspond aux filtres sélectionnés.</p>
@@ -1301,7 +1301,7 @@ function AuditTab() {
                 return [
                   <tr key={log.id} style={{ borderBottom: isOpen ? 'none' : '1px solid #F1F5F9', background: i % 2 === 0 ? '#fff' : '#FAFBFF', cursor: 'pointer' }}
                     onClick={() => setExpanded(e => ({ ...e, [log.id]: !e[log.id] }))}
-                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(234,88,12,0.04)'; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(234,60,12,0.04)'; }}
                     onMouseLeave={e => { e.currentTarget.style.background = i % 2 === 0 ? '#fff' : '#FAFBFF'; }}
                   >
                     <td style={{ padding: '10px 14px', fontSize: 11, color: '#334155', whiteSpace: 'nowrap', fontWeight: 600 }}>{date}</td>
@@ -1323,10 +1323,10 @@ function AuditTab() {
                     </td>
                   </tr>,
                   isOpen && (
-                    <tr key={`${log.id}-exp`} style={{ background: 'rgba(234,88,12,0.04)', borderBottom: '1px solid rgba(234,88,12,0.12)' }}>
+                    <tr key={`${log.id}-exp`} style={{ background: 'rgba(234,60,12,0.04)', borderBottom: '1px solid rgba(234,60,12,0.12)' }}>
                       <td colSpan={7} style={{ padding: '10px 20px 14px' }}>
-                        <p style={{ fontSize: 10, fontWeight: 700, color: '#EA580C', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>Payload complet · ID: {log.id}</p>
-                        <pre style={{ margin: 0, fontSize: 11, color: '#334155', background: '#fff', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(234,88,12,0.20)', overflowX: 'auto', maxHeight: 200, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
+                        <p style={{ fontSize: 10, fontWeight: 700, color: '#FF3A03', textTransform: 'uppercase', letterSpacing: '0.06em', margin: '0 0 6px' }}>Payload complet · ID: {log.id}</p>
+                        <pre style={{ margin: 0, fontSize: 11, color: '#334155', background: '#fff', borderRadius: 8, padding: '10px 14px', border: '1px solid rgba(234,60,12,0.20)', overflowX: 'auto', maxHeight: 200, whiteSpace: 'pre-wrap', wordBreak: 'break-all' }}>
                           {log.payload ? JSON.stringify(log.payload, null, 2) : 'Aucun payload'}
                         </pre>
                       </td>
@@ -1414,7 +1414,7 @@ function ExportsTab() {
           <span style={{ display: 'flex', alignItems: 'center', gap: 5, background: '#F0FDF4', border: '1px solid #BBF7D0', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700, color: '#15803D' }}>
             <CheckCircle style={{ width: 12, height: 12 }} /> Conforme OHADA
           </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(234,88,12,0.08)', border: '1px solid rgba(234,88,12,0.20)', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700, color: ACCENT }}>
+          <span style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(234,60,12,0.08)', border: '1px solid rgba(234,60,12,0.20)', borderRadius: 20, padding: '5px 12px', fontSize: 11, fontWeight: 700, color: ACCENT }}>
             <Shield style={{ width: 12, height: 12 }} /> Rétention 10 ans
           </span>
         </div>
@@ -1427,7 +1427,7 @@ function ExportsTab() {
         <div style={{ ...card, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
           <div style={{ padding: '18px 20px 14px', borderBottom: '1px solid #E2E8F0' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(234,88,12,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: 'rgba(234,60,12,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <FileText style={{ width: 21, height: 21, color: ACCENT }} />
               </div>
               <div style={{ flex: 1 }}>
@@ -1442,7 +1442,7 @@ function ExportsTab() {
             <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
               {[{ value: 'monthly', label: 'Mensuel' }, { value: 'quarterly', label: 'Trimestriel' }, { value: 'yearly', label: 'Annuel' }].map(p => (
                 <button key={p.value} onClick={() => setSysPeriod(p.value)}
-                  style={{ flex: 1, padding: '7px 0', border: `1.5px solid ${sysPeriod === p.value ? ACCENT : '#E2E8F0'}`, borderRadius: 8, cursor: 'pointer', fontWeight: sysPeriod === p.value ? 700 : 500, fontSize: 12, background: sysPeriod === p.value ? 'rgba(234,88,12,0.08)' : '#fff', color: sysPeriod === p.value ? ACCENT : '#475569', transition: 'all 0.15s' }}>
+                  style={{ flex: 1, padding: '7px 0', border: `1.5px solid ${sysPeriod === p.value ? ACCENT : '#E2E8F0'}`, borderRadius: 8, cursor: 'pointer', fontWeight: sysPeriod === p.value ? 700 : 500, fontSize: 12, background: sysPeriod === p.value ? 'rgba(234,60,12,0.08)' : '#fff', color: sysPeriod === p.value ? ACCENT : '#475569', transition: 'all 0.15s' }}>
                   {p.label}
                 </button>
               ))}
@@ -1537,7 +1537,7 @@ function ExportsTab() {
 
         <div style={{ ...card, padding: '18px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(234,88,12,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+            <div style={{ width: 36, height: 36, borderRadius: 9, background: 'rgba(234,60,12,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <Shield style={{ width: 16, height: 16, color: ACCENT }} />
             </div>
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>Conformité OHADA</p>
@@ -1582,7 +1582,7 @@ function ExportsTab() {
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
               {history.slice(0, 8).map((h, i) => (
-                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', borderRadius: 8, background: i === 0 ? 'rgba(234,88,12,0.04)' : 'transparent', border: i === 0 ? '1px solid rgba(234,88,12,0.10)' : '1px solid transparent' }}>
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '7px 10px', borderRadius: 8, background: i === 0 ? 'rgba(234,60,12,0.04)' : 'transparent', border: i === 0 ? '1px solid rgba(234,60,12,0.10)' : '1px solid transparent' }}>
                   <span style={{ fontSize: 11, color: '#374151', display: 'flex', alignItems: 'center', gap: 6, overflow: 'hidden' }}>
                     <FileText style={{ width: 11, height: 11, color: '#94A3B8', flexShrink: 0 }} />
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{h.label || h.name}</span>
@@ -1603,7 +1603,7 @@ const INTEGRATION_TYPES = [
   'REST_API', 'WEBHOOK', 'PAYMENT', 'SMS', 'PUSH_NOTIFICATION', 'EMAIL', 'STORAGE', 'ANALYTICS', 'CUSTOM',
 ];
 const TYPE_COLOR = {
-  PAYMENT: '#F59E0B', SMS: '#F43F5E', PUSH_NOTIFICATION: '#EA580C',
+  PAYMENT: '#F59E0B', SMS: '#F43F5E', PUSH_NOTIFICATION: '#FF3A03',
   EMAIL: '#6366F1', STORAGE: '#0EA5E9', REST_API: '#10B981',
   WEBHOOK: '#8B5CF6', ANALYTICS: '#EC4899', CUSTOM: '#64748B',
 };
@@ -1629,7 +1629,7 @@ function IntegrationDynamicCard({ integration, onToggle, onEdit, onDelete, onTes
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>{integration.name}</p>
-            {isCdc && <span style={{ fontSize: 9, background: 'rgba(234,88,12,0.10)', color: '#EA580C', borderRadius: 4, padding: '1px 6px', fontWeight: 800, letterSpacing: '0.04em' }}>CDC</span>}
+            {isCdc && <span style={{ fontSize: 9, background: 'rgba(234,60,12,0.10)', color: '#FF3A03', borderRadius: 4, padding: '1px 6px', fontWeight: 800, letterSpacing: '0.04em' }}>CDC</span>}
             <span style={{ background: `${color}14`, color, borderRadius: 4, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>{integration.type.replace(/_/g, ' ')}</span>
           </div>
           <p style={{ fontSize: 11, color: '#64748B', margin: '2px 0 0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
@@ -1642,12 +1642,12 @@ function IntegrationDynamicCard({ integration, onToggle, onEdit, onDelete, onTes
             <Activity style={{ width: 12, height: 12 }} />
           </button>
           <button onClick={() => onEdit(integration)} title="Configurer"
-            style={{ background: 'rgba(234,88,12,0.10)', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
+            style={{ background: 'rgba(234,60,12,0.10)', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: ACCENT, display: 'flex', alignItems: 'center' }}>
             <Settings style={{ width: 12, height: 12 }} />
           </button>
           {!isCdc && (
             <button onClick={() => onDelete(integration.id)} title="Supprimer"
-              style={{ background: '#FEE2E2', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: '#EA580C', display: 'flex', alignItems: 'center' }}>
+              style={{ background: '#FEE2E2', border: 'none', borderRadius: 7, padding: '5px 8px', cursor: 'pointer', color: '#FF3A03', display: 'flex', alignItems: 'center' }}>
               <X style={{ width: 12, height: 12 }} />
             </button>
           )}
@@ -2055,7 +2055,7 @@ function ConfigTab() {
                 return (
                   <div key={m.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, padding: '12px 14px', border: '1px solid #E2E8F0', borderRadius: 10, background: on ? '#fff' : '#F8FAFC' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                      <div style={{ width: 34, height: 34, borderRadius: 8, background: on ? '#FFF7ED' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                      <div style={{ width: 34, height: 34, borderRadius: 8, background: on ? '#FFF5ED' : '#F1F5F9', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                         <CreditCard style={{ width: 16, height: 16, color: on ? ACCENT : '#94A3B8' }} />
                       </div>
                       <div style={{ minWidth: 0 }}>
@@ -2165,7 +2165,7 @@ function ConfigTab() {
                   <img src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(twoFAData.otpauthUrl)}`}
                     alt="QR 2FA" style={{ borderRadius: 8, border: '1px solid #D1D9E6' }} />
                 </div>
-                <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#FFF5EB', border: '1px solid rgba(234,88,12,0.2)', borderRadius: 6, padding: '6px 10px', marginBottom: 12, wordBreak: 'break-all', color: '#EA580C', letterSpacing: '0.1em' }}>
+                <div style={{ fontFamily: 'monospace', fontSize: 11, background: '#FFF5EB', border: '1px solid rgba(234,60,12,0.2)', borderRadius: 6, padding: '6px 10px', marginBottom: 12, wordBreak: 'break-all', color: '#FF3A03', letterSpacing: '0.1em' }}>
                   {twoFAData.secret}
                 </div>
                 <div>
@@ -2211,7 +2211,7 @@ function ConfigTab() {
 const PURGE_TARGETS = [
   { key: 'audit', label: "Logs d'audit", color: '#7C3AED', bg: '#F5F3FF' },
   { key: 'commandes', label: 'Historique commandes', color: '#DC2626', bg: '#FEF2F2' },
-  { key: 'livraisons', label: 'Livraisons externes', color: '#EA580C', bg: '#FFF7ED' },
+  { key: 'livraisons', label: 'Livraisons externes', color: '#FF3A03', bg: '#FFF5ED' },
   { key: 'notifications', label: 'Notifications', color: '#0284C7', bg: '#F0F9FF' },
 ];
 
@@ -2366,7 +2366,7 @@ function ContestationsBanner() {
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           {factures.map(f => (
-            <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderRadius: 10, padding: '10px 14px', border: '1px solid rgba(234,88,12,0.2)', flexWrap: 'wrap', gap: 8 }}>
+            <div key={f.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#fff', borderRadius: 10, padding: '10px 14px', border: '1px solid rgba(234,60,12,0.2)', flexWrap: 'wrap', gap: 8 }}>
               <div>
                 <p style={{ fontSize: 13, fontWeight: 700, color: '#0F172A', margin: 0 }}>
                   {f.compteB2B?.raisonSociale} — #{f.numeroFacture}
@@ -2459,7 +2459,7 @@ function MetriquesTab() {
     finally { setBackupRunning(false); }
   };
 
-  const Stat = ({ label, value, sub, color = '#EA580C' }) => (
+  const Stat = ({ label, value, sub, color = '#FF3A03' }) => (
     <div style={{ ...card, padding: '18px 22px' }}>
       <p style={{ fontSize: 11, fontWeight: 700, color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.07em', margin: '0 0 6px' }}>{label}</p>
       <p style={{ fontSize: 28, fontWeight: 800, color, margin: 0 }}>{value ?? '—'}</p>
@@ -2745,7 +2745,7 @@ function FournisseursTab() {
                       <button onClick={() => handleToggle(f)} title={f.actif ? 'Désactiver' : 'Activer'} style={{ border: '1px solid #D1D9E6', borderRadius: 7, padding: '5px 8px', background: f.actif ? '#FEF3C7' : '#D1FAE5', cursor: 'pointer', color: f.actif ? '#92400E' : '#065F46', display: 'flex', alignItems: 'center' }}>
                         {f.actif ? <ToggleRight style={{ width: 13, height: 13 }} /> : <ToggleLeft style={{ width: 13, height: 13 }} />}
                       </button>
-                      <button onClick={() => handleDelete(f)} title="Supprimer" style={{ border: '1px solid #FEE2E2', borderRadius: 7, padding: '5px 8px', background: '#FFF5F5', cursor: 'pointer', color: '#EA580C', display: 'flex', alignItems: 'center' }}>
+                      <button onClick={() => handleDelete(f)} title="Supprimer" style={{ border: '1px solid #FEE2E2', borderRadius: 7, padding: '5px 8px', background: '#FFF5F5', cursor: 'pointer', color: '#FF3A03', display: 'flex', alignItems: 'center' }}>
                         <Trash2 style={{ width: 13, height: 13 }} />
                       </button>
                     </div>
@@ -2926,8 +2926,8 @@ function CommissionsTab() {
 
   const kpis = [
     { label: 'Total commissions perçues', value: `${(data?.totalCommissions ?? 0).toLocaleString('fr-FR')} FCFA`, icon: CreditCard, color: '#10B981', bg: '#ECFDF5' },
-    { label: 'Commissions ce mois', value: `${(data?.commissionsMois ?? 0).toLocaleString('fr-FR')} FCFA`, icon: TrendingUp, color: '#EA580C', bg: '#FEF2F2' },
-    { label: 'Commandes facturées', value: data?.totalCommandes ?? 0, icon: BarChart2, color: '#EA580C', bg: 'rgba(234,88,12,0.08)' },
+    { label: 'Commissions ce mois', value: `${(data?.commissionsMois ?? 0).toLocaleString('fr-FR')} FCFA`, icon: TrendingUp, color: '#FF3A03', bg: '#FEF2F2' },
+    { label: 'Commandes facturées', value: data?.totalCommandes ?? 0, icon: BarChart2, color: '#FF3A03', bg: 'rgba(234,60,12,0.08)' },
   ];
 
   return (
@@ -2996,7 +2996,7 @@ function CommissionsTab() {
                       style={{ width: 70, padding: '4px 8px', border: `1px solid ${ACCENT}`, borderRadius: 7, fontSize: 13, outline: 'none' }}
                     />
                   ) : (
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(234,88,12,0.10)', color: ACCENT, borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: 'rgba(234,60,12,0.10)', color: ACCENT, borderRadius: 20, padding: '3px 10px', fontSize: 12, fontWeight: 700 }}>
                       {r.tauxCommission}%
                     </span>
                   )}
@@ -3063,7 +3063,7 @@ function AlertesTab() {
   const CATEGORIES = {
     security: { label: 'Sécurité', color: '#DC2626', bg: '#FEF2F2', icon: Shield },
     b2b: { label: 'B2B', color: '#7C3AED', bg: '#F5F3FF', icon: Building2 },
-    user: { label: 'Utilisateur', color: '#EA580C', bg: '#FFF5EB', icon: Users },
+    user: { label: 'Utilisateur', color: '#FF3A03', bg: '#FFF5EB', icon: Users },
     payment: { label: 'Paiement', color: '#059669', bg: '#F0FDF4', icon: CreditCard },
     system: { label: 'Système', color: '#D97706', bg: '#FFFBEB', icon: Zap },
     restaurant: { label: 'Restaurant', color: '#0891B2', bg: '#F0F9FF', icon: UtensilsCrossed },
@@ -3405,7 +3405,7 @@ function LivraisonsExtTab() {
                     {f.webhookCallbackUrl && <p style={{ fontSize: 11, color: '#94A3B8', margin: '2px 0 0', fontFamily: 'monospace' }}>{f.webhookCallbackUrl.slice(0, 40)}…</p>}
                   </td>
                   <td style={{ padding: '12px 16px' }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 9px', background: '#FFF5EB', color: '#EA580C' }}>{f.type}</span>
+                    <span style={{ fontSize: 11, fontWeight: 700, borderRadius: 6, padding: '3px 9px', background: '#FFF5EB', color: '#FF3A03' }}>{f.type}</span>
                   </td>
                   <td style={{ padding: '12px 16px', fontSize: 12, color: '#475569', fontFamily: 'monospace', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {f.apiUrl || '—'}

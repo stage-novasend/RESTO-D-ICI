@@ -81,7 +81,7 @@ function DockItem({ item, active, onClick, mouseY }) {
           width: 44, height: 44, borderRadius: 12, border: 'none',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           background: active
-            ? `linear-gradient(135deg, ${ACCENT}, #C2410C)`
+            ? `linear-gradient(135deg, ${ACCENT}, #CC2402)`
             : 'rgba(0,0,0,0.055)',
           color: active ? '#fff' : '#374151',
           transform: `scale(${scale})`,
@@ -249,7 +249,7 @@ export default function AdminLayout() {
                       fontSize: 13, fontWeight: 600,
                       transition: 'all 0.15s',
                     }}>
-                    <span style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(255,255,255,0.22)' : 'rgba(255,140,0,0.1)', color: active ? '#fff' : ACCENT, flexShrink: 0 }}>
+                    <span style={{ width: 32, height: 32, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', background: active ? 'rgba(255,255,255,0.22)' : 'rgba(255,108,0,0.1)', color: active ? '#fff' : ACCENT, flexShrink: 0 }}>
                       <Icon style={{ width: 15, height: 15 }} />
                     </span>
                     {item.label}

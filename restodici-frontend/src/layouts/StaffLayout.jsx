@@ -24,7 +24,7 @@ import {
   SURFACE as PAGE_BG, SURFACE as CARD, NAVY, BORDER_GRAY as BORDER,
   MUTED_WARM as MUTED, MUTED_WARM as FAINT, RED_STRONG as RED, RED_ROSE as RED_L, GREEN_DARK as GREEN,
 } from '../theme/colors';
-const OG_G   = 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)';
+const OG_G   = 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)';
 const SH      = '0 1px 4px rgba(0,0,0,0.07)';
 const SH3     = '0 24px 60px rgba(0,0,0,0.22),0 4px 12px rgba(0,0,0,0.08)';
 
@@ -364,9 +364,9 @@ export default function StaffLayout() {
       <style>{`
         *, *::before, *::after { box-sizing: border-box; }
         body { margin: 0; }
-        .snav-item:hover { background: rgba(255,140,0,0.08) !important; color: #1A0C00 !important; }
+        .snav-item:hover { background: rgba(255,108,0,0.08) !important; color: #1A0C00 !important; }
         .snav-logout:hover { background: rgba(220,38,38,0.07) !important; color: #DC2626 !important; }
-        .snav-bell:hover { background: rgba(255,140,0,0.1) !important; }
+        .snav-bell:hover { background: rgba(255,108,0,0.1) !important; }
         @media (max-width: 1023px) {
           .staff-topbar { padding-left: 60px !important; }
           .staff-badge-text { display: none; }
@@ -422,7 +422,7 @@ export default function StaffLayout() {
                 }}>
                 <div style={{
                   width: 32, height: 32, borderRadius: 10, flexShrink: 0,
-                  background: active ? OG_G : 'rgba(255,140,0,0.07)',
+                  background: active ? OG_G : 'rgba(255,108,0,0.07)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   transition: 'all 0.13s',
                   boxShadow: active ? `0 3px 10px ${OG}55` : 'none',
@@ -458,7 +458,7 @@ export default function StaffLayout() {
               color: unreadCount > 0 ? OG : SIDE_TEXT,
               transition: 'all 0.13s',
             }}>
-            <div style={{ width: 32, height: 32, borderRadius: 10, background: notifOpen ? OG_G : 'rgba(255,140,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, boxShadow: notifOpen ? `0 3px 10px ${OG}55` : 'none' }}>
+            <div style={{ width: 32, height: 32, borderRadius: 10, background: notifOpen ? OG_G : 'rgba(255,108,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', flexShrink: 0, boxShadow: notifOpen ? `0 3px 10px ${OG}55` : 'none' }}>
               <Bell size={14} color={notifOpen ? '#fff' : unreadCount > 0 ? OG : SIDE_TEXT} strokeWidth={1.8} />
               {unreadCount > 0 && (
                 <span style={{ position: 'absolute', top: -3, right: -3, background: RED, color: '#fff', fontSize: 7, fontWeight: 900, width: 14, height: 14, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', border: `2px solid ${SIDEBAR_BG}` }}>
@@ -534,7 +534,7 @@ export default function StaffLayout() {
                       color: active ? SIDE_TEXT_HI : SIDE_TEXT,
                       fontSize: 14, fontWeight: active ? 700 : 500,
                     }}>
-                    <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: active ? OG_G : 'rgba(255,140,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: active ? `0 3px 10px ${OG}55` : 'none' }}>
+                    <div style={{ width: 32, height: 32, borderRadius: 10, flexShrink: 0, background: active ? OG_G : 'rgba(255,108,0,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: active ? `0 3px 10px ${OG}55` : 'none' }}>
                       <Icon size={14} color={active ? '#fff' : SIDE_TEXT} strokeWidth={active ? 2.3 : 1.8} />
                     </div>
                     <span style={{ flex: 1 }}>{label}</span>

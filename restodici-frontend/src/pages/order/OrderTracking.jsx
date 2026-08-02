@@ -32,8 +32,8 @@ const MODE_LABELS = {
 
 const STEPS = [
   { key: 'RECUE',        label: 'Commande reçue',   icon: CheckCircle,  color: '#8B6E50', activeColor: 'text-orange-500' },
-  { key: 'CONFIRMEE',    label: 'Confirmée',         icon: CheckCircle,  color: '#EA580C', activeColor: 'text-orange-500' },
-  { key: 'EN_PREP',      label: 'En préparation',    icon: Clock,        color: '#EA580C', activeColor: 'text-orange-500' },
+  { key: 'CONFIRMEE',    label: 'Confirmée',         icon: CheckCircle,  color: '#FF3A03', activeColor: 'text-orange-500' },
+  { key: 'EN_PREP',      label: 'En préparation',    icon: Clock,        color: '#FF3A03', activeColor: 'text-orange-500' },
   { key: 'PRETE',        label: 'Prête',             icon: Package,      color: '#2ECC71', activeColor: 'text-emerald-500' },
   { key: 'EN_LIVRAISON', label: 'En livraison',      icon: Truck,        color: '#0066CC', activeColor: 'text-blue-500' },
   { key: 'LIVREE',       label: 'Livrée',            icon: MapPin,       color: '#2ECC71', activeColor: 'text-emerald-500' },

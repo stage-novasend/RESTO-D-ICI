@@ -17,8 +17,8 @@ import { ORANGE as A, ORANGE_PEACH as AL, SURFACE as SF, BORDER_BROWN as BD } fr
 
 /* ── Tokens visuels partagés avec menu.jsx ─────────────────────────────────── */
 const C = {
-  bg: '#F4F4F4', card: '#FFFFFF', accent: '#EA580C',
-  aD: '#C2410C', aL: '#FFF3E0', yellow: '#FFB800',
+  bg: '#F4F4F4', card: '#FFFFFF', accent: '#FF3A03',
+  aD: '#CC2402', aL: '#FFEFE0', yellow: '#FFB800',
   dark: '#1C1C1E', text: '#3D3D3D', muted: '#8A8A8A',
   faint: '#C5C5C5', line: '#EBEBEB', green: '#22C55E',
   sh: '0 1px 8px rgba(0,0,0,0.07)',
@@ -714,8 +714,8 @@ export default function BulkOrder() {
                 <div style={{ width: 36, height: 36, borderRadius: '50%', border: `4px solid ${C.accent}`, borderTopColor: 'transparent', animation: 'spin 0.8s linear infinite' }} />
               </div>
             ) : restaurants.length === 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', background: '#FFF7ED', borderRadius: 16 }}>
-                <UtensilsCrossed size={48} style={{ marginBottom: 12, color: '#EA580C', opacity: 0.4 }} />
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 20px', textAlign: 'center', background: '#FFF5ED', borderRadius: 16 }}>
+                <UtensilsCrossed size={48} style={{ marginBottom: 12, color: '#FF3A03', opacity: 0.4 }} />
                 <p style={{ fontFamily: sans, fontSize: 15, fontWeight: 700, color: '#1A0C00', margin: '0 0 6px' }}>Aucun restaurant disponible</p>
                 <p style={{ fontFamily: sans, fontSize: 13, color: '#A89070', margin: 0 }}>Aucun restaurant partenaire n'est disponible pour le moment.</p>
               </div>
@@ -816,8 +816,8 @@ export default function BulkOrder() {
                           ))}
                         </div>
                       ) : filteredProducts.length === 0 ? (
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF7ED', borderRadius: 12 }}>
-                          <ShoppingBag size={48} style={{ marginBottom: 12, color: '#EA580C', opacity: 0.4 }} />
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '48px 20px', textAlign: 'center', background: '#FFF5ED', borderRadius: 12 }}>
+                          <ShoppingBag size={48} style={{ marginBottom: 12, color: '#FF3A03', opacity: 0.4 }} />
                           <p style={{ fontFamily: sans, fontSize: 14, fontWeight: 700, color: '#1A0C00', margin: '0 0 4px' }}>Aucun article disponible</p>
                           <p style={{ fontFamily: sans, fontSize: 12, color: '#A89070', margin: 0 }}>Essayez une autre catégorie ou modifiez votre recherche.</p>
                         </div>
@@ -899,7 +899,7 @@ export default function BulkOrder() {
                 {mode === 'instant' ? (
                   /* Mode instant — date verrouillée, heure auto */
                   <div className="rounded-lg p-4 flex items-center gap-3"
-                    style={{ background: '#FFF7ED', border: '1px solid #FDBA74' }}>
+                    style={{ background: '#FFF5ED', border: '1px solid #FDBA74' }}>
                     <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
                       style={{ background: A }}>
                       <span className="text-white text-lg">⚡</span>
@@ -1260,7 +1260,7 @@ export default function BulkOrder() {
                         return { ...p, [member.id]: next };
                       })}
                       className="w-8 h-8 rounded-lg flex items-center justify-center text-lg font-bold transition"
-                      style={{ background: qty > 0 ? '#FFF0DF' : '#F3F4F6', color: qty > 0 ? A : '#8B6E50' }}>
+                      style={{ background: qty > 0 ? '#FFECDF' : '#F3F4F6', color: qty > 0 ? A : '#8B6E50' }}>
                       −
                     </button>
                     <span className="w-6 text-center text-sm font-bold text-[#1A0C00]">{qty}</span>
@@ -1284,7 +1284,7 @@ export default function BulkOrder() {
           <div className="px-5 py-4" style={{ borderTop: `1px solid ${BD}` }}>
             <button onClick={applyPicker}
               className="w-full py-3 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
-              style={{ background: totalPickerQty > 0 ? `linear-gradient(135deg, #EA580C, ${A})` : '#D1D5DB' }}>
+              style={{ background: totalPickerQty > 0 ? `linear-gradient(135deg, #FF3A03, ${A})` : '#D1D5DB' }}>
               {totalPickerQty > 0
                 ? `Valider — ${totalPickerQty} portion${totalPickerQty > 1 ? 's' : ''} · ${formatFCFA(totalPickerQty * prix)}`
                 : 'Retirer ce plat du panier'}

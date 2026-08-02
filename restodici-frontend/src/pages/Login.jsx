@@ -218,7 +218,7 @@ export default function Login() {
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full py-3 rounded-lg font-semibold text-white text-sm transition disabled:opacity-60"
-                style={{ background: '#EA580C' }}
+                style={{ background: '#FF3A03' }}
               >
                 {isSubmitting ? t('verification') + '…' : t('validate')}
               </button>
@@ -284,7 +284,7 @@ export default function Login() {
                   <Link
                     to="/forgot-password"
                     className="text-xs font-medium hover:underline"
-                    style={{ color: '#EA580C' }}
+                    style={{ color: '#FF3A03' }}
                   >{t('forgot_password')}</Link>
                 </div>
                 <div className="relative">
@@ -352,7 +352,7 @@ export default function Login() {
                 type="submit"
                 disabled={isSubmitting}
                 className="w-full py-3 rounded-lg font-semibold text-white text-sm transition disabled:opacity-60 active:scale-[0.99]"
-                style={{ background: '#EA580C' }}
+                style={{ background: '#FF3A03' }}
               >
                 {isSubmitting ? (
                   <span className="flex items-center justify-center gap-2">

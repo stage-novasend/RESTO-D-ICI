@@ -9,9 +9,9 @@
    ═══════════════════════════════════════════════════════════════ */
 
 /* ── Marque : orange RESTODICI ── */
-export const ORANGE      = '#EA580C'; // CTA principal
-export const ORANGE_DARK = '#C2410C'; // hover / dégradé foncé
-export const ORANGE_LIGHT = '#FFF4ED'; // fond orange clair (surfaces)
+export const ORANGE      = '#FF3A03'; // CTA principal
+export const ORANGE_DARK = '#CC2402'; // hover / dégradé foncé
+export const ORANGE_LIGHT = '#FFF2ED'; // fond orange clair (surfaces)
 
 /* ── Fonds & surfaces ──
    PAGE  = fond de page, blanc pur.
@@ -72,22 +72,22 @@ export const BORDER_SLATE   = '#E2E8F0';
 export const BORDER_GRAY    = '#E5E7EB';
 export const BORDER_SAND    = '#E8E2D9';
 export const BORDER_STRONG  = 'rgba(0,0,0,0.12)';
-export const BORDER_WARM    = 'rgba(255,140,0,0.12)';
-export const BORDER_WARM_14 = 'rgba(255,140,0,0.14)';
-export const BORDER_WARM_09 = 'rgba(255,140,0,0.09)';
-export const BORDER_WARM_08 = 'rgba(255,140,0,0.08)';
+export const BORDER_WARM    = 'rgba(255,108,0,0.12)';
+export const BORDER_WARM_14 = 'rgba(255,108,0,0.14)';
+export const BORDER_WARM_09 = 'rgba(255,108,0,0.09)';
+export const BORDER_WARM_08 = 'rgba(255,108,0,0.08)';
 export const BORDER_BROWN   = 'rgba(89,67,42,0.10)';
 export const LINE_BROWN     = 'rgba(89,67,42,0.12)';
 export const BORDER_WHITE_07 = 'rgba(255,255,255,0.07)';
 
 /* Oranges clairs / dérivés */
-export const ORANGE_PEACH  = '#FFF0DF';
-export const ORANGE_CREAM  = '#FFF3E0';
-export const ORANGE_CREAM_2 = '#FFF5E8';
-export const ORANGE_TINT   = '#FFF7ED';
-export const ORANGE_TINT_2 = '#FFF8F0';
-export const ORANGE_WARM   = '#E07800';
-export const ORANGE_GLOW   = 'rgba(255,140,0,0.12)';
+export const ORANGE_PEACH  = '#FFECDF';
+export const ORANGE_CREAM  = '#FFEFE0';
+export const ORANGE_CREAM_2 = '#FFF2E8';
+export const ORANGE_TINT   = '#FFF5ED';
+export const ORANGE_TINT_2 = '#FFF6F0';
+export const ORANGE_WARM   = '#E05C00';
+export const ORANGE_GLOW   = 'rgba(255,108,0,0.12)';
 
 /* Verts */
 export const GREEN_MINT   = '#DCFCE7';

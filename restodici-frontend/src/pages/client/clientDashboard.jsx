@@ -31,9 +31,9 @@ import moovMoneyLogo    from '../../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
 /* ── Palette épurée et professionnelle ── */
-const ACCENT       = '#EA580C'; // Orange Terracotta
-const ACCENT_DARK  = '#C2410C';
-const ACCENT_LIGHT = '#FFF7ED';
+const ACCENT       = '#FF3A03'; // Orange Terracotta
+const ACCENT_DARK  = '#CC2402';
+const ACCENT_LIGHT = '#FFF5ED';
 const BG           = '#F8FAFC'; // Slate très clair
 const SURFACE      = '#FFFFFF';
 const BORDER       = '#E2E8F0';
@@ -44,7 +44,7 @@ const DARK_NAVY    = '#0F172A';
 const ORDER_STATUS = {
   RECUE:        { label: 'Reçue',          bg: '#FEF3C7', color: '#D97706' },
   CONFIRMEE:    { label: 'Confirmée',      bg: '#ECFDF5', color: '#059669' },
-  EN_PREP:      { label: 'En préparation', bg: '#FFF7ED', color: '#EA580C' },
+  EN_PREP:      { label: 'En préparation', bg: '#FFF5ED', color: '#FF3A03' },
   PRETE:        { label: 'Prête',          bg: '#ECFDF5', color: '#059669' },
   EN_LIVRAISON: { label: 'En livraison',   bg: '#EFF6FF', color: '#2563EB' },
   LIVREE:       { label: 'Livrée',         bg: '#ECFDF5', color: '#16A34A' },

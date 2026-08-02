@@ -30,7 +30,7 @@ const MODE_LABELS = {
 
 /* Métadonnées visuelles locales — ne contient aucune logique métier */
 const METHOD_VISUAL_MAP = {
-  orange_money: { provider: 'ORANGE', name: 'Orange Money',   shortName: 'Orange',   logo: orangeMoneyLogo,   accent: '#FF7900', accentLight: '#FFF3E0', borderActive: 'border-orange-400', bgActive: 'bg-orange-50',  phoneRequired: true,  otpRequired: true  },
+  orange_money: { provider: 'ORANGE', name: 'Orange Money',   shortName: 'Orange',   logo: orangeMoneyLogo,   accent: '#FF7900', accentLight: '#FFEFE0', borderActive: 'border-orange-400', bgActive: 'bg-orange-50',  phoneRequired: true,  otpRequired: true  },
   mtn_momo:     { provider: 'MOMO',   name: 'MTN Mobile Money',shortName: 'MTN MoMo', logo: mtnMomoLogo,       accent: '#FFCC00', accentLight: '#FFFDE7', borderActive: 'border-yellow-400', bgActive: 'bg-yellow-50',  phoneRequired: true,  otpRequired: false },
   moov_money:   { provider: 'MOOV',   name: 'Moov Money',     shortName: 'Moov',     logo: moovMoneyLogo,     accent: '#0066CC', accentLight: '#E3F0FF', borderActive: 'border-blue-400',   bgActive: 'bg-blue-50',    phoneRequired: true,  otpRequired: false },
   wave:         { provider: 'WAVE',   name: 'Wave',           shortName: 'Wave',     logo: null,              accent: '#1DA1F2', accentLight: '#E8F5FD', borderActive: 'border-sky-400',    bgActive: 'bg-sky-50',     phoneRequired: true,  otpRequired: false },
@@ -171,12 +171,12 @@ function OtpInput({ value, onChange }) {
             fontWeight: 800,
             borderRadius: 14,
             border: `2px solid ${digits[i].trim() ? ACCENT : '#E2E8F0'}`,
-            background: digits[i].trim() ? '#FFF3E0' : '#FAFAF9',
+            background: digits[i].trim() ? '#FFEFE0' : '#FAFAF9',
             color: '#1A0C00',
             outline: 'none',
             transition: 'all 0.18s',
             fontFamily: 'Manrope, sans-serif',
-            boxShadow: digits[i].trim() ? '0 0 0 3px rgba(255,140,0,0.12)' : 'none',
+            boxShadow: digits[i].trim() ? '0 0 0 3px rgba(255,108,0,0.12)' : 'none',
           }}
         />
       ))}
@@ -202,12 +202,12 @@ function PaymentMethodSelector({ paymentMethods, selectedMethod, onSelectMethod 
               gap: 14,
               padding: '14px 16px',
               borderRadius: 16,
-              border: active ? '2px solid #EA580C' : '2px solid #F0EDE8',
-              background: active ? '#FFF8F0' : 'white',
+              border: active ? '2px solid #FF3A03' : '2px solid #F0EDE8',
+              background: active ? '#FFF6F0' : 'white',
               cursor: 'pointer',
               textAlign: 'left',
               transition: 'all 0.2s',
-              boxShadow: active ? '0 4px 16px rgba(234,88,12,0.14)' : '0 1px 4px rgba(0,0,0,0.03)',
+              boxShadow: active ? '0 4px 16px rgba(234,60,12,0.14)' : '0 1px 4px rgba(0,0,0,0.03)',
               width: '100%',
             }}>
             {/* Logo container */}
@@ -245,7 +245,7 @@ function PaymentMethodSelector({ paymentMethods, selectedMethod, onSelectMethod 
 
             {/* Name + subtitle */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ fontSize: 14, fontWeight: 800, color: active ? '#EA580C' : '#1A0C00', margin: 0, letterSpacing: '-0.02em' }}>
+              <p style={{ fontSize: 14, fontWeight: 800, color: active ? '#FF3A03' : '#1A0C00', margin: 0, letterSpacing: '-0.02em' }}>
                 {m.name}
               </p>
               {m.phoneRequired && (
@@ -258,8 +258,8 @@ function PaymentMethodSelector({ paymentMethods, selectedMethod, onSelectMethod 
               width: 20,
               height: 20,
               borderRadius: '50%',
-              border: active ? '2px solid #EA580C' : '2px solid #CBD5E1',
-              background: active ? '#EA580C' : 'transparent',
+              border: active ? '2px solid #FF3A03' : '2px solid #CBD5E1',
+              background: active ? '#FF3A03' : 'transparent',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -298,16 +298,16 @@ const GLOBAL_STYLES = `
   .checkout-fadeup-3 { animation: fadeUp 0.38s 0.18s ease both; }
   .checkout-fadeup-4 { animation: fadeUp 0.38s 0.24s ease both; }
   .checkout-input:focus {
-    border-color: #EA580C !important;
-    box-shadow: 0 0 0 3px rgba(234,88,12,0.14) !important;
+    border-color: #FF3A03 !important;
+    box-shadow: 0 0 0 3px rgba(234,60,12,0.14) !important;
   }
   .method-card:hover {
-    border-color: rgba(255,140,0,0.4) !important;
-    box-shadow: 0 2px 12px rgba(234,88,12,0.08) !important;
+    border-color: rgba(255,108,0,0.4) !important;
+    box-shadow: 0 2px 12px rgba(234,60,12,0.08) !important;
   }
   .checkout-cta:not(:disabled):hover {
     transform: translateY(-1px);
-    box-shadow: 0 12px 40px rgba(234,88,12,0.50) !important;
+    box-shadow: 0 12px 40px rgba(234,60,12,0.50) !important;
   }
   .checkout-cta:not(:disabled):active {
     transform: translateY(0);
@@ -643,10 +643,10 @@ export default function CheckoutPage() {
 
       {/* ── Mobile header (sticky, hidden on md+) ─────────────────────────── */}
       <header className="md:hidden sticky top-0 z-30"
-        style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(234,88,12,0.10)' }}>
+        style={{ background: 'rgba(255,255,255,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(234,60,12,0.10)' }}>
         <div className="px-4 h-14 flex items-center gap-3 max-w-lg mx-auto">
           <button onClick={() => navigate('/cart')}
-            style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(234,88,12,0.08)', border: 'none', cursor: 'pointer', color: '#EA580C' }}>
+            style={{ width: 36, height: 36, borderRadius: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(234,60,12,0.08)', border: 'none', cursor: 'pointer', color: '#FF3A03' }}>
             <ArrowLeft size={18} />
           </button>
           <h1 style={{ fontWeight: 800, fontSize: 17, color: '#1A0C00', letterSpacing: '-0.03em', margin: 0 }}>
@@ -664,7 +664,7 @@ export default function CheckoutPage() {
           style={{
             width: '40%',
             flexShrink: 0,
-            background: 'linear-gradient(160deg, #EA580C 0%, #C2410C 60%, #C96200 100%)',
+            background: 'linear-gradient(160deg, #FF3A03 0%, #CC2402 60%, #C96200 100%)',
             minHeight: '100vh',
             position: 'sticky',
             top: 0,
@@ -826,7 +826,7 @@ export default function CheckoutPage() {
               </div>
 
             </div>
-            <div style={{ height: 1, background: 'linear-gradient(90deg, rgba(234,88,12,0.18) 0%, transparent 100%)' }} />
+            <div style={{ height: 1, background: 'linear-gradient(90deg, rgba(234,60,12,0.18) 0%, transparent 100%)' }} />
           </div>
 
           {/* Content area */}
@@ -834,11 +834,11 @@ export default function CheckoutPage() {
 
             {/* ── Mobile: compact summary card ───────────────────────────── */}
             <div className="md:hidden checkout-fadeup" style={{
-              background: 'linear-gradient(145deg, #EA580C 0%, #C2410C 55%, #C96200 100%)',
+              background: 'linear-gradient(145deg, #FF3A03 0%, #CC2402 55%, #C96200 100%)',
               borderRadius: 24,
               padding: '18px 20px 20px',
               marginBottom: 20,
-              boxShadow: '0 8px 32px rgba(234,88,12,0.28)',
+              boxShadow: '0 8px 32px rgba(234,60,12,0.28)',
             }}>
               {/* Header row */}
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -897,14 +897,14 @@ export default function CheckoutPage() {
               <section className="checkout-fadeup-1" style={{
                 background: 'white',
                 borderRadius: 20,
-                border: '1px solid rgba(255,140,0,0.12)',
+                border: '1px solid rgba(255,108,0,0.12)',
                 padding: '20px 20px',
                 marginBottom: 16,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
-                  <div style={{ width: 30, height: 30, borderRadius: 10, background: '#FFF3E0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Tag size={14} color="#EA580C" />
+                  <div style={{ width: 30, height: 30, borderRadius: 10, background: '#FFEFE0', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <Tag size={14} color="#FF3A03" />
                   </div>
                   <span style={{ fontSize: 14, fontWeight: 800, color: '#1A0C00', letterSpacing: '-0.02em' }}>Code promo</span>
                 </div>
@@ -951,7 +951,7 @@ export default function CheckoutPage() {
                       disabled={promoLoading || !promoCode.trim()}
                       style={{
                         borderRadius: 14,
-                        background: 'linear-gradient(135deg, #EA580C, #C2410C)',
+                        background: 'linear-gradient(135deg, #FF3A03, #CC2402)',
                         color: 'white',
                         border: 'none',
                         padding: '12px 20px',
@@ -977,17 +977,17 @@ export default function CheckoutPage() {
               <section className="checkout-fadeup-2" style={{
                 background: 'white',
                 borderRadius: 20,
-                border: '1px solid rgba(234,88,12,0.15)',
+                border: '1px solid rgba(234,60,12,0.15)',
                 padding: '22px 20px',
                 marginBottom: 16,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
               }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FFF3E0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
+                  <div style={{ width: 44, height: 44, borderRadius: 14, background: '#FFEFE0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 20 }}>
                     📋
                   </div>
                   <div>
-                    <h2 style={{ fontWeight: 800, color: '#EA580C', fontSize: 15, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
+                    <h2 style={{ fontWeight: 800, color: '#FF3A03', fontSize: 15, margin: '0 0 6px', letterSpacing: '-0.02em' }}>
                       Facturation mensuelle B2B
                     </h2>
                     <p style={{ fontSize: 13, color: '#9E8B7A', lineHeight: 1.6, margin: 0, fontWeight: 600 }}>
@@ -1001,7 +1001,7 @@ export default function CheckoutPage() {
               <section className="checkout-fadeup-2" style={{
                 background: 'white',
                 borderRadius: 20,
-                border: '1px solid rgba(255,140,0,0.12)',
+                border: '1px solid rgba(255,108,0,0.12)',
                 padding: '22px 20px',
                 marginBottom: 16,
                 boxShadow: '0 4px 24px rgba(0,0,0,0.04)',
@@ -1026,7 +1026,7 @@ export default function CheckoutPage() {
                 {method?.phoneRequired && (
                   <div style={{ marginTop: 18 }}>
                     <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, fontWeight: 800, color: '#1A0C00', marginBottom: 8 }}>
-                      <Phone size={13} color="#EA580C" />
+                      <Phone size={13} color="#FF3A03" />
                       Numéro {method.name} *
                     </label>
                     <input
@@ -1069,9 +1069,9 @@ export default function CheckoutPage() {
 
                 {/* Orange Money OTP — étape 2, après « Initier le paiement » */}
                 {method?.otpRequired && otpStep && (
-                  <div style={{ marginTop: 16, borderRadius: 16, border: '1.5px solid #FFD199', background: '#FFF8F0', padding: '18px 20px' }}>
+                  <div style={{ marginTop: 16, borderRadius: 16, border: '1.5px solid #FFD199', background: '#FFF6F0', padding: '18px 20px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-                      <div style={{ width: 28, height: 28, borderRadius: 9, background: '#FFF3E0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔐</div>
+                      <div style={{ width: 28, height: 28, borderRadius: 9, background: '#FFEFE0', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🔐</div>
                       <p style={{ fontSize: 13, fontWeight: 800, color: '#1A0C00', margin: 0 }}>Code OTP Orange *</p>
                     </div>
                     <p style={{ fontSize: 12, color: '#92400E', lineHeight: 1.55, margin: '0 0 14px', fontWeight: 600 }}>
@@ -1079,7 +1079,7 @@ export default function CheckoutPage() {
                     </p>
                     <OtpInput value={otp} onChange={setOtp} />
                     {otp.length > 0 && otp.length < 4 && (
-                      <p style={{ textAlign: 'center', fontSize: 12, color: '#EA580C', marginTop: 10, fontWeight: 700 }}>
+                      <p style={{ textAlign: 'center', fontSize: 12, color: '#FF3A03', marginTop: 10, fontWeight: 700 }}>
                         Entrez les 4 chiffres
                       </p>
                     )}
@@ -1168,10 +1168,10 @@ export default function CheckoutPage() {
 
             {/* Delivery info on mobile */}
             {(pendingOrder.orderMode ?? '').toUpperCase() === 'LIVRAISON' && (
-              <section className="checkout-fadeup-3" style={{ background: 'white', borderRadius: 20, border: '1px solid rgba(255,140,0,0.12)', padding: '16px 20px', marginBottom: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
+              <section className="checkout-fadeup-3" style={{ background: 'white', borderRadius: 20, border: '1px solid rgba(255,108,0,0.12)', padding: '16px 20px', marginBottom: 16, boxShadow: '0 4px 24px rgba(0,0,0,0.04)' }}>
                 {pendingOrder.deliveryAddress && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: pendingOrder.driver ? 12 : 0 }}>
-                    <MapPin size={14} color="#EA580C" />
+                    <MapPin size={14} color="#FF3A03" />
                     <span style={{ fontSize: 13, color: '#9E8B7A', fontWeight: 600 }}>
                       {pendingOrder.deliveryAddress}{pendingOrder.deliveryZone ? ` · ${pendingOrder.deliveryZone}` : ''}
                     </span>
@@ -1179,7 +1179,7 @@ export default function CheckoutPage() {
                 )}
                 {pendingOrder.driver && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderRadius: 14, background: '#F0FDF4', border: '1px solid #86EFAC', padding: '12px 14px' }}>
-                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #EA580C, #C2410C)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #FF3A03, #CC2402)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                       <User size={15} color="white" />
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>
@@ -1199,8 +1199,8 @@ export default function CheckoutPage() {
 
             {/* Security note */}
             {!isB2B && (
-              <div className="checkout-fadeup-4" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 16, borderRadius: 12, background: 'rgba(234,88,12,0.04)', border: '1px solid rgba(234,88,12,0.08)' }}>
-                <ShieldCheck size={15} color="#EA580C" style={{ flexShrink: 0 }} />
+              <div className="checkout-fadeup-4" style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', marginBottom: 16, borderRadius: 12, background: 'rgba(234,60,12,0.04)', border: '1px solid rgba(234,60,12,0.08)' }}>
+                <ShieldCheck size={15} color="#FF3A03" style={{ flexShrink: 0 }} />
                 <p style={{ fontSize: 12, color: '#9E8B7A', margin: 0, fontWeight: 600, lineHeight: 1.5 }}>
                   Paiement sécurisé via <strong style={{ color: '#7A6A5A' }}>NovaSend</strong>. Aucune donnée bancaire n'est stockée sur nos serveurs.
                 </p>
@@ -1219,14 +1219,14 @@ export default function CheckoutPage() {
                   borderRadius: 16,
                   border: 'none',
                   background: primaryEnabled
-                    ? 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)'
+                    ? 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)'
                     : 'linear-gradient(135deg, #D4C4B0 0%, #C4B4A0 100%)',
                   color: 'white',
                   fontSize: 16,
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
                   cursor: primaryEnabled ? 'pointer' : 'not-allowed',
-                  boxShadow: primaryEnabled ? '0 8px 32px rgba(234,88,12,0.40)' : 'none',
+                  boxShadow: primaryEnabled ? '0 8px 32px rgba(234,60,12,0.40)' : 'none',
                   transition: 'all 0.2s',
                   fontFamily: 'Manrope, sans-serif',
                   display: 'flex',
@@ -1259,7 +1259,7 @@ export default function CheckoutPage() {
         background: 'rgba(255,255,255,0.97)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',
-        borderTop: '1px solid rgba(234,88,12,0.10)',
+        borderTop: '1px solid rgba(234,60,12,0.10)',
         zIndex: 40,
       }}>
         <button
@@ -1272,14 +1272,14 @@ export default function CheckoutPage() {
             borderRadius: 16,
             border: 'none',
             background: canSubmit
-              ? 'linear-gradient(135deg, #EA580C 0%, #C2410C 100%)'
+              ? 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)'
               : 'linear-gradient(135deg, #D4C4B0 0%, #C4B4A0 100%)',
             color: 'white',
             fontSize: 16,
             fontWeight: 800,
             letterSpacing: '-0.02em',
             cursor: canSubmit ? 'pointer' : 'not-allowed',
-            boxShadow: canSubmit ? '0 8px 28px rgba(234,88,12,0.38)' : 'none',
+            boxShadow: canSubmit ? '0 8px 28px rgba(234,60,12,0.38)' : 'none',
             transition: 'all 0.2s',
             fontFamily: 'Manrope, sans-serif',
             display: 'flex',
@@ -1449,19 +1449,19 @@ export default function CheckoutPage() {
                   )}
 
                   {!paymentUrl && method?.provider === 'ORANGE' && (
-                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#FFF7ED', border: '1.5px solid #FFEDD5', textAlign: 'left' }}>
+                    <div style={{ marginBottom: 18, padding: '12px 14px', borderRadius: 14, background: '#FFF5ED', border: '1.5px solid #FFEDD5', textAlign: 'left' }}>
                       <p style={{ margin: '0 0 4px', fontSize: 12, fontWeight: 800, color: '#9A3412', display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span>📱</span> Validation OTP Orange CI
                       </p>
                       <p style={{ margin: 0, fontSize: 12, color: '#7C2D12', fontWeight: 600, lineHeight: 1.5 }}>
-                        Composez <strong style={{ color: '#EA580C', fontSize: 13 }}>#144*82#</strong> pour générer votre code OTP à 4 chiffres.
+                        Composez <strong style={{ color: '#FF3A03', fontSize: 13 }}>#144*82#</strong> pour générer votre code OTP à 4 chiffres.
                       </p>
                     </div>
                   )}
 
                   {paymentUrl && (
-                    <div style={{ width: '100%', marginBottom: 18, textAlign: 'center', padding: '14px 16px', borderRadius: 14, background: '#FFF7ED', border: '1.5px solid #FFEDD5', boxSizing: 'border-box' }}>
-                      <p style={{ margin: 0, fontSize: 13, color: '#EA580C', fontWeight: 700 }}>
+                    <div style={{ width: '100%', marginBottom: 18, textAlign: 'center', padding: '14px 16px', borderRadius: 14, background: '#FFF5ED', border: '1.5px solid #FFEDD5', boxSizing: 'border-box' }}>
+                      <p style={{ margin: 0, fontSize: 13, color: '#FF3A03', fontWeight: 700 }}>
                         ⏳ Redirection automatique vers la page de paiement...
                       </p>
                     </div>
@@ -1560,13 +1560,13 @@ export default function CheckoutPage() {
                         padding: '14px',
                         borderRadius: 14,
                         border: 'none',
-                        background: 'linear-gradient(135deg, #EA580C, #C2410C)',
+                        background: 'linear-gradient(135deg, #FF3A03, #CC2402)',
                         color: 'white',
                         fontSize: 14,
                         fontWeight: 800,
                         cursor: 'pointer',
                         marginBottom: 10,
-                        boxShadow: '0 6px 20px rgba(234,88,12,0.32)',
+                        boxShadow: '0 6px 20px rgba(234,60,12,0.32)',
                         letterSpacing: '-0.02em',
                         fontFamily: 'Manrope, sans-serif',
                       }}>
