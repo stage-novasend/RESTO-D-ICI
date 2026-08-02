@@ -100,7 +100,19 @@ export default function DeliveryMap({ value, onChange, heightClassName = 'h-72',
     return () => {
       cancelled = true;
       if (mapRef.current) {
-        mapRef.current.remove();
+        // map.remove() détache lui-même les nœuds DOM que Leaflet a créés
+        // dans containerRef. Si ce cleanup s'exécute pendant que React est
+        // déjà en train de démonter le même sous-arbre (fermeture abrupte de
+        // la modale contenant la carte), les deux retraits se chevauchent et
+        // React peut tomber sur un removeChild sur un nœud déjà détaché par
+        // Leaflet → NotFoundError qui remonte jusqu'à l'ErrorBoundary. Cette
+        // opération est un nettoyage best-effort, pas une condition dont
+        // dépend l'intégrité de l'app : on l'entoure d'un try/catch.
+        try {
+          mapRef.current.remove();
+        } catch (e) {
+          console.warn('DeliveryMap cleanup: map.remove() a échoué (sans impact) —', e);
+        }
         mapRef.current = null;
         markerRef.current = null;
       }
