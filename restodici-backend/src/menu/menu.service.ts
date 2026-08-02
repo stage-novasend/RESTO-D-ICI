@@ -529,6 +529,9 @@ export class MenuService {
         'article',
         'article.disponible = true',
       )
+      // Nécessaire pour le filtre par catégorie de l'accueil (Home.jsx) :
+      // sans ce join, article.categorie est toujours absent côté client.
+      .leftJoin('article.categorie', 'categorie')
       .select([
         'restaurant.id',
         'restaurant.nom',
@@ -541,6 +544,7 @@ export class MenuService {
         'article.nom',
         'article.prix',
         'article.photoUrl',
+        'categorie.nom',
       ])
       .where('restaurant.actif = true')
       .orderBy('restaurant.nom', 'ASC')

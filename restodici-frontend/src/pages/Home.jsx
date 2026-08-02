@@ -68,6 +68,13 @@ const CSS = `
   .rd-desktop-sidebar { display: none !important; }
   .rd-mobile-filter-btn { display: flex !important; }
 }
+/* Sur mobile, "100vh" force le hero (image plein cadre en object-fit: cover)
+   dans un rectangle très étroit et très haut : la photo se retrouve zoomée
+   à l'extrême, ne laissant voir qu'une tranche verticale du plat. On plafonne
+   la hauteur pour garder un cadrage proche de l'original. */
+@media (max-width: 640px) {
+  .rd-hero-banner { min-height: 70vh !important; max-height: 620px !important; }
+}
 @media (min-width: 901px) {
   .rd-mobile-filter-btn { display: none !important; }
 }
@@ -343,10 +350,14 @@ function Nav() {
 /* ─── Hero Cinematic & Flottant ─── */
 function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
   const { t } = useLanguage();
+  /* Photos de plats (pas de scènes de rue/grill) : le but du hero est de donner
+     envie de commander, pas de documenter la préparation. Même pool Unsplash
+     que les vignettes plats (utils/articleImage.js) — plats africains vérifiés
+     appétissants et bien cadrés. */
   const HERO_IMAGES = [
-    "/hero-home.jpg",
-    "/hero-home-2.jpg",
-    "/hero-home-3.jpg"
+    "https://images.unsplash.com/photo-1665401015549-712c0dc5ef85?auto=format&fit=crop&w=2400&q=80", // poisson braisé, citron, tomate, oignon
+    "https://images.unsplash.com/photo-1665333048952-a3ee97714c6b?auto=format&fit=crop&w=2400&q=80", // riz sauté au poulet, dressage gastronomique
+    "https://images.unsplash.com/photo-1665332305771-e49a5dd5ba80?auto=format&fit=crop&w=2400&q=80", // thiéboudienne, légumes
   ];
   const [currentImgIndex, setCurrentImgIndex] = useState(0);
 
@@ -359,7 +370,7 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
 
   return (
     <section style={{ position: "relative", padding: "12px 16px 0", width: "100%", margin: 0 }}>
-      <div style={{
+      <div className="rd-hero-banner" style={{
         position: "relative", borderRadius: "32px", overflow: "hidden",
         minHeight: "calc(100vh - 24px)", width: "100%", display: "flex",
         flexDirection: "column", justifyContent: "center",
@@ -381,7 +392,7 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
               width: "100%",
               height: "100%",
               objectFit: "cover",
-              objectPosition: "center 45%",
+              objectPosition: "center",
               filter: "contrast(1.06) brightness(1.08) saturate(1.1)",
             }}
             onError={e => {
@@ -697,8 +708,6 @@ function Catalog({
   restaurants, selectedRestoId, onRestoChange,
   priceRange, onPriceRangeChange,
   minRating, onMinRatingChange,
-  freeDeliveryOnly, onFreeDeliveryChange,
-  fastDeliveryOnly, onFastDeliveryChange,
   sortBy, onSortByChange,
   onResetFilters, activeFiltersCount,
   results, totalCount, hiddenCount, onSeeMore,
@@ -746,23 +755,20 @@ function Catalog({
           <div className="rd-desktop-sidebar" style={{ width: 280, flexShrink: 0, position: "sticky", top: 96 }}>
             <FilterSidebar
               categories={sidebarCats}
-              selectedCategory={activeType === "__all__" ? "__all__" : activeType}
-              onSelectCategory={(catId) => onType(catId === "__all__" ? "__all__" : catId)}
+              activeCat={activeType}
+              onCatChange={(catId) => onType(catId === "__all__" ? "__all__" : catId)}
               restaurants={restaurants}
-              selectedRestaurantId={selectedRestoId}
-              onSelectRestaurant={onRestoChange}
+              selectedRestoId={selectedRestoId}
+              onRestoChange={onRestoChange}
               priceRange={priceRange}
               onPriceRangeChange={onPriceRangeChange}
               minRating={minRating}
               onMinRatingChange={onMinRatingChange}
-              freeDeliveryOnly={freeDeliveryOnly}
-              onFreeDeliveryChange={onFreeDeliveryChange}
-              fastDeliveryOnly={fastDeliveryOnly}
-              onFastDeliveryChange={onFastDeliveryChange}
               sortBy={sortBy}
               onSortByChange={onSortByChange}
-              onResetFilters={onResetFilters}
-              activeFiltersCount={activeFiltersCount}
+              onReset={onResetFilters}
+              activeCount={activeFiltersCount}
+              showDeliveryFilters={false}
             />
           </div>
 
@@ -867,23 +873,20 @@ function Catalog({
                 </div>
                 <FilterSidebar
                   categories={sidebarCats}
-                  selectedCategory={activeType === "__all__" ? "__all__" : activeType}
-                  onSelectCategory={(catId) => { onType(catId === "__all__" ? "__all__" : catId); setMobileFilterOpen(false); }}
+                  activeCat={activeType}
+                  onCatChange={(catId) => { onType(catId === "__all__" ? "__all__" : catId); setMobileFilterOpen(false); }}
                   restaurants={restaurants}
-                  selectedRestaurantId={selectedRestoId}
-                  onSelectRestaurant={(id) => { onRestoChange(id); setMobileFilterOpen(false); }}
+                  selectedRestoId={selectedRestoId}
+                  onRestoChange={(id) => { onRestoChange(id); setMobileFilterOpen(false); }}
                   priceRange={priceRange}
                   onPriceRangeChange={onPriceRangeChange}
                   minRating={minRating}
                   onMinRatingChange={onMinRatingChange}
-                  freeDeliveryOnly={freeDeliveryOnly}
-                  onFreeDeliveryChange={onFreeDeliveryChange}
-                  fastDeliveryOnly={fastDeliveryOnly}
-                  onFastDeliveryChange={onFastDeliveryChange}
                   sortBy={sortBy}
                   onSortByChange={onSortByChange}
-                  onResetFilters={onResetFilters}
-                  activeFiltersCount={activeFiltersCount}
+                  onReset={onResetFilters}
+                  activeCount={activeFiltersCount}
+                  showDeliveryFilters={false}
                 />
               </motion.div>
             </motion.div>
@@ -1192,11 +1195,11 @@ export default function Home() {
   const [search, setSearch] = useState("");
 
   const [selectedRestoId, setSelectedRestoId] = useState("__all__");
-  const [priceRange, setPriceRange] = useState([0, 20000]);
+  // Identifiants alignés sur FilterSidebar.PRICE_OPTIONS (pas un [min,max] :
+  // le composant propose des tranches fixes, pas un slider).
+  const [priceRange, setPriceRange] = useState("__all__");
   const [minRating, setMinRating] = useState(0);
-  const [freeDeliveryOnly, setFreeDeliveryOnly] = useState(false);
-  const [fastDeliveryOnly, setFastDeliveryOnly] = useState(false);
-  const [sortBy, setSortBy] = useState("recommended");
+  const [sortBy, setSortBy] = useState("popular");
   const [suggestions, setSuggestions] = useState([]);
 
   useEffect(() => {
@@ -1243,11 +1246,9 @@ export default function Home() {
   const handleResetFilters = () => {
     setActiveType("__all__");
     setSelectedRestoId("__all__");
-    setPriceRange([0, 20000]);
+    setPriceRange("__all__");
     setMinRating(0);
-    setFreeDeliveryOnly(false);
-    setFastDeliveryOnly(false);
-    setSortBy("recommended");
+    setSortBy("popular");
     setSearch("");
   };
 
@@ -1255,19 +1256,34 @@ export default function Home() {
     let count = 0;
     if (activeType !== "__all__") count++;
     if (selectedRestoId !== "__all__") count++;
-    if (priceRange[0] > 0 || priceRange[1] < 20000) count++;
+    if (priceRange !== "__all__") count++;
     if (minRating > 0) count++;
-    if (freeDeliveryOnly) count++;
-    if (fastDeliveryOnly) count++;
-    if (sortBy !== "recommended") count++;
+    if (sortBy !== "popular") count++;
     if (search.trim()) count++;
     return count;
-  }, [activeType, selectedRestoId, priceRange, minRating, freeDeliveryOnly, fastDeliveryOnly, sortBy, search]);
+  }, [activeType, selectedRestoId, priceRange, minRating, sortBy, search]);
+
+  /* Prix le plus bas de la carte : sert de repère pour le filtre "Fourchette
+     de prix" (un restaurant est dans le budget dès qu'un plat l'est). */
+  const restoMinPrice = (r) => {
+    const prices = (r.articles || [])
+      .map(a => Number(a.prixPromo || a.prix))
+      .filter(p => Number.isFinite(p) && p > 0);
+    return prices.length ? Math.min(...prices) : null;
+  };
 
   const filteredResults = useMemo(() => {
     const q = search.trim().toLowerCase();
 
-    return restaurants
+    const matchesPriceRange = (minPrice) => {
+      if (priceRange === "__all__" || minPrice == null) return true;
+      if (priceRange === "under_3000") return minPrice < 3000;
+      if (priceRange === "3000_6000") return minPrice >= 3000 && minPrice <= 6000;
+      if (priceRange === "over_6000") return minPrice > 6000;
+      return true;
+    };
+
+    const matched = restaurants
       .map(r => {
         if (selectedRestoId !== "__all__" && r.id !== selectedRestoId) return null;
 
@@ -1279,6 +1295,13 @@ export default function Home() {
         }
 
         const articles = r.articles || [];
+
+        if (activeType !== "__all__" && !articles.some(a => a.categorie?.nom === activeType)) {
+          return null;
+        }
+
+        if (!matchesPriceRange(restoMinPrice(r))) return null;
+
         let matchedDishes = [];
 
         if (q) {
@@ -1290,7 +1313,29 @@ export default function Home() {
         return { restaurant: r, matchedDishes };
       })
       .filter(Boolean);
-  }, [restaurants, selectedRestoId, minRating, search]);
+
+    switch (sortBy) {
+      case "rating":
+        matched.sort((a, b) => Number(b.restaurant.noteMoyenne || 0) - Number(a.restaurant.noteMoyenne || 0));
+        break;
+      case "price_asc":
+        matched.sort((a, b) => (restoMinPrice(a.restaurant) ?? Infinity) - (restoMinPrice(b.restaurant) ?? Infinity));
+        break;
+      case "price_desc":
+        matched.sort((a, b) => (restoMinPrice(b.restaurant) ?? 0) - (restoMinPrice(a.restaurant) ?? 0));
+        break;
+      // "time" : pas de délai de livraison par restaurant côté backend pour
+      // l'instant (uniquement au niveau d'une commande) — on retombe sur la
+      // popularité plutôt que de trier sur une donnée absente.
+      case "time":
+      case "popular":
+      default:
+        matched.sort((a, b) => Number(b.restaurant.nbAvis || 0) - Number(a.restaurant.nbAvis || 0));
+        break;
+    }
+
+    return matched;
+  }, [restaurants, selectedRestoId, minRating, activeType, priceRange, sortBy, search]);
 
   /* La page d'accueil ne montre qu'une sélection : les mieux notés.
      Dès qu'une recherche ou un filtre est actif, on affiche la totalité des
@@ -1350,10 +1395,6 @@ export default function Home() {
         onPriceRangeChange={setPriceRange}
         minRating={minRating}
         onMinRatingChange={setMinRating}
-        freeDeliveryOnly={freeDeliveryOnly}
-        onFreeDeliveryChange={setFreeDeliveryOnly}
-        fastDeliveryOnly={fastDeliveryOnly}
-        onFastDeliveryChange={setFastDeliveryOnly}
         sortBy={sortBy}
         onSortByChange={setSortBy}
         onResetFilters={handleResetFilters}

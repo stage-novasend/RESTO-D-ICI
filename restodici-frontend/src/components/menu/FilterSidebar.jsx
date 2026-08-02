@@ -69,6 +69,10 @@ export default function FilterSidebar({
   activeCount = 0,
   isOpenMobile = false,
   onCloseMobile,
+  // Les frais/délai de livraison ne sont pas encore une donnée par
+  // restaurant côté backend (uniquement au niveau d'une commande) : tant que
+  // ce n'est pas le cas, afficher ces filtres ici les rendrait décoratifs.
+  showDeliveryFilters = true,
 }) {
   const [collapsedSections, setCollapsedSections] = useState({});
 
@@ -331,45 +335,49 @@ export default function FilterSidebar({
           })}
         </div>
 
-        {/* Option Livraison gratuite */}
-        <label
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '10px 12px', borderRadius: 6, background: freeDeliveryOnly ? '#F0FDF4' : C.card,
-            border: `1px solid ${freeDeliveryOnly ? C.green : C.line}`, cursor: 'pointer', transition: 'all 0.15s',
-            boxShadow: freeDeliveryOnly ? C.shadow : 'none'
-          }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: freeDeliveryOnly ? '#15803D' : C.text }}>
-            <Truck size={14} color={freeDeliveryOnly ? '#15803D' : C.muted} /> Livraison offerte
-          </span>
-          <input
-            type="checkbox"
-            checked={freeDeliveryOnly}
-            onChange={e => onFreeDeliveryChange(e.target.checked)}
-            style={{ accentColor: C.green, width: 16, height: 16, cursor: 'pointer' }}
-          />
-        </label>
+        {showDeliveryFilters && (
+          <>
+            {/* Option Livraison gratuite */}
+            <label
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: 6, background: freeDeliveryOnly ? '#F0FDF4' : C.card,
+                border: `1px solid ${freeDeliveryOnly ? C.green : C.line}`, cursor: 'pointer', transition: 'all 0.15s',
+                boxShadow: freeDeliveryOnly ? C.shadow : 'none'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: freeDeliveryOnly ? '#15803D' : C.text }}>
+                <Truck size={14} color={freeDeliveryOnly ? '#15803D' : C.muted} /> Livraison offerte
+              </span>
+              <input
+                type="checkbox"
+                checked={freeDeliveryOnly}
+                onChange={e => onFreeDeliveryChange(e.target.checked)}
+                style={{ accentColor: C.green, width: 16, height: 16, cursor: 'pointer' }}
+              />
+            </label>
 
-        {/* Option Livraison rapide */}
-        <label
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '10px 12px', borderRadius: 6, background: fastDeliveryOnly ? C.accentL : C.card,
-            border: `1px solid ${fastDeliveryOnly ? C.accent : C.line}`, cursor: 'pointer', transition: 'all 0.15s',
-            boxShadow: fastDeliveryOnly ? C.shadow : 'none'
-          }}
-        >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: fastDeliveryOnly ? C.accentD : C.text }}>
-            <Clock size={14} color={fastDeliveryOnly ? C.accentD : C.muted} /> Moins de 30 min
-          </span>
-          <input
-            type="checkbox"
-            checked={fastDeliveryOnly}
-            onChange={e => onFastDeliveryChange(e.target.checked)}
-            style={{ accentColor: C.accent, width: 16, height: 16, cursor: 'pointer' }}
-          />
-        </label>
+            {/* Option Livraison rapide */}
+            <label
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '10px 12px', borderRadius: 6, background: fastDeliveryOnly ? C.accentL : C.card,
+                border: `1px solid ${fastDeliveryOnly ? C.accent : C.line}`, cursor: 'pointer', transition: 'all 0.15s',
+                boxShadow: fastDeliveryOnly ? C.shadow : 'none'
+              }}
+            >
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 500, color: fastDeliveryOnly ? C.accentD : C.text }}>
+                <Clock size={14} color={fastDeliveryOnly ? C.accentD : C.muted} /> Moins de 30 min
+              </span>
+              <input
+                type="checkbox"
+                checked={fastDeliveryOnly}
+                onChange={e => onFastDeliveryChange(e.target.checked)}
+                style={{ accentColor: C.accent, width: 16, height: 16, cursor: 'pointer' }}
+              />
+            </label>
+          </>
+        )}
       </div>
     </div>
   );
