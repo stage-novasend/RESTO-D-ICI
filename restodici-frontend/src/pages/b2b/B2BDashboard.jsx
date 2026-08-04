@@ -985,6 +985,8 @@ export default function B2BDashboard() {
   const cached = readCache(uid);
 
   const [tab, setTab]               = useState('overview');
+  // Bascule interne de l'onglet fusionné « Activité » (ex-Historique + Notifications).
+  const [activiteView, setActiviteView] = useState('notifications');
   const [settingsTab, setSettingsTab] = useState('profil');
   const [sideOpen, setSideOpen]         = useState(false);
   const [sideCollapsed, setSideCollapsed] = useState(false);
@@ -1087,13 +1089,13 @@ export default function B2BDashboard() {
   }, [user, loadData]);
 
   useEffect(() => {
-    if (tab !== 'historique') return;
+    if (tab !== 'activite' || activiteView !== 'historique') return;
     setAuditLoading(true);
     b2bAPI.getAuditLogs()
       .then(res => setAuditLogs(Array.isArray(res.data) ? res.data : []))
       .catch(() => setAuditLogs([]))
       .finally(() => setAuditLoading(false));
-  }, [tab]);
+  }, [tab, activiteView]);
 
   // Persist notifications whenever they change
   useEffect(() => {
@@ -1305,14 +1307,18 @@ export default function B2BDashboard() {
     } finally { setDownloading(false); }
   };
 
+  /* Historique + Notifications fusionnés en un seul onglet « Activité » (bascule
+     interne, cf. activiteView) : deux flux d'événements dans le temps qui
+     n'avaient pas besoin de deux entrées de nav séparées. Le sous-onglet
+     Rapports de Paramètres a été retiré pour la même raison : doublon exact
+     des boutons SYSCOHADA de l'onglet Facturation. */
   const NAV = [
     { key: 'overview',       label: 'Vue d\'ensemble', icon: LayoutDashboard },
     { key: 'orders',         label: 'Commandes',       icon: ShoppingBag,  badge: activeOrders.length },
     { key: 'collaborateurs', label: 'Équipe',           icon: Users,        badge: collabs.length },
     { key: 'abonnements',    label: 'Abonnements',     icon: CalendarDays },
     { key: 'factures',       label: 'Facturation',     icon: FileText,     badge: unpaidInvoices },
-    { key: 'historique',     label: 'Historique',      icon: Activity },
-    { key: 'notifications',  label: 'Notifications',   icon: Bell,         badge: unreadCount },
+    { key: 'activite',       label: 'Activité',        icon: Activity,     badge: unreadCount },
     { key: 'settings',       label: 'Paramètres',      icon: Settings },
   ];
 
@@ -1405,8 +1411,7 @@ export default function B2BDashboard() {
                       {item.key === 'collaborateurs' && 'Gestion équipe'}
                       {item.key === 'abonnements' && 'Repas récurrents'}
                       {item.key === 'factures' && 'SYSCOHADA'}
-                      {item.key === 'historique' && 'Audit & traces'}
-                      {item.key === 'notifications' && 'Alertes temps réel'}
+                      {item.key === 'activite' && 'Notifications & audit'}
                       {item.key === 'settings' && 'Réglages compte'}
                     </span>
                   </span>
@@ -1522,7 +1527,7 @@ export default function B2BDashboard() {
                 style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280', cursor: 'pointer' }}>
                 <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} />
               </button>
-              <button onClick={() => goTo('notifications')}
+              <button onClick={() => { setActiviteView('notifications'); goTo('activite'); }}
                 className="relative w-8 h-8 rounded-lg flex items-center justify-center transition hover:opacity-70"
                 style={{ background: '#F3F4F6', border: '1px solid #E5E7EB', color: '#6B7280', cursor: 'pointer' }}>
                 <Bell className="w-3.5 h-3.5" />
@@ -2622,8 +2627,32 @@ export default function B2BDashboard() {
             </div>
           )}
 
-          {/* ══ HISTORIQUE ═══════════════════════════════════════════════════════ */}
-          {tab === 'historique' && (
+          {/* ══ ACTIVITÉ (Notifications + Historique/Audit fusionnés) ══════════════ */}
+          {tab === 'activite' && (
+            <div className="space-y-5">
+              <div className="flex items-center gap-1.5 p-1 rounded-lg w-fit" style={{ background: BG }}>
+                {[
+                  { id: 'notifications', label: 'Notifications', badge: unreadCount },
+                  { id: 'historique',    label: "Journal d'audit" },
+                ].map(v => {
+                  const isActive = activiteView === v.id;
+                  return (
+                    <button key={v.id} onClick={() => setActiviteView(v.id)}
+                      className="flex items-center gap-2 px-3.5 py-2 rounded-md text-[12px] font-semibold transition"
+                      style={{ background: isActive ? CARD : 'transparent', color: isActive ? TEXT : MUTED, boxShadow: isActive ? SH : 'none' }}>
+                      {v.label}
+                      {v.badge > 0 && (
+                        <span className="min-w-[16px] h-4 px-1 rounded-full text-[10px] font-bold text-white flex items-center justify-center"
+                          style={{ background: RED }}>
+                          {v.badge > 9 ? '9+' : v.badge}
+                        </span>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+          {activiteView === 'historique' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -2708,8 +2737,7 @@ export default function B2BDashboard() {
             </div>
           )}
 
-          {/* ══ NOTIFICATIONS ════════════════════════════════════════════════════ */}
-          {tab === 'notifications' && (
+          {activiteView === 'notifications' && (
             <div className="space-y-5">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div>
@@ -2819,6 +2847,8 @@ export default function B2BDashboard() {
               </div>
             </div>
           )}
+            </div>
+          )}
 
           {/* ══ PARAMÈTRES ═══════════════════════════════════════════════════════ */}
           {tab === 'settings' && (
@@ -2846,7 +2876,6 @@ export default function B2BDashboard() {
                     { id: 'profil',     label: 'Profil',      icon: '👤' },
                     { id: 'entreprise', label: 'Entreprise',  icon: '🏢' },
                     { id: 'securite',   label: 'Sécurité',    icon: '🔒' },
-                    { id: 'rapports',   label: 'Rapports',    icon: '📊' },
                   ].map(t => {
                     const isActive = settingsTab === t.id;
                     return (
@@ -2934,6 +2963,11 @@ export default function B2BDashboard() {
                           <p className="text-[13px] font-semibold" style={{ color: TEXT }}>{r.value}</p>
                         </div>
                       ))}
+                      <button onClick={() => setTab('factures')}
+                        className="w-full mt-4 rounded-lg py-3 text-sm font-semibold flex items-center justify-center gap-2 transition hover:opacity-80"
+                        style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }}>
+                        <FileText className="w-4 h-4" /> Voir les rapports SYSCOHADA dans Facturation
+                      </button>
                     </div>
                   )}
                   {settingsTab === 'entreprise' && !compte && (
@@ -2947,44 +2981,6 @@ export default function B2BDashboard() {
                     <SecurityPanel user={user} accentColor={NAVY} />
                   )}
 
-                  {/* Onglet Rapports */}
-                  {settingsTab === 'rapports' && (
-                    <div className="rounded-lg p-6" style={{ background: CARD, boxShadow: SH2 }}>
-                      <div className="flex items-center gap-3 mb-5">
-                        <div className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0" style={{ background: GREEN_L }}>
-                          <FileText className="w-5 h-5" style={{ color: GREEN }} />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold" style={{ color: TEXT }}>Rapport SYSCOHADA</p>
-                          <p className="text-[11px]" style={{ color: FAINT }}>TVA 18% · Norme OHADA · Côte d'Ivoire</p>
-                        </div>
-                      </div>
-                      <button onClick={() => setViewingSyscohada(true)}
-                        className="w-full rounded-lg py-3 text-sm font-bold flex items-center justify-center gap-2 transition hover:opacity-80 mb-3"
-                        style={{ background: BG, border: `1.5px solid ${BORDER}`, color: TEXT }}>
-                        <Eye className="w-4 h-4" /> Consulter le rapport
-                      </button>
-                      {isLastDayOfMonth ? (
-                        <button onClick={downloadSyscohadaReport} disabled={downloading}
-                          className="w-full rounded-lg py-3 text-sm font-bold text-white flex items-center justify-center gap-2 transition hover:opacity-90"
-                          style={{ background: `linear-gradient(135deg, ${GREEN}, ${GREEN_D})`, opacity: downloading ? 0.7 : 1 }}>
-                          {downloading ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                          {downloading ? 'Génération…' : 'Télécharger (PDF)'}
-                        </button>
-                      ) : (
-                        <div className="rounded-lg p-3.5 flex items-center gap-3"
-                          style={{ background: AMBER_L, border: `1px solid #FDE68A` }}>
-                          <Clock className="w-4 h-4 shrink-0" style={{ color: AMBER }} />
-                          <div>
-                            <p className="text-[12px] font-bold" style={{ color: AMBER }}>Téléchargement le {lastDayDisplay}</p>
-                            <p className="text-[11px]" style={{ color: '#92400E' }}>
-                              {daysUntilExport > 1 ? `encore ${daysUntilExport} jours` : 'disponible demain'} · Format PDF OHADA
-                            </p>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
 
                 </div>
               </div>
