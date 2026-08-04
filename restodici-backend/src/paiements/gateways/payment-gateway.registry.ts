@@ -95,11 +95,25 @@ export class PaymentGatewayRegistry {
 
   /**
    * Retourne tous les gateways de paiement activés.
+   *
+   * Repli sur l'environnement pour les providers connus sans ligne en base :
+   * getGateway() (singulier) a toujours eu ce filet de sécurité, mais pas
+   * celui-ci — un déploiement dont les clés NOVASEND_* sont correctement
+   * définies dans l'environnement (sans jamais être passé par l'écran
+   * « Intégrations » de l'admin pour créer la ligne en base) se retrouvait
+   * avec /paiements/methodes renvoyant { methods: [], configured: false } et
+   * un checkout sans aucun moyen de paiement affiché, alors que l'initiation
+   * du paiement elle-même (getGateway) fonctionnait très bien.
    */
   async getEnabledPaymentGateways(): Promise<PaymentGateway[]> {
     const integrations = await this.integrationRepo.find({
       where: { type: IntegrationType.PAYMENT, enabled: true },
     });
+
+    if (integrations.length === 0) {
+      const envIntegration = this.buildEnvIntegration('novasend');
+      if (envIntegration) integrations.push(envIntegration);
+    }
 
     return integrations
       .map((integration) => {
