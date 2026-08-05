@@ -429,17 +429,6 @@ function CatalogHero({ search, onSearch, resultCount, hasQuery, suggestions }) {
         {/* Hero Content */}
         <div style={{ position: "relative", zIndex: 2, maxWidth: 900, margin: "0 auto", padding: "120px 24px 80px", width: "100%", textAlign: "center" }}>
 
-          <motion.div
-            initial={{ opacity: 0, y: -15 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{ display: "inline-flex", alignItems: "center", gap: 10, background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 6, padding: "6px 16px", marginBottom: 24 }}
-          >
-            <span style={{ width: 6, height: 6, borderRadius: "50%", background: T.green }} />
-            <span style={{ fontFamily: sans, fontSize: 12, fontWeight: 600, letterSpacing: "0.1em", textTransform: "uppercase", color: "#fff" }}>
-              {t('abidjan_ci')}
-            </span>
-          </motion.div>
-
           <motion.h1
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
