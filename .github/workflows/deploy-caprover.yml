@@ -45,11 +45,20 @@ jobs:
             -cf "$GITHUB_WORKSPACE/deploy.tar" .
 
       - name: Deploy backend
-        uses: caprover/deploy-from-github@v1.1.2
-        with:
-          server: ${{ secrets.CAPROVER_SERVER }}
-          app: restodici-backend
-          token: ${{ secrets.CAPROVER_BACKEND_APP_TOKEN }}
+        # caprover/deploy-from-github@v1.1.2 fait `npm i -g caprover` sans
+        # version figée à chaque run. caprover@2.4.0 (publié le 2026-08-05)
+        # a fait passer sa dépendance update-notifier de ^3.0.1 (CJS) à
+        # ^7.3.1 (ESM-only), donc le require() du CLI plante immédiatement
+        # (ERR_REQUIRE_ESM) — casse tous les déploiements en amont, sans
+        # rapport avec nos secrets ni le serveur CapRover. On appelle donc
+        # le CLI nous-mêmes, figé sur la dernière version saine connue.
+        run: |
+          npm install -g caprover@2.3.1
+          caprover deploy \
+            --caproverUrl "${{ secrets.CAPROVER_SERVER }}" \
+            --appToken "${{ secrets.CAPROVER_BACKEND_APP_TOKEN }}" \
+            --appName restodici-backend \
+            --tarFile "$GITHUB_WORKSPACE/deploy.tar"
 
   frontend:
     needs: changes
@@ -71,8 +80,14 @@ jobs:
             -cf "$GITHUB_WORKSPACE/deploy.tar" .
 
       - name: Deploy frontend
-        uses: caprover/deploy-from-github@v1.1.2
-        with:
-          server: ${{ secrets.CAPROVER_SERVER }}
-          app: restodici-front
-          token: ${{ secrets.CAPROVER_FRONTEND_APP_TOKEN }}
+        # Voir le commentaire équivalent du job backend : on n'utilise plus
+        # caprover/deploy-from-github@v1.1.2 (npm i -g caprover non figé,
+        # cassé par caprover@2.4.0/update-notifier ESM), on fige nous-mêmes
+        # la dernière version saine.
+        run: |
+          npm install -g caprover@2.3.1
+          caprover deploy \
+            --caproverUrl "${{ secrets.CAPROVER_SERVER }}" \
+            --appToken "${{ secrets.CAPROVER_FRONTEND_APP_TOKEN }}" \
+            --appName restodici-front \
+            --tarFile "$GITHUB_WORKSPACE/deploy.tar"
