@@ -351,7 +351,9 @@ export default function CartDrawer({ isOpen, onClose, tableNumber, initialMode, 
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {items.length > 0 && (
-                  <button onClick={clearCart}
+                  <button onClick={() => {
+                    if (window.confirm('Vider le panier ? Cette action est irréversible.')) clearCart();
+                  }}
                     style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,108,0,0.15)', border: '1px solid rgba(255,108,0,0.25)', borderRadius: 10, padding: '7px 10px', cursor: 'pointer', color: '#FFDCAA', fontSize: 11, fontWeight: 700, lineHeight: 1 }}>
                     <Trash2 style={{ width: 12, height: 12 }} /> Vider
                   </button>

@@ -531,7 +531,9 @@ function CartPanel({ items, total, onUpdate, onClear, deliveryMode, onDeliveryMo
               <p style={{ margin: '3px 0 0', fontFamily: sans, fontSize: 15, fontWeight: 900, color: C.accent }}>{items.reduce((s, i) => s + (i.quantite || 0), 0)}</p>
             </div>
             {items.length > 0 && (
-              <button onClick={onClear} title="Vider le panier"
+              <button onClick={() => {
+                if (window.confirm('Vider le panier ? Cette action est irréversible.')) onClear();
+              }} title="Vider le panier"
                 style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(234,60,12,0.1)', border: '1px solid rgba(255,108,0,0.25)', borderRadius: 8, padding: '5px 9px', cursor: 'pointer', color: C.accent, fontSize: 11, fontWeight: 700, lineHeight: 1, marginTop: 2 }}>
                 <Trash2 size={11} /> Vider
               </button>

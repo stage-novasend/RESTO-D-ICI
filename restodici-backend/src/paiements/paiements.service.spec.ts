@@ -269,7 +269,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
   it('marque la commande comme payée et notifie tous les rôles', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockCommandeRepo.update.mockResolvedValue({ affected: 1 });
     mockNovaSend.getProvider.mockReturnValue('WAVE');
 
     await service.handleNovasendWebhook({
@@ -278,7 +278,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
     });
 
     expect(mockCommandeRepo.update).toHaveBeenCalledWith(
-      'cmd-uuid-1',
+      { id: 'cmd-uuid-1', estPaye: false },
       expect.objectContaining({
         estPaye: true,
         modePaiement: ModePaiementCommande.WAVE,
@@ -306,7 +306,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
   it('marque la commande comme payée sur le statut NovaSend `processed`', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockCommandeRepo.update.mockResolvedValue({ affected: 1 });
     mockNovaSend.getProvider.mockReturnValue('ORANGE');
 
     await service.handleNovasendWebhook({
@@ -315,7 +315,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
     });
 
     expect(mockCommandeRepo.update).toHaveBeenCalledWith(
-      'cmd-uuid-1',
+      { id: 'cmd-uuid-1', estPaye: false },
       expect.objectContaining({ estPaye: true }),
     );
   });
@@ -337,7 +337,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
   it('résout le mode de paiement depuis la trace Payment (chemin unifié, sans _provider ni map RAM)', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockCommandeRepo.update.mockResolvedValue({ affected: 1 });
     mockNovaSend.getProvider.mockReturnValue(undefined); // map RAM vide (nouveau chemin)
     mockPaymentRepo.findOne.mockResolvedValue({
       reference: 'cmd-uuid-1',
@@ -352,7 +352,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
     });
 
     expect(mockCommandeRepo.update).toHaveBeenCalledWith(
-      'cmd-uuid-1',
+      { id: 'cmd-uuid-1', estPaye: false },
       expect.objectContaining({
         estPaye: true,
         modePaiement: ModePaiementCommande.WAVE,
@@ -363,7 +363,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
   it('utilise metadata.commandeId si présent pour résoudre la commande', async () => {
     const commande = makeCommande({ id: 'cmd-via-meta' });
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockCommandeRepo.update.mockResolvedValue({ affected: 1 });
     mockNovaSend.getProvider.mockReturnValue(undefined);
 
     await service.handleNovasendWebhook({
@@ -380,7 +380,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
   it('envoie le SMS de confirmation au client', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockCommandeRepo.update.mockResolvedValue({ affected: 1 });
     mockNovaSend.getProvider.mockReturnValue('WAVE');
 
     await service.handleNovasendWebhook({
@@ -398,7 +398,7 @@ describe('PaiementsService handleNovasendWebhook() — succès commande', () => 
   it('enqueue le reçu PDF dans BullMQ après confirmation', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockCommandeRepo.update.mockResolvedValue({ affected: 1 });
     mockNovaSend.getProvider.mockReturnValue('WAVE');
 
     await service.handleNovasendWebhook({
@@ -590,7 +590,7 @@ describe('PaiementsService handleCinetpayWebhook()', () => {
   it('délègue au webhook NovaSend avec statut SUCCESSFUL quand cpm_result=00', async () => {
     const commande = makeCommande();
     mockCommandeRepo.findOne.mockResolvedValue(commande);
-    mockCommandeRepo.update.mockResolvedValue(undefined);
+    mockCommandeRepo.update.mockResolvedValue({ affected: 1 });
     mockNovaSend.getProvider.mockReturnValue(undefined);
 
     await service.handleCinetpayWebhook({
@@ -599,7 +599,7 @@ describe('PaiementsService handleCinetpayWebhook()', () => {
     });
 
     expect(mockCommandeRepo.update).toHaveBeenCalledWith(
-      'cmd-uuid-1',
+      { id: 'cmd-uuid-1', estPaye: false },
       expect.objectContaining({ estPaye: true }),
     );
   });

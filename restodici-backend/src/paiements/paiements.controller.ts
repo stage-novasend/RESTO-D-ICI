@@ -25,7 +25,6 @@ import {
 } from './webhook-signature.util';
 import * as crypto from 'crypto';
 
-@SkipThrottle()
 @Controller('paiements')
 export class PaiementsController {
   private readonly logger = new Logger(PaiementsController.name);
@@ -75,6 +74,12 @@ export class PaiementsController {
   }
 
   // ── Webhook NovaSend (appelé par NovaSend après paiement) ───────────────────
+  // [SÉCURITÉ] SkipThrottle limité aux webhooks : ils sont authentifiés par
+  // signature HMAC, pas par un utilisateur, donc la limite de débit standard
+  // ne s'applique pas. Les routes appelantes une API externe payante
+  // (/initier) restent, elles, soumises au throttling global (audit ISO
+  // 25010 — Sécurité §1).
+  @SkipThrottle()
   @Public() // authentifié par signature HMAC, pas par JWT
   @Post('webhook/novasend')
   @HttpCode(HttpStatus.OK)
@@ -108,6 +113,7 @@ export class PaiementsController {
   }
 
   // ── Webhook CinetPay (legacy) ────────────────────────────────────────────────
+  @SkipThrottle()
   @Public() // authentifié par signature HMAC, pas par JWT
   @Post('webhook/cinetpay')
   @HttpCode(HttpStatus.OK)
@@ -147,6 +153,7 @@ export class PaiementsController {
   }
 
   // ── Webhook générique par intégration ────────────────────────────────────────
+  @SkipThrottle()
   @Public() // authentifié par signature (verifyWebhook du gateway), pas par JWT
   @Post('webhook/:integrationName')
   @HttpCode(HttpStatus.OK)

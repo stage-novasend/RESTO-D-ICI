@@ -36,9 +36,18 @@ COPY --from=build --chown=nestjs:nodejs /app/package*.json ./
 COPY --from=build --chown=nestjs:nodejs /app/node_modules ./node_modules
 COPY --from=build --chown=nestjs:nodejs /app/dist ./dist
 
-RUN mkdir -p /app/uploads
+RUN mkdir -p /app/uploads && chown nestjs:nodejs /app/uploads
 
-# CapRover staging: run as root — nestjs user crashed silently on this host
+# [PORTABILITÉ] Tourne en root sur l'hôte CapRover actuel : un précédent
+# passage à `USER nestjs` a fait planter le conteneur silencieusement (aucun
+# log exploitable). Hypothèse la plus probable : un volume/point de montage
+# CapRover propre à cet hôte, avec des permissions incompatibles avec l'UID
+# 1001 — l'upload d'images passe déjà entièrement par mémoire → S3
+# (uploads.controller.ts), /app/uploads n'est donc plus réellement utilisé
+# par le code applicatif. Avant de retenter `USER nestjs` : vérifier côté
+# CapRover (Persistent Directories de l'app restodici-backend) si un volume
+# est monté, et sur quel chemin/UID hôte, puis retester d'abord sur un
+# environnement non critique (staging ou app CapRover dupliquée).
 EXPOSE 3000
 
 CMD ["dumb-init", "node", "dist/main.js"]

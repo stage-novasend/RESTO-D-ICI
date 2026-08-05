@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
@@ -377,6 +377,12 @@ i18n
 
 export function LanguageProvider({ children }) {
   const [lang, setLangState] = useState(i18n.language || 'fr');
+
+  // Synchronise l'attribut lang du document dès le montage (couvre le cas où
+  // une langue autre que le défaut fr a été restaurée depuis localStorage).
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
 
   const setLang = useCallback((newLang) => {
     const val = newLang === 'en' ? 'en' : 'fr';

@@ -126,7 +126,14 @@ export class LivraisonsExternesController {
   @Public()
   @Post('webhook/:fournisseurId')
   @HttpCode(HttpStatus.OK)
-  webhook(@Param('fournisseurId') fournisseurId: string, @Body() body: any) {
-    return this.service.handleWebhook(fournisseurId, body);
+  webhook(
+    @Param('fournisseurId') fournisseurId: string,
+    @Body() body: any,
+    @Req() req: any,
+  ) {
+    const providedSecret = req.headers?.['x-webhook-secret'] as
+      | string
+      | undefined;
+    return this.service.handleWebhook(fournisseurId, body, providedSecret);
   }
 }

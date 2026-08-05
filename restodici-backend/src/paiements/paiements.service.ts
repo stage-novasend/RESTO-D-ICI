@@ -388,13 +388,29 @@ export class PaiementsService implements OnModuleInit {
       (provider && PROVIDER_TO_MODE[provider]) ||
       ModePaiementCommande.ORANGE_MONEY;
 
+    // [FIABILITÉ] UPDATE conditionné sur estPaye = false : la vérification
+    // ci-dessus (ligne 371) et cette écriture ne sont pas atomiques entre
+    // elles, donc deux webhooks quasi simultanés (NovaSend redélivre parfois)
+    // peuvent tous les deux passer le contrôle. En intégrant la condition
+    // dans la clause WHERE, un seul des deux UPDATE affecte une ligne — le
+    // second obtient affected=0 et s'arrête avant de redéclencher SMS/push/
+    // reçu en double (audit ISO 25010 — Fiabilité).
     const payeAt = new Date();
-    await this.commandeRepo.update(commandeId, {
-      estPaye: true,
-      payeAt,
-      modePaiement,
-      paiementCollectePlateforme: true,
-    });
+    const updateResult = await this.commandeRepo.update(
+      { id: commandeId, estPaye: false },
+      {
+        estPaye: true,
+        payeAt,
+        modePaiement,
+        paiementCollectePlateforme: true,
+      },
+    );
+    if (!updateResult.affected) {
+      this.logger.log(
+        `Commande ${commandeId} déjà traitée par un webhook concurrent — effets de bord ignorés`,
+      );
+      return;
+    }
     await this.updatePaymentStatus(reference, PaymentStatus.SUCCESS);
     await this.paymentLock.cacheStatus(reference, PaymentStatus.SUCCESS);
     await this.paymentLock.release(reference);

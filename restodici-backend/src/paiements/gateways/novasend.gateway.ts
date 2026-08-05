@@ -244,8 +244,20 @@ export class NovaSendGateway implements PaymentGateway {
             status: isSuccess ? 'SUCCESS' : 'PENDING',
           };
         } catch (altErr: any) {
+          // [FIABILITÉ] En production, un repli silencieux vers la simulation
+          // laissait la commande "en attente" indéfiniment sans alerte
+          // exploitable au-delà d'un log warning — l'échec doit être bruyant
+          // pour être vu et corrigé (clés NovaSend invalides/expirées).
+          if (process.env.NODE_ENV === 'production') {
+            this.logger.error(
+              `[NovaSend] 401 sur API réelles (prod & staging) en PRODUCTION — clés invalides ou expirées. Paiement rejeté (pas de repli simulation).`,
+            );
+            throw new Error(
+              'NovaSend indisponible : clés API invalides ou expirées',
+            );
+          }
           this.logger.warn(
-            `[NovaSend] 401 sur API réelles (prod & staging) — Clés invalides ou expirées. Basculement en simulation.`,
+            `[NovaSend] 401 sur API réelles (prod & staging) — Clés invalides ou expirées. Basculement en simulation (hors production).`,
           );
           return this.simulateInitiation(reference, options);
         }

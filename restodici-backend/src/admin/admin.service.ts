@@ -488,6 +488,13 @@ export class AdminService {
     return { updated: result.affected ?? 0 };
   }
 
+  // [FIABILITÉ/COHÉRENCE] Suppression logique (actif=false), harmonisée avec
+  // le pattern déjà utilisé pour les articles de menu (softDeleteArticle).
+  // Un remove() en dur plantait avec une violation de contrainte FK dès
+  // qu'un utilisateur avait la moindre commande (ManyToOne Commande→User
+  // sans onDelete, RESTRICT par défaut) — ce n'était donc pas qu'une
+  // incohérence de pattern mais un bug bloquant en pratique (audit ISO
+  // 25010 — Utilisabilité §5).
   async deleteUser(id: string, currentAdminId: string) {
     if (id === currentAdminId) {
       throw new BadRequestException(
@@ -497,7 +504,8 @@ export class AdminService {
     const user = await this.userRepo.findOne({ where: { id } });
     if (!user) throw new NotFoundException('Utilisateur introuvable');
 
-    await this.userRepo.remove(user);
+    user.actif = false;
+    await this.userRepo.save(user);
     this.notifyAdmins('users', { id, deleted: true });
 
     await this.auditRepo.save(
@@ -524,11 +532,18 @@ export class AdminService {
     });
   }
 
+  // [FIABILITÉ/COHÉRENCE] Même raisonnement que deleteUser() : suppression
+  // logique plutôt que remove() en dur, qui plantait (contrainte FK) dès
+  // qu'un restaurant avait la moindre commande — et qui, sans cette
+  // protection, aurait de toute façon supprimé en cascade tout l'historique
+  // de commandes/articles du restaurant si la contrainte avait été en
+  // cascade (perte de données comptables irréversible).
   async deleteRestaurant(id: string, currentAdminId: string) {
     const restaurant = await this.restaurantRepo.findOne({ where: { id } });
     if (!restaurant) throw new NotFoundException('Restaurant introuvable');
 
-    await this.restaurantRepo.remove(restaurant);
+    restaurant.actif = false;
+    await this.restaurantRepo.save(restaurant);
     this.notifyAdmins('restaurants', { id, deleted: true });
 
     await this.auditRepo.save(

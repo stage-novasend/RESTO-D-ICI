@@ -1,7 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import axios from 'axios';
+import * as crypto from 'crypto';
 import {
   FournisseurLivraison,
   TypeFournisseurLivraison,
@@ -13,6 +14,8 @@ import {
 
 @Injectable()
 export class LivraisonsExternesService {
+  private readonly logger = new Logger(LivraisonsExternesService.name);
+
   constructor(
     @InjectRepository(FournisseurLivraison)
     private fournisseurRepo: Repository<FournisseurLivraison>,
@@ -124,7 +127,34 @@ export class LivraisonsExternesService {
 
   // ── Réception d'un webhook de statut ───────────────────────────
 
-  async handleWebhook(fournisseurId: string, body: any): Promise<void> {
+  // [SÉCURITÉ] Fail-closed comme les webhooks de paiement (NovaSend/
+  // CinetPay) : sans webhookSecret configuré ou sans secret fourni
+  // correspondant, quiconque connaissant un fournisseurId pouvait
+  // auparavant forger un changement de statut de livraison (audit
+  // ISO 25010 — Sécurité). Comparaison en temps constant.
+  async handleWebhook(
+    fournisseurId: string,
+    body: any,
+    providedSecret?: string,
+  ): Promise<void> {
+    const fournisseur = await this.fournisseurRepo.findOne({
+      where: { id: fournisseurId },
+      select: ['id', 'webhookSecret'],
+    });
+    if (!fournisseur?.webhookSecret) {
+      this.logger.error(
+        `Webhook livraison [${fournisseurId}]: aucun webhookSecret configuré — rejeté`,
+      );
+      return;
+    }
+    if (
+      !providedSecret ||
+      !this.verifyWebhookSecret(providedSecret, fournisseur.webhookSecret)
+    ) {
+      this.logger.warn(`Webhook livraison [${fournisseurId}]: secret invalide`);
+      return;
+    }
+
     const referenceExterne: string | undefined =
       body?.id || body?.orderId || body?.reference || body?.delivery_id;
     const statutBrut: string | undefined =
@@ -158,6 +188,12 @@ export class LivraisonsExternesService {
       if (body?.driver_phone) livraison.telephoneLivreur = body.driver_phone;
       await this.livraisonRepo.save(livraison);
     }
+  }
+
+  private verifyWebhookSecret(provided: string, expected: string): boolean {
+    const a = Buffer.from(provided);
+    const b = Buffer.from(expected);
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
   }
 
   async getLivraisonsCommande(commandeId: string): Promise<LivraisonExterne[]> {

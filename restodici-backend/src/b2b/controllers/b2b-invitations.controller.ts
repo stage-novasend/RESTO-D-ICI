@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Param, Body } from '@nestjs/common';
 import { B2BService } from '../services/b2b.service';
 import { Public } from '../../auth/decorators/public.decorator';
+import { AcceptInvitationDto } from '../dto/accept-invitation.dto';
 
 // L'invité n'a pas encore de compte : l'accès se fait par token d'invitation.
 @Public()
@@ -16,7 +17,7 @@ export class B2BInvitationsController {
   @Post(':token/accept')
   async acceptInvitation(
     @Param('token') token: string,
-    @Body() body: { password: string; prenom?: string },
+    @Body() body: AcceptInvitationDto,
   ) {
     return this.b2bService.acceptInvitation(token, body.password, body.prenom);
   }

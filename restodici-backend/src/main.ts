@@ -6,6 +6,8 @@ import {
   ClassSerializerInterceptor,
   Logger,
   ValidationPipe,
+  VersioningType,
+  VERSION_NEUTRAL,
 } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -25,6 +27,19 @@ async function bootstrap() {
 
   // PRÉFIXE GLOBAL OBLIGATOIRE
   app.setGlobalPrefix('api');
+
+  // [COMPATIBILITÉ] Mécanisme de versionnement d'API, sans rien casser
+  // aujourd'hui : VERSION_NEUTRAL en défaut garde toutes les routes
+  // existantes accessibles exactement comme avant (/api/xxx), y compris en
+  // cas de déploiement backend/frontend non simultané (les jobs GitHub
+  // Actions backend/frontend tournent en parallèle, pas de manière
+  // atomique). Un futur endpoint avec un changement cassant pourra
+  // s'exposer explicitement via @Version('2') → /api/v2/xxx, sans jamais
+  // retirer l'accès aux anciens clients (audit ISO 25010 — Compatibilité).
+  app.enableVersioning({
+    type: VersioningType.URI,
+    defaultVersion: VERSION_NEUTRAL,
+  });
 
   // [SÉCURITÉ] En-têtes HTTP durcis (CSP, HSTS, X-Frame-Options…).
   app.use(helmet());

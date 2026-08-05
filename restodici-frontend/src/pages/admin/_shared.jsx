@@ -9,6 +9,7 @@ import Chart from 'chart.js/auto';
 import { RefreshCw, TrendingUp, TrendingDown, AlertTriangle, Check, XCircle } from 'lucide-react';
 import { adminAPI } from '../../services/api';
 import { useAdminRevision, useAdminRealtimeStatus } from '../../hooks/useAdminRealtime';
+import { useModalA11y } from '../../hooks/useModalA11y';
 import { ACCENT, ROLE_COLOR, DAY_LABELS, card } from './_colors';
 
 /* ── Composants utilitaires ── */
@@ -274,6 +275,7 @@ export function ActivityHeatmap({ heatmap }) {
 
 /* ══════════════════ Modale de confirmation de suppression ══════════════════ */
 export function ConfirmDeleteModal({ target, onClose, onConfirm, deleting }) {
+  const dialogRef = useModalA11y(!!target, onClose);
   if (!target) return null;
   const isUser = target.type === 'user';
   const name = isUser
@@ -282,11 +284,11 @@ export function ConfirmDeleteModal({ target, onClose, onConfirm, deleting }) {
 
   return (
     <div onClick={onClose} className="fade-in" style={{ position: 'fixed', inset: 0, zIndex: 1100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24, background: 'rgba(15,23,42,0.6)', backdropFilter: 'blur(3px)' }}>
-      <div onClick={e => e.stopPropagation()} className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.25)' }}>
+      <div ref={dialogRef} onClick={e => e.stopPropagation()} role="dialog" aria-modal="true" aria-labelledby="confirm-delete-title" tabIndex={-1} className="fade-up" style={{ background: '#fff', borderRadius: 20, width: '100%', maxWidth: 440, padding: 28, boxShadow: '0 24px 80px rgba(0,0,0,0.25)', outline: 'none' }}>
         <div style={{ width: 48, height: 48, borderRadius: 14, background: '#FEE2E2', color: '#DC2626', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
           <AlertTriangle style={{ width: 24, height: 24 }} />
         </div>
-        <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#0F172A' }}>
+        <h3 id="confirm-delete-title" style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#0F172A' }}>
           Supprimer {isUser ? 'ce compte utilisateur' : 'ce restaurant'} ?
         </h3>
         <p style={{ fontSize: 13, color: '#64748B', lineHeight: 1.5, margin: '0 0 20px' }}>
