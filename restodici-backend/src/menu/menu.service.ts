@@ -522,33 +522,35 @@ export class MenuService {
       });
     }
 
-    return this.restaurantRepo
-      .createQueryBuilder('restaurant')
-      .leftJoinAndSelect(
-        'restaurant.articles',
-        'article',
-        'article.disponible = true',
-      )
-      // Nécessaire pour le filtre par catégorie de l'accueil (Home.jsx) :
-      // sans ce join, article.categorie est toujours absent côté client.
-      .leftJoin('article.categorie', 'categorie')
-      .select([
-        'restaurant.id',
-        'restaurant.nom',
-        'restaurant.logo',
-        'restaurant.adresse',
-        'restaurant.telephone',
-        'restaurant.noteMoyenne',
-        'restaurant.nbAvis',
-        'article.id',
-        'article.nom',
-        'article.prix',
-        'article.photoUrl',
-        'categorie.nom',
-      ])
-      .where('restaurant.actif = true')
-      .orderBy('restaurant.nom', 'ASC')
-      .getMany();
+    return (
+      this.restaurantRepo
+        .createQueryBuilder('restaurant')
+        .leftJoinAndSelect(
+          'restaurant.articles',
+          'article',
+          'article.disponible = true',
+        )
+        // Nécessaire pour le filtre par catégorie de l'accueil (Home.jsx) :
+        // sans ce join, article.categorie est toujours absent côté client.
+        .leftJoin('article.categorie', 'categorie')
+        .select([
+          'restaurant.id',
+          'restaurant.nom',
+          'restaurant.logo',
+          'restaurant.adresse',
+          'restaurant.telephone',
+          'restaurant.noteMoyenne',
+          'restaurant.nbAvis',
+          'article.id',
+          'article.nom',
+          'article.prix',
+          'article.photoUrl',
+          'categorie.nom',
+        ])
+        .where('restaurant.actif = true')
+        .orderBy('restaurant.nom', 'ASC')
+        .getMany()
+    );
   }
 
   //  GET /menu/restaurant/:id — Menu d'un restaurant spécifique (pour client B2C)

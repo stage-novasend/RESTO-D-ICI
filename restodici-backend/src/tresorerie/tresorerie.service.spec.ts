@@ -324,37 +324,6 @@ describe('TresorerieService exportSyscohada()', () => {
   });
 });
 
-// ─── recordOrderPayment() ─────────────────────────────────────────────────────
-
-describe('TresorerieService recordOrderPayment()', () => {
-  let service: TresorerieService;
-
-  beforeEach(async () => {
-    jest.clearAllMocks();
-    const module = await buildModule();
-    service = module.get<TresorerieService>(TresorerieService);
-  });
-
-  it('records a payment and returns type ORDER_PAYMENT', async () => {
-    const paymentData = {
-      commandeId: 'cmd-uuid-1',
-      numeroCommande: 'CMD-2026-001',
-      montantTotal: 5000,
-      montantRemis: 5000,
-      modePaiement: 'WAVE',
-      restaurantId: 'resto-uuid-1',
-    };
-
-    const result = await service.recordOrderPayment(paymentData);
-
-    expect(result.type).toBe('ORDER_PAYMENT');
-    expect(result.status).toBe('synced');
-    expect(result.id).toMatch(/^tx_/);
-    expect(result.syncedAt).toBeInstanceOf(Date);
-    expect(result.commandeId).toBe('cmd-uuid-1');
-  });
-});
-
 // ─── Bootstrap smoke test ─────────────────────────────────────────────────────
 
 describe('TresorerieService bootstrap', () => {

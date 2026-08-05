@@ -27,7 +27,7 @@ ENV NODE_ENV=production
 ENV PORT=3000
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates dumb-init openssl \
+  && apt-get install -y --no-install-recommends ca-certificates dumb-init openssl postgresql-client \
   && rm -rf /var/lib/apt/lists/* \
   && groupadd --system --gid 1001 nodejs \
   && useradd --system --uid 1001 nestjs

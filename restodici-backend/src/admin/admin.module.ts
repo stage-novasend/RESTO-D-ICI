@@ -10,6 +10,7 @@ import { SystemConfig } from '../common/entities/system-config.entity';
 import { Integration } from '../common/entities/integration.entity';
 import { AuthModule } from '../auth/auth.module';
 import { CommandesModule } from '../commandes/commandes.module';
+import { StorageModule } from '../storage/storage.module';
 import { BackupService } from './backup.service';
 import { SlaService } from './sla.service';
 import { SlaIncident } from './entities/sla-incident.entity';
@@ -33,6 +34,7 @@ import { PaymentMethod } from '../paiements/entities/payment-method.entity';
     ]),
     AuthModule,
     CommandesModule,
+    StorageModule,
   ],
   controllers: [AdminController],
   providers: [AdminService, BackupService, SlaService],

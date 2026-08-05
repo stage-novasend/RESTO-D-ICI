@@ -10,7 +10,6 @@ import { CommandeStatusHistory } from './entities/commande-status-history.entity
 import { CommissionPlateforme } from './entities/commission-plateforme.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { CommandesGateway } from './commandes.gateway';
-import { TresorerieService } from '../tresorerie/tresorerie.service';
 import { PromosService } from '../promos/promos.service';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
@@ -39,7 +38,6 @@ const mockCommandesGateway = {
   emitToKitchen: jest.fn(),
   emitToClient: jest.fn(),
 };
-const mockTresorerieService = {};
 const mockPromosService = {};
 const mockSmsService = {};
 const mockFcmService = {};
@@ -72,7 +70,6 @@ function buildModule() {
       },
       { provide: DataSource, useValue: mockDataSource },
       { provide: CommandesGateway, useValue: mockCommandesGateway },
-      { provide: TresorerieService, useValue: mockTresorerieService },
       { provide: PromosService, useValue: mockPromosService },
       { provide: SmsService, useValue: mockSmsService },
       { provide: FcmService, useValue: mockFcmService },

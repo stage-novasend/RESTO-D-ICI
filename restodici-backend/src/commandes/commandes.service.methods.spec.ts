@@ -7,19 +7,23 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { CommandesService } from './commandes.service';
-import { Commande, StatutCommande } from './entities/commande.entity';
+import {
+  Commande,
+  StatutCommande,
+  ModePaiementCommande,
+} from './entities/commande.entity';
 import { LigneCommande } from './entities/ligne-commande.entity';
 import { AvisCommande } from './entities/avis-commande.entity';
 import { CommandeStatusHistory } from './entities/commande-status-history.entity';
 import { CommissionPlateforme } from './entities/commission-plateforme.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { CommandesGateway } from './commandes.gateway';
-import { TresorerieService } from '../tresorerie/tresorerie.service';
 import { PromosService } from '../promos/promos.service';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentGatewayRegistry } from '../paiements/gateways/payment-gateway.registry';
+import { Payment, PaymentStatus } from '../paiements/entities/payment.entity';
 
 // Couvre les méthodes de lecture / avis / historique non testées par le spec principal.
 describe('CommandesService — méthodes complémentaires', () => {
@@ -28,8 +32,10 @@ describe('CommandesService — méthodes complémentaires', () => {
   const avisRepo: any = {};
   const restoRepo: any = {};
   const historyRepo: any = {};
+  const dataSourceMock: any = { transaction: jest.fn() };
 
   beforeEach(async () => {
+    dataSourceMock.transaction = jest.fn();
     Object.assign(cmdRepo, {
       find: jest.fn(),
       findOne: jest.fn(),
@@ -74,7 +80,7 @@ describe('CommandesService — méthodes complémentaires', () => {
           provide: getRepositoryToken(CommissionPlateforme),
           useValue: { save: jest.fn(), create: jest.fn() },
         },
-        { provide: DataSource, useValue: { transaction: jest.fn() } },
+        { provide: DataSource, useValue: dataSourceMock },
         {
           provide: CommandesGateway,
           useValue: {
@@ -83,7 +89,6 @@ describe('CommandesService — méthodes complémentaires', () => {
             emitToClient: jest.fn(),
           },
         },
-        { provide: TresorerieService, useValue: {} },
         { provide: PromosService, useValue: {} },
         { provide: SmsService, useValue: {} },
         { provide: FcmService, useValue: {} },
@@ -272,6 +277,102 @@ describe('CommandesService — méthodes complémentaires', () => {
       historyRepo.find.mockResolvedValue([{ id: 'h1' }]);
       const r = await service.getCommandeHistory('cmd-1', 'client-1');
       expect(r).toHaveLength(1);
+    });
+  });
+
+  // Régression : registerPayment()/clientRegisterPayment() doivent écrire
+  // la commande payée ET la trace Payment dans une seule transaction
+  // (audit ISO 25010 — Fiabilité §2 : plus de fenêtre où l'une réussit sans
+  // l'autre).
+  describe('registerPayment', () => {
+    const fakeManager = {
+      save: jest.fn((_entity, data) => Promise.resolve(data)),
+    };
+
+    beforeEach(() => {
+      fakeManager.save.mockClear();
+      dataSourceMock.transaction.mockImplementation((cb: any) =>
+        cb(fakeManager),
+      );
+    });
+
+    it('écrit Commande et Payment dans la même transaction', async () => {
+      cmdRepo.findOne.mockResolvedValue(
+        cmd({ estPaye: false, montantTotal: 5000 }),
+      );
+
+      const r = await service.registerPayment('cmd-1', {
+        montantRemis: 5000,
+        modePaiement: ModePaiementCommande.ESPECES,
+      });
+
+      expect(dataSourceMock.transaction).toHaveBeenCalledTimes(1);
+      expect(fakeManager.save).toHaveBeenCalledTimes(2);
+      expect(fakeManager.save).toHaveBeenCalledWith(
+        Commande,
+        expect.objectContaining({ estPaye: true, id: 'cmd-1' }),
+      );
+      expect(fakeManager.save).toHaveBeenCalledWith(
+        Payment,
+        expect.objectContaining({
+          commandeId: 'cmd-1',
+          amount: 5000,
+          status: PaymentStatus.SUCCESS,
+        }),
+      );
+      expect(r.commande.estPaye).toBe(true);
+      expect(r.transaction).toMatchObject({ commandeId: 'cmd-1' });
+    });
+
+    it('refuse si la commande est déjà payée', async () => {
+      cmdRepo.findOne.mockResolvedValue(cmd({ estPaye: true }));
+      await expect(
+        service.registerPayment('cmd-1', {
+          montantRemis: 5000,
+          modePaiement: ModePaiementCommande.ESPECES,
+        }),
+      ).rejects.toThrow(BadRequestException);
+      expect(dataSourceMock.transaction).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('clientRegisterPayment', () => {
+    const fakeManager = {
+      save: jest.fn((_entity, data) => Promise.resolve(data)),
+    };
+
+    beforeEach(() => {
+      fakeManager.save.mockClear();
+      dataSourceMock.transaction.mockImplementation((cb: any) =>
+        cb(fakeManager),
+      );
+    });
+
+    it('écrit Commande et Payment dans la même transaction pour un paiement digital', async () => {
+      cmdRepo.findOne.mockResolvedValue(
+        cmd({ estPaye: false, montantTotal: 5000, client: { id: 'client-1' } }),
+      );
+
+      const saved = await service.clientRegisterPayment(
+        'cmd-1',
+        ModePaiementCommande.ORANGE_MONEY,
+        'client-1',
+      );
+
+      expect(dataSourceMock.transaction).toHaveBeenCalledTimes(1);
+      expect(fakeManager.save).toHaveBeenCalledTimes(2);
+      expect(fakeManager.save).toHaveBeenCalledWith(
+        Commande,
+        expect.objectContaining({ estPaye: true, id: 'cmd-1' }),
+      );
+      expect(fakeManager.save).toHaveBeenCalledWith(
+        Payment,
+        expect.objectContaining({
+          commandeId: 'cmd-1',
+          status: PaymentStatus.SUCCESS,
+        }),
+      );
+      expect(saved.estPaye).toBe(true);
     });
   });
 });

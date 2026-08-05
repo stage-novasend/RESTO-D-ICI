@@ -4,6 +4,8 @@ import {
   S3Client,
   PutObjectCommand,
   GetObjectCommand,
+  ListObjectsV2Command,
+  DeleteObjectCommand,
 } from '@aws-sdk/client-s3';
 
 @Injectable()
@@ -47,6 +49,15 @@ export class StorageService {
   }
 
   async uploadPdf(key: string, buffer: Buffer): Promise<string | null> {
+    return this.uploadFile(key, buffer, 'application/pdf');
+  }
+
+  /** Upload générique — sert aussi aux dumps de sauvegarde (BackupService). */
+  async uploadFile(
+    key: string,
+    buffer: Buffer,
+    contentType: string,
+  ): Promise<string | null> {
     if (!this.s3 || !this.bucket) return null;
     try {
       await this.s3.send(
@@ -54,7 +65,7 @@ export class StorageService {
           Bucket: this.bucket,
           Key: key,
           Body: buffer,
-          ContentType: 'application/pdf',
+          ContentType: contentType,
         }),
       );
       const publicBase = this.config.get<string>('AWS_S3_PUBLIC_BASE');
@@ -64,6 +75,40 @@ export class StorageService {
     } catch (err: any) {
       this.logger.error(`Upload S3 échoué [${key}]: ${err.message}`);
       return null;
+    }
+  }
+
+  /** Liste les clés sous un préfixe (ex: "backups/") — plus récentes en premier. */
+  async listFiles(
+    prefix: string,
+  ): Promise<{ key: string; sizeKb: number; lastModified: string }[]> {
+    if (!this.s3 || !this.bucket) return [];
+    try {
+      const res = await this.s3.send(
+        new ListObjectsV2Command({ Bucket: this.bucket, Prefix: prefix }),
+      );
+      return (res.Contents || [])
+        .filter((o) => o.Key && o.Size !== undefined)
+        .map((o) => ({
+          key: o.Key!,
+          sizeKb: Math.round((o.Size ?? 0) / 1024),
+          lastModified: (o.LastModified ?? new Date()).toISOString(),
+        }))
+        .sort((a, b) => b.lastModified.localeCompare(a.lastModified));
+    } catch (err: any) {
+      this.logger.error(`Listage S3 échoué [${prefix}]: ${err.message}`);
+      return [];
+    }
+  }
+
+  async deleteFile(key: string): Promise<void> {
+    if (!this.s3 || !this.bucket) return;
+    try {
+      await this.s3.send(
+        new DeleteObjectCommand({ Bucket: this.bucket, Key: key }),
+      );
+    } catch (err: any) {
+      this.logger.error(`Suppression S3 échouée [${key}]: ${err.message}`);
     }
   }
 

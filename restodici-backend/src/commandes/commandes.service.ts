@@ -21,12 +21,12 @@ import { Article } from '../menu/entities/article.entity';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
 import { CreateCommandeDto } from './dto/create-commande.dto';
 import { CommandesGateway } from './commandes.gateway';
-import { TresorerieService } from '../tresorerie/tresorerie.service';
 import { PromosService } from '../promos/promos.service';
 import { SmsService } from '../notifications/sms.service';
 import { FcmService } from '../notifications/fcm.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PaymentGatewayRegistry } from '../paiements/gateways/payment-gateway.registry';
+import { Payment, PaymentStatus } from '../paiements/entities/payment.entity';
 
 // Modes de paiement dont le versement au restaurant peut être automatisé via
 // l'API payout NovaSend (mobile money uniquement — pas de virement bancaire
@@ -69,7 +69,6 @@ export class CommandesService {
     private commissionRepo: Repository<CommissionPlateforme>,
     private dataSource: DataSource,
     private commandesGateway: CommandesGateway,
-    private tresorerieService: TresorerieService,
     private promosService: PromosService,
     private smsService: SmsService,
     private fcmService: FcmService,
@@ -792,17 +791,24 @@ export class CommandesService {
     commande.renduMonnaie = montantRemis - montantTotal;
     commande.payeAt = new Date();
 
-    const saved = await this.commandeRepo.save(commande);
-
-    const transaction = await this.tresorerieService.recordOrderPayment({
-      commandeId: saved.id,
-      numeroCommande: saved.numero,
-      montantTotal,
-      modePaiement: saved.modePaiement,
-      montantRemis,
-      restaurantId: saved.restaurant.id,
-      payeAt: saved.payeAt,
-    });
+    // [FIABILITÉ] Marquer la commande payée et tracer le paiement sont deux
+    // écritures ; les séparer laissait une fenêtre où la première réussit
+    // sans la seconde (commande "payée" sans aucune trace de paiement en
+    // cas d'échec entre les deux). Une seule transaction pour les deux
+    // (audit ISO 25010 — Fiabilité §2).
+    const { saved, payment } = await this.dataSource.transaction(
+      async (manager) => {
+        const savedCommande = await manager.save(Commande, commande);
+        const paymentRow = await manager.save(Payment, {
+          reference: savedCommande.numero,
+          provider: savedCommande.modePaiement,
+          amount: montantTotal,
+          status: PaymentStatus.SUCCESS,
+          commandeId: savedCommande.id,
+        });
+        return { saved: savedCommande, payment: paymentRow };
+      },
+    );
 
     const paymentPayload = {
       id: saved.id,
@@ -834,7 +840,7 @@ export class CommandesService {
 
     return {
       commande: saved,
-      transaction,
+      transaction: payment,
     };
   }
 
@@ -866,16 +872,19 @@ export class CommandesService {
     commande.renduMonnaie = 0;
     commande.payeAt = new Date();
 
-    const saved = await this.commandeRepo.save(commande);
-
-    await this.tresorerieService.recordOrderPayment({
-      commandeId: saved.id,
-      numeroCommande: saved.numero,
-      montantTotal: Number(saved.montantTotal),
-      modePaiement: saved.modePaiement,
-      montantRemis: Number(saved.montantTotal),
-      restaurantId: saved.restaurant.id,
-      payeAt: saved.payeAt,
+    // [FIABILITÉ] Même raisonnement que registerPayment() : commande payée
+    // et trace du paiement dans une seule transaction (audit ISO 25010 —
+    // Fiabilité §2).
+    const { saved } = await this.dataSource.transaction(async (manager) => {
+      const savedCommande = await manager.save(Commande, commande);
+      await manager.save(Payment, {
+        reference: savedCommande.numero,
+        provider: savedCommande.modePaiement,
+        amount: Number(savedCommande.montantTotal),
+        status: PaymentStatus.SUCCESS,
+        commandeId: savedCommande.id,
+      });
+      return { saved: savedCommande };
     });
 
     const clientPayPayload = {

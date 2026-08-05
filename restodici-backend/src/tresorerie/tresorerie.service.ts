@@ -859,24 +859,6 @@ export class TresorerieService {
     return Buffer.from('﻿' + csvContent, 'utf8');
   }
 
-  async recordOrderPayment(data: {
-    commandeId: string;
-    numeroCommande: string;
-    montantTotal: number;
-    montantRemis: number;
-    modePaiement?: string;
-    restaurantId: string;
-    payeAt?: Date;
-  }) {
-    return {
-      id: `tx_${Date.now()}`,
-      type: 'ORDER_PAYMENT',
-      status: 'synced',
-      syncedAt: new Date(),
-      ...data,
-    };
-  }
-
   async configureBudgetAlerts(
     restaurantId: string,
     config: {
