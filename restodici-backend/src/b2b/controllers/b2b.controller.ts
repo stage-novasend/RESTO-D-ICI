@@ -202,11 +202,6 @@ export class B2BController {
     return this.facturationService.exportSyscohadaCsv(id, req.user.id);
   }
 
-  @Post('factures-mensuelles/test-seed')
-  async seedFactureTest(@Req() req: RequestWithUser) {
-    return this.facturationService.createFactureTest(req.user.id);
-  }
-
   // ============================================================
   // === AUDIT LOGS =============================================
   // ============================================================

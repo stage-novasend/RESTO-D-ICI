@@ -7,7 +7,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  UtensilsCrossed, ArrowRight, Check, Star, Search, Truck, Clock,
+  UtensilsCrossed, ArrowRight, Check, Star, Search, Truck,
   Mail, X, Zap, Smartphone, ShieldCheck, SlidersHorizontal, Building2,
   Sparkles, ChevronRight, User, ShoppingBag, Menu
 } from "lucide-react";
@@ -590,7 +590,9 @@ function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDi
      inventée, il est signalé comme nouveau. */
   const nbAvis = Number(restaurant.nbAvis || 0);
   const rating = nbAvis > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
-  const time = restaurant.deliveryTime || (20 + (idx % 4) * 5) + "–" + (30 + (idx % 4) * 5) + " min";
+  /* isOpen est calculé côté serveur à partir des horaires réels du
+     restaurant (openingTime/closingTime) — jamais un badge fixe. */
+  const isOpen = restaurant.isOpen !== false;
 
   return (
     <motion.div
@@ -628,8 +630,10 @@ function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDi
           )}
         </div>
 
-        {/* Status Badge */}
-        <div style={{ position: "absolute", top: 12, right: 12, background: T.green, borderRadius: 6, padding: "4px 8px", color: "#fff", fontFamily: sans, fontSize: 10, fontWeight: 600, textTransform: "uppercase" }}>{t('open_now')}</div>
+        {/* Status Badge — calculé côté serveur depuis les horaires réels */}
+        <div style={{ position: "absolute", top: 12, right: 12, background: isOpen ? T.green : "rgba(15,23,42,0.72)", borderRadius: 6, padding: "4px 8px", color: "#fff", fontFamily: sans, fontSize: 10, fontWeight: 600, textTransform: "uppercase" }}>
+          {isOpen ? t('open_now') : 'Fermé'}
+        </div>
       </div>
 
       {/* Info Body */}
@@ -665,9 +669,6 @@ function RestaurantCard({ restaurant, idx, matched, query, onOpenResto, onOpenDi
         {/* Footer info & Action button */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderTop: `1px solid ${T.line}`, paddingTop: 12, marginTop: "auto" }}>
           <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 4, color: T.muted }}>
-              <Clock size={12} /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 500 }}>{time}</span>
-            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
               <Truck size={12} color={T.green} /><span style={{ fontFamily: sans, fontSize: 12, fontWeight: 500, color: T.green }}>{t('delivery')}</span>
             </div>
@@ -1232,7 +1233,17 @@ export default function Home() {
           : [];
 
         setRestaurants(restoList);
-        setTypes(catList.map(c => ({ nom: c.nom, count: c.articlesCount || 5 })));
+        /* Compte réel de plats par catégorie, calculé depuis les articles
+           déjà chargés (withArticles: true ci-dessus) — jamais une valeur
+           inventée si l'API des catégories ne renvoie pas de compteur. */
+        const realCounts = {};
+        for (const r of restoList) {
+          for (const a of r.articles || []) {
+            const catNom = a.categorie?.nom;
+            if (catNom) realCounts[catNom] = (realCounts[catNom] || 0) + 1;
+          }
+        }
+        setTypes(catList.map(c => ({ nom: c.nom, count: c.articlesCount ?? realCounts[c.nom] ?? 0 })));
         setSuggestions(platsPopulaires);
       } catch (e) {
         console.error("Home loading error:", e);

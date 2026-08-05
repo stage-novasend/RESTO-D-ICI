@@ -255,7 +255,6 @@ export const b2bAPI = {
   getFacturesMensuelles: ()           => api.get("/b2b/factures-mensuelles"),
   payerFacture:          (id)         => api.post(`/b2b/factures-mensuelles/${id}/payer`),
   initierPaiement:       (id)         => api.post(`/b2b/factures-mensuelles/${id}/initier-paiement`),
-  seedFactureTest:       ()           => api.post("/b2b/factures-mensuelles/test-seed"),
   contesterFacture:      (id, motif)  => api.post(`/b2b/factures-mensuelles/${id}/contester`, { motif }),
   exportSyscohadaCsv:    (id)         => api.get(`/b2b/factures-mensuelles/${id}/export-syscohada`),
 

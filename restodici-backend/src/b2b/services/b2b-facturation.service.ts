@@ -528,47 +528,6 @@ export class B2bFacturationService {
     return { paymentUrl: payment_url, transactionId: transaction_id };
   }
 
-  // ── Dev/test helper ──────────────────────────────────────────────────────────
-  async createFactureTest(userId: string): Promise<FactureMensuelleB2B> {
-    const compte = await this.findCompteByUser(userId);
-    if (!compte) throw new NotFoundException('Compte entreprise introuvable');
-
-    const now = new Date();
-    const mois = MOIS_FR[now.getMonth()];
-    const annee = now.getFullYear();
-
-    // Remove any existing test facture for this month so it can be recreated
-    const existing = await this.factureRepository.findOne({
-      where: { compteB2B: { id: compte.id }, mois, annee },
-    });
-    if (existing) await this.factureRepository.remove(existing);
-
-    const montantHT = 42_373; // ~50 000 FCFA TTC
-    const tva = Math.round(montantHT * 0.18);
-    const montantTTC = montantHT + tva;
-    const seq = String(Math.floor(Math.random() * 9000) + 1000);
-    const numeroFacture = `RDI-B2B-${annee}${String(now.getMonth() + 1).padStart(2, '0')}-TEST${seq}`;
-    const echeance = new Date(annee, now.getMonth() + 1, 15)
-      .toISOString()
-      .slice(0, 10);
-
-    const facture = this.factureRepository.create({
-      compteB2B: compte,
-      annee,
-      mois,
-      statut: 'EN_ATTENTE',
-      montantHT,
-      tva,
-      montantTTC,
-      numeroFacture,
-      nifClient: compte.numeroContribuable,
-      rccmClient: compte.numeroRCCM,
-      echeance,
-    });
-
-    return this.factureRepository.save(facture);
-  }
-
   private formatFacture(
     f: FactureMensuelleB2B,
     compte: CompteB2B,

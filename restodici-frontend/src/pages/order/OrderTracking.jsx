@@ -94,14 +94,7 @@ export default function OrderTrackingPage() {
     let active = true;
     let poll;
 
-    const isMock = id.startsWith('mock-');
-
     const fetchOrder = async () => {
-      if (isMock) {
-        const mockData = localStorage.getItem('restodici_mock_' + id);
-        if (mockData && active) { setOrder(JSON.parse(mockData)); setLoading(false); }
-        return;
-      }
       try {
         const res = await commandesService.findOne(id);
         if (!active) return;
@@ -116,7 +109,6 @@ export default function OrderTrackingPage() {
     };
 
     const fetchAvis = async () => {
-      if (isMock) return;
       try {
         const res = await commandesService.getAvisForOrder(id);
         if (!active) return;
@@ -130,27 +122,25 @@ export default function OrderTrackingPage() {
 
     const cachedUser = JSON.parse(localStorage.getItem('user') || '{}');
     const currentUser = cachedUser?.user || cachedUser;
-    const socket = isMock ? null : createCommandesSocket(currentUser);
+    const socket = createCommandesSocket(currentUser);
 
-    if (socket) {
-      socket.on('commande.statut', (payload) => {
-        if (payload?.id === id) {
-          setJustUpdated(true);
-          void fetchOrder();
-          setTimeout(() => setJustUpdated(false), 3000);
-        }
-      });
-      socket.on('commande.paiement', (payload) => {
-        if (payload?.id === id) { setPaymentFailed(false); void fetchOrder(); }
-      });
-      socket.on('commande.paiement.echec', (payload) => {
-        if (payload?.id === id) setPaymentFailed(true);
-      });
-    }
+    socket.on('commande.statut', (payload) => {
+      if (payload?.id === id) {
+        setJustUpdated(true);
+        void fetchOrder();
+        setTimeout(() => setJustUpdated(false), 3000);
+      }
+    });
+    socket.on('commande.paiement', (payload) => {
+      if (payload?.id === id) { setPaymentFailed(false); void fetchOrder(); }
+    });
+    socket.on('commande.paiement.echec', (payload) => {
+      if (payload?.id === id) setPaymentFailed(true);
+    });
 
     fetchOrder();
     void fetchAvis();
-    if (!isMock) poll = setInterval(fetchOrder, 5000);
+    poll = setInterval(fetchOrder, 5000);
 
     return () => {
       active = false;
@@ -186,9 +176,7 @@ export default function OrderTrackingPage() {
     setRatingSubmitting(true);
     setRatingError('');
     try {
-      if (!id.startsWith('mock-')) {
-        await commandesService.submitAvis(id, rating, ratingComment || undefined);
-      }
+      await commandesService.submitAvis(id, rating, ratingComment || undefined);
       setRatingDone(true);
       setShowRating(false);
     } catch (err) {

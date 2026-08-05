@@ -517,6 +517,8 @@ export class MenuService {
           'telephone',
           'noteMoyenne',
           'nbAvis',
+          'openingTime',
+          'closingTime',
         ],
         order: { nom: 'ASC' },
       });
@@ -541,6 +543,8 @@ export class MenuService {
           'restaurant.telephone',
           'restaurant.noteMoyenne',
           'restaurant.nbAvis',
+          'restaurant.openingTime',
+          'restaurant.closingTime',
           'article.id',
           'article.nom',
           'article.prix',

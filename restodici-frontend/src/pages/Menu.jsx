@@ -281,7 +281,6 @@ function RestaurantCard({ restaurant, idx, onSelect, matched, favorites, onFav, 
   // Note réelle uniquement : sans avis, on n'affiche pas un « 0.0 » trompeur.
   const nbAvis = Number(restaurant.nbAvis || 0);
   const rating = nbAvis > 0 ? Number(restaurant.noteMoyenne).toFixed(1) : null;
-  const time   = restaurant.deliveryTime || (20 + (idx % 4) * 5) + '–' + (30 + (idx % 4) * 5) + ' min';
   const isFav  = favorites?.includes(restaurant.id);
   const isOpen = restaurant.isOpen !== false;
   const badge = Number(restaurant.noteMoyenne) >= 4.5 ? '★ Bien noté' : null;
@@ -328,7 +327,6 @@ function RestaurantCard({ restaurant, idx, onSelect, matched, favorites, onFav, 
           </span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             {distance != null && distance !== Infinity && <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 11, color: 'rgba(255,255,255,0.9)' }}><MapPin size={11} color="rgba(255,255,255,0.8)" /> {distance < 1 ? '< 1 km' : distance.toFixed(1) + ' km'}</span>}
-            <span style={{ display: 'flex', alignItems: 'center', gap: 3, fontFamily: sans, fontSize: 11, color: 'rgba(255,255,255,0.9)' }}><Clock size={11} color="rgba(255,255,255,0.8)" /> {time}</span>
           </div>
         </div>
       </div>
@@ -1427,8 +1425,8 @@ export default function MenuPage() {
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, fontWeight: 800, color: C.dark }}>
                       <Star size={12} fill={C.yellow} color={C.yellow} /> {Number(selectedResto.noteMoyenne) > 0 ? Number(selectedResto.noteMoyenne).toFixed(1) : 'Nouveau'}
                     </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, color: C.muted }}>
-                      <Clock size={12} color={C.muted} /> {selectedResto.deliveryTime || '30 min'}
+                    <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, fontWeight: 700, color: selectedResto.isOpen !== false ? C.green : C.muted }}>
+                      <Clock size={12} color={selectedResto.isOpen !== false ? C.green : C.muted} /> {selectedResto.isOpen !== false ? 'Ouvert' : 'Fermé'}
                     </span>
                     <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontFamily: sans, fontSize: 12, fontWeight: 700, color: C.green }}>
                       <Truck size={12} color={C.green} /> {selectedResto.fraisLivraison === 0 ? 'Offerte' : (selectedResto.fraisLivraison ? formatFCFA(selectedResto.fraisLivraison) : 'Livraison')}

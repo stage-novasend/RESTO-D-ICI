@@ -6,9 +6,11 @@ import {
   ManyToMany,
   CreateDateColumn,
   UpdateDateColumn,
+  AfterLoad,
 } from 'typeorm';
 import { User } from '../../auth/entities/user.entity';
 import { Article } from '../../menu/entities/article.entity';
+import { isRestaurantOpenNow } from '../../common/utils/horaires.util';
 
 @Entity('restaurants')
 export class Restaurant {
@@ -107,4 +109,19 @@ export class Restaurant {
 
   @UpdateDateColumn()
   updatedAt!: Date;
+
+  /**
+   * Calculé à chaque chargement depuis openingTime/closingTime — jamais
+   * persisté. Ne fonctionne que si ces deux colonnes font partie du
+   * `select` de la requête (comportement TypeORM par défaut, sauf select
+   * explicite partiel — vérifier au cas par cas). Seule source de vérité
+   * pour "le restaurant est-il ouvert maintenant" côté client (audit ISO
+   * 25010 — le front affichait un badge "Ouvert" fixe, jamais recalculé).
+   */
+  isOpen?: boolean;
+
+  @AfterLoad()
+  computeIsOpen() {
+    this.isOpen = isRestaurantOpenNow(this.openingTime, this.closingTime);
+  }
 }

@@ -1,5 +1,4 @@
-import { Eye, RefreshCw, Download, Clock, FileText, Plus, CreditCard } from 'lucide-react';
-import { b2bAPI } from '../../../services/api';
+import { Eye, RefreshCw, Download, Clock, FileText, CreditCard } from 'lucide-react';
 import { formatFCFA } from '../../../utils/formatters';
 import {
   BG, CARD, NAVY, TEXT, MUTED, FAINT, BORDER,
@@ -83,22 +82,6 @@ export default function FacturesSection({
             </div>
             <p className="text-base font-bold mb-1" style={{ color: TEXT }}>Aucune facture disponible</p>
             <p className="text-sm mb-6" style={{ color: FAINT }}>Générées automatiquement en fin de mois</p>
-            <button
-              onClick={async () => {
-                try {
-                  await b2bAPI.seedFactureTest();
-                  await loadData(true);
-                } catch (e) {
-                  alert(e.response?.data?.message || 'Erreur lors de la création');
-                }
-              }}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold text-white transition hover:opacity-90"
-              style={{ background: `linear-gradient(135deg, #7C3AED, #6D28D9)`, boxShadow: '0 3px 12px rgba(124,58,237,0.35)' }}>
-              <Plus className="w-4 h-4" /> Créer une facture de test
-            </button>
-            <p className="text-[11px] mt-3" style={{ color: FAINT }}>
-              Génère une facture fictive de 50 000 FCFA pour tester le paiement
-            </p>
           </div>
         ) : factures.map((f, idx, arr) => {
           const isPaid   = f.statut === 'PAYEE' || f.statut === 'paid';
