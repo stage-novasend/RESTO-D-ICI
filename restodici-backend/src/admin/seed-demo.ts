@@ -165,7 +165,7 @@ async function seedDemo() {
   console.log('\n📁 Seeding des catégories :');
 
   for (const cat of categoriesToSeed) {
-    const existingCat = await connection.query(
+    const existingCat = await connection.query<{ id: string }[]>(
       `SELECT id FROM categories WHERE nom = $1 LIMIT 1`,
       [cat.nom],
     );
@@ -174,7 +174,7 @@ async function seedDemo() {
       categoryMap.set(cat.nom, existingCat[0].id);
       console.log(`   ℹ️ Catégorie existante : ${cat.nom}`);
     } else {
-      const catInsert = await connection.query(
+      const catInsert = await connection.query<{ id: string }[]>(
         `INSERT INTO categories (id, nom, description, icone, actif, "restaurantId", "createdAt", "updatedAt")
          VALUES (gen_random_uuid(), $1, $2, $3, true, $4, NOW(), NOW()) RETURNING id`,
         [cat.nom, cat.description, cat.icone, restaurantId],

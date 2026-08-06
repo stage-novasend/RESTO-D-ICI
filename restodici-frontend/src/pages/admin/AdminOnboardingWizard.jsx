@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { adminAPI } from '../../services/api';
-import { ORANGE as ACCENT, DARK_STONE as DARK, MUTED_WARM as MUTED } from '../../theme/colors';
-import { Shield, ArrowRight, CheckCircle, Lock, Phone } from 'lucide-react';
+import { ORANGE as ACCENT } from '../../theme/colors';
+import { ArrowRight, CheckCircle, Lock, Phone } from 'lucide-react';
 import { BrandMark } from '../../components/shared/BrandLogo';
 
 export default function AdminOnboardingWizard() {

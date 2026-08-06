@@ -23,6 +23,7 @@ import { Roles } from '../common/decorators/roles.decorator';
 import { TresorerieService } from '../tresorerie/tresorerie.service';
 import { StorageService } from '../storage/storage.service';
 import { HorairesGuard } from './guards/horaires.guard';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 @Controller('commandes')
 export class CommandesController {
@@ -37,7 +38,7 @@ export class CommandesController {
   @Roles('CLIENT', 'B2B', 'STAFF', 'GERANT')
   async create(
     @Body() dto: CreateCommandeDto,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('restaurantId') restaurantId?: string,
   ) {
     const clientId = req.user.id;
@@ -70,7 +71,7 @@ export class CommandesController {
   @Get('me')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENT', 'B2B')
-  async findMyOrders(@Req() req: any) {
+  async findMyOrders(@Req() req: AuthenticatedRequest) {
     return this.commandesService.findAllByUser(req.user.id);
   }
 
@@ -81,7 +82,7 @@ export class CommandesController {
     @Query('restaurantId') restaurantId: string,
     @Query('limit') limitStr: string,
     @Query('offset') offsetStr: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     const limit = Math.min(
       Math.max(parseInt(limitStr ?? '50', 10) || 50, 1),
@@ -110,7 +111,7 @@ export class CommandesController {
   @Get('kds')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'STAFF')
-  async getKDS(@Req() req: any) {
+  async getKDS(@Req() req: AuthenticatedRequest) {
     const restaurantId = req.user.restaurant?.id;
     if (!restaurantId) return [];
     return this.commandesService.getKDS(restaurantId);
@@ -121,7 +122,7 @@ export class CommandesController {
   @Roles('CLIENT', 'B2B', 'GERANT', 'STAFF', 'ADMIN')
   async getReceiptPdf(
     @Param('id') id: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Res() res: any,
   ) {
     const userRole = req.user.role;
@@ -147,10 +148,8 @@ export class CommandesController {
     let pdfBuffer: Buffer | null = null;
 
     // Servir depuis S3 si le PDF a déjà été persisté
-    if ((commande as any).recuPdfS3Key) {
-      pdfBuffer = await this.storageService.downloadPdf(
-        (commande as any).recuPdfS3Key,
-      );
+    if (commande.recuPdfS3Key) {
+      pdfBuffer = await this.storageService.downloadPdf(commande.recuPdfS3Key);
     }
 
     // Génération à la volée si absent de S3 (ou S3 non configuré)
@@ -162,9 +161,9 @@ export class CommandesController {
         restaurantAdresse: commande.restaurant.adresse,
         restaurantTelephone: commande.restaurant.telephone,
         restaurantEmail: commande.restaurant.email,
-        restaurantNif: (commande.restaurant as any).nif,
-        restaurantRccm: (commande.restaurant as any).rccm,
-        restaurantLogo: (commande.restaurant as any).logo || undefined,
+        restaurantNif: commande.restaurant.nif,
+        restaurantRccm: commande.restaurant.rccm,
+        restaurantLogo: commande.restaurant.logo || undefined,
         clientNom:
           [commande.client?.prenom, commande.client?.nom]
             .filter(Boolean)
@@ -181,7 +180,7 @@ export class CommandesController {
       });
 
       // Persister en S3 pour les prochaines requêtes
-      if (!(commande as any).recuPdfS3Key && this.storageService.configured) {
+      if (!commande.recuPdfS3Key && this.storageService.configured) {
         const s3Key = `receipts/${commande.id}/recu-${commande.numero}.pdf`;
         const uploaded = await this.storageService.uploadPdf(s3Key, pdfBuffer);
         if (uploaded) {
@@ -200,7 +199,7 @@ export class CommandesController {
 
   @Get(':id')
   @UseGuards(AuthGuard('jwt'))
-  async findOne(@Param('id') id: string, @Req() req: any) {
+  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     const userRole = req.user.role;
     const isAdmin = userRole === 'ADMIN';
     const isRestaurantStaff = userRole === 'GERANT' || userRole === 'STAFF';
@@ -220,7 +219,10 @@ export class CommandesController {
   @Patch(':id/annuler')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENT', 'B2B')
-  async annulerByClient(@Param('id') id: string, @Req() req: any) {
+  async annulerByClient(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.commandesService.annulerByClient(id, req.user.id);
   }
 
@@ -237,7 +239,7 @@ export class CommandesController {
   async updateStatut(
     @Param('id') id: string,
     @Body('statut') statut: StatutCommande,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     const restaurantId =
       req.user.role === 'GERANT' || req.user.role === 'STAFF'
@@ -255,7 +257,10 @@ export class CommandesController {
 
   @Get(':id/history')
   @UseGuards(AuthGuard('jwt'))
-  async getCommandeHistory(@Param('id') id: string, @Req() req: any) {
+  async getCommandeHistory(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     const userRole = req.user.role;
     const clientId =
       userRole === 'CLIENT' || userRole === 'B2B' ? req.user.id : undefined;
@@ -270,7 +275,7 @@ export class CommandesController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'STAFF', 'ADMIN')
   async getRestaurantActivity(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('limit') limitStr?: string,
   ) {
     const restaurantId = req.user.restaurant?.id;
@@ -285,7 +290,7 @@ export class CommandesController {
   async clientRegisterPayment(
     @Param('id') id: string,
     @Body('modePaiement') modePaiement: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.commandesService.clientRegisterPayment(
       id,
@@ -301,7 +306,7 @@ export class CommandesController {
     @Param('id') id: string,
     @Body('note') note: number,
     @Body('commentaire') commentaire: string | undefined,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.commandesService.submitAvis(id, req.user.id, note, commentaire);
   }
@@ -309,7 +314,10 @@ export class CommandesController {
   @Get(':id/avis')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENT', 'B2B')
-  async getAvisForOrder(@Param('id') id: string, @Req() req: any) {
+  async getAvisForOrder(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.commandesService.getAvisForOrder(id, req.user.id);
   }
 
@@ -320,7 +328,7 @@ export class CommandesController {
     @Param('id') id: string,
     @Body('montantRemis') montantRemis: number,
     @Body('modePaiement') modePaiement: ModePaiementCommande,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     const restaurantId =
       req.user.role === 'GERANT' || req.user.role === 'STAFF'
@@ -344,7 +352,7 @@ export class CommandesController {
   async rembourser(
     @Param('id') id: string,
     @Body('motif') motif: string,
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
   ) {
     const restaurantId =
       req.user.role === 'GERANT' ? req.user.restaurant?.id : undefined;
@@ -354,7 +362,10 @@ export class CommandesController {
   @Post(':id/confirmer-reception')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('CLIENT', 'B2B')
-  async confirmerReception(@Param('id') id: string, @Req() req: any) {
+  async confirmerReception(
+    @Param('id') id: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.commandesService.confirmerReception(id, req.user.id);
   }
 }

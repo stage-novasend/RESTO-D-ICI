@@ -62,7 +62,7 @@ export class NovaSendGateway implements PaymentGateway {
   async initiate(
     options: InitiatePaymentOptions,
   ): Promise<PaymentGatewayResult> {
-    const reference = options.metadata?.reference ?? randomUUID();
+    const reference: string = options.metadata?.reference ?? randomUUID();
     if (options.provider) {
       this.pendingMap.set(reference, options.provider);
     }
@@ -93,7 +93,11 @@ export class NovaSendGateway implements PaymentGateway {
   }
 
   async handleWebhook(payload: any): Promise<PaymentWebhookResult> {
-    const { reference, status, metadata } = payload;
+    const { reference, status, metadata } = payload as {
+      reference: string;
+      status?: string;
+      metadata?: Record<string, unknown>;
+    };
 
     let normalizedStatus: 'SUCCESS' | 'FAILED' | 'PENDING' = 'PENDING';
     if (isSuccessStatus(status)) normalizedStatus = 'SUCCESS';
@@ -243,7 +247,7 @@ export class NovaSendGateway implements PaymentGateway {
             paymentUrl,
             status: isSuccess ? 'SUCCESS' : 'PENDING',
           };
-        } catch (altErr: any) {
+        } catch {
           // [FIABILITÉ] En production, un repli silencieux vers la simulation
           // laissait la commande "en attente" indéfiniment sans alerte
           // exploitable au-delà d'un log warning — l'échec doit être bruyant
@@ -333,7 +337,9 @@ export class NovaSendGateway implements PaymentGateway {
       );
       return {
         payoutId: data?.id || data?.reference || options.reference,
-        status: normalizeNovaSendPayoutStatus(data?.status),
+        status: normalizeNovaSendPayoutStatus(
+          data?.status as string | undefined,
+        ),
         raw: data,
       };
     } catch (err: any) {
@@ -372,7 +378,9 @@ export class NovaSendGateway implements PaymentGateway {
       });
       return {
         payoutId: data?.id || reference,
-        status: normalizeNovaSendPayoutStatus(data?.status),
+        status: normalizeNovaSendPayoutStatus(
+          data?.status as string | undefined,
+        ),
         raw: data,
       };
     } catch (err: any) {

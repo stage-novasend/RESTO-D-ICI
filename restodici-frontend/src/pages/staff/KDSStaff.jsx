@@ -5,7 +5,7 @@
    ═══════════════════════════════════════════════════════════════ */
 import { useCallback, useEffect, useState } from 'react';
 import {
-  Clock, ChefHat, CheckCircle2, RefreshCw, AlertCircle,
+  Clock, ChefHat, CheckCircle2, AlertCircle,
   History, X, ChevronDown, ChevronUp,
   CheckCheck, Ban, UtensilsCrossed, Building2, Bell, CreditCard, CalendarClock, Truck,
 } from 'lucide-react';
@@ -16,15 +16,14 @@ import DispatchModal from '../../components/livraison/DispatchModal';
 
 /* ── Palette — miroir StaffDashboard (couleurs : theme/colors.js) ── */
 import {
-  BG, SURFACE as CARD, NAVY, BORDER, MUTED_WARM as MUTED, TEXT_MUTED as FAINT,
+  SURFACE as CARD, NAVY, BORDER, MUTED_WARM as MUTED, TEXT_MUTED as FAINT,
   ORANGE as OG, ORANGE_DARK as OG_D, BORDER_WARM_09 as OG_L,
-  GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, AMBER, RED_STRONG as RED, RED_SALMON as RED_L,
+  GREEN_DARK as GREEN, AMBER, RED_STRONG as RED, RED_SALMON as RED_L,
   PURPLE, PURPLE as VIO, PURPLE_GLOW as VIO_L, BLUE_BRIGHT as BLUE, BLUE_GLOW as BLUE_L,
 } from '../../theme/colors';
 const OG_G   = 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)';
 const GREEN_G= 'linear-gradient(135deg,#15803D,#16A34A)';
 const AMBER_G= 'linear-gradient(135deg,#B45309,#D97706)';
-const PURPLE_G='linear-gradient(135deg,#6D28D9,#8B5CF6)';
 
 const NEXT_STATUT = {
   RECUE: 'CONFIRMEE', CONFIRMEE: 'EN_PREP',
@@ -35,7 +34,6 @@ const ACTION_LABELS = {
   PRETE: 'Prête', EN_LIVRAISON: 'En livraison', LIVREE: 'Livré',
 };
 
-const BLUE_G = 'linear-gradient(135deg,#1D4ED8,#3B82F6)';
 const VIO_G  = 'linear-gradient(135deg,#6D28D9,#8B5CF6)';
 
 const COLS = [
@@ -96,10 +94,6 @@ function useGlobalTick() {
 function elapsed(ts) {
   if (!ts) return 0;
   return Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-}
-
-function mmss(sec) {
-  return `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 }
 
 const DELAI_PRESETS = [10, 15, 20, 30, 45];
@@ -543,7 +537,7 @@ export default function KDSStaff() {
   const [loading,      setLoading]      = useState(true);
   const [error,        setError]        = useState('');
   const [saving,       setSaving]       = useState('');
-  const [lastEvent,    setLastEvent]    = useState('');
+  const [, setLastEvent]    = useState('');
   const [showHistory,  setShowHistory]  = useState(true);
   const [histFilter,   setHistFilter]   = useState('all');
   const [reminders,    setReminders]    = useState([]);
@@ -720,7 +714,6 @@ export default function KDSStaff() {
       .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt)),
   }));
 
-  const urgents   = activeOrders.filter(o => elapsed(o.createdAt) >= 1200).length;
   const livreesToday = historyOrders.filter(o => {
     const ts = o.updatedAt || o.createdAt;
     return ts && new Date(ts).toDateString() === new Date().toDateString() && o.statut === 'LIVREE';

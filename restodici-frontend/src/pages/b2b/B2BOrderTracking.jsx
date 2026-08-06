@@ -100,7 +100,7 @@ export default function B2BOrderTracking() {
     }, 5000);
 
     return () => { socket.disconnect(); clearInterval(poll); };
-  }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [id]);  
 
   const handleCancel = async () => {
     if (!window.confirm('Annuler cette commande groupée ? Cette action est irréversible.')) return;

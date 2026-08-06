@@ -7,13 +7,13 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import {
-  ShoppingBag, Clock, CheckCircle, Star, Download, Eye,
+  ShoppingBag, Star, Download, Eye,
   User, Shield, ChefHat, Package, X, Send,
   Printer, RefreshCcw, Receipt, Truck, ArrowRight,
-  UtensilsCrossed, Wallet, AlertCircle, MessageSquare, CreditCard,
-  Plus, Trash2, Phone, Mail, MapPin, Camera, TrendingUp, Award,
-  Zap, Lock, Key, Smartphone, Globe, ChevronRight, BarChart3,
-  BadgeCheck, LogOut, Menu as MenuIcon, Filter, Layers, CheckCircle2
+  UtensilsCrossed, Wallet, MessageSquare, CreditCard,
+  Trash2, MapPin,
+  ChevronRight,
+  BadgeCheck, LogOut, Menu as MenuIcon, CheckCircle2
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { commandesService as svcTs, createCommandesSocket } from '../../services/commandes.service';
@@ -22,7 +22,6 @@ import SecurityPanel from '../../components/security/SecurityPanel';
 import NotificationBell from '../../components/notifications/NotificationBell';
 import { formatFCFA } from '../../utils/formatters';
 import { EMAIL_PATTERN, CI_PHONE_PATTERN, MSG } from '../../utils/validators';
-import { KpiCard } from '../../components/ui';
 import OnboardingWizard from '../../components/wizard/OnboardingWizard';
 
 import orangeMoneyLogo  from '../../assets/payments/orange-money.svg';
@@ -32,13 +31,8 @@ import carteBancaireLogo from '../../assets/payments/carte-bancaire.svg';
 
 /* ── Palette épurée et professionnelle ── */
 const ACCENT       = '#FF3A03'; // Orange Terracotta
-const ACCENT_DARK  = '#CC2402';
 const ACCENT_LIGHT = '#FFF5ED';
 const BG           = '#F8FAFC'; // Slate très clair
-const SURFACE      = '#FFFFFF';
-const BORDER       = '#E2E8F0';
-const TEXT_DARK    = '#0F172A'; // Slate 900
-const TEXT_MUTED   = '#64748B'; // Slate 500
 const DARK_NAVY    = '#0F172A';
 
 const ORDER_STATUS = {
@@ -521,7 +515,7 @@ function OrderTrackModal({ order, onClose, onReceipt }) {
 /* ════════════════════════════════════════════════════════════════
    ──  TAB VUE D'ENSEMBLE  ───────────────────────────────────────
    ════════════════════════════════════════════════════════════════ */
-function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pendingAvis, totalSpent, avgOrder, loadingOrders, canAvis, setTab, setTrackOrder, setReceiptOrder, setAvisOrder, downloadPdf, handleReorder, handleConfirmReceipt }) {
+function OverviewTab({ user, orders, activeOrders, delivered, pendingAvis, totalSpent, avgOrder, loadingOrders, canAvis, setTab, setTrackOrder, setReceiptOrder, setAvisOrder, downloadPdf, handleReorder, handleConfirmReceipt }) {
   const initials = ((user?.prenom || user?.nom || 'U').charAt(0)).toUpperCase();
   const firstName = user?.prenom || user?.nom?.split(' ')[0] || 'Client';
 
@@ -721,7 +715,7 @@ function OverviewTab({ user, orders, activeOrders, delivered, cancelled, pending
 /* ════════════════════════════════════════════════════════════════
    ──  TAB PROFIL  ────────────────────────────────────────────────
    ════════════════════════════════════════════════════════════════ */
-function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfileSave, orders, totalSpent, delivered, savedAddresses, addrForm, setAddrForm, addAddress, removeAddress }) {
+function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfileSave, savedAddresses, addrForm, setAddrForm, addAddress, removeAddress }) {
   const initials = ((user?.prenom || user?.nom || 'U').charAt(0)).toUpperCase();
   const memberSince = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })
@@ -835,11 +829,9 @@ function ProfileTab({ user, profileForm, setProfileForm, profileMsg, handleProfi
 /* ════════════════════════════════════════════════════════════════
    ──  TAB PAIEMENT / PORTEFEUILLE  ───────────────────────────────
    ════════════════════════════════════════════════════════════════ */
-function PaymentTab({ savedPM, setSavedPM, pmForm, setPmForm, pmMsg, setPmMsg, addPM, removePM, setDefaultPM, userId, paymentTypes, quickPay, toggleQuickPay }) {
+function PaymentTab({ savedPM, pmForm, setPmForm, addPM, removePM, setDefaultPM, paymentTypes }) {
   const PAYMENT_TYPES = paymentTypes || PAYMENT_TYPES_FALLBACK;
   const currentType   = PAYMENT_TYPES.find(t => t.id === pmForm.type) || PAYMENT_TYPES[0];
-  const defaultPM     = savedPM.find(m => m.isDefault) || savedPM[0] || null;
-  const qpOn          = !!quickPay?.enabled && !!defaultPM;
 
   return (
     <div className="space-y-6">
@@ -983,7 +975,7 @@ export default function ClientDashboard() {
 
   const [orders, setOrders] = useState(() => loadCachedOrders(user?.id));
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [refreshing, setRefreshing]       = useState(false);
+  const [, setRefreshing]       = useState(false);
   const [ordersError, setOrdersError]     = useState('');
   const [trackOrder, setTrackOrder]       = useState(null);
   const [receiptOrder, setReceiptOrder]   = useState(null);

@@ -28,7 +28,6 @@ const TER_G  = `linear-gradient(135deg,${PRIMARY},${PRIMARY_CONTAINER})`;
 
 const SH  = '0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04)';
 const SH2 = '0 4px 16px rgba(0,0,0,0.08),0 2px 4px rgba(0,0,0,0.04)';
-const SH3 = '0 8px 32px rgba(0,0,0,0.12),0 4px 8px rgba(0,0,0,0.06)';
 
 function fmt(n)  { return Math.round(Number(n) || 0).toLocaleString('fr-FR'); }
 function fmtF(n) { return `${fmt(n)} FCFA`; }
@@ -234,7 +233,7 @@ function DigitalPaymentModal({ commande, payMode: modeId, onClose, onSimConfirme
   // form | sending | waiting | confirmed | failed
   const [step,       setStep]       = useState('form');
   const [phone,      setPhone]      = useState('');
-  const [sessionId,  setSessionId]  = useState(null);
+  const [, setSessionId]  = useState(null);
   const [paymentUrl, setPaymentUrl] = useState(null);
   const [qrDataUrl,  setQrDataUrl]  = useState(null);
   const [simulated,  setSimulated]  = useState(false);

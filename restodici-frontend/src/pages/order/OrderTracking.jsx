@@ -12,13 +12,6 @@ import {
 import { formatFCFA } from '../../utils/formatters';
 import { getClientOrdersPath } from '../../utils/order-ux';
 
-const safeFormatDate = (d) => {
-  if (!d) return '';
-  try {
-    return new Date(d).toLocaleString('fr-FR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-  } catch { return d; }
-};
-
 const MODE_ICONS = {
   SUR_PLACE: UtensilsCrossed,
   EMPORTER: Package,

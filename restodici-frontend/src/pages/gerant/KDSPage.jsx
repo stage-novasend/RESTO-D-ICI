@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
-  RefreshCw, Truck, Clock, Package, CheckCircle2,
+  RefreshCw, Truck, Package, CheckCircle2,
   AlertCircle, Timer, ArrowRight, CreditCard, Bell
 } from 'lucide-react';
 import DispatchModal from '../../components/livraison/DispatchModal';
@@ -11,7 +11,6 @@ import {
 import { useAuth } from '../../hooks/useAuth';
 import {
   formatFCFA,
-  formatDate,
   formatDeliveryMode,
   STATUS_LABELS,
   STATUS_COLORS,

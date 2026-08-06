@@ -12,6 +12,7 @@ import {
 } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { NotificationsService } from './notifications.service';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 @Controller('notifications')
 @UseGuards(AuthGuard('jwt'))
@@ -21,7 +22,7 @@ export class NotificationsController {
   // GET /notifications?page=1&limit=30 — historique de l'utilisateur courant
   @Get()
   list(
-    @Req() req: any,
+    @Req() req: AuthenticatedRequest,
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
@@ -33,14 +34,14 @@ export class NotificationsController {
 
   // GET /notifications/unread-count — badge « non lues »
   @Get('unread-count')
-  async unreadCount(@Req() req: any) {
+  async unreadCount(@Req() req: AuthenticatedRequest) {
     return { count: await this.service.unreadCount(req.user.id) };
   }
 
   // PATCH /notifications/read-all — tout marquer lu
   @Patch('read-all')
   @HttpCode(HttpStatus.OK)
-  async markAllRead(@Req() req: any) {
+  async markAllRead(@Req() req: AuthenticatedRequest) {
     await this.service.markAllRead(req.user.id);
     return { status: 'ok' };
   }
@@ -48,7 +49,7 @@ export class NotificationsController {
   // PATCH /notifications/:id/read — marquer une notif lue
   @Patch(':id/read')
   @HttpCode(HttpStatus.OK)
-  async markRead(@Req() req: any, @Param('id') id: string) {
+  async markRead(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     await this.service.markRead(id, req.user.id);
     return { status: 'ok' };
   }
@@ -56,7 +57,7 @@ export class NotificationsController {
   // DELETE /notifications/:id
   @Delete(':id')
   @HttpCode(HttpStatus.OK)
-  async remove(@Req() req: any, @Param('id') id: string) {
+  async remove(@Req() req: AuthenticatedRequest, @Param('id') id: string) {
     await this.service.remove(id, req.user.id);
     return { status: 'ok' };
   }

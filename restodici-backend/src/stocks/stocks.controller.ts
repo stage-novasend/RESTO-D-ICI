@@ -16,6 +16,7 @@ import { StocksService } from './stocks.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 @Controller('stocks')
 export class StocksController {
@@ -25,7 +26,10 @@ export class StocksController {
   @Get()
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN', 'STAFF')
-  getAll(@Req() req, @Query('restaurantId') restaurantId?: string) {
+  getAll(
+    @Req() req: AuthenticatedRequest,
+    @Query('restaurantId') restaurantId?: string,
+  ) {
     const targetRestaurantId = req.user?.restaurant?.id || restaurantId;
     return this.stocksService.getAll(targetRestaurantId);
   }
@@ -34,7 +38,7 @@ export class StocksController {
   @Get('alerts')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN', 'STAFF')
-  getAlerts(@Req() req) {
+  getAlerts(@Req() req: AuthenticatedRequest) {
     const restaurantId = req.user?.restaurant?.id;
     return this.stocksService.getAlerts(restaurantId);
   }
@@ -43,7 +47,10 @@ export class StocksController {
   @Get('rapport-ecarts')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN', 'STAFF')
-  getRapportEcarts(@Req() req, @Query('restaurantId') restaurantId?: string) {
+  getRapportEcarts(
+    @Req() req: AuthenticatedRequest,
+    @Query('restaurantId') restaurantId?: string,
+  ) {
     const targetRestaurantId = req.user?.restaurant?.id || restaurantId;
     return this.stocksService.getRapportEcarts(targetRestaurantId);
   }
@@ -56,7 +63,7 @@ export class StocksController {
     @Param('id') id: string,
     @Body('quantity') quantity: number,
     @Body('motif') motif: string,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     const restaurantId = req.user?.restaurant?.id;
     return this.stocksService.adjustStock(id, quantity, restaurantId, motif);
@@ -72,7 +79,7 @@ export class StocksController {
     @Body('quantity') quantity: number,
     @Body('fournisseurId') fournisseurId: string,
     @Body('motif') motif: string,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     const restaurantId = req.user?.restaurant?.id;
     return this.stocksService.entreeStock(

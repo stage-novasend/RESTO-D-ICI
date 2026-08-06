@@ -5,7 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { Cron } from '@nestjs/schedule';
 import { In, Repository, Between } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
@@ -360,7 +360,7 @@ export class B2BService {
 
     const saved = await this.collaborateurRepository.save(collab);
     await this.auditService.logAudit(
-      'MODIFICATION_COLLABORATEUR' as any,
+      'MODIFICATION_COLLABORATEUR',
       compte.id,
       userId,
       {
@@ -578,7 +578,7 @@ export class B2BService {
       .andWhere('cmd.createdAt >= :from', { from })
       .andWhere('cmd.createdAt < :to', { to })
       .andWhere('cmd.statut != :annulee', { annulee: 'ANNULEE' })
-      .getRawOne();
+      .getRawOne<{ total: string | null }>();
 
     return parseFloat(result?.total ?? '0');
   }
@@ -1329,16 +1329,22 @@ export class B2BService {
     }));
 
     return [...fromGrouped, ...fromBulk]
-      .sort(
-        (a, b) =>
-          new Date(b.dateLivraison ?? 0).getTime() -
-          new Date(a.dateLivraison ?? 0).getTime(),
-      )
+      .sort((a, b) => {
+        const bDate = (b.dateLivraison ?? 0) as string | number | Date;
+        const aDate = (a.dateLivraison ?? 0) as string | number | Date;
+        return new Date(bDate).getTime() - new Date(aDate).getTime();
+      })
       .slice(0, cap);
   }
 
   async getOrdersForManagement(userId: string): Promise<Record<string, any>[]> {
+    // [SÉCURITÉ] Manquait ici alors que chaque méthode sœur de ce service
+    // (getBulkOrdersByUser, getOrdersByUser) filtre par createdByUserId —
+    // sans ce where, tout utilisateur B2B authentifié voyait les 50
+    // dernières commandes en gros de TOUTES les entreprises de la
+    // plateforme (fuite de données inter-tenant).
     const orders = await this.bulkOrderRepository.find({
+      where: { createdByUserId: userId },
       relations: ['createdBy'],
       order: { createdAt: 'DESC' },
       take: 50,
@@ -1458,8 +1464,21 @@ export class B2BService {
           : Promise.resolve([]),
       ]);
 
-    const totalBulk = bulkOrders.reduce((s, o) => s + Number(o.total), 0);
-    const totalGrouped = groupedOrders
+    // [FIABILITÉ] firstOfMonth/firstOfNext étaient calculés mais jamais
+    // appliqués : monthlyExpenses/monthlyOrders sommaient en réalité TOUTES
+    // les commandes depuis toujours, pas seulement le mois en cours.
+    const isThisMonth = (d: Date | string | undefined) => {
+      if (!d) return false;
+      const t = new Date(d).getTime();
+      return t >= firstOfMonth.getTime() && t < firstOfNext.getTime();
+    };
+    const monthBulkOrders = bulkOrders.filter((o) => isThisMonth(o.createdAt));
+    const monthGroupedOrders = groupedOrders.filter((o) =>
+      isThisMonth(o.createdAt as Date | string | undefined),
+    );
+
+    const totalBulk = monthBulkOrders.reduce((s, o) => s + Number(o.total), 0);
+    const totalGrouped = monthGroupedOrders
       .filter((o) => o.statut !== 'ANNULEE')
       .reduce((s, o) => s + o.totalEstime, 0);
 
@@ -1480,7 +1499,7 @@ export class B2BService {
           }
         : null,
       monthlyExpenses,
-      monthlyOrders: bulkOrders.length + groupedOrders.length,
+      monthlyOrders: monthBulkOrders.length + monthGroupedOrders.length,
       activeCollaborators: collaborateurs.filter((c) => c.actif).length,
       unpaidInvoices,
       recentOrders: recentOrders.slice(0, 5),

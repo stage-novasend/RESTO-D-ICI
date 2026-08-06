@@ -8,7 +8,7 @@ import {
 // Extrait de B2BDashboard.jsx — bloc { tab === 'factures' && (...) }.
 export default function FacturesSection({
   setViewingSyscohada, isLastDayOfMonth, downloadSyscohadaReport, downloading,
-  lastDayDisplay, factures, loading, loadData, setViewingFacture, setPayingFacture,
+  lastDayDisplay, factures, loading, setViewingFacture, setPayingFacture,
 }) {
   return (
     <div className="space-y-5">

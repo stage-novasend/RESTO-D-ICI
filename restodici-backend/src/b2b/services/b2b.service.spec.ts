@@ -13,6 +13,7 @@ import { Invoice } from '../entities/invoice.entity';
 import { User } from '../../auth/entities/user.entity';
 import { CompteB2B } from '../entities/compte-b2b.entity';
 import { CollaborateurB2B } from '../entities/collaborateur-b2b.entity';
+import type { CreateBulkOrderDto } from '../dto/create-bulk-order.dto';
 import { CommandeGroupeeB2B } from '../entities/commande-groupee-b2b.entity';
 import { LigneCommandeGroupeeB2B } from '../entities/ligne-commande-groupee-b2b.entity';
 import { AuditLogB2B } from '../entities/audit-log-b2b.entity';
@@ -222,7 +223,7 @@ describe('B2BService realtime events', () => {
     await service.createBulkOrder('b2b-1', {
       items: [{ articleId: 'art-1', quantity: 2, unitPrice: 6000 }],
       deliveryAddress: 'Plateau',
-    } as any);
+    } as unknown as CreateBulkOrderDto);
 
     expect(commandesGateway.emitToManagers).toHaveBeenCalledWith(
       'commande.nouvelle',
@@ -284,7 +285,7 @@ describe('B2BService createBulkOrder() — validations', () => {
       service.createBulkOrder('client-1', {
         items: [{ articleId: 'art-1', quantity: 1, unitPrice: 2000 }],
         deliveryAddress: 'Cocody',
-      } as any),
+      } as unknown as CreateBulkOrderDto),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -295,7 +296,7 @@ describe('B2BService createBulkOrder() — validations', () => {
       service.createBulkOrder('ghost-id', {
         items: [{ articleId: 'art-1', quantity: 1, unitPrice: 2000 }],
         deliveryAddress: 'Cocody',
-      } as any),
+      } as unknown as CreateBulkOrderDto),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -313,7 +314,7 @@ describe('B2BService createBulkOrder() — validations', () => {
     const result = await service.createBulkOrder('b2b-1', {
       items: [{ articleId: 'art-1', quantity: 3, unitPrice: 3000 }],
       deliveryAddress: 'Marcory',
-    } as any);
+    } as unknown as CreateBulkOrderDto);
 
     expect(bulkOrderRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({ status: 'PENDING' }),
@@ -363,7 +364,7 @@ describe('B2BService updateBulkOrderStatus() — validations', () => {
     });
 
     await expect(
-      service.updateBulkOrderStatus('bulk-1', 'b2b-1', {} as any),
+      service.updateBulkOrderStatus('bulk-1', 'b2b-1', {}),
     ).rejects.toThrow(BadRequestException);
   });
 });

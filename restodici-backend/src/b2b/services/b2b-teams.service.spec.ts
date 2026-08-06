@@ -80,7 +80,7 @@ describe('B2bTeamsService createTeam()', () => {
     userRepository.findOne.mockResolvedValue({ id: 'staff-1', role: 'STAFF' });
 
     await expect(
-      service.createTeam('staff-1', { name: 'Équipe X' } as any),
+      service.createTeam('staff-1', { name: 'Équipe X' }),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -88,7 +88,7 @@ describe('B2bTeamsService createTeam()', () => {
     userRepository.findOne.mockResolvedValue(null);
 
     await expect(
-      service.createTeam('ghost-id', { name: 'Équipe Y' } as any),
+      service.createTeam('ghost-id', { name: 'Équipe Y' }),
     ).rejects.toThrow(ForbiddenException);
   });
 });
@@ -142,7 +142,7 @@ describe('B2bTeamsService addTeamMember()', () => {
       service.addTeamMember('team-1', 'member-1', {
         userId: 'new-user',
         role: 'MEMBER',
-      } as any),
+      }),
     ).rejects.toThrow(ForbiddenException);
   });
 
@@ -162,7 +162,7 @@ describe('B2bTeamsService addTeamMember()', () => {
       service.addTeamMember('team-1', 'owner-1', {
         userId: 'client-99',
         role: 'MEMBER',
-      } as any),
+      }),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -188,7 +188,7 @@ describe('B2bTeamsService addTeamMember()', () => {
       service.addTeamMember('team-1', 'owner-1', {
         userId: 'existing-member',
         role: 'MEMBER',
-      } as any),
+      }),
     ).rejects.toThrow(BadRequestException);
   });
 });

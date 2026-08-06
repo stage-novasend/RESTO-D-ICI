@@ -763,14 +763,14 @@ async function seedRestaurants() {
     // ── Upsert categories ────────────────────────────────────────────────
     const catMap = new Map<string, string>();
     for (const cat of resto.categories) {
-      const existing = await connection.query(
+      const existing = await connection.query<{ id: string }[]>(
         `SELECT id FROM categories WHERE nom = $1 AND "restaurantId" = $2 LIMIT 1`,
         [cat.nom, restaurantId],
       );
       if (existing.length > 0) {
         catMap.set(cat.nom, existing[0].id);
       } else {
-        const ins = await connection.query(
+        const ins = await connection.query<{ id: string }[]>(
           `INSERT INTO categories (id, nom, description, icone, actif, "restaurantId", "createdAt", "updatedAt")
            VALUES (gen_random_uuid(), $1, $2, $3, true, $4, NOW(), NOW()) RETURNING id`,
           [cat.nom, cat.description, cat.icone, restaurantId],

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import * as jwt from 'jsonwebtoken';
+import type { Socket } from 'socket.io';
 import { CommandesGateway } from './commandes.gateway';
 import { User } from '../auth/entities/user.entity';
 
@@ -44,12 +45,15 @@ describe('CommandesGateway', () => {
       actif: true,
     });
 
+    const join = jest.fn().mockResolvedValue(undefined);
+    const emit = jest.fn();
+    const disconnect = jest.fn();
     const client = {
       handshake: { auth: { token }, headers: {} },
-      join: jest.fn().mockResolvedValue(undefined),
-      emit: jest.fn(),
-      disconnect: jest.fn(),
-    } as any;
+      join,
+      emit,
+      disconnect,
+    } as unknown as Socket;
 
     const result = await gateway.handleSubscribe(client);
 
@@ -59,27 +63,30 @@ describe('CommandesGateway', () => {
       role: 'GERANT',
       restaurantId: 'resto-1',
     });
-    expect(client.join).toHaveBeenCalledWith('user:user-1');
-    expect(client.join).toHaveBeenCalledWith('role:GERANT');
-    expect(client.join).toHaveBeenCalledWith('restaurant:resto-1:staff');
-    expect(client.disconnect).not.toHaveBeenCalled();
+    expect(join).toHaveBeenCalledWith('user:user-1');
+    expect(join).toHaveBeenCalledWith('role:GERANT');
+    expect(join).toHaveBeenCalledWith('restaurant:resto-1:staff');
+    expect(disconnect).not.toHaveBeenCalled();
   });
 
   it('disconnects socket when token cannot be validated', async () => {
+    const join = jest.fn();
+    const emit = jest.fn();
+    const disconnect = jest.fn();
     const client = {
       handshake: { auth: { token: 'bad-token' }, headers: {} },
-      join: jest.fn(),
-      emit: jest.fn(),
-      disconnect: jest.fn(),
-    } as any;
+      join,
+      emit,
+      disconnect,
+    } as unknown as Socket;
 
     const result = await gateway.handleSubscribe(client);
 
     expect(result).toEqual({ success: false });
-    expect(client.emit).toHaveBeenCalledWith('subscribe.error', {
+    expect(emit).toHaveBeenCalledWith('subscribe.error', {
       message: 'Unauthorized',
     });
-    expect(client.disconnect).toHaveBeenCalled();
-    expect(client.join).not.toHaveBeenCalled();
+    expect(disconnect).toHaveBeenCalled();
+    expect(join).not.toHaveBeenCalled();
   });
 });

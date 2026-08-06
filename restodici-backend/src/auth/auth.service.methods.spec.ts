@@ -177,7 +177,7 @@ describe('AuthService — méthodes complémentaires', () => {
           email: 'a@b.com',
           password: 'ValidPass1',
           nom: 'D',
-        } as any),
+        }),
       ).rejects.toThrow(ConflictException);
     });
     it('rejette un mot de passe trop court', async () => {
@@ -187,7 +187,7 @@ describe('AuthService — méthodes complémentaires', () => {
           email: 'x@b.com',
           password: '123',
           nom: 'D',
-        } as any),
+        }),
       ).rejects.toThrow(BadRequestException);
     });
   });

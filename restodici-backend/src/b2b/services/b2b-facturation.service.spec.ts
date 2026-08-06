@@ -115,7 +115,7 @@ describe('B2bFacturationService generateFactureForCompte()', () => {
       numeroContribuable: 'NIF12345',
       numeroRCCM: 'RCCM-CI-ABJ-2025',
       responsable: { id: 'b2b-user-1' },
-    } as any;
+    } as unknown as CompteB2B;
 
     factureRepo.findOne.mockResolvedValue(null);
     commandeGroupeeRepo.createQueryBuilder.mockReturnValue(mockQB());
@@ -151,7 +151,7 @@ describe('B2bFacturationService generateFactureForCompte()', () => {
     const compte = {
       id: 'compte-uuid-1',
       raisonSociale: 'Sankofa SARL',
-    } as any;
+    } as unknown as CompteB2B;
     const existante = {
       id: 'facture-existante',
       mois: 'MAI',
@@ -168,7 +168,10 @@ describe('B2bFacturationService generateFactureForCompte()', () => {
   });
 
   it('retourne null si le montant total du mois est 0', async () => {
-    const compte = { id: 'compte-uuid-2', responsable: { id: 'b2b-2' } } as any;
+    const compte = {
+      id: 'compte-uuid-2',
+      responsable: { id: 'b2b-2' },
+    } as unknown as CompteB2B;
     factureRepo.findOne.mockResolvedValue(null);
 
     const zeroQB = {

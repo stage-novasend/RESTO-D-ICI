@@ -141,7 +141,6 @@ function addFooter(doc, pageNum, totalPages) {
 // ═════════════════════════════════════════════════════════════════════════════
 export function buildSyscohadaBlob(collabs, factures, compte, monthlyExp) {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-  const W   = doc.internal.pageSize.getWidth();
   const mois = new Date().toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
 
   let y = addPageHeader(

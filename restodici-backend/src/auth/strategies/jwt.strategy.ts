@@ -70,6 +70,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       id: user.id,
       email: user.email,
       role: user.role,
+      // [FIABILITÉ] Absents jusqu'ici : plusieurs contrôleurs lisent déjà
+      // req.user.prenom/nom pour l'historique de commande (actorNom), qui
+      // affichait donc systématiquement l'email au lieu du nom réel — bug
+      // masqué par le typage `any` de req (audit ISO 25010).
+      prenom: user.prenom,
+      nom: user.nom,
       compteB2BId,
       restaurant: user.restaurant
         ? { id: user.restaurant.id, nom: user.restaurant.nom }

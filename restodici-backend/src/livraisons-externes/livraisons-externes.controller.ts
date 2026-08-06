@@ -17,6 +17,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { LivraisonsExternesService } from './livraisons-externes.service';
+import { FournisseurLivraison } from './entities/fournisseur-livraison.entity';
 
 @Controller('livraisons-externes')
 export class LivraisonsExternesController {
@@ -41,14 +42,17 @@ export class LivraisonsExternesController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
-  createFournisseur(@Body() body: any) {
+  createFournisseur(@Body() body: Partial<FournisseurLivraison>) {
     return this.service.createFournisseur(body);
   }
 
   @Patch('fournisseurs/:id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN')
-  updateFournisseur(@Param('id') id: string, @Body() body: any) {
+  updateFournisseur(
+    @Param('id') id: string,
+    @Body() body: Partial<FournisseurLivraison>,
+  ) {
     return this.service.updateFournisseur(id, body);
   }
 

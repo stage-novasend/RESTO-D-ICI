@@ -11,7 +11,7 @@ import {
   Param,
   UseGuards,
   UseInterceptors,
-  Req, // <--- AJOUTER CET IMPORT
+  Req,
 } from '@nestjs/common';
 import { CacheInterceptor, CacheTTL } from '@nestjs/cache-manager';
 import { MenuService } from './menu.service';
@@ -23,6 +23,15 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
 import { Public } from '../auth/decorators/public.decorator';
 import { PromosService } from '../promos/promos.service';
+import type { Request } from 'express';
+import type {
+  RequestUser,
+  AuthenticatedRequest,
+} from '../common/types/authenticated-request';
+
+// @Public() : req est toujours fourni par Express, mais req.user n'existe
+// que si un JWT valide a été envoyé (optionnel sur ces routes).
+type OptionallyAuthenticatedRequest = Request & { user?: RequestUser };
 
 @Controller('menu')
 export class MenuController {
@@ -38,9 +47,14 @@ export class MenuController {
     @Query('categorie') categorieId?: string,
     @Query('cible') cible: string = 'CLIENT',
     @Query('restaurantId') restaurantId?: string,
-    @Req() req?,
+    @Req() req?: OptionallyAuthenticatedRequest,
   ) {
-    return this.menuService.getMenu(categorieId, cible, req.user, restaurantId);
+    return this.menuService.getMenu(
+      categorieId,
+      cible,
+      req?.user,
+      restaurantId,
+    );
   }
 
   // GET /menu/restaurants — Liste des restaurants actifs
@@ -95,12 +109,12 @@ export class MenuController {
     @Query('q') query: string,
     @Query('cible') cible: string = 'CLIENT',
     @Query('restaurantId') restaurantId?: string,
-    @Req() req?,
+    @Req() req?: OptionallyAuthenticatedRequest,
   ) {
     return this.menuService.searchArticles(
       query,
       cible,
-      req.user,
+      req?.user,
       restaurantId,
     );
   }
@@ -127,7 +141,10 @@ export class MenuController {
   @Post('categories')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  createCategorie(@Body() dto: CreateCategorieDto, @Req() req) {
+  createCategorie(
+    @Body() dto: CreateCategorieDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     // On passe req.user pour que le service sache à quel restaurant lier la catégorie
     return this.menuService.createCategorie(dto, req.user);
   }
@@ -136,7 +153,10 @@ export class MenuController {
   @Post('articles')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  createArticle(@Body() dto: CreateArticleDto, @Req() req) {
+  createArticle(
+    @Body() dto: CreateArticleDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
     // CRITIQUE : req.user contient { id, role, restaurant: { id, nom } }
     return this.menuService.createArticle(dto, req.user);
   }
@@ -148,7 +168,7 @@ export class MenuController {
   toggleDisponibilite(
     @Param('id') id: string,
     @Body('disponible') disponible: boolean,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.menuService.toggleDisponibilite(id, disponible, req.user);
   }
@@ -160,7 +180,7 @@ export class MenuController {
   updateArticle(
     @Param('id') id: string,
     @Body() dto: UpdateArticleDto,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.menuService.updateArticle(id, dto, req.user);
   }
@@ -169,7 +189,7 @@ export class MenuController {
   @Delete('articles/:id')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('ADMIN', 'GERANT')
-  softDeleteArticle(@Param('id') id: string, @Req() req) {
+  softDeleteArticle(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
     return this.menuService.softDeleteArticle(id, req.user);
   }
 }

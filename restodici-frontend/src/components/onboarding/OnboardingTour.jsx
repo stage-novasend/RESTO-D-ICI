@@ -4,19 +4,19 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ArrowRight, ArrowLeft, X, Sparkles } from 'lucide-react';
 
-const PAD   = 12;   // padding autour de l'élément highlighté
-const ANIM  = 260;  // durée transition en ms
+const PAD = 12;   // padding autour de l'élément highlighté
+const ANIM = 260;  // durée transition en ms
 import { NAVY, MUTED_WARM as MUTED, BORDER_SLATE as BORDER } from '../../theme/colors';
 
 // ── Spotlight = 4 panneaux sombres autour de l'élément ────────────────────────
 function Spotlight({ rect }) {
   if (!rect) return null;
   const { top, left, width, height } = rect;
-  const right  = left + width;
-  const bottom = top  + height;
-  const T = Math.max(0, top    - PAD);
-  const L = Math.max(0, left   - PAD);
-  const R = Math.min(window.innerWidth,  right  + PAD);
+  const right = left + width;
+  const bottom = top + height;
+  const T = Math.max(0, top - PAD);
+  const L = Math.max(0, left - PAD);
+  const R = Math.min(window.innerWidth, right + PAD);
   const B = Math.min(window.innerHeight, bottom + PAD);
 
   const base = {
@@ -49,9 +49,8 @@ function Spotlight({ rect }) {
 // ── Tooltip positionné autour de l'élément ─────────────────────────────────────
 function Tooltip({ rect, step, stepIdx, total, onPrev, onNext, onSkip, accentColor }) {
   const { top, left, width, height } = rect;
-  const right  = left + width;
-  const bottom = top  + height;
-  const T = top    - PAD;
+  const bottom = top + height;
+  const T = top - PAD;
   const B = bottom + PAD;
   const cx = left + width / 2;           // centre horizontal de l'élément
 
@@ -71,7 +70,7 @@ function Tooltip({ rect, step, stepIdx, total, onPrev, onNext, onSkip, accentCol
   const arrowLeft = cx - tipLeft - 8;   // position de la flèche relative au tooltip
 
   const isFirst = stepIdx === 0;
-  const isLast  = stepIdx === total - 1;
+  const isLast = stepIdx === total - 1;
 
   return (
     <div style={{
@@ -138,7 +137,7 @@ function Tooltip({ rect, step, stepIdx, total, onPrev, onNext, onSkip, accentCol
 // ── Modal centrée (step sans selector = welcome / done) ───────────────────────
 function CenterModal({ step, stepIdx, total, onNext, onSkip, accentColor }) {
   const isFirst = stepIdx === 0;
-  const isLast  = stepIdx === total - 1;
+  const isLast = stepIdx === total - 1;
   return (
     <>
       {/* Overlay full */}
@@ -182,17 +181,12 @@ function CenterModal({ step, stepIdx, total, onNext, onSkip, accentColor }) {
 // storageKey: clé localStorage pour ne plus afficher ("tour_staff_done" etc.)
 // onComplete / onSkip : callbacks optionnels
 export default function OnboardingTour({ steps, accentColor = '#ab3500', storageKey, onComplete, onSkip: onSkipCb }) {
-  const [idx,     setIdx]     = useState(0);
-  const [rect,    setRect]    = useState(null);
+  const [idx, setIdx] = useState(0);
+  const [rect, setRect] = useState(null);
   const [visible, setVisible] = useState(true);
   const raf = useRef(null);
 
   const step = steps[idx];
-  const total = steps.filter(s => !s.isCenter).length + steps.filter(s => s.isCenter).length; // toujours steps.length
-
-  // Nombre d'étapes "spotlight" affichées dans le compteur
-  // On affiche "Étape X / Y" en excluant les étapes centrées (welcome/done) du total visible
-  const spotlightCount = steps.length;
 
   const measureTarget = useCallback(() => {
     if (!step?.selector) { setRect(null); return; }

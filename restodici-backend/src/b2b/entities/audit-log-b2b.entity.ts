@@ -11,6 +11,7 @@ import { CompteB2B } from './compte-b2b.entity';
 export type TypeAuditB2B =
   | 'CONNEXION'
   | 'CREATION_COLLABORATEUR'
+  | 'MODIFICATION_COLLABORATEUR'
   | 'CREATION_COMMANDE_GROUPEE'
   | 'VALIDATION_BUDGET'
   | 'GENERATION_FACTURE'
@@ -30,6 +31,7 @@ export class AuditLogB2B {
     enum: [
       'CONNEXION',
       'CREATION_COLLABORATEUR',
+      'MODIFICATION_COLLABORATEUR',
       'CREATION_COMMANDE_GROUPEE',
       'VALIDATION_BUDGET',
       'GENERATION_FACTURE',

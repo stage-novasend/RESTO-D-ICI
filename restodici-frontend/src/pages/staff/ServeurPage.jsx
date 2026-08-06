@@ -4,10 +4,10 @@
    ═══════════════════════════════════════════════════════════════ */
 import { useEffect, useState } from 'react';
 import {
-  Search, Plus, Minus, Send, ChevronDown, Users,
+  Search, Plus, Minus, Send, Users,
   Clock, CheckCircle, X,
-  ChefHat, ShoppingCart, Receipt, Zap, RefreshCw,
-  LayoutGrid, MapPin, Timer, Utensils,
+  ChefHat, ShoppingCart, Receipt, Zap,
+  LayoutGrid,
 } from 'lucide-react';
 import { menuAPI, commandesService } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -15,11 +15,11 @@ import { getArticleImage } from '../../utils/articleImage';
 
 /* ── Design system — miroir StaffDashboard (couleurs : theme/colors.js) ── */
 import {
-  BG, BLACK_SOFT as SIDEBAR_BG, SURFACE, SURFACE_ELEVATED, BORDER, TEXT,
+  BLACK_SOFT as SIDEBAR_BG, SURFACE, SURFACE_ELEVATED, BORDER, TEXT,
   MUTED_WARM as TEXT_MUTED, TEXT_MUTED as TEXT_LIGHT,
   ORANGE, ORANGE_DARK, BORDER_WARM as ORANGE_GLOW, ORANGE_CREAM_2 as ORANGE_LIGHT,
   GREEN_DARK as GREEN, GREEN_MINT as GREEN_BG, GREEN_BORDER,
-  RED_STRONG as DANGER, BLUE_BRIGHT as BLUE,
+  RED_STRONG as DANGER,
   PAGE,
 } from '../../theme/colors';
 const SHADOW           = '0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)';
@@ -185,7 +185,7 @@ export default function ServeurPage() {
     try { localStorage.setItem('resto_table_count', String(count)); } catch { /* préférence locale best-effort */ }
   };
 
-  const now = useClock();
+  useClock(); // déclenche un re-rendu chaque seconde (affichages relatifs au temps)
 
   const showToast = (ok, msg) => {
     setToast({ ok, msg });
@@ -263,15 +263,6 @@ export default function ServeurPage() {
   const occupiedTables = new Set(
     myOrders.map(o => o.tableNumero).filter(Boolean).map(Number)
   );
-
-  /* Initiales staff */
-  const initials = user
-    ? `${(user.prenom || user.firstName || '')[0] || ''}${(user.nom || user.lastName || '')[0] || ''}`.toUpperCase() || 'S'
-    : 'S';
-
-  /* Formatage date/heure */
-  const dateStr = now.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: 'short' });
-  const timeStr = now.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
   const tablesLibres   = tables.filter(t => !occupiedTables.has(t)).length;
   const tablesOccupees = tables.length - tablesLibres;

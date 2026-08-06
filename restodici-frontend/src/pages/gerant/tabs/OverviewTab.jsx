@@ -42,7 +42,7 @@ export default function OverviewTab({ restaurantId }) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
-  const [lastRefresh, setLastRefresh] = useState("");
+  const [, setLastRefresh] = useState("");
   const [clockTs, setClockTs] = useState(0);
 
   const loadOverviewData = useCallback(

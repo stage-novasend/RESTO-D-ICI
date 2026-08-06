@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   CheckCircle2, Loader2, AlertCircle, ArrowRight, ShieldCheck, Lock,
-  Copy, Check, CreditCard, Smartphone, Receipt, ArrowLeft
+  Copy, Check, CreditCard, Receipt, ArrowLeft
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { paiementsAPI } from '../services/api';

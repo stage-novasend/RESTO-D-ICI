@@ -55,7 +55,7 @@ const FOOD_IMGS = [
   '/images/food/poisson_braise.png',
   '/images/food/suya_brochettes.png',
 ];
-const fallback = (i, w = 600) => FOOD_IMGS[i % FOOD_IMGS.length];
+const fallback = (i) => FOOD_IMGS[i % FOOD_IMGS.length];
 
 const CSS = `
 @keyframes sk      { 0%{background-position:200% 0}100%{background-position:-200% 0} }
@@ -434,7 +434,7 @@ function ProductCard({ product, qty, onAdd, onRemove, onCustomize, idx, isFav, o
 }
 
 /* ── Catégories en onglets plats (SaaS Style) ── */
-// eslint-disable-next-line react/prop-types
+ 
 function CategoryTabs({ cats, active, onChange }) {
   const ref = useRef(null);
   useEffect(() => {
@@ -445,7 +445,7 @@ function CategoryTabs({ cats, active, onChange }) {
 
   return (
     <div ref={ref} className="cat-scroll" style={{ display: 'flex', gap: 8, overflowX: 'auto', padding: '12px 20px 16px', scrollbarWidth: 'none' }}>
-      {/* eslint-disable-next-line react/prop-types */}
+      { }
       {cats.map(cat => {
         const isActive = cat.id === active;
         return (
@@ -757,7 +757,7 @@ export default function MenuPage() {
       })
       .catch(() => setError('Impossible de charger les restaurants.'))
       .finally(() => setLoading(false));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   useEffect(() => {
     if (!selectedResto) { setPromos([]); return; }
@@ -782,7 +782,7 @@ export default function MenuPage() {
       })
       .catch(() => setError('Impossible de charger le menu.'))
       .finally(() => setMenuLoading(false));
-  }, [selectedResto]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedResto]);  
 
   useEffect(() => {
     const map = {};

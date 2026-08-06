@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FileText, CheckCircle, Clock, AlertCircle, CreditCard, Download, ArrowLeft, ShieldAlert, ExternalLink, X, RefreshCw } from 'lucide-react';
 import { b2bAPI } from '../../services/api';
-import { formatFCFA } from '../../utils/formatters';
 
 // ── Design tokens (couleurs : theme/colors.js) ──────────────────────────────────
 import {

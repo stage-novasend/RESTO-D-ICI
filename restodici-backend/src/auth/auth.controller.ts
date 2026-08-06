@@ -5,8 +5,6 @@ import {
   Get,
   Req,
   UseGuards,
-  Param,
-  Query,
   Res,
   HttpCode,
   HttpStatus,
@@ -21,6 +19,7 @@ import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import type { Response, Request } from 'express';
 import { REFRESH_COOKIE, refreshCookieOptions } from '../config/app-config';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 @Controller('auth')
 export class AuthController {
@@ -30,7 +29,10 @@ export class AuthController {
    * Pose le refresh token dans un cookie HttpOnly (jamais exposé au JS)
    * et le retire du corps de la réponse. L'access token, lui, reste dans le body.
    */
-  private issueTokens(res: Response, result: Record<string, any>) {
+  private issueTokens(
+    res: Response,
+    result: { refreshToken?: string; [key: string]: unknown },
+  ) {
     if (result?.refreshToken) {
       res.cookie(REFRESH_COOKIE, result.refreshToken, refreshCookieOptions());
     }
@@ -73,14 +75,14 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(AuthGuard('jwt'))
-  me(@Req() req: { user: Record<string, any> }) {
+  me(@Req() req: AuthenticatedRequest) {
     return this.authService.getProfile(req.user.id);
   }
 
   @Patch('me')
   @UseGuards(AuthGuard('jwt'))
   updateMe(
-    @Req() req: { user: Record<string, any> },
+    @Req() req: AuthenticatedRequest,
     @Body()
     body: {
       nom?: string;
@@ -96,7 +98,7 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const token = req.cookies?.[REFRESH_COOKIE];
+    const token = req.cookies?.[REFRESH_COOKIE] as string | undefined;
     await this.authService.logout(token);
     res.clearCookie(REFRESH_COOKIE, { path: refreshCookieOptions().path });
     return { message: 'Déconnexion réussie' };
@@ -110,8 +112,10 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     // Refresh token lu depuis le cookie HttpOnly (fallback body pour compat).
-    const token: string =
-      req.cookies?.[REFRESH_COOKIE] || req.body?.refreshToken;
+    // req.body n'est pas typé par Express — champ client, validé juste après.
+    const bodyToken = req.body as { refreshToken?: string } | undefined;
+    const token: string | undefined =
+      req.cookies?.[REFRESH_COOKIE] || bodyToken?.refreshToken;
     if (!token) {
       throw new UnauthorizedException('Aucune session active');
     }
@@ -180,7 +184,7 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   async changePassword(
-    @Req() req: { user: Record<string, any> },
+    @Req() req: AuthenticatedRequest,
     @Body('currentPassword') currentPassword: string,
     @Body('newPassword') newPassword: string,
   ) {
@@ -193,7 +197,7 @@ export class AuthController {
 
   @Post('2fa/setup')
   @UseGuards(AuthGuard('jwt'))
-  async setup2FA(@Req() req: { user: Record<string, any> }) {
+  async setup2FA(@Req() req: AuthenticatedRequest) {
     return this.authService.setup2FA(req.user.id);
   }
 
@@ -201,7 +205,7 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
   async enable2FA(
-    @Req() req: { user: Record<string, any> },
+    @Req() req: AuthenticatedRequest,
     @Body('code') code: string,
   ) {
     return this.authService.enable2FA(req.user.id, code);
@@ -210,7 +214,7 @@ export class AuthController {
   @Post('2fa/disable')
   @UseGuards(AuthGuard('jwt'))
   @HttpCode(HttpStatus.OK)
-  async disable2FA(@Req() req: { user: Record<string, any> }) {
+  async disable2FA(@Req() req: AuthenticatedRequest) {
     return this.authService.disable2FA(req.user.id);
   }
 

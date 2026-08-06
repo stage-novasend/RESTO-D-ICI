@@ -27,10 +27,7 @@ import { UpdateBulkOrderStatusDto } from '../dto/update-bulk-order-status.dto';
 import { CreateCompteB2BDto } from '../dto/create-compte-b2b.dto';
 import { CreateCollaborateurB2BDto } from '../dto/create-collaborateur-b2b.dto';
 import { CreateCommandeGroupeeDto } from '../dto/create-commande-groupee.dto';
-
-interface RequestWithUser extends Request {
-  user: { id: string; role: string };
-}
+import type { AuthenticatedRequest as RequestWithUser } from '../../common/types/authenticated-request';
 
 @Controller('b2b')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -235,7 +232,11 @@ export class B2BController {
   }
 
   @Post('collaborators')
-  async createCollaborator(@Req() req: RequestWithUser, @Body() dto: any) {
+  async createCollaborator(
+    @Req() req: RequestWithUser,
+    @Body()
+    dto: { nom?: string; email?: string; limiteBudget?: number; role?: string },
+  ) {
     return this.b2bService.createCollaborator(req.user.id, dto);
   }
 
@@ -351,7 +352,7 @@ export class B2BController {
   // Staff/Gerant: active B2B orders for their restaurant (KDS view)
   @Get('restaurant-kds')
   @Roles(Role.GERANT, Role.STAFF, Role.ADMIN)
-  async getRestaurantB2BKDS(@Req() req: any) {
+  async getRestaurantB2BKDS(@Req() req: RequestWithUser) {
     const restaurantId = req.user.restaurant?.id;
     if (!restaurantId) {
       return [];
@@ -362,7 +363,10 @@ export class B2BController {
   // Staff/Gerant: confirm payment at caisse before preparation
   @Patch('commandes-groupees/:id/paiement')
   @Roles(Role.GERANT, Role.STAFF, Role.ADMIN)
-  async confirmerPaiement(@Req() req: any, @Param('id') id: string) {
+  async confirmerPaiement(
+    @Req() req: RequestWithUser,
+    @Param('id') id: string,
+  ) {
     const restaurantId = req.user.restaurant?.id ?? '';
     return this.b2bService.confirmerPaiementB2B(id, restaurantId);
   }
@@ -377,7 +381,7 @@ export class B2BController {
   @Patch('commandes-groupees/:id/statut')
   @Roles(Role.GERANT, Role.STAFF, Role.ADMIN)
   async updateB2BOrderStatus(
-    @Req() req: any,
+    @Req() req: RequestWithUser,
     @Param('id') id: string,
     @Body() body: { statut: string },
   ) {

@@ -5,6 +5,8 @@ import { TresorerieService } from '../tresorerie/tresorerie.service';
 import { StorageService } from '../storage/storage.service';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Restaurant } from '../restaurants/entities/restaurant.entity';
+import type { CreateCommandeDto } from './dto/create-commande.dto';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 describe('CommandesController create', () => {
   let controller: CommandesController;
@@ -44,7 +46,7 @@ describe('CommandesController create', () => {
   it('normalizes quantity to quantite before forwarding to service', async () => {
     commandesService.createCommande.mockResolvedValue({ id: 'cmd-1' });
 
-    const dto: any = {
+    const dto = {
       lignes: [
         {
           articleId: 'article-1',
@@ -56,13 +58,13 @@ describe('CommandesController create', () => {
       restaurantId: '7f7deaf5-7572-468a-a1bc-88e93b2f8d79',
     };
 
-    const req: any = {
+    const req = {
       user: {
         id: 'client-1',
       },
-    };
+    } as unknown as AuthenticatedRequest;
 
-    await controller.create(dto, req);
+    await controller.create(dto as unknown as CreateCommandeDto, req);
 
     expect(commandesService.createCommande).toHaveBeenCalledWith(
       {
@@ -84,7 +86,7 @@ describe('CommandesController create', () => {
   it('keeps quantite unchanged when already provided', async () => {
     commandesService.createCommande.mockResolvedValue({ id: 'cmd-2' });
 
-    const dto: any = {
+    const dto = {
       lignes: [
         {
           articleId: 'article-1',
@@ -95,13 +97,13 @@ describe('CommandesController create', () => {
       restaurantId: '7f7deaf5-7572-468a-a1bc-88e93b2f8d79',
     };
 
-    const req: any = {
+    const req = {
       user: {
         id: 'client-1',
       },
-    };
+    } as unknown as AuthenticatedRequest;
 
-    await controller.create(dto, req);
+    await controller.create(dto as unknown as CreateCommandeDto, req);
 
     expect(commandesService.createCommande).toHaveBeenCalledWith(
       {

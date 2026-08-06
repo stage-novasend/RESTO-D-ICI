@@ -110,7 +110,7 @@ export default function NotificationBell({ accentColor = '#FF3A03', size = 'md',
     if (isClient && typeof Notification !== 'undefined' && Notification.permission === 'default') {
       Notification.requestPermission().catch(() => {});
     }
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]);  
 
   /* Socket — temps réel.
      Client : notifications persistées poussées par le serveur (notification.new).
@@ -137,7 +137,7 @@ export default function NotificationBell({ accentColor = '#FF3A03', size = 'md',
     };
     events.forEach(ev => socket.on(ev, handleEvent(ev)));
     return () => { events.forEach(ev => socket.off(ev)); socket.disconnect(); };
-  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.id]);  
 
   /* Fermer au clic extérieur */
   useEffect(() => {

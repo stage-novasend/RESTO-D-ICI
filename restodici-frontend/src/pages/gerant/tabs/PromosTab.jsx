@@ -4,7 +4,7 @@ import { CheckCircle, Copy, Pencil, Percent, Plus, Tag, ToggleLeft, ToggleRight,
 import { promosAPI } from "../../../services/api";
 import { PROMO_TYPES, VISIBILITE_OPTIONS, emptyForm } from "../_helpers";
 
-export default function PromosTab({ restaurantId }) {
+export default function PromosTab() {
   const [promos, setPromos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [modal, setModal] = useState(null); // null | 'create' | promo object

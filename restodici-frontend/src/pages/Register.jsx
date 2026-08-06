@@ -35,7 +35,7 @@ function Field({ label, icon: Icon, error, children }) {
 }
 
 const inputCls = (hasIcon, hasError) =>
-  `w-full ${hasIcon ? 'pl-10' : 'px-4'} pr-4 py-3 rounded-lg text-sm outline-none transition`;
+  `w-full ${hasIcon ? 'pl-10' : 'px-4'} pr-4 py-3 rounded-lg text-sm outline-none transition ${hasError ? 'border-red-400' : ''}`;
 const inputStyle = (hasError) => ({
   background: '#F8FAFC',
   border: `1.5px solid ${hasError ? '#FCA5A5' : '#E2E8F0'}`,
@@ -44,17 +44,17 @@ const inputStyle = (hasError) => ({
 
 export default function Register() {
   const [searchParams] = useSearchParams();
-  const location       = useLocation();
-  const navigate       = useNavigate();
+  const location = useLocation();
+  const navigate = useNavigate();
   const { register: authRegister } = useAuth();
   const { t } = useLanguage();
 
-  const userType    = normalizeUserType(searchParams.get("type"));
+  const userType = normalizeUserType(searchParams.get("type"));
   const isRestaurant = userType === "restaurant";
-  const isBusiness   = userType === "business";
+  const isBusiness = userType === "business";
 
-  const [form, setForm]       = useState({ nom: "", email: "", telephone: "", password: "", restaurantNom: "", nomEntreprise: "" });
-  const [errors, setErrors]   = useState({});
+  const [form, setForm] = useState({ nom: "", email: "", telephone: "", password: "", restaurantNom: "", nomEntreprise: "" });
+  const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [apiError, setApiError] = useState("");
 
@@ -62,12 +62,12 @@ export default function Register() {
 
   const validate = () => {
     const e = {};
-    e.nom       = validateField('text',  form.nom,       { required: true });
-    e.email     = validateField('email', form.email,     { required: true });
+    e.nom = validateField('text', form.nom, { required: true });
+    e.email = validateField('email', form.email, { required: true });
     e.telephone = validateField('phone', form.telephone, { required: true });
-    e.password  = validateField('password', form.password, { required: true });
+    e.password = validateField('password', form.password, { required: true });
     if (isRestaurant && !form.restaurantNom.trim()) e.restaurantNom = MSG.required;
-    if (isBusiness   && !form.nomEntreprise.trim()) e.nomEntreprise = MSG.required;
+    if (isBusiness && !form.nomEntreprise.trim()) e.nomEntreprise = MSG.required;
     Object.keys(e).forEach(k => { if (!e[k]) delete e[k]; });
     setErrors(e);
     return !Object.keys(e).length;
@@ -115,14 +115,14 @@ export default function Register() {
   };
 
   const TABS = [
-    { key: "client",     label: t('client_tab'),     icon: User      },
-    { key: "restaurant", label: t('restaurant_tab'), icon: ChefHat   },
-    { key: "business",   label: t('enterprise_tab'), icon: Building2 },
+    { key: "client", label: t('client_tab'), icon: User },
+    { key: "restaurant", label: t('restaurant_tab'), icon: ChefHat },
+    { key: "business", label: t('enterprise_tab'), icon: Building2 },
   ];
 
   const heading = isRestaurant ? t('create_restaurant')
     : isBusiness ? t('create_b2b')
-    : t('create_account');
+      : t('create_account');
 
   return (
     <div className="min-h-screen min-h-dvh flex lg:flex-row-reverse" style={{ background: '#FFFFFF', fontFamily: "'Inter', system-ui, sans-serif" }}>
@@ -143,7 +143,7 @@ export default function Register() {
             <p className="mt-1 text-sm" style={{ color: '#64748B' }}>
               {isRestaurant ? t('manage_restaurant_rt')
                 : isBusiness ? t('team_meals_budget')
-                : t('join_digital_table')}
+                  : t('join_digital_table')}
             </p>
           </div>
 
@@ -269,7 +269,7 @@ export default function Register() {
               ) : (
                 isBusiness ? t('create_business_account')
                   : isRestaurant ? t('create_restaurant')
-                  : t('create_account')
+                    : t('create_account')
               )}
             </button>
           </form>

@@ -222,8 +222,8 @@ describe('PaiementsService initiatePayment()', () => {
         commandeId: 'cmd-uuid-1',
         montant: 5000,
         telephone: '0707070707',
-        provider: 'WAVE',
-      } as any),
+        provider: 'WAVE' as const,
+      }),
     ).rejects.toThrow('Un paiement est déjà en cours');
     expect(mockNovaSend.initiate).not.toHaveBeenCalled();
   });
@@ -237,7 +237,7 @@ describe('PaiementsService initiatePayment()', () => {
         montant: 5000,
         telephone: '0707070707',
         provider: 'WAVE' as const,
-      } as any),
+      }),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -250,7 +250,7 @@ describe('PaiementsService initiatePayment()', () => {
         montant: 5000,
         telephone: '0707070707',
         provider: 'WAVE' as const,
-      } as any),
+      }),
     ).rejects.toThrow(BadRequestException);
   });
 });

@@ -174,7 +174,15 @@ export class RestaurantsService {
     return { valid: true, tableNumber: Math.floor(Math.random() * 20) + 1 };
   }
 
-  async createStaffAccount(restaurantId: string, staffData: any) {
+  async createStaffAccount(
+    restaurantId: string,
+    staffData: {
+      email: string;
+      nom: string;
+      telephone?: string;
+      password?: string;
+    },
+  ) {
     const restaurant = await this.restaurantRepo.findOne({
       where: { id: restaurantId },
     });
@@ -218,7 +226,7 @@ export class RestaurantsService {
 
     const savedStaff = await this.userRepo.save(staffUser);
 
-    const { password, ...staffWithoutPassword } = savedStaff;
+    const { password: _, ...staffWithoutPassword } = savedStaff;
     return {
       ...staffWithoutPassword,
       temporaryPassword: staffData.password ? undefined : rawPassword,
@@ -244,7 +252,7 @@ export class RestaurantsService {
     }
 
     const updatedStaff = await this.userRepo.save(staffUser);
-    const { password, ...updatedStaffWithoutPassword } = updatedStaff;
+    const { password: _, ...updatedStaffWithoutPassword } = updatedStaff;
     return updatedStaffWithoutPassword;
   }
 

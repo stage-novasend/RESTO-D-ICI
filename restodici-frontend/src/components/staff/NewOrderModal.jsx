@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   X, Search, Plus, Minus, ShoppingCart, Send, UtensilsCrossed, Package,
-  ChevronRight, Loader2,
+  Loader2,
 } from 'lucide-react';
 import { menuAPI, commandesService } from '../../services/api';
 import { formatFCFA } from '../../utils/formatters';
@@ -13,7 +13,7 @@ import {
   ORANGE as ACCENT, ORANGE_DARK as ACCENT_D, SURFACE,
   BORDER_SAND as BORDER, TEXT_STONE as TEXT, MUTED_STONE as MUTED,
 } from '../../theme/colors';
-const sans    = "'Plus Jakarta Sans', system-ui, sans-serif";
+const sans = "'Plus Jakarta Sans', system-ui, sans-serif";
 
 const FOOD_IMGS = [
   'photo-1544025162-8111f466cb1e', // Jollof
@@ -47,8 +47,10 @@ function ArticleCard({ article, qty, onAdd, onRemove, idx }) {
           onError={e => { e.target.src = fallback(idx); }} />
       </div>
       <div style={{ flex: 1, padding: '8px 10px', minWidth: 0 }}>
-        <p style={{ margin: 0, fontFamily: sans, fontSize: 13, fontWeight: 700, color: TEXT,
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        <p style={{
+          margin: 0, fontFamily: sans, fontSize: 13, fontWeight: 700, color: TEXT,
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+        }}>
           {article.nom}
         </p>
         <p style={{ margin: '2px 0 0', fontFamily: sans, fontSize: 13, fontWeight: 800, color: ACCENT }}>
@@ -59,26 +61,32 @@ function ArticleCard({ article, qty, onAdd, onRemove, idx }) {
         {qty > 0 ? (
           <div style={{ display: 'flex', alignItems: 'center', background: ACCENT, borderRadius: 99 }}>
             <button onClick={() => onRemove(article)}
-              style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{
+                width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
               <Minus size={12} />
             </button>
             <span style={{ fontFamily: sans, fontSize: 13, fontWeight: 800, color: '#fff', minWidth: 18, textAlign: 'center' }}>
               {qty}
             </span>
             <button onClick={() => onAdd(article)}
-              style={{ width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff',
-                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              style={{
+                width: 28, height: 28, border: 'none', background: 'transparent', color: '#fff',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}>
               <Plus size={12} />
             </button>
           </div>
         ) : (
           <button onClick={() => avail && onAdd(article)} disabled={!avail}
-            style={{ width: 30, height: 30, borderRadius: '50%', border: 'none',
+            style={{
+              width: 30, height: 30, borderRadius: '50%', border: 'none',
               background: avail ? ACCENT : BORDER, color: avail ? '#fff' : MUTED,
               cursor: avail ? 'pointer' : 'not-allowed',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              boxShadow: avail ? `0 2px 8px ${ACCENT}44` : 'none' }}>
+              boxShadow: avail ? `0 2px 8px ${ACCENT}44` : 'none'
+            }}>
             <Plus size={14} />
           </button>
         )}
@@ -89,16 +97,16 @@ function ArticleCard({ article, qty, onAdd, onRemove, idx }) {
 
 /* ── Main Modal ──────────────────────────────────────────────────────────────── */
 export default function NewOrderModal({ restaurantId, onClose, onSuccess }) {
-  const [articles,    setArticles]    = useState([]);
-  const [categories,  setCategories]  = useState([]);
+  const [articles, setArticles] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loadingMenu, setLoadingMenu] = useState(true);
-  const [search,      setSearch]      = useState('');
-  const [activeCat,   setActiveCat]   = useState('__all__');
-  const [cart,        setCart]        = useState([]); // [{article, qty, notes}]
-  const [mode,        setMode]        = useState('SUR_PLACE');
+  const [search, setSearch] = useState('');
+  const [activeCat, setActiveCat] = useState('__all__');
+  const [cart, setCart] = useState([]); // [{article, qty, notes}]
+  const [mode, setMode] = useState('SUR_PLACE');
   const [tableNumber, setTableNumber] = useState('');
-  const [submitting,  setSubmitting]  = useState(false);
-  const [error,       setError]       = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   useEffect(() => {
     if (!restaurantId) return;
@@ -242,10 +250,12 @@ export default function NewOrderModal({ restaurantId, onClose, onSuccess }) {
                   const isA = c.id === activeCat;
                   return (
                     <button key={c.id} onClick={() => setActiveCat(c.id)}
-                      style={{ flexShrink: 0, padding: '5px 14px', borderRadius: 99, border: 'none',
+                      style={{
+                        flexShrink: 0, padding: '5px 14px', borderRadius: 99, border: 'none',
                         background: isA ? ACCENT : '#fff', color: isA ? '#fff' : MUTED,
                         fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                        boxShadow: '0 1px 4px rgba(0,0,0,0.07)', transition: 'all 0.12s' }}>
+                        boxShadow: '0 1px 4px rgba(0,0,0,0.07)', transition: 'all 0.12s'
+                      }}>
                       {c.nom}
                     </button>
                   );
@@ -281,14 +291,16 @@ export default function NewOrderModal({ restaurantId, onClose, onSuccess }) {
                 <div style={{ display: 'flex', gap: 6, marginBottom: 10 }}>
                   {[
                     { id: 'SUR_PLACE', label: 'Sur place', icon: UtensilsCrossed },
-                    { id: 'EMPORTER',  label: 'À emporter', icon: Package },
+                    { id: 'EMPORTER', label: 'À emporter', icon: Package },
                   ].map(({ id, label, icon: Icon }) => (
                     <button key={id} onClick={() => setMode(id)}
-                      style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                      style={{
+                        flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
                         padding: '8px', borderRadius: 10, border: `1.5px solid ${mode === id ? ACCENT : BORDER}`,
                         background: mode === id ? `${ACCENT}12` : 'transparent',
                         color: mode === id ? ACCENT : MUTED,
-                        fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                        fontFamily: sans, fontSize: 12, fontWeight: 700, cursor: 'pointer'
+                      }}>
                       <Icon size={13} /> {label}
                     </button>
                   ))}

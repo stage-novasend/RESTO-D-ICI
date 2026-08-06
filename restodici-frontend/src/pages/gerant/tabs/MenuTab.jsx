@@ -221,17 +221,6 @@ export default function MenuTab({ restaurantId, token }) {
     }
   };
 
-  const handleDeleteCategory = async (categoryId) => {
-    if (!window.confirm("Supprimer cette catégorie ? Les articles associés devront être recatégorisés.")) return;
-    try {
-      await menuAPI.deleteArticle(`categories/${categoryId}`).catch(() => {});
-      const catRes = await menuAPI.getCategories({ restaurantId });
-      setCategories(catRes.data || []);
-    } catch (error) {
-      alert("Impossible de supprimer cette catégorie");
-    }
-  };
-
   const filteredArticles = articles.filter(
     (a) =>
       a.nom.toLowerCase().includes(searchTerm.toLowerCase()) ||

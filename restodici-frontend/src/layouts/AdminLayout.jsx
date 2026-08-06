@@ -8,23 +8,23 @@ import { useAuth } from '../hooks/useAuth';
 import {
   LayoutDashboard, Users, UtensilsCrossed, ScrollText,
   Download, Settings, LogOut, X, Menu,
-  Truck, BarChart2, Percent, Bell, Activity, AlertTriangle,
+  Truck, Percent, Activity, AlertTriangle,
 } from 'lucide-react';
 import { ORANGE as ACCENT } from '../theme/colors';
 import { BrandMark } from '../components/shared/BrandLogo';
 
 const MENU_ITEMS = [
-  { id: 'overview',      label: "Vue d'ensemble",  icon: LayoutDashboard, path: '/admin' },
-  { id: 'alertes', label: 'Alertes système', icon: AlertTriangle,    path: '/admin?tab=alertes' },
-  { id: 'users',         label: 'Utilisateurs',    icon: Users,           path: '/admin?tab=users' },
-  { id: 'restaurants',   label: 'Restaurants',     icon: UtensilsCrossed, path: '/admin?tab=restaurants' },
-  { id: 'fournisseurs',  label: 'Fournisseurs',    icon: Truck,           path: '/admin?tab=fournisseurs' },
-  { id: 'livraisons',    label: 'Livraisons ext.', icon: Truck,           path: '/admin?tab=livraisons' },
-  { id: 'metriques',     label: 'Métriques',       icon: Activity,        path: '/admin?tab=metriques' },
-  { id: 'commissions',   label: 'Commissions',     icon: Percent,         path: '/admin?tab=commissions' },
-  { id: 'audit',         label: 'Audit Logs',      icon: ScrollText,      path: '/admin?tab=audit' },
-  { id: 'exports',       label: 'Exports',         icon: Download,        path: '/admin?tab=exports' },
-  { id: 'config',        label: 'Configuration',   icon: Settings,        path: '/admin?tab=config' },
+  { id: 'overview', label: "Vue d'ensemble", icon: LayoutDashboard, path: '/admin' },
+  { id: 'alertes', label: 'Alertes système', icon: AlertTriangle, path: '/admin?tab=alertes' },
+  { id: 'users', label: 'Utilisateurs', icon: Users, path: '/admin?tab=users' },
+  { id: 'restaurants', label: 'Restaurants', icon: UtensilsCrossed, path: '/admin?tab=restaurants' },
+  { id: 'fournisseurs', label: 'Fournisseurs', icon: Truck, path: '/admin?tab=fournisseurs' },
+  { id: 'livraisons', label: 'Livraisons ext.', icon: Truck, path: '/admin?tab=livraisons' },
+  { id: 'metriques', label: 'Métriques', icon: Activity, path: '/admin?tab=metriques' },
+  { id: 'commissions', label: 'Commissions', icon: Percent, path: '/admin?tab=commissions' },
+  { id: 'audit', label: 'Audit Logs', icon: ScrollText, path: '/admin?tab=audit' },
+  { id: 'exports', label: 'Exports', icon: Download, path: '/admin?tab=exports' },
+  { id: 'config', label: 'Configuration', icon: Settings, path: '/admin?tab=config' },
 ];
 
 /* ── Calcul de scale Dock : icône centrale = 1.55×, voisins en dégradé ── */
@@ -119,11 +119,11 @@ function DockSep() {
    ══════════════════════════════════════════════════════════════════ */
 export default function AdminLayout() {
   const { user, logout } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const [sideOpen, setSideOpen]           = useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [sideOpen, setSideOpen] = useState(false);
   const [showLogoutModal, setShowLogoutModal] = useState(false);
-  const [mouseY, setMouseY]               = useState(null);
+  const [mouseY, setMouseY] = useState(null);
 
   const activeTab = new URLSearchParams(location.search).get('tab') || 'overview';
   const confirmLogout = () => { logout(); navigate('/login'); setShowLogoutModal(false); };

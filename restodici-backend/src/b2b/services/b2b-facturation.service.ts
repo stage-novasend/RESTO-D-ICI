@@ -293,7 +293,7 @@ export class B2bFacturationService {
       .andWhere('cmd.createdAt >= :from', { from })
       .andWhere('cmd.createdAt < :to', { to })
       .andWhere('cmd.statut != :annulee', { annulee: 'ANNULEE' })
-      .getRawOne();
+      .getRawOne<{ total: string | null }>();
 
     // Also include bulk orders total
     const bulkResult = await this.bulkOrderRepository
@@ -305,7 +305,7 @@ export class B2bFacturationService {
       .andWhere('order.createdAt >= :from', { from })
       .andWhere('order.createdAt < :to', { to })
       .andWhere('order.status != :cancelled', { cancelled: 'CANCELLED' })
-      .getRawOne();
+      .getRawOne<{ total: string | null }>();
 
     const montantHT =
       parseFloat(result?.total ?? '0') + parseFloat(bulkResult?.total ?? '0');

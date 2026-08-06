@@ -295,7 +295,12 @@ export class PaiementsService implements OnModuleInit {
 
   // ── Webhook NovaSend (et simulation) ─────────────────────────────────────
   async handleNovasendWebhook(body: any): Promise<void> {
-    const { reference, status, metadata, _provider } = body;
+    const { reference, status, metadata, _provider } = body as {
+      reference: string;
+      status?: string;
+      metadata?: { commandeId?: string; factureId?: string };
+      _provider?: NovaSendProvider;
+    };
 
     // Statuts NovaSend (minuscules) : processing | processed | failed | expired.
     // Le succès est `processed` — cf. novasend-status.util.ts.

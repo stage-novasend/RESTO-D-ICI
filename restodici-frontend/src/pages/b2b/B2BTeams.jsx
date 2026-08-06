@@ -8,11 +8,10 @@ import { formatFCFA } from '../../utils/formatters';
 import {
   BG, SURFACE as CARD, TEXT, MUTED_WARM as MUTED, FAINT_WARM as FAINT, BORDER_SLATE as BORDER,
   ORANGE, ORANGE_CREAM as ORANGE_L, ORANGE_WARM as ORANGE_D,
-  GREEN_DARK as GREEN, GREEN_MINT as GREEN_L, GREEN_FOREST as GREEN_D,
+  GREEN_DARK as GREEN, GREEN_MINT as GREEN_L,
   RED_STRONG as RED, RED_ROSE as RED_L,
   PAGE,
 } from '../../theme/colors';
-const SH     = '0 1px 3px rgba(139,110,80,0.07),0 1px 2px rgba(139,110,80,0.04)';
 const SH2    = '0 4px 16px rgba(139,110,80,0.10),0 2px 4px rgba(139,110,80,0.06)';
 const SH3    = '0 20px 40px rgba(139,110,80,0.15),0 4px 8px rgba(139,110,80,0.06)';
 

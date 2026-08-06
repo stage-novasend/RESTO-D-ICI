@@ -24,6 +24,13 @@ import {
   verifyNovaSendSignature,
 } from './webhook-signature.util';
 import * as crypto from 'crypto';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
+import type { Request } from 'express';
+
+// rawBody : ajouté par NestFactory.create({ rawBody: true }) dans main.ts —
+// nécessaire pour vérifier les signatures HMAC sur les octets bruts,
+// absent du type Request standard.
+type RawBodyRequest = Request & { rawBody?: Buffer };
 
 @Controller('paiements')
 export class PaiementsController {
@@ -69,7 +76,10 @@ export class PaiementsController {
   // ── Statut d'un paiement (polling front) ────────────────────────────────────
   @Get('statut/:commandeId')
   @UseGuards(AuthGuard('jwt'))
-  async getStatut(@Param('commandeId') commandeId: string, @Req() req: any) {
+  async getStatut(
+    @Param('commandeId') commandeId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.paiementsService.getPaymentStatus(commandeId, req.user);
   }
 
@@ -83,7 +93,7 @@ export class PaiementsController {
   @Public() // authentifié par signature HMAC, pas par JWT
   @Post('webhook/novasend')
   @HttpCode(HttpStatus.OK)
-  async novasendWebhook(@Body() body: any, @Req() req: any) {
+  async novasendWebhook(@Body() body: any, @Req() req: RawBodyRequest) {
     // [SÉCURITÉ] Signature obligatoire — webhook rejeté sans secret ou signature (audit §3.2)
     const secret = this.config.get<string>('NOVASEND_WEBHOOK_SECRET');
     if (!secret) {
@@ -120,7 +130,7 @@ export class PaiementsController {
   async cinetpayWebhook(
     @Body() body: any,
     @Headers('x-token') tokenHeader: string,
-    @Req() req: any,
+    @Req() req: RawBodyRequest,
   ) {
     // [SÉCURITÉ] Fail-closed : signature HMAC obligatoire. Sans elle, n'importe qui
     // pourrait POST {cpm_trans_id, cpm_result:'00'} et valider une commande sans payer.
@@ -160,7 +170,7 @@ export class PaiementsController {
   async genericWebhook(
     @Param('integrationName') integrationName: string,
     @Body() body: any,
-    @Req() req: any,
+    @Req() req: RawBodyRequest,
   ) {
     this.logger.log(
       `Webhook [${integrationName}]: ${JSON.stringify(body).slice(0, 200)}`,

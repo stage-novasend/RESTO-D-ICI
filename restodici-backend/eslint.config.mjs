@@ -27,7 +27,15 @@ export default tseslint.config(
   {
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
-      '@typescript-eslint/no-unused-vars': 'warn',
+      // varsIgnorePattern : convention pour une clé volontairement omise via
+      // déstructuration (const { k: _, ...rest } = obj) — pas une variable
+      // oubliée. argsIgnorePattern : paramètre de fonction volontairement
+      // inutilisé mais nécessaire à la signature (ex: down(_queryRunner)
+      // d'une migration non réversible).
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        { varsIgnorePattern: '^_$', argsIgnorePattern: '^_' },
+      ],
       '@typescript-eslint/no-floating-promises': 'warn',
       '@typescript-eslint/no-unsafe-assignment': 'off',
       '@typescript-eslint/no-unsafe-argument': 'warn',

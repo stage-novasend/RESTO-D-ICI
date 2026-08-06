@@ -18,6 +18,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Public } from '../auth/decorators/public.decorator';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 @Controller('restaurants')
 export class RestaurantsController {
@@ -37,7 +38,7 @@ export class RestaurantsController {
   @Get('me/profile')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  getMyRestaurantProfile(@Req() req) {
+  getMyRestaurantProfile(@Req() req: AuthenticatedRequest) {
     const restaurantId = req.user.restaurant?.id;
     if (!restaurantId) {
       throw new ForbiddenException(
@@ -61,7 +62,7 @@ export class RestaurantsController {
   updateRestaurant(
     @Param('id') id: string,
     @Body() updateData: any,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     return this.restaurantsService.updateRestaurant(id, updateData, req.user);
   }
@@ -69,14 +70,20 @@ export class RestaurantsController {
   // POST /restaurants/:id/favorites — Ajouter/retirer des favoris
   @Post(':id/favorites')
   @UseGuards(AuthGuard('jwt'))
-  toggleFavorite(@Param('id') restaurantId: string, @Req() req) {
+  toggleFavorite(
+    @Param('id') restaurantId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.restaurantsService.toggleFavorite(req.user.id, restaurantId);
   }
 
   // DELETE /restaurants/:id/favorites — Retirer des favoris
   @Delete(':id/favorites')
   @UseGuards(AuthGuard('jwt'))
-  removeFavorite(@Param('id') restaurantId: string, @Req() req) {
+  removeFavorite(
+    @Param('id') restaurantId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     return this.restaurantsService.removeFavorite(req.user.id, restaurantId);
   }
 
@@ -93,8 +100,14 @@ export class RestaurantsController {
   @Roles('GERANT', 'ADMIN')
   createStaffAccount(
     @Param('restaurantId') restaurantId: string,
-    @Body() staffData: any,
-    @Req() req,
+    @Body()
+    staffData: {
+      email: string;
+      nom: string;
+      telephone?: string;
+      password?: string;
+    },
+    @Req() req: AuthenticatedRequest,
   ) {
     // Verify that the requesting user has access to this restaurant
     if (
@@ -116,7 +129,7 @@ export class RestaurantsController {
     @Param('restaurantId') restaurantId: string,
     @Param('staffId') staffId: string,
     @Body() updateData: any,
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
   ) {
     // Verify that the requesting user has access to this restaurant
     if (
@@ -134,7 +147,10 @@ export class RestaurantsController {
   @Get(':restaurantId/staff')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  getStaffAccounts(@Param('restaurantId') restaurantId: string, @Req() req) {
+  getStaffAccounts(
+    @Param('restaurantId') restaurantId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
     // Verify that the requesting user has access to this restaurant
     if (
       req.user.role === 'GERANT' &&

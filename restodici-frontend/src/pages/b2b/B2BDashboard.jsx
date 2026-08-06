@@ -94,24 +94,6 @@ const saveNotifs = (uid, notifs) => {
   try { localStorage.setItem(NOTIF_KEY(uid), JSON.stringify(notifs.slice(0, 50))); } catch { /* ignore */ }
 };
 
-// ── Abonnements helpers ────────────────────────────────────────────────────────
-const SUBS_KEY = (cid) => cid ? `b2b_subs:${cid}` : 'b2b_subs';
-const loadSubs = (cid) => {
-  try {
-    const raw = localStorage.getItem(SUBS_KEY(cid));
-    return raw ? JSON.parse(raw) : [];
-  } catch { return []; }
-};
-const saveSubs = (cid, subs) => {
-  try { localStorage.setItem(SUBS_KEY(cid), JSON.stringify(subs)); } catch { /* ignore */ }
-};
-const nextDelivery = (freq) => {
-  const d = new Date();
-  if (freq === 'HEBDO') d.setDate(d.getDate() + (7 - d.getDay() + 1) % 7 || 7);
-  else d.setMonth(d.getMonth() + 1, 1);
-  return d.toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
-};
-
 // Maps event type to { icon, label, color }
 const NOTIF_TYPES = {
   'commande.creee':       { type: 'new_order',    label: 'Nouvelle commande',         color: '#FF3A03', iconBg: '#FFF5ED' },
@@ -1079,12 +1061,12 @@ export default function B2BDashboard() {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [uid]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [uid]);  
 
   useEffect(() => { loadData(!!readCache(uid)); }, [loadData, uid]);
   useEffect(() => {
     if (user) setProfileForm({ prenom: user.prenom || '', nom: user.nom || '', email: user.email || '', telephone: user.telephone || '' });
-  }, [user?.prenom, user?.nom, user?.email, user?.telephone]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user?.prenom, user?.nom, user?.email, user?.telephone]);  
 
   useEffect(() => {
     if (!user) return;
@@ -1153,7 +1135,7 @@ export default function B2BDashboard() {
       // Disparaître après 8s
       setTimeout(() => setPaymentBanner(null), 8000);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);  
 
   const handleInvite = async (form) => {
     await b2bAPI.createCollaborateur({
@@ -1270,9 +1252,6 @@ export default function B2BDashboard() {
   const isBlocked     = compte?.blocked === true;
   const prochainFactureDisplay = compte?.prochainFacture
     ? new Date(compte.prochainFacture).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
-    : null;
-  const datePrelevementDisplay = compte?.datePrelevement
-    ? new Date(compte.datePrelevement).toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })
     : null;
   const unpaidInvoices = factures.filter(f => f.statut !== 'PAYEE' && f.statut !== 'paid').length;
   const centerCounts  = orders.reduce((acc, o) => {

@@ -10,7 +10,6 @@ import { B2BCountdown } from "../_shared";
 export default function OrdersTab({ restaurantId }) {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedOrder, setSelectedOrder] = useState(null);
   const [error, setError] = useState(null);
   const [nowTs, setNowTs] = useState(0);
   const [receiptLoading, setReceiptLoading] = useState({});

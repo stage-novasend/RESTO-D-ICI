@@ -1,10 +1,10 @@
 // src/pages/b2b/BulkOrder.jsx
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft, ArrowRight, MapPin, Clock, Search, CheckCircle,
   AlertCircle, Loader2, Navigation, Users,
-  Star, Store, Phone, Trash2, ShoppingBag, X, Plus, Minus, UtensilsCrossed,
+  Star, Trash2, ShoppingBag, X, UtensilsCrossed,
 } from 'lucide-react';
 import { menuAPI, b2bAPI } from '../../services/api';
 import { useAuth } from '../../hooks/useAuth';
@@ -274,15 +274,6 @@ function buildDynamicCategories(menuData, categoryList) {
   return Array.from(map.values()).sort((a, b) => a.nom.localeCompare(b.nom));
 }
 
-function getAllergenIcons(product) {
-  const al = (product.allergene || product.allergènes || product.allergenes || '').toString().toLowerCase();
-  const icons = [];
-  if (al.includes('arachide') || al.includes('noix')) icons.push('🥜');
-  if (al.includes('piment') || al.includes('épicé') || product.epice) icons.push('🌶️');
-  if (icons.length === 0 && al) icons.push('⚠️');
-  return icons;
-}
-
 // ── Step bar ─────────────────────────────────────────────────────────────────
 function StepBar({ current }) {
   return (
@@ -448,7 +439,7 @@ export default function BulkOrder() {
       finally { setLoadingMenu(false); }
     };
     void load();
-  }, [selectedRestaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedRestaurantId]);  
 
   // ── Panier helpers ────────────────────────────────────────────────────────
   const getArticleQty = (articleId) => {

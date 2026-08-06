@@ -1,8 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { UnauthorizedException, NotFoundException } from '@nestjs/common';
+import type { Request, Response } from 'express';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { Role } from './entities/user.entity';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 // ─── Mock AuthService ─────────────────────────────────────────────────────────
 
@@ -50,8 +52,10 @@ const tokenResponse = {
 };
 
 // Mocks Express pour les handlers qui posent/lisent des cookies.
-const mockRes = () => ({ cookie: jest.fn(), clearCookie: jest.fn() }) as any;
-const mockReq = (cookies: Record<string, string> = {}) => ({ cookies }) as any;
+const mockRes = () =>
+  ({ cookie: jest.fn(), clearCookie: jest.fn() }) as unknown as Response;
+const mockReq = (cookies: Record<string, string> = {}) =>
+  ({ cookies }) as unknown as Request;
 
 // ─── login() ──────────────────────────────────────────────────────────────────
 
@@ -221,7 +225,9 @@ describe('AuthController me()', () => {
     );
 
     await expect(
-      controller.me({ user: { id: 'ghost-id' } } as any),
+      controller.me({
+        user: { id: 'ghost-id' },
+      } as unknown as AuthenticatedRequest),
     ).rejects.toThrow(NotFoundException);
   });
 });

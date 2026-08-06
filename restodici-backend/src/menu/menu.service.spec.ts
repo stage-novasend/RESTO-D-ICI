@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { LigneCommande } from '../commandes/entities/ligne-commande.entity';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
@@ -201,8 +201,12 @@ describe('MenuService createArticle()', () => {
 
     await expect(
       service.createArticle(
-        { nom: 'Test', prix: 1000, categorieId: 'cat-1' } as any,
-        userWithoutResto as any,
+        { nom: 'Test', prix: 1000, categorieId: 'cat-1' },
+        userWithoutResto as unknown as {
+          id: string;
+          role: string;
+          restaurant?: { id: string };
+        },
       ),
     ).rejects.toThrow(BadRequestException);
   });
@@ -212,7 +216,7 @@ describe('MenuService createArticle()', () => {
 
     await expect(
       service.createArticle(
-        { nom: 'Test', prix: 1000, categorieId: 'cat-inexistant' } as any,
+        { nom: 'Test', prix: 1000, categorieId: 'cat-inexistant' },
         gerantUser,
       ),
     ).rejects.toThrow(NotFoundException);
@@ -224,7 +228,7 @@ describe('MenuService createArticle()', () => {
 
     await expect(
       service.createArticle(
-        { nom: 'Test', prix: 0, categorieId: 'cat-uuid-1' } as any,
+        { nom: 'Test', prix: 0, categorieId: 'cat-uuid-1' },
         gerantUser,
       ),
     ).rejects.toThrow(BadRequestException);
@@ -236,7 +240,7 @@ describe('MenuService createArticle()', () => {
 
     await expect(
       service.createArticle(
-        { nom: 'Test', prix: -500, categorieId: 'cat-uuid-1' } as any,
+        { nom: 'Test', prix: -500, categorieId: 'cat-uuid-1' },
         gerantUser,
       ),
     ).rejects.toThrow(BadRequestException);
@@ -250,7 +254,7 @@ describe('MenuService createArticle()', () => {
 
     await expect(
       service.createArticle(
-        { nom: 'Test', prix: 1000, categorieId: 'cat-uuid-1' } as any,
+        { nom: 'Test', prix: 1000, categorieId: 'cat-uuid-1' },
         gerantUser,
       ),
     ).rejects.toThrow(BadRequestException);
@@ -331,11 +335,7 @@ describe('MenuService updateArticle()', () => {
     mockArticleRepo.findOne.mockResolvedValue(null);
 
     await expect(
-      service.updateArticle(
-        'article-inexistant',
-        { nom: 'Test' } as any,
-        gerantUser,
-      ),
+      service.updateArticle('article-inexistant', { nom: 'Test' }, gerantUser),
     ).rejects.toThrow(NotFoundException);
   });
 
@@ -346,11 +346,7 @@ describe('MenuService updateArticle()', () => {
     mockArticleRepo.findOne.mockResolvedValue(articleAutreResto);
 
     await expect(
-      service.updateArticle(
-        'article-uuid-1',
-        { nom: 'Test' } as any,
-        gerantUser,
-      ),
+      service.updateArticle('article-uuid-1', { nom: 'Test' }, gerantUser),
     ).rejects.toThrow(BadRequestException);
   });
 
@@ -397,7 +393,7 @@ describe('MenuService updateArticle()', () => {
     await expect(
       service.updateArticle(
         'article-uuid-1',
-        { categorieId: 'cat-inexistante' } as any,
+        { categorieId: 'cat-inexistante' },
         gerantUser,
       ),
     ).rejects.toThrow(NotFoundException);

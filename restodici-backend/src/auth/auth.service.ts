@@ -344,7 +344,8 @@ export class AuthService {
 
     // Envoyer l'email de vérification (non bloquant)
     const frontendUrl =
-      this.configService?.get('FRONTEND_URL') || 'http://localhost:5173';
+      this.configService?.get<string>('FRONTEND_URL') ||
+      'http://localhost:5173';
     try {
       await this.emailService.sendEmailVerification(
         savedUser.email,
@@ -455,7 +456,8 @@ export class AuthService {
 
     // Envoyer l'email de réinitialisation
     const frontendUrl =
-      this.configService?.get('FRONTEND_URL') || 'http://localhost:5173';
+      this.configService?.get<string>('FRONTEND_URL') ||
+      'http://localhost:5173';
     try {
       await this.emailService.sendPasswordReset(userEmail, token, frontendUrl);
     } catch (emailErr) {
@@ -540,7 +542,8 @@ export class AuthService {
       await this.userRepository.save(user);
 
       const frontendUrl =
-        this.configService?.get('FRONTEND_URL') || 'http://localhost:5173';
+        this.configService?.get<string>('FRONTEND_URL') ||
+        'http://localhost:5173';
       try {
         await this.emailService.sendEmailVerification(
           user.email,

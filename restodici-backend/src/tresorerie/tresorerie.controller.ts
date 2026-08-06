@@ -13,6 +13,7 @@ import { TresorerieService } from './tresorerie.service';
 import { Roles } from '../common/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { AuthGuard } from '@nestjs/passport';
+import type { AuthenticatedRequest } from '../common/types/authenticated-request';
 
 @Controller('tresorerie')
 export class TresorerieController {
@@ -23,7 +24,7 @@ export class TresorerieController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
   getStats(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Query('period') period: 'day' | 'week' | 'month' = 'day',
   ) {
     const restaurantId = req.user?.restaurant?.id;
@@ -37,7 +38,7 @@ export class TresorerieController {
   @Get('commissions')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  getCommissionsResume(@Req() req) {
+  getCommissionsResume(@Req() req: AuthenticatedRequest) {
     const restaurantId = req.user?.restaurant?.id;
     if (!restaurantId) {
       throw new BadRequestException('Restaurant ID required');
@@ -50,7 +51,7 @@ export class TresorerieController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
   async exportSyscohada(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Res() res: any,
     @Query('period') period: 'monthly' | 'quarterly' | 'yearly' = 'monthly',
   ) {
@@ -76,7 +77,16 @@ export class TresorerieController {
   @Post('expenses')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  recordExpense(@Body() expenseData: any, @Req() req) {
+  recordExpense(
+    @Body()
+    expenseData: {
+      categorie: string;
+      montant: number;
+      description?: string;
+      date?: string;
+    },
+    @Req() req: AuthenticatedRequest,
+  ) {
     const restaurantId = req.user?.restaurant?.id;
     if (!restaurantId) {
       throw new BadRequestException('Restaurant ID required');
@@ -99,7 +109,7 @@ export class TresorerieController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
   listExpenses(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Query('period') period: 'day' | 'week' | 'month' = 'month',
   ) {
     const restaurantId = req.user?.restaurant?.id;
@@ -113,7 +123,7 @@ export class TresorerieController {
   @Get('budget-alerts')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  getBudgetAlerts(@Req() req) {
+  getBudgetAlerts(@Req() req: AuthenticatedRequest) {
     const restaurantId = req.user?.restaurant?.id;
     if (!restaurantId) {
       throw new BadRequestException('Restaurant ID required');
@@ -126,7 +136,7 @@ export class TresorerieController {
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
   generateReport(
-    @Req() req,
+    @Req() req: AuthenticatedRequest,
     @Query('period') period: 'monthly' | 'quarterly' | 'yearly' = 'monthly',
   ) {
     const restaurantId = req.user?.restaurant?.id;
@@ -140,7 +150,15 @@ export class TresorerieController {
   @Post('budget-alerts')
   @UseGuards(AuthGuard('jwt'), RolesGuard)
   @Roles('GERANT', 'ADMIN')
-  configureBudgetAlerts(@Body() config: any, @Req() req) {
+  configureBudgetAlerts(
+    @Body()
+    config: {
+      plafondMensuel?: number;
+      alerte80?: boolean;
+      alerte100?: boolean;
+    },
+    @Req() req: AuthenticatedRequest,
+  ) {
     const restaurantId = req.user?.restaurant?.id;
     if (!restaurantId) {
       throw new BadRequestException('Restaurant ID required');

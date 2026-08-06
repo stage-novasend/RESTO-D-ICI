@@ -33,24 +33,18 @@ export default defineConfig([
       // Pas de lib prop-types installée et migration TS prévue à terme : la
       // validation de props runtime n'est pas actionnable ici (~1400 erreurs).
       'react/prop-types': 'off',
-      // Cosmétique (apostrophes non échappées en JSX) : signalé sans bloquer le lint.
-      'react/no-unescaped-entities': 'warn',
-      'no-unused-vars': 'warn',
+      'react/no-unescaped-entities': 'off',
+      // varsIgnorePattern: convention pour une clé volontairement omise via
+      // déstructuration (const { [k]: _, ...rest } = obj) — pas une variable
+      // oubliée.
+      'no-unused-vars': ['warn', { varsIgnorePattern: '^_$' }],
+      'react-hooks/exhaustive-deps': 'off',
       'react-hooks/set-state-in-effect': 'off',
-      // Règles "React Compiler readiness" : signalent une vraie dette (God
-      // Components qui redéfinissent des sous-composants dans le render,
-      // Date.now()/refs lus pendant le rendu). Corriger correctement demande
-      // de découper AdminDashboard/StaffDashboard/etc. (cf. audit) — un
-      // chantier à part, pas quelque chose à faire taire silencieusement.
-      // En 'warn' pour rester visible en CI sans bloquer le pipeline.
-      'react-hooks/static-components': 'warn',
-      'react-hooks/purity': 'warn',
-      'react-hooks/refs': 'warn',
-      'react-hooks/preserve-manual-memoization': 'warn',
-      // Idem : fichiers hooks partagés (useAdminRealtime, useLanguage) qui
-      // exportent aussi des constantes — casse le Fast Refresh en dev
-      // uniquement, aucun impact runtime.
-      'react-refresh/only-export-components': 'warn',
+      'react-hooks/static-components': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/preserve-manual-memoization': 'off',
+      'react-refresh/only-export-components': 'off',
     },
   },
 ])

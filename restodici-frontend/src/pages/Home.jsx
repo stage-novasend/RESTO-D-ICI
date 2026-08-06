@@ -8,8 +8,8 @@ import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   UtensilsCrossed, ArrowRight, Check, Star, Search, Truck,
-  Mail, X, Zap, Smartphone, ShieldCheck, SlidersHorizontal, Building2,
-  Sparkles, ChevronRight, User, ShoppingBag, Menu
+  X, Zap, Smartphone, ShieldCheck, SlidersHorizontal, Building2,
+  User, Menu
 } from "lucide-react";
 import { menuAPI, newsletterAPI } from "../services/api";
 import FilterSidebar from "../components/menu/FilterSidebar";
@@ -49,7 +49,6 @@ const T = {
   shadowM: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1)",
 };
 
-const KENTE = ["#FF3A03", "#F97316", "#CC2402", "#9A3412"];
 /* Une seule famille moderne sans-serif pour un look SaaS pur */
 const serif = "'Inter', system-ui, sans-serif";
 const sans = "'Inter', system-ui, sans-serif";
@@ -95,7 +94,7 @@ const FOOD_IMGS = [
   "/images/food/suya_brochettes.png",
 ];
 
-const fallbackImg = (idx, w = 600) => FOOD_IMGS[idx % FOOD_IMGS.length];
+const fallbackImg = (idx) => FOOD_IMGS[idx % FOOD_IMGS.length];
 
 function restoImg(r, idx) {
   return r?.logo || r?.coverImage || r?.photoUrl || fallbackImg(idx);
@@ -119,10 +118,6 @@ function FontLoader() {
     }
   }, []);
   return null;
-}
-
-function KS({ h = 4 }) {
-  return <div style={{ display: "flex", height: h }}>{KENTE.map((c, i) => <div key={i} style={{ flex: 1, background: c }} />)}</div>;
 }
 
 /* ─── Navigation Glassmorphique Premium ─── */

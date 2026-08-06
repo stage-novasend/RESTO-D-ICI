@@ -1,20 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import {
-  AlertTriangle, ArrowRight, CheckCircle2, ChefHat,
+  AlertTriangle, ArrowRight, ChefHat,
   CircleDollarSign, Clock, Package, RefreshCw, Save,
-  ShieldCheck, User, Wallet, Truck, Calendar, Activity,
+  Wallet, Truck, Calendar, Activity,
   X, Boxes, LayoutDashboard, ListOrdered, UtensilsCrossed,
-  Minus, Plus, Zap, CheckCircle, Coffee, Bell, Search,
-  Filter, MoreVertical, TrendingUp, DollarSign, AlertCircle,
-  Settings, LogOut, Menu
+  Minus, Plus, CheckCircle, Coffee,
+  AlertCircle,
+  LogOut, Menu
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import OnboardingWizard from '../../components/wizard/OnboardingWizard';
 import { commandesService, createCommandesSocket } from '../../services/commandes.service';
 import { stocksAPI, authAPI, b2bAPI } from '../../services/api';
 import NewOrderModal from '../../components/staff/NewOrderModal';
-import SecurityPanel from '../../components/security/SecurityPanel';
 import NotificationBell from '../../components/notifications/NotificationBell';
 import {
   formatDeliveryMode, formatFCFA,
@@ -25,11 +24,11 @@ import EconomicReconciliation from '../../components/staff/EconomicReconciliatio
 
 // ─── Palette — Pro dark sidebar + orange accent (couleurs : theme/colors.js) ───
 import {
-  BG, BLACK_SOFT as SIDEBAR_BG, BORDER_WHITE_07 as SIDEBAR_BORDER, SURFACE, SURFACE_ELEVATED,
-  BORDER, BORDER_STRONG, TEXT, MUTED_WARM as TEXT_MUTED, TEXT_MUTED as TEXT_LIGHT,
+  BLACK_SOFT as SIDEBAR_BG, BORDER_WHITE_07 as SIDEBAR_BORDER, SURFACE, SURFACE_ELEVATED,
+  BORDER, TEXT, MUTED_WARM as TEXT_MUTED, TEXT_MUTED as TEXT_LIGHT,
   ORANGE, ORANGE_DARK, BORDER_WARM as ORANGE_GLOW, ORANGE_CREAM_2 as ORANGE_LIGHT,
   GREEN_DARK as GREEN, GREEN_BRIGHT as GREEN_LIGHT, GREEN_MINT as GREEN_BG, GREEN_BORDER,
-  GREEN_GLOW, RED_STRONG as DANGER, DANGER_GLOW, BLUE_BRIGHT as BLUE, PURPLE, AMBER,
+  GREEN_GLOW, RED_STRONG as DANGER, DANGER_GLOW, BLUE_BRIGHT as BLUE, AMBER,
   PAGE,
 } from '../../theme/colors';
 const SHADOW         = '0 1px 4px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04)';
@@ -225,7 +224,7 @@ function StatCard({ icon: Icon, value, label, color, subtitle }) {
 
 // ─── StaffOrderCard ───────────────────────────────────────────────────────────
 function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDraft, saving, onDispatch }) {
-  // eslint-disable-next-line react-hooks/purity
+   
   const age = order.createdAt ? Date.now() - new Date(order.createdAt).getTime() : 0;
   const minutesAgo = Math.floor(age / 60000);
   const isUrgent = age >= 15 * 60 * 1000;
@@ -421,7 +420,7 @@ function StaffOrderCard({ order, onAction, onPayment, paymentDraft, setPaymentDr
 
 // ─── B2BOrderCard ─────────────────────────────────────────────────────────────
 function B2BOrderCard({ order, onAction, saving }) {
-  // eslint-disable-next-line react-hooks/purity
+   
   const age = order.createdAt ? Date.now() - new Date(order.createdAt).getTime() : 0;
   const minutesAgo = Math.floor(age / 60000);
   const isUrgent = age >= 15 * 60 * 1000;
@@ -781,7 +780,7 @@ export default function StaffDashboard() {
   }, [appendHistory, pushToast, refresh, userId, restaurantId, userRole]);
 
   const activeOrders = useMemo(() => orders.filter(o => ['RECUE','CONFIRMEE','EN_PREP','PRETE','EN_LIVRAISON'].includes(o.statut)), [orders]);
-  // eslint-disable-next-line react-hooks/purity
+   
   const urgentOrders = useMemo(() => activeOrders.filter(o => o.createdAt && Date.now() - new Date(o.createdAt).getTime() >= 15 * 60 * 1000), [activeOrders]);
   const todayStr = useMemo(() => new Date().toDateString(), []);
   const completedToday = useMemo(() => orders.filter(o => o.statut === 'LIVREE' && new Date(o.updatedAt || o.createdAt).toDateString() === todayStr), [orders, todayStr]);

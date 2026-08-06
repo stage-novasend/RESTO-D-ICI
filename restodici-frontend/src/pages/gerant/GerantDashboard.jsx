@@ -5,8 +5,7 @@
    Fonctionnalités : WebSocket temps réel, QR Code, carte Leaflet
    ═══════════════════════════════════════════════════════════════ */
 
-import { useEffect, useRef, useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
 import OnboardingWizard from "../../components/wizard/OnboardingWizard";
 import MenuTab from "./tabs/MenuTab";
@@ -26,7 +25,6 @@ export default function GerantDashboard({ restaurantId, token }) {
   const cachedUser = JSON.parse(localStorage.getItem("user") || "{}");
   const user = cachedUser?.user || cachedUser;
   const [darkMode, setDarkMode] = useState(localStorage.getItem("darkMode") === "true");
-  const tabContentRef = useRef(null);
   useEffect(() => {
     const syncDarkMode = () => setDarkMode(localStorage.getItem("darkMode") === "true");
     window.addEventListener("storage", syncDarkMode);
@@ -64,11 +62,10 @@ export default function GerantDashboard({ restaurantId, token }) {
     <div className="max-w-6xl mx-auto" style={{ position: 'relative', fontFamily: "'Inter', system-ui, sans-serif" }}>
       <OnboardingWizard />
       <div
-        className={`rounded-lg p-6 shadow-card ${
-          darkMode
+        className={`rounded-lg p-6 shadow-card ${darkMode
             ? "border border-slate-800 bg-gradient-to-b from-slate-950 via-slate-900 to-slate-950"
             : "bg-white border border-[rgba(0,0,0,0.05)]"
-        }`}
+          }`}
       >
         <div key={activeTab}>
           {renderTabContent()}

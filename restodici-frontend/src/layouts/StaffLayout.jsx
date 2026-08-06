@@ -18,36 +18,35 @@ import { BrandMark } from '../components/shared/BrandLogo';
 
 /* ── Tokens sidebar blanc/orange (couleurs : theme/colors.js) ── */
 import {
-  SURFACE as SIDEBAR_BG, ORANGE_TINT_2 as SIDEBAR_BG2, BORDER_WARM as SIDEBAR_BOR,
+  SURFACE as SIDEBAR_BG, BORDER_WARM as SIDEBAR_BOR,
   GRAY_SLATE as SIDE_TEXT, NAVY as SIDE_TEXT_HI,
   ORANGE as OG, ORANGE_DARK as OG_D, BORDER_WARM as OG_L, BORDER_WARM_08 as OG_L2,
   SURFACE as PAGE_BG, SURFACE as CARD, NAVY, BORDER_GRAY as BORDER,
   MUTED_WARM as MUTED, MUTED_WARM as FAINT, RED_STRONG as RED, RED_ROSE as RED_L, GREEN_DARK as GREEN,
 } from '../theme/colors';
-const OG_G   = 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)';
-const SH      = '0 1px 4px rgba(0,0,0,0.07)';
-const SH3     = '0 24px 60px rgba(0,0,0,0.22),0 4px 12px rgba(0,0,0,0.08)';
+const OG_G = 'linear-gradient(135deg, #FF3A03 0%, #CC2402 100%)';
+const SH3 = '0 24px 60px rgba(0,0,0,0.22),0 4px 12px rgba(0,0,0,0.08)';
 
 const NAV = [
-  { to: '/staff/kds',      label: 'KDS — Cuisine',   icon: ChefHat,         tourId: 'staff-kds'      },
-  { to: '/staff/caisse',   label: 'Caisse',           icon: CreditCard,      tourId: 'staff-caisse'   },
-  { to: '/staff/salle',    label: 'Salle',            icon: UtensilsCrossed, tourId: 'staff-salle'    },
-  { to: '/staff/articles', label: 'Articles',         icon: Package,         tourId: 'staff-articles' },
+  { to: '/staff/kds', label: 'KDS — Cuisine', icon: ChefHat, tourId: 'staff-kds' },
+  { to: '/staff/caisse', label: 'Caisse', icon: CreditCard, tourId: 'staff-caisse' },
+  { to: '/staff/salle', label: 'Salle', icon: UtensilsCrossed, tourId: 'staff-salle' },
+  { to: '/staff/articles', label: 'Articles', icon: Package, tourId: 'staff-articles' },
 ];
 
 const STAFF_TOUR_STEPS = [
   { title: 'Bienvenue dans votre espace Staff !', body: 'En quelques secondes, découvrez les 5 outils essentiels à votre journée.' },
-  { selector: '[data-tour="staff-kds"]',      title: 'KDS — Écran Cuisine',      body: 'Visualisez toutes les commandes, changez leur statut et consultez l\'historique.' },
-  { selector: '[data-tour="staff-salle"]',    title: 'Prise de commande — Salle', body: 'Sélectionnez une table, composez la commande et envoyez-la en cuisine.' },
-  { selector: '[data-tour="staff-articles"]', title: 'Gestion des articles',      body: 'Marquez un plat en rupture pour qu\'il disparaisse du menu client.' },
-  { selector: '[data-tour="staff-bell"]',     title: 'Notifications',             body: 'Chaque nouvelle commande déclenche un bip et une alerte ici.' },
-  { selector: '[data-tour="staff-avatar"]',   title: 'Votre profil',              body: 'Modifiez vos informations et activez la double authentification.' },
+  { selector: '[data-tour="staff-kds"]', title: 'KDS — Écran Cuisine', body: 'Visualisez toutes les commandes, changez leur statut et consultez l\'historique.' },
+  { selector: '[data-tour="staff-salle"]', title: 'Prise de commande — Salle', body: 'Sélectionnez une table, composez la commande et envoyez-la en cuisine.' },
+  { selector: '[data-tour="staff-articles"]', title: 'Gestion des articles', body: 'Marquez un plat en rupture pour qu\'il disparaisse du menu client.' },
+  { selector: '[data-tour="staff-bell"]', title: 'Notifications', body: 'Chaque nouvelle commande déclenche un bip et une alerte ici.' },
+  { selector: '[data-tour="staff-avatar"]', title: 'Votre profil', body: 'Modifiez vos informations et activez la double authentification.' },
   { title: "C'est parti !", body: 'Vous connaissez maintenant tous vos outils. Bonne journée !' },
 ];
 
 function timeAgo(ts) {
   const s = Math.floor((Date.now() - new Date(ts).getTime()) / 1000);
-  if (s < 60)   return `${s}s`;
+  if (s < 60) return `${s}s`;
   if (s < 3600) return `${Math.floor(s / 60)} min`;
   return `${Math.floor(s / 3600)} h`;
 }
@@ -177,14 +176,14 @@ function NotifPanel({ notifs, onMarkAllRead, onClear, onClose, anchorRef }) {
    ProfileDrawer
    ══════════════════════════════════════════════════════════════════ */
 function ProfileDrawer({ user, onClose, syncUser }) {
-  const [tab,    setTab]    = useState('profil');
-  const [form,   setForm]   = useState({
+  const [tab, setTab] = useState('profil');
+  const [form, setForm] = useState({
     prenom: user?.prenom || '', nom: user?.nom || '',
     email: user?.email || '', telephone: user?.telephone || '',
   });
   const [saving, setSaving] = useState(false);
-  const [msg,    setMsg]    = useState('');
-  const [isErr,  setIsErr]  = useState(false);
+  const [msg, setMsg] = useState('');
+  const [isErr, setIsErr] = useState(false);
   const fullName = [user?.prenom, user?.nom].filter(Boolean).join(' ') || 'Staff';
 
   const handleSave = async (e) => {
@@ -291,17 +290,17 @@ function ProfileDrawer({ user, onClose, syncUser }) {
    ══════════════════════════════════════════════════════════════════ */
 export default function StaffLayout() {
   const { user, logout, syncUser } = useAuth();
-  const navigate  = useNavigate();
-  const location  = useLocation();
-  const bellRef   = useRef(null);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const bellRef = useRef(null);
 
-  const [notifs,      setNotifs]      = useState([]);
-  const [notifOpen,   setNotifOpen]   = useState(false);
-  const [drawer,      setDrawer]      = useState(false);
+  const [notifs, setNotifs] = useState([]);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [drawer, setDrawer] = useState(false);
   const [logoutModal, setLogoutModal] = useState(false);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  const tourKey  = user?.id ? `tour_staff_${user.id}` : null;
+  const tourKey = user?.id ? `tour_staff_${user.id}` : null;
   const [showTour, setShowTour] = useState(false);
   useEffect(() => {
     if (tourKey && !localStorage.getItem(tourKey)) setShowTour(true);
@@ -318,8 +317,8 @@ export default function StaffLayout() {
 
     s.on('commande.nouvelle', p => {
       const lieu = p?.modeLivraison === 'SUR_PLACE' ? `Table ${p?.tableNumero ?? '?'}`
-        : p?.modeLivraison === 'EMPORTER'  ? 'À emporter'
-        : p?.modeLivraison === 'LIVRAISON' ? 'Livraison' : '';
+        : p?.modeLivraison === 'EMPORTER' ? 'À emporter'
+          : p?.modeLivraison === 'LIVRAISON' ? 'Livraison' : '';
       pushNotif({ type: 'nouvelle', numero: p?.numero, lieu, montant: p?.montantTotal });
       try {
         const ac = new (window.AudioContext || window.webkitAudioContext)();

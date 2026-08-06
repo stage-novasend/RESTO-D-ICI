@@ -161,7 +161,7 @@ function IntegrationModal({ initial, onClose, onSave }) {
 export default function ConfigTab() {
   const revision = useAdminRevision();
   const { user } = useAuth();
-  const [configs, setConfigs] = useState([]);
+  const [, setConfigs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState({});
   const [pwForm, setPwForm] = useState({ current: '', next: '', confirm: '' });
@@ -200,15 +200,6 @@ export default function ConfigTab() {
   }, []);
 
   useEffect(() => { loadConfig(); }, [loadConfig, revision]);
-
-  const saveKey = async (key, value) => {
-    setSaving(s => ({ ...s, [key]: true }));
-    try {
-      await adminAPI.setConfig(key, String(value));
-      setConfigs(prev => prev.map(c => c.key === key ? { ...c, value: String(value) } : c));
-    } catch { /* ignore */ }
-    finally { setSaving(s => ({ ...s, [key]: false })); }
-  };
 
   // `keys` limite la sauvegarde aux champs du panneau réellement affiché.
   // Sans ça, secEdits (peuplé avec TOUTES les clés de config au premier

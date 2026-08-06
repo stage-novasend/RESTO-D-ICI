@@ -15,6 +15,7 @@ import { AuthGuard } from '@nestjs/passport';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../common/decorators/roles.decorator';
 import { FournisseursService } from './fournisseurs.service';
+import { Fournisseur } from './entities/fournisseur.entity';
 
 @Controller('fournisseurs')
 @UseGuards(AuthGuard('jwt'), RolesGuard)
@@ -34,13 +35,13 @@ export class FournisseursController {
   @Post()
   @Roles('ADMIN')
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() dto: any) {
+  create(@Body() dto: Partial<Fournisseur>) {
     return this.svc.create(dto);
   }
 
   @Patch(':id')
   @Roles('ADMIN')
-  update(@Param('id') id: string, @Body() dto: any) {
+  update(@Param('id') id: string, @Body() dto: Partial<Fournisseur>) {
     return this.svc.update(id, dto);
   }
 

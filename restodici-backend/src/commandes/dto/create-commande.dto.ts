@@ -8,7 +8,6 @@ import {
   IsString,
   Min,
   ValidateIf,
-  IsUUID,
   ValidateNested,
 } from 'class-validator';
 import { Transform, Type } from 'class-transformer';

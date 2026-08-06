@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ArrowLeft, Bike, CheckCircle, Tag, X, Phone, RefreshCw,
-  AlertCircle, ExternalLink, CreditCard, Lock, MapPin, Star, User,
+  AlertCircle, CreditCard, Lock, MapPin, Star, User,
   ShieldCheck,
 } from 'lucide-react';
 import { useCart } from '../hooks/useCart';
@@ -15,7 +15,6 @@ import orangeMoneyLogo from '../assets/payments/orange-money.svg';
 import mtnMomoLogo from '../assets/payments/mtn-momo.svg';
 import moovMoneyLogo from '../assets/payments/moov-money.svg';
 import carteBancaireLogo from '../assets/payments/carte-bancaire.svg';
-import QRCode from 'qrcode';
 
 // Mode paiement réel 100% API (Aucune simulation locale)
 // Flip to false when NovaSend card payment is live in CI
@@ -30,11 +29,11 @@ const MODE_LABELS = {
 
 /* Métadonnées visuelles locales — ne contient aucune logique métier */
 const METHOD_VISUAL_MAP = {
-  orange_money: { provider: 'ORANGE', name: 'Orange Money',   shortName: 'Orange',   logo: orangeMoneyLogo,   accent: '#FF7900', accentLight: '#FFEFE0', borderActive: 'border-orange-400', bgActive: 'bg-orange-50',  phoneRequired: true,  otpRequired: true  },
-  mtn_momo:     { provider: 'MOMO',   name: 'MTN Mobile Money',shortName: 'MTN MoMo', logo: mtnMomoLogo,       accent: '#FFCC00', accentLight: '#FFFDE7', borderActive: 'border-yellow-400', bgActive: 'bg-yellow-50',  phoneRequired: true,  otpRequired: false },
-  moov_money:   { provider: 'MOOV',   name: 'Moov Money',     shortName: 'Moov',     logo: moovMoneyLogo,     accent: '#0066CC', accentLight: '#E3F0FF', borderActive: 'border-blue-400',   bgActive: 'bg-blue-50',    phoneRequired: true,  otpRequired: false },
-  wave:         { provider: 'WAVE',   name: 'Wave',           shortName: 'Wave',     logo: null,              accent: '#1DA1F2', accentLight: '#E8F5FD', borderActive: 'border-sky-400',    bgActive: 'bg-sky-50',     phoneRequired: true,  otpRequired: false },
-  card:         { provider: 'CARTE',  name: 'Carte Bancaire', shortName: 'Carte',    logo: carteBancaireLogo, accent: '#1A0C00', accentLight: '#F5F0FF', borderActive: 'border-slate-500',  bgActive: 'bg-slate-50',   phoneRequired: false, otpRequired: false },
+  orange_money: { provider: 'ORANGE', name: 'Orange Money', shortName: 'Orange', logo: orangeMoneyLogo, accent: '#FF7900', accentLight: '#FFEFE0', borderActive: 'border-orange-400', bgActive: 'bg-orange-50', phoneRequired: true, otpRequired: true },
+  mtn_momo: { provider: 'MOMO', name: 'MTN Mobile Money', shortName: 'MTN MoMo', logo: mtnMomoLogo, accent: '#FFCC00', accentLight: '#FFFDE7', borderActive: 'border-yellow-400', bgActive: 'bg-yellow-50', phoneRequired: true, otpRequired: false },
+  moov_money: { provider: 'MOOV', name: 'Moov Money', shortName: 'Moov', logo: moovMoneyLogo, accent: '#0066CC', accentLight: '#E3F0FF', borderActive: 'border-blue-400', bgActive: 'bg-blue-50', phoneRequired: true, otpRequired: false },
+  wave: { provider: 'WAVE', name: 'Wave', shortName: 'Wave', logo: null, accent: '#1DA1F2', accentLight: '#E8F5FD', borderActive: 'border-sky-400', bgActive: 'bg-sky-50', phoneRequired: true, otpRequired: false },
+  card: { provider: 'CARTE', name: 'Carte Bancaire', shortName: 'Carte', logo: carteBancaireLogo, accent: '#1A0C00', accentLight: '#F5F0FF', borderActive: 'border-slate-500', bgActive: 'bg-slate-50', phoneRequired: false, otpRequired: false },
 };
 
 const METHODS_FALLBACK = Object.entries(METHOD_VISUAL_MAP)
@@ -43,10 +42,10 @@ const METHODS_FALLBACK = Object.entries(METHOD_VISUAL_MAP)
 
 const PROVIDER_NOTE = {
   ORANGE: 'Une demande de paiement a été envoyée. Si la confirmation n\'apparaît pas automatiquement, composez #144*82# pour obtenir votre code OTP.',
-  MOMO:   'Une demande de validation Push a été envoyée sur votre mobile MTN. Si elle n\'apparaît pas automatiquement, composez *133#.',
-  MOOV:   'Une demande de validation Push a été envoyée sur votre mobile Moov. Si elle n\'apparaît pas automatiquement, composez *155#.',
-  WAVE:   'Scannez le QR code ou cliquez sur le bouton pour ouvrir l\'application Wave et valider.',
-  CARTE:  'Votre paiement par carte bancaire sécurisée est en cours de traitement.',
+  MOMO: 'Une demande de validation Push a été envoyée sur votre mobile MTN. Si elle n\'apparaît pas automatiquement, composez *133#.',
+  MOOV: 'Une demande de validation Push a été envoyée sur votre mobile Moov. Si elle n\'apparaît pas automatiquement, composez *155#.',
+  WAVE: 'Scannez le QR code ou cliquez sur le bouton pour ouvrir l\'application Wave et valider.',
+  CARTE: 'Votre paiement par carte bancaire sécurisée est en cours de traitement.',
 };
 
 const COUNTDOWN_SECS = 90;
@@ -83,55 +82,6 @@ function CountdownRing({ total, current }) {
   );
 }
 
-function WaveQRCode({ url }) {
-  const [qrData, setQrData] = useState('');
-
-  useEffect(() => {
-    if (!url) return;
-    QRCode.toDataURL(url, { width: 220, margin: 1, color: { dark: '#0284C7', light: '#FFFFFF' } })
-      .then(setQrData)
-      .catch(() => {});
-  }, [url]);
-
-  if (!qrData) return null;
-
-  return (
-    <div style={{
-      margin: '16px 0',
-      padding: '16px',
-      borderRadius: 18,
-      background: 'linear-gradient(135deg, #F0F9FF 0%, #E0F2FE 100%)',
-      border: '1.5px solid #BAE6FD',
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      gap: 12,
-      boxShadow: '0 4px 20px rgba(14,165,233,0.12)'
-    }}>
-      <div style={{
-        background: 'white',
-        padding: 12,
-        borderRadius: 16,
-        boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        border: '1px solid #E0F2FE',
-      }}>
-        <img src={qrData} alt="QR Code Wave" style={{ width: 170, height: 170, borderRadius: 8, display: 'block' }} />
-      </div>
-      <div style={{ textAlign: 'center' }}>
-        <p style={{ margin: '0 0 2px', fontSize: 13, fontWeight: 800, color: '#0369A1', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-          <span>📷</span> Scannez avec l'application Wave
-        </p>
-        <p style={{ margin: 0, fontSize: 11, color: '#0284C7', fontWeight: 600 }}>
-          Ouvrez Wave sur votre téléphone et pointez la caméra vers ce QR Code pour débiter votre solde
-        </p>
-      </div>
-    </div>
-  );
-}
-
 // OTP input — 4 cases individuelles
 function OtpInput({ value, onChange }) {
   const refs = [useRef(), useRef(), useRef(), useRef()];
@@ -160,7 +110,7 @@ function OtpInput({ value, onChange }) {
           inputMode="numeric"
           maxLength={1}
           value={digits[i].trim()}
-          onChange={() => {}}
+          onChange={() => { }}
           onKeyDown={e => handleKey(i, e)}
           onClick={() => refs[i].current?.select()}
           style={{
@@ -326,41 +276,41 @@ export default function CheckoutPage() {
 
   const [paymentMethods, setPaymentMethods] = useState(METHODS_FALLBACK);
   const [selectedMethod, setSelectedMethod] = useState('orange_money');
-  const [pendingOrder, setPendingOrder]     = useState(null);
-  const [phone, setPhone]                   = useState('');
-  const [otp, setOtp]                       = useState('');
+  const [pendingOrder, setPendingOrder] = useState(null);
+  const [phone, setPhone] = useState('');
+  const [otp, setOtp] = useState('');
   // Flux OTP en 2 étapes (Orange) : on saisit le numéro puis on « initie », et le
   // champ OTP n'apparaît qu'ensuite.
-  const [otpStep, setOtpStep]               = useState(false);
+  const [otpStep, setOtpStep] = useState(false);
 
   // Card fields
-  const [cardNumber, setCardNumber]   = useState('');
-  const [cardExpiry, setCardExpiry]   = useState('');
-  const [cardCvv, setCardCvv]         = useState('');
-  const [cardName, setCardName]       = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [cardName, setCardName] = useState('');
 
   // Promo
-  const [promoCode, setPromoCode]       = useState('');
-  const [promoResult, setPromoResult]   = useState(null);
-  const [promoError, setPromoError]     = useState('');
+  const [promoCode, setPromoCode] = useState('');
+  const [promoResult, setPromoResult] = useState(null);
+  const [promoError, setPromoError] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
 
   // Modal: idle | creating | waiting | success | failed
-  const [modalState, setModalState]     = useState('idle');
-  const [modalError, setModalError]     = useState('');
+  const [modalState, setModalState] = useState('idle');
+  const [modalError, setModalError] = useState('');
   const [createdOrder, setCreatedOrder] = useState(null);
-  const [paymentUrl, setPaymentUrl]     = useState(null);
+  const [paymentUrl, setPaymentUrl] = useState(null);
 
   useEffect(() => {
     if (paymentUrl) {
       window.location.href = paymentUrl;
     }
   }, [paymentUrl]);
-  const [countdown, setCountdown]       = useState(COUNTDOWN_SECS);
-  const [canRetry, setCanRetry]         = useState(false);
+  const [countdown, setCountdown] = useState(COUNTDOWN_SECS);
+  const [canRetry, setCanRetry] = useState(false);
 
-  const socketRef  = useRef(null);
-  const timerRef   = useRef(null);
+  const socketRef = useRef(null);
+  const timerRef = useRef(null);
   const simTimerRef = useRef(null);
   const orderIdRef = useRef(null);
 
@@ -375,11 +325,11 @@ export default function CheckoutPage() {
     } else {
       navigate('/cart');
     }
-  }, [navigate]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [navigate]);
 
   useEffect(() => {
     if (user?.telephone && !phone) setPhone(user.telephone);
-  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user]);
 
   // Repart de l'étape « numéro » à chaque changement de moyen.
   useEffect(() => { setOtpStep(false); setOtp(''); }, [selectedMethod]);
@@ -395,7 +345,7 @@ export default function CheckoutPage() {
         if (qp.phone && !phone) setPhone(qp.phone);
       }
     } catch { /* config absente ou invalide — ignore */ }
-  }, [user, pendingOrder]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [user, pendingOrder]);
 
   /* Chargement dynamique des méthodes depuis l'API */
   useEffect(() => {
@@ -427,9 +377,9 @@ export default function CheckoutPage() {
 
   // ── Cleanup ────────────────────────────────────────────────────────────────
   const cleanupAll = useCallback(() => {
-    if (timerRef.current)    { clearInterval(timerRef.current);  timerRef.current   = null; }
+    if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
     if (simTimerRef.current) { clearTimeout(simTimerRef.current); simTimerRef.current = null; }
-    if (socketRef.current)   { socketRef.current.disconnect();   socketRef.current  = null; }
+    if (socketRef.current) { socketRef.current.disconnect(); socketRef.current = null; }
   }, []);
 
   useEffect(() => () => cleanupAll(), [cleanupAll]);
@@ -600,10 +550,10 @@ export default function CheckoutPage() {
 
   if (!pendingOrder) return null;
 
-  const total          = pendingOrder.total ?? 0;
-  const items          = pendingOrder.items ?? [];
+  const total = pendingOrder.total ?? 0;
+  const items = pendingOrder.items ?? [];
   const effectiveTotal = Math.max(0, total - (promoResult?.remise ?? 0));
-  const isOpen         = modalState !== 'idle';
+  const isOpen = modalState !== 'idle';
 
   // Mobile Money : le numéro doit correspondre à l'opérateur choisi (Orange/MTN/Moov)
   const requiresOperatorMatch = ['ORANGE', 'MOMO', 'MOOV'].includes(method?.provider);
@@ -1333,8 +1283,8 @@ export default function CheckoutPage() {
               background: modalState === 'success'
                 ? 'linear-gradient(135deg, #F0FDF4, #DCFCE7)'
                 : modalState === 'failed'
-                ? '#FEF2F2'
-                : (method?.accentLight ?? '#FDF5EF'),
+                  ? '#FEF2F2'
+                  : (method?.accentLight ?? '#FDF5EF'),
               borderBottom: '1px solid rgba(0,0,0,0.05)',
             }}>
               {modalState === 'success' ? (

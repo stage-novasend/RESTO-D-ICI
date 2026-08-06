@@ -117,7 +117,7 @@ export default function DeliveryMap({ value, onChange, heightClassName = 'h-72',
         markerRef.current = null;
       }
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   // Sync external value changes to marker position
